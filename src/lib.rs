@@ -1,9 +1,13 @@
-use bevy::math::{UVec2};
-use array2d::*;
+mod renderer;
+
+use grid::Grid;
+use std::slice::Iter;
+use std::slice::IterMut;
 use std::iter::FromIterator;
 
-use bevy::prelude::*;
 use bevy_render::prelude::Color;
+
+use bevy::prelude::{Bundle};
 
 #[derive(Clone, Copy)]
 pub struct Tile {
@@ -11,6 +15,21 @@ pub struct Tile {
     fg_color: Color,
     bg_color: Color,
 }
+
+pub struct TerminalSize {
+    size: (usize,usize),
+}
+
+impl From<&TerminalSize> for (usize,usize) {
+    fn from(val: &TerminalSize) -> Self {
+        val.size
+    }
+}
+
+pub struct Terminal {
+    data: Grid<Tile>,
+}
+
 
 impl Default for Tile {
     fn default() -> Self {
@@ -22,49 +41,37 @@ impl Default for Tile {
     }
 }
 
-trait Terminal {
-    fn put_char(&mut self, x: i32, y: i32, glyph: char);
-    fn put_string(&mut self, x: i32, y: i32, string: &str);
-    fn get_char(&self, x: i32, y: i32) -> char;
-    fn get_string(&self, x: i32, y: i32, len: usize) -> String;
-    fn get_tile(&self, x: i32, y: i32) -> &Tile;
-    fn get_tile_mut(&mut self,x: i32, y: i32) -> &mut Tile;
-}
-
-pub struct FixedTerminal {
-    size: (usize,usize),
-    data: Array2D<Tile>,
-}
-
-impl FixedTerminal {
-    pub fn new(width: usize, height: usize) -> FixedTerminal {
-        FixedTerminal {
-            size: (width, height),
-            data: Array2D::filled_with(Tile::default(), width, height),
+impl Terminal {
+    pub fn new(width: usize, height: usize) -> Terminal {
+        Terminal {
+            data: Grid::new(width, height),
+            //data: Grid::filled_with(Tile::default(), width, height),
         }
     }
-}
 
-impl Terminal for FixedTerminal {
+    pub fn size(&self) -> (usize,usize) {
+        self.data.size()
+    }
+
     fn put_char(&mut self, x: i32, y: i32, glyph: char) {
         self.get_tile_mut(x,y).glyph = glyph;
     }
 
     fn put_string(&mut self, x: i32, y: i32, string: &str) {
-        let len = string.len();
         let chars = string.chars();
 
         let mut i = 0_usize;
         let mut dy = y as usize;
         let mut dx =  x as usize + i;
 
+        let (width, height) = self.size();
         for ch in chars {
-            if dx >= self.size.0 {
+            if dx >= width {
                 dy += 1;
-                if dy >= self.size.1 {
+                if dy >= height {
                     return;
                 }
-                dx = dx % self.size.0;
+                dx = dx % width;
             }
 
             let mut t = self.data.get_mut(dx, dy).unwrap();
@@ -83,19 +90,21 @@ impl Terminal for FixedTerminal {
     }
 
     fn get_string(&self, x: i32, y: i32, len: usize) -> String {
-        debug_assert!((x as usize) < self.size.0 &&
-                      (y as usize) < self.size.1, "Trying to get string out of bounds");
+        let (width,height) = self.size();
+
+        debug_assert!((x as usize) < width &&
+                      (y as usize) < height, "Trying to get string out of bounds");
 
         let mut y = y as usize;
         let mut chars: Vec<char> = vec![' '; len];
         for i in 0..len {
             let mut dx = i + x as usize;
-            if dx >= self.size.0 {
+            if dx >= width {
                 y += 1;
-                if y >= self.size.1 {
+                if y >= height {
                     return String::from_iter(chars);
                 }
-                dx = dx % self.size.0;
+                dx = dx % width;
             }
             chars[i] = self.get_char(dx as i32,y as i32);
         }
@@ -110,6 +119,20 @@ impl Terminal for FixedTerminal {
     fn get_tile_mut(&mut self, x: i32, y: i32) -> &mut Tile {
         self.data.get_mut(x as usize,y as usize).unwrap()
     }
+
+    fn iter(&self) -> Iter<Tile> {
+        self.data.iter()
+    }
+
+    fn iter_mut(&mut self) -> IterMut<Tile> {
+        self.data.iter_mut()
+    }
+}
+
+#[derive(Bundle)]
+pub struct TerminalBundle {
+    terminal: Terminal,
+    size: TerminalSize,
 }
 
 #[cfg(test)]
@@ -118,7 +141,7 @@ mod tests {
 
     #[test]
     fn put_char() {
-        let mut term = FixedTerminal::new(20,20);
+        let mut term = Terminal::new(20,20);
 
         term.put_char(5,5, 'h');
 
@@ -127,7 +150,7 @@ mod tests {
 
     #[test]
     fn put_string() {
-        let mut term = FixedTerminal::new(20, 20);
+        let mut term = Terminal::new(20, 20);
         term.put_string(0,0, "Hello");
         assert_eq!("Hello", term.get_string(0,0,5));
     }

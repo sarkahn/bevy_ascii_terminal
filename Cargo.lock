@@ -68,12 +68,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28ae2b3dec75a406790005a200b1bd89785afc02517a00ca99ecfe093ee9e6cf"
 
 [[package]]
-name = "array2d"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "224b2db9d3e7dd068c8b07b186076ee668ce38810d0ba12c80dacbcbb7cfc9e8"
-
-[[package]]
 name = "async-channel"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -409,6 +403,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_terminal"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_render",
+ "grid",
+]
+
+[[package]]
 name = "bevy_transform"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -446,15 +449,6 @@ dependencies = [
  "bevy_math",
  "bevy_utils",
  "web-sys",
-]
-
-[[package]]
-name = "bevy_yet_another_tilemap"
-version = "0.1.0"
-dependencies = [
- "array2d",
- "bevy",
- "bevy_render",
 ]
 
 [[package]]
@@ -765,6 +759,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3abb554f8ee44336b72d522e0a7fe86a29e09f839a36022fa869a7dfe941a54b"
 
 [[package]]
+name = "grid"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "761399914080c89fadf3ff5471a57fd3ff0fb9753ba5089b1c6ef29ee96905f4"
+dependencies = [
+ "no-std-compat",
+]
+
+[[package]]
 name = "heck"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -989,6 +992,12 @@ name = "ndk-sys"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c44922cb3dbb1c70b5e5f443d63b64363a898564d739ba5198e3a9138442868d"
+
+[[package]]
+name = "no-std-compat"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 
 [[package]]
 name = "notify"
