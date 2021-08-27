@@ -99,10 +99,7 @@ fn setup(
 
     let handle = meshes.add(mesh);
 
-    commands.spawn().insert((
-        data, 
-        MeshResource { mesh: handle.clone()}
-    ));
+    commands.spawn().insert_bundle((data, MeshResource { mesh: handle.clone()}));
 
     // plane
     commands.spawn_bundle(PbrBundle {
