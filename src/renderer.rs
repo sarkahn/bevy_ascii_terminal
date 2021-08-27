@@ -1,4 +1,4 @@
-use bevy::{math::{IVec2, Vec2, Vec3}, prelude::*};
+use bevy::{math::{Vec2, Vec3}, prelude::*, render::mesh::VertexAttributeValues};
 
 use crate::{Terminal, TerminalSize};
 

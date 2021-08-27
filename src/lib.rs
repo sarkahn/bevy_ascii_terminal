@@ -32,7 +32,7 @@ pub struct Terminal {
 impl Default for Tile {
     fn default() -> Self {
         Tile {
-            glyph: ' ',
+            glyph: '.',
             fg_color: Color::WHITE,
             bg_color: Color::BLACK,
         }
