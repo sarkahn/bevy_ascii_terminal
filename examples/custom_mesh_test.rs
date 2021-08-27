@@ -2,14 +2,7 @@ use bevy::prelude::*;
 use bevy::render::mesh::Indices;
 use bevy::render::pipeline::PrimitiveTopology;
 
-fn main() {
-    App::build()
-        .insert_resource(Msaa { samples: 4 })
-        .add_plugins(DefaultPlugins)
-        .add_startup_system(setup.system())
-        .run();
-}
-
+#[derive(Default)]
 struct MeshData {
     verts: Vec<Vec3>,
     uvs: Vec<Vec2>,
@@ -22,6 +15,42 @@ struct MeshResource {
 }
 
 impl MeshData {
+    fn add_tile(&mut self, origin: Vec3) {
+        let right = Vec3::new(1.0, 0.0, 0.0);
+        let up = Vec3::new(0.0, 1.0, 0.0);
+
+    
+        #[rustfmt::skip]
+        let positions = vec![
+            origin + up, 
+            origin + up + right, 
+            origin, 
+            origin + right
+            ];
+    
+        let origin = Vec2::new(0.0, 0.0);
+        let right = Vec2::new(1.0, 0.0);
+        let up = Vec2::new(0.0, 1.0);
+    
+        #[rustfmt::skip]
+        let uvs = vec![
+            origin + up, 
+            origin + up + right, 
+            origin, 
+            origin + right
+            ];
+    
+        let normals = vec![Vec3::Z; 4];
+        let vi = self.verts.len() as u32;
+        let indices = vec![vi + 0, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1];
+
+
+        self.verts.extend(positions);
+        self.uvs.extend(uvs);
+        self.indices.extend(indices);
+        self.normals.extend(normals);
+    }
+
     fn update_mesh(&self, mesh: &mut Mesh) {
         let positions: Vec<[f32;3]> = self.verts.iter().map(|&p| p.into()).collect();
         let uvs: Vec<[f32;2]> = self.uvs.iter().map(|&u| u.into()).collect();
@@ -34,43 +63,19 @@ impl MeshData {
     }
 }
 
-fn update_mesh(keys: Res<Input<KeyCode>>,
-meshes: Res<Assets<Mesh>>,
-mut q: Query<(&mut MeshData, &MeshResource)>) {
-    if keys.just_pressed(KeyCode::Space) {
+fn update_mesh(
+    keys: Res<Input<KeyCode>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut q: Query<(&mut MeshData, &MeshResource)>) 
+{
+    if keys.just_pressed(KeyCode::Q) {
+        info!("Keypress detected");
         for (mut data, mesh_res) in q.iter_mut() {
-
-            let origin = Vec3::new(1.0, 1.0, 0.0);
-            let right = Vec3::new(1.0, 0.0, 0.0);
-            let up = Vec3::new(0.0, 1.0, 0.0);
-        
-            #[rustfmt::skip]
-            let positions = vec![
-                origin + up, 
-                origin + up + right, 
-                origin, 
-                origin + right
-                ];
-        
-            let origin = Vec2::new(0.0, 0.0);
-            let right = Vec2::new(1.0, 0.0);
-            let up = Vec2::new(0.0, 1.0);
-        
-            #[rustfmt::skip]
-            let uvs = vec![
-                origin + up, 
-                origin + up + right, 
-                origin, 
-                origin + right
-                ];
-
-            let ii = 6;
-            let indices = vec![ii + 0, ii + 1, ii + 2, ii + 3, ii + 2, ii + 1];
+            info!("Updating mesh");
+            let mesh = meshes.get_mut(mesh_res.mesh.clone()).unwrap();
             
-            
-            let mut mesh = meshes.get(mesh_res.mesh.clone()).unwrap();
-            
-            data.update_mesh(&mut mesh);
+            data.add_tile(Vec3::X);
+            data.update_mesh(mesh);
 
         }
     }
@@ -83,50 +88,20 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
 
-    let origin = Vec3::new(0.0, 0.0, 0.0);
-    let right = Vec3::new(1.0, 0.0, 0.0);
-    let up = Vec3::new(0.0, 1.0, 0.0);
-
-    #[rustfmt::skip]
-    let positions = vec![
-        origin + up, 
-        origin + up + right, 
-        origin, 
-        origin + right
-        ];
-
-    let origin = Vec2::new(0.0, 0.0);
-    let right = Vec2::new(1.0, 0.0);
-    let up = Vec2::new(0.0, 1.0);
-
-    #[rustfmt::skip]
-    let uvs = vec![
-        origin + up, 
-        origin + up + right, 
-        origin, 
-        origin + right
-        ];
-
-    let normals = vec![Vec3::Z; 4];
-    let indices = vec![0, 1, 2, 3, 2, 1];
-
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-    let handle = meshes.add(mesh);
 
-    let data = MeshData {
-        verts: positions,
-        uvs: uvs,
-        indices: indices,
-        normals: normals
-    };
+    let mut data = MeshData::default();
 
+    data.add_tile(Vec3::ZERO);
     data.update_mesh(&mut mesh);
+    //data.add_tile(Vec3::X);
+
 
     let handle = meshes.add(mesh);
 
     commands.spawn().insert((
         data, 
-        MeshResource { mesh: handle}
+        MeshResource { mesh: handle.clone()}
     ));
 
     // plane
@@ -146,4 +121,13 @@ fn setup(
         transform: Transform::from_xyz(0.0, 5.0, -8.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
+}
+
+fn main() {
+    App::build()
+        .insert_resource(Msaa { samples: 4 })
+        .add_plugins(DefaultPlugins)
+        .add_startup_system(setup.system())
+        .add_system(update_mesh.system())
+        .run();
 }
