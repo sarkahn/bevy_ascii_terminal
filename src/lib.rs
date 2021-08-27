@@ -5,9 +5,7 @@ use std::slice::Iter;
 use std::slice::IterMut;
 use std::iter::FromIterator;
 
-use bevy_render::prelude::Color;
-
-use bevy::prelude::{Bundle};
+use bevy::prelude::*;
 
 #[derive(Clone, Copy)]
 pub struct Tile {

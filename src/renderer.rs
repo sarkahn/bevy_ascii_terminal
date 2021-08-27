@@ -1,5 +1,4 @@
-use bevy::{math::{IVec2, Vec2, Vec3}, prelude::{Changed, Handle, Plugin, Query}};
-use bevy_render::{mesh::Mesh, prelude::Color};
+use bevy::{math::{IVec2, Vec2, Vec3}, prelude::*};
 
 use crate::{Terminal, TerminalSize};
 
