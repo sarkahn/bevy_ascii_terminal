@@ -18,14 +18,14 @@ impl GlyphMapping {
         }
     }
 
-    fn From_File(path: &str) -> Self {
+    fn from_file(path: &str) -> Self {
         let f = File::open(path).expect("Error opening file");
         let mapping = from_reader(f).expect("Error parsing mapping file");
         GlyphMapping::new(mapping)
     }
 
-    fn Code_Page_437() -> Self {
-        GlyphMapping::From_File("assets/code_page_437.mapping")
+    fn code_page_437() -> Self {
+        GlyphMapping::from_file("assets/code_page_437.mapping")
     }
 
     fn get_glyph(&self, index: usize) -> char {
@@ -39,7 +39,7 @@ impl GlyphMapping {
 
 impl Default for GlyphMapping {
     fn default() -> Self {
-        GlyphMapping::Code_Page_437()
+        GlyphMapping::code_page_437()
     }
 }
 

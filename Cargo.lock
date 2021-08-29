@@ -600,11 +600,7 @@ name = "bevy_terminal"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "erased-serde",
- "grid",
  "ron",
- "serde",
- "vec-option",
 ]
 
 [[package]]
@@ -1686,15 +1682,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "grid"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "761399914080c89fadf3ff5471a57fd3ff0fb9753ba5089b1c6ef29ee96905f4"
-dependencies = [
- "no-std-compat",
-]
-
-[[package]]
 name = "guillotiere"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2293,12 +2280,6 @@ dependencies = [
  "libc",
  "memoffset",
 ]
-
-[[package]]
-name = "no-std-compat"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b93853da6d84c2e3c7d730d6473e8817692dd89be387eb01b94d7f108ecb5b8c"
 
 [[package]]
 name = "nom"
@@ -3231,12 +3212,6 @@ dependencies = [
  "getrandom",
  "serde",
 ]
-
-[[package]]
-name = "vec-option"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fe12288ff5b002bbf056bf5da15d6da36c8efe501332d0a53e9b8324b348c4e"
 
 [[package]]
 name = "vec_map"

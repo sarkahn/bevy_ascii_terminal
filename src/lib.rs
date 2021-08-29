@@ -1,8 +1,7 @@
-mod renderer;
-mod renderer_sprites;
-mod glyph_mapping;
 
-use grid::Grid;
+mod glyph_mapping;
+mod render;
+
 use std::slice::Iter;
 use std::slice::IterMut;
 use std::iter::FromIterator;
@@ -27,7 +26,8 @@ impl From<&TerminalSize> for (usize,usize) {
 }
 
 pub struct Terminal {
-    data: Grid<Tile>,
+    data: Vec<Tile>,
+    size: (usize, usize),
 }
 
 
@@ -44,13 +44,13 @@ impl Default for Tile {
 impl Terminal {
     pub fn new(width: usize, height: usize) -> Terminal {
         Terminal {
-            data: Grid::new(width, height),
-            //data: Grid::filled_with(Tile::default(), width, height),
+            data: vec![Tile::default(); width* height],
+            size: (width, height),
         }
     }
 
-    pub fn size(&self) -> (usize,usize) {
-        self.data.size()
+    fn width(&self) -> usize {
+        self.size.0
     }
 
     fn put_char(&mut self, x: i32, y: i32, glyph: char) {
@@ -64,7 +64,7 @@ impl Terminal {
         let mut dy = y as usize;
         let mut dx =  x as usize + i;
 
-        let (width, height) = self.size();
+        let (width, height) = self.size;
         for ch in chars {
             if dx >= width {
                 dy += 1;
@@ -74,7 +74,7 @@ impl Terminal {
                 dx = dx % width;
             }
 
-            let mut t = self.data.get_mut(dx, dy).unwrap();
+            let mut t = self.data.get_mut(dy * width + dx).unwrap();
             t.glyph = ch;
 
             self.put_char(dx as i32, dy as i32, ch);
@@ -90,7 +90,7 @@ impl Terminal {
     }
 
     fn get_string(&self, x: i32, y: i32, len: usize) -> String {
-        let (width,height) = self.size();
+        let (width,height) = self.size;
 
         debug_assert!((x as usize) < width &&
                       (y as usize) < height, "Trying to get string out of bounds");
@@ -113,11 +113,16 @@ impl Terminal {
     }
 
     fn get_tile(&self, x: i32, y: i32) -> &Tile {
-        self.data.get(x as usize, y as usize).unwrap()
+        let x = x as usize;
+        let y = y as usize;
+        self.data.get(y * self.width() + x).unwrap()
     }
 
     fn get_tile_mut(&mut self, x: i32, y: i32) -> &mut Tile {
-        self.data.get_mut(x as usize,y as usize).unwrap()
+        let x = x as usize;
+        let y = y as usize;
+        let width = self.width();
+        self.data.get_mut(y * width + x).unwrap()
     }
 
     fn iter(&self) -> Iter<Tile> {
