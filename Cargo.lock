@@ -600,7 +600,11 @@ name = "bevy_terminal"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "erased-serde",
  "grid",
+ "ron",
+ "serde",
+ "vec-option",
 ]
 
 [[package]]
@@ -3227,6 +3231,12 @@ dependencies = [
  "getrandom",
  "serde",
 ]
+
+[[package]]
+name = "vec-option"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fe12288ff5b002bbf056bf5da15d6da36c8efe501332d0a53e9b8324b348c4e"
 
 [[package]]
 name = "vec_map"

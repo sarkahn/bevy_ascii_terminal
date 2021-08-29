@@ -1,4 +1,6 @@
 mod renderer;
+mod renderer_sprites;
+mod glyph_mapping;
 
 use grid::Grid;
 use std::slice::Iter;
