@@ -4,15 +4,16 @@ use std::iter::FromIterator;
 
 use bevy::prelude::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Tile {
     pub glyph: char,
     pub fg_color: Color,
     pub bg_color: Color,
 }
 
+#[derive(Default)]
 pub struct TerminalSize {
-    size: (usize,usize),
+    pub size: (usize,usize),
 }
 
 impl From<&TerminalSize> for (usize,usize) {
@@ -21,15 +22,16 @@ impl From<&TerminalSize> for (usize,usize) {
     }
 }
 
+#[derive(Default)]
 pub struct Terminal {
-    pub data: Vec<Tile>,
+    pub tiles: Vec<Tile>,
     pub size: (usize, usize),
 }
 
 impl Default for Tile {
     fn default() -> Self {
         Tile {
-            glyph: '.',
+            glyph: ' ',
             fg_color: Color::WHITE,
             bg_color: Color::BLACK,
         }
@@ -39,7 +41,7 @@ impl Default for Tile {
 impl Terminal {
     pub fn new(width: usize, height: usize) -> Terminal {
         Terminal {
-            data: vec![Tile::default(); width* height],
+            tiles: vec![Tile::default(); width * height],
             size: (width, height),
         }
     }
@@ -107,22 +109,22 @@ impl Terminal {
     fn get_tile(&self, x: i32, y: i32) -> &Tile {
         let x = x as usize;
         let y = y as usize;
-        self.data.get(y * self.width() + x).unwrap()
+        self.tiles.get(y * self.width() + x).unwrap()
     }
 
     fn get_tile_mut(&mut self, x: i32, y: i32) -> &mut Tile {
         let x = x as usize;
         let y = y as usize;
         let width = self.width();
-        self.data.get_mut(y * width + x).unwrap()
+        self.tiles.get_mut(y * width + x).unwrap()
     }
 
     fn iter(&self) -> Iter<Tile> {
-        self.data.iter()
+        self.tiles.iter()
     }
 
     fn iter_mut(&mut self) -> IterMut<Tile> {
-        self.data.iter_mut()
+        self.tiles.iter_mut()
     }
 }
 

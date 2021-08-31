@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy::render::{mesh::Indices};
 use bevy::render::pipeline::{PrimitiveTopology};
 
+use bevy_terminal::render::TerminalRendererPlugin;
 use bevy_terminal::render::pipeline::{TerminalRendererPipeline};
 
 #[derive(Default)]
@@ -143,7 +144,7 @@ fn main() {
     App::build()
         .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
-        .init_resource::<TerminalRendererPipeline>()
+        .add_plugin(TerminalRendererPlugin)
         .add_system(add_tile_system.system())
         .add_startup_system(setup.system())
         .run();
