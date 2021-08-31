@@ -36,6 +36,8 @@ mut meshes: ResMut<Assets<Mesh>>) {
         vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
         fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER)))
     }));
+
+    
 }
 
 fn main () {
