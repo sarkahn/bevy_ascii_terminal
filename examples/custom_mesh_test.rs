@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy::render::{mesh::Indices};
-use bevy::render::pipeline::{PipelineDescriptor, PrimitiveTopology};
+use bevy::render::pipeline::{PrimitiveTopology};
 
-use bevy_terminal::render::pipeline::{TerminalRendererPipeline, get_pipelines, setup_pipeline2};
+use bevy_terminal::render::pipeline::{TerminalRendererPipeline};
 
 #[derive(Default)]
 struct MeshVertData {
@@ -111,8 +111,6 @@ fn setup(
     pipeline: Res<TerminalRendererPipeline>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut pipelines: ResMut<Assets<PipelineDescriptor>>,
-    mut shaders: ResMut<Assets<Shader>>,
 ) {
     let tex = asset_server.load("zx_evolution_8x8.png");
     let mat = materials.add(ColorMaterial::texture(tex));
@@ -126,9 +124,7 @@ fn setup(
 
     update_mesh(&verts, &uvs, &mut mesh);
 
-    //let mesh = Mesh::from(shape::Cube { size: 2.0});
-    let pipeline = get_pipelines(&mut shaders, &mut pipelines);
-    //let pipeline = pipeline.get_pipelines(); // Causes panic when compiling the pipeline, not sure why
+    let pipeline = pipeline.get_pipelines();
     commands.spawn_bundle(MeshBundle {
         mesh: meshes.add(mesh),
         render_pipelines: pipeline,
@@ -148,7 +144,6 @@ fn main() {
         .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
         .init_resource::<TerminalRendererPipeline>()
-        .add_startup_system(setup_pipeline2.system())
         .add_system(add_tile_system.system())
         .add_startup_system(setup.system())
         .run();
