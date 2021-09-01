@@ -2,7 +2,8 @@ use bevy::{prelude::*, render::camera::ScalingMode};
 
 use bevy_ascii_terminal::{terminal::Terminal, TerminalBundle, TerminalPlugin};
 
-fn spawn_terminal(mut commands: Commands) {
+fn spawn_terminal(mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>) {
     let mut term_bundle = TerminalBundle::with_size(20, 3);
 
     term_bundle.terminal.draw_border_single();
@@ -12,9 +13,15 @@ fn spawn_terminal(mut commands: Commands) {
     let mut cam = OrthographicCameraBundle::new_2d();
     cam.orthographic_projection.scaling_mode = ScalingMode::FixedVertical;
     cam.orthographic_projection.scale = 6.0;
-    cam.transform.translation += Vec3::new(10.0, 1.5, 0.0);
+    cam.transform.translation += Vec3::new(0.0, 1.5, 0.0);
 
     commands.spawn_bundle(cam);
+
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube{ size: 2.0})),
+        transform: Transform::from_xyz(-1.0, 0.0, 0.0),
+        ..Default::default()
+    });
 }
 
 fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
