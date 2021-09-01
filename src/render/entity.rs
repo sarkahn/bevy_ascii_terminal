@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use super::{TerminalRendererFont, renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData};
+use super::{
+    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
+    TerminalRendererFont,
+};
 
 #[derive(Bundle, Default)]
 pub struct TerminalRendererBundle {

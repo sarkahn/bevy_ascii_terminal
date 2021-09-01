@@ -2,14 +2,14 @@ use bevy::math::Vec3;
 
 #[derive(Default)]
 pub struct TerminalRendererVertexData {
-    pub verts: Vec<[f32;3]>,
+    pub verts: Vec<[f32; 3]>,
     pub indices: Vec<u32>,
 }
 
 impl TerminalRendererVertexData {
     pub fn with_size(width: usize, height: usize) -> Self {
         let mut v = Self::default();
-        v.resize(width,height);
+        v.resize(width, height);
         v
     }
 
@@ -28,10 +28,10 @@ impl TerminalRendererVertexData {
 
             let vi = i * 4;
             // 0---2
-            // | / | 
+            // | / |
             // 1---3
             let verts = &mut self.verts;
-            verts[vi + 0] = (origin + up).into();
+            verts[vi] = (origin + up).into();
             verts[vi + 1] = origin.into();
             verts[vi + 2] = (origin + right + up).into();
             verts[vi + 3] = (origin + right).into();
@@ -39,7 +39,7 @@ impl TerminalRendererVertexData {
             let ii = i * 6;
             let vi = vi as u32;
             let indices = &mut self.indices;
-            indices[ii + 0] = vi + 0;
+            indices[ii] = vi + 0;
             indices[ii + 1] = vi + 1;
             indices[ii + 2] = vi + 2;
             indices[ii + 3] = vi + 3;

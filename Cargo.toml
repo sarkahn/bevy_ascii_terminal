@@ -1,8 +1,14 @@
 [package]
-name = "bevy_terminal"
+name = "bevy_ascii_terminal"
 description = "A simple terminal for rendering ascii in bevy."
 version = "0.1.0"
+authors = ["sark"]
+homepage = "https://github.com/sarkahn/bevy_ascii_terminal"
+repository = "https://github.com/sarkahn/bevy_ascii_terminal"
+license-file = "LICENSE"
 edition = "2018"
+exclude = ["assets/*", "images/*"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

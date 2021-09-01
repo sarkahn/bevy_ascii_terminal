@@ -1,6 +1,9 @@
 use bevy::prelude::*;
-use render::{TerminalRendererPlugin, entity::TerminalRendererBundle, renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData};
-use terminal::{Terminal, TerminalSize};
+use render::{
+    entity::TerminalRendererBundle, renderer_tile_data::TerminalRendererTileData,
+    renderer_vertex_data::TerminalRendererVertexData, TerminalRendererPlugin,
+};
+pub use terminal::{Terminal, TerminalSize};
 
 pub mod render;
 pub mod terminal;
@@ -19,14 +22,13 @@ impl TerminalBundle {
         Self {
             terminal: Terminal::new(width, height),
             size: TerminalSize {
-                size: (width, height)
+                size: (width, height),
             },
             renderer_bundle: TerminalRendererBundle {
                 vert_data: TerminalRendererVertexData::with_size(width, height),
                 tile_data: TerminalRendererTileData::with_size(width, height),
                 ..Default::default()
             },
-            ..Default::default()
         }
     }
 }

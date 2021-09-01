@@ -1,6 +1,6 @@
+use std::iter::FromIterator;
 use std::slice::Iter;
 use std::slice::IterMut;
-use std::iter::FromIterator;
 
 use bevy::prelude::*;
 
@@ -13,10 +13,10 @@ pub struct Tile {
 
 #[derive(Default)]
 pub struct TerminalSize {
-    pub size: (usize,usize),
+    pub size: (usize, usize),
 }
 
-impl From<&TerminalSize> for (usize,usize) {
+impl From<&TerminalSize> for (usize, usize) {
     fn from(val: &TerminalSize) -> Self {
         val.size
     }
@@ -43,7 +43,6 @@ impl Terminal {
         Terminal {
             tiles: vec![Tile::default(); width * height],
             size: (width, height),
-            ..Default::default()
         }
     }
 
@@ -55,54 +54,54 @@ impl Terminal {
     }
 
     pub fn put_char(&mut self, x: i32, y: i32, glyph: char) {
-        self.get_tile_mut(x,y).glyph = glyph;
+        self.get_tile_mut(x, y).glyph = glyph;
     }
 
     pub fn put_char_color(&mut self, x: i32, y: i32, glyph: char, fg_color: Color) {
-        let t = self.get_tile_mut(x,y);
+        let t = self.get_tile_mut(x, y);
         t.glyph = glyph;
         t.fg_color = fg_color;
     }
 
     pub fn put_tile(&mut self, x: i32, y: i32, tile: Tile) {
-        let t = self.get_tile_mut(x,y);
+        let t = self.get_tile_mut(x, y);
         *t = tile;
     }
 
     pub fn put_string(&mut self, x: i32, y: i32, string: &str) {
         let chars = string.chars();
 
-        let mut i = 0_usize;
         let mut dy = y as usize;
-        let mut dx =  x as usize + i;
+        let mut dx = x as usize;
 
         let (width, height) = self.size;
+
         for ch in chars {
             if dx >= width {
                 dy += 1;
                 if dy >= height {
                     return;
                 }
-                dx = dx % width;
+                dx %= width;
             }
 
             self.put_char(dx as i32, dy as i32, ch);
 
             dx += 1;
-            i += 1;
-
         }
     }
 
     pub fn get_char(&self, x: i32, y: i32) -> char {
-        self.get_tile(x,y).glyph
+        self.get_tile(x, y).glyph
     }
 
     pub fn get_string(&self, x: i32, y: i32, len: usize) -> String {
-        let (width,height) = self.size;
+        let (width, height) = self.size;
 
-        debug_assert!((x as usize) < width &&
-                      (y as usize) < height, "Trying to get string out of bounds");
+        debug_assert!(
+            (x as usize) < width && (y as usize) < height,
+            "Trying to get string out of bounds"
+        );
 
         let mut y = y as usize;
         let mut chars: Vec<char> = vec![' '; len];
@@ -115,7 +114,7 @@ impl Terminal {
                 }
                 dx = dx % width;
             }
-            chars[i] = self.get_char(dx as i32,y as i32);
+            chars[i] = self.get_char(dx as i32, y as i32);
         }
 
         String::from_iter(chars)
@@ -131,41 +130,58 @@ impl Terminal {
         let x = x as usize;
         let y = y as usize;
         let width = self.width();
-        debug_assert!(x < self.width(), "get_tile_mut(x = {}) out of bounds. Width {}", x, self.width());
-        debug_assert!(y < self.height(), "get_tile_mut(y = {}) out of bounds: {}", y, self.height());
+        debug_assert!(
+            x < self.width(),
+            "get_tile_mut(x = {}) out of bounds. Width {}",
+            x,
+            self.width()
+        );
+        debug_assert!(
+            y < self.height(),
+            "get_tile_mut(y = {}) out of bounds: {}",
+            y,
+            self.height()
+        );
         let i = y * width + x;
-        debug_assert!(i < self.tiles.len(), "get_tile_mut({},{}) resulting index {} is out of bounds of len {}",x, y, i, self.tiles.len());
+        debug_assert!(
+            i < self.tiles.len(),
+            "get_tile_mut({},{}) resulting index {} is out of bounds of len {}",
+            x,
+            y,
+            i,
+            self.tiles.len()
+        );
 
         self.tiles.get_mut(i).unwrap()
     }
 
-    pub fn draw_box_single(&mut self, x: i32, y: i32, width: usize, height: usize, ) {
+    pub fn draw_box_single(&mut self, x: i32, y: i32, width: usize, height: usize) {
         let width = width as i32;
         let height = height as i32;
-        
-        let l = x;
-        let r = x + width - 1;
-        let b = y;
-        let t = y + height - 1;
 
-        for y in b + 1..t {
-            self.put_char(l, y, '│');
-            self.put_char(r, y, '│');
+        let left = x;
+        let right = x + width - 1;
+        let bottom = y;
+        let top = y + height - 1;
+
+        for y in bottom + 1..top {
+            self.put_char(left, y, '│');
+            self.put_char(right, y, '│');
         }
 
-        for x in l + 1..r {
-            self.put_char(x, t, '─');
-            self.put_char(x, b, '─');
+        for x in left + 1..right {
+            self.put_char(x, top, '─');
+            self.put_char(x, bottom, '─');
         }
 
-        self.put_char(l, b, '└');
-        self.put_char(l, t, '┌');
-        self.put_char(r, t, '┐');
-        self.put_char(r, b, '┘');
+        self.put_char(left, bottom, '└');
+        self.put_char(left, top, '┌');
+        self.put_char(right, top, '┐');
+        self.put_char(right, bottom, '┘');
     }
 
     pub fn draw_border_single(&mut self) {
-        self.draw_box_single(0,0, self.width(), self.height());
+        self.draw_box_single(0, 0, self.width(), self.height());
     }
 
     pub fn clear(&mut self) {
@@ -189,27 +205,27 @@ mod tests {
 
     #[test]
     fn put_char() {
-        let mut term = Terminal::new(20,20);
+        let mut term = Terminal::new(20, 20);
 
-        term.put_char(5,5, 'h');
+        term.put_char(5, 5, 'h');
 
-        assert_eq!('h', term.get_char(5,5));
+        assert_eq!('h', term.get_char(5, 5));
     }
 
     #[test]
     fn put_string() {
         let mut term = Terminal::new(20, 20);
-        term.put_string(0,0, "Hello");
-        assert_eq!("Hello", term.get_string(0,0,5));
+        term.put_string(0, 0, "Hello");
+        assert_eq!("Hello", term.get_string(0, 0, 5));
 
-        term.put_string(18,19, "Hello");
-        assert_eq!("He", term.get_string(18,19,2));
+        term.put_string(18, 19, "Hello");
+        assert_eq!("He", term.get_string(18, 19, 2));
     }
 
     #[test]
     fn edges() {
-        let mut term = Terminal::new(25,20);
-        term.put_char(0,0,'a');
-        term.put_char(24,19,'a');
+        let mut term = Terminal::new(25, 20);
+        term.put_char(0, 0, 'a');
+        term.put_char(24, 19, 'a');
     }
 }
