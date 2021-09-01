@@ -11,13 +11,22 @@ use crate::terminal::{Terminal, TerminalSize};
 use self::{renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData};
 
 const DEFAULT_TEX_PATH: &str = "alloy_curses_12x12.png";
+
+pub struct TerminalRendererFont(pub String);
+impl Default for TerminalRendererFont {
+    fn default() -> Self {
+        Self(String::from(DEFAULT_TEX_PATH))
+    }
+}
+
 pub struct TerminalRendererPlugin;
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<TerminalRendererPipeline>()
         .add_system(terminal_init.system().label("terminal_init"))
-        .add_system(terminal_renderer_update_size.system().label("update_size_system").after("terminal_init"))
+        .add_system(terminal_update_material.system().label("term_update_material").after("terminal_init"))
+        .add_system(terminal_renderer_update_size.system().label("update_size_system").after("term_update_material"))
         .add_system(terminal_renderer_update_tile_data.system().label("update_data_system").after("update_size_system"))
         .add_system(terminal_renderer_update_mesh.system().after("update_data_system"))
         ;
@@ -25,21 +34,33 @@ impl Plugin for TerminalRendererPlugin {
 }
 
 pub fn terminal_init(
-    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     pipeline: Res<TerminalRendererPipeline>,
-    mut q: Query<(&mut Handle<Mesh>, &mut RenderPipelines, &mut Handle<ColorMaterial>), 
+    mut q: Query<(&mut Handle<Mesh>, &mut RenderPipelines), 
                  (Added<Handle<Mesh>>, With<TerminalRendererVertexData>)>) {
-    for (mut mesh, mut pipelines, mut mat) in q.iter_mut() {
-        //info!("intializing terminal resources");
-
-        let tex = asset_server.load(DEFAULT_TEX_PATH);
-        *mat = materials.add(ColorMaterial::texture(tex));
+    for (mut mesh, mut pipelines) in q.iter_mut() {
 
         let new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         *mesh = meshes.add(new_mesh);
         *pipelines = pipeline.get_pipelines();
+    }
+}
+
+pub fn terminal_update_material(
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut q: Query<(&TerminalRendererFont, &mut Handle<ColorMaterial>),
+                  Changed<TerminalRendererFont>>) {
+
+    for (font, mut mat) in q.iter_mut() {
+        let existing_mat = materials.get(mat.clone_weak());
+
+        if existing_mat.is_some() {
+            materials.remove(mat.clone_weak());
+        }
+
+        let tex = asset_server.load(font.0.as_str());
+        *mat = materials.add(ColorMaterial::texture(tex));
     }
 }
 
