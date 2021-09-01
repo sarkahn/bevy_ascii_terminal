@@ -29,9 +29,9 @@ pub struct TerminalRendererPlugin;
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.init_resource::<TerminalRendererPipeline>()
-            .add_system(terminal_init.system().label("terminal_init"))
+            .add_system(terminal_renderer_init.system().label("terminal_init"))
             .add_system(
-                terminal_update_material
+                terminal_renderer_update_material
                     .system()
                     .label("term_update_material")
                     .after("terminal_init"),
@@ -56,7 +56,7 @@ impl Plugin for TerminalRendererPlugin {
     }
 }
 
-pub fn terminal_init(
+pub fn terminal_renderer_init(
     mut meshes: ResMut<Assets<Mesh>>,
     pipeline: Res<TerminalRendererPipeline>,
     mut q: Query<
@@ -71,7 +71,7 @@ pub fn terminal_init(
     }
 }
 
-pub fn terminal_update_material(
+pub fn terminal_renderer_update_material(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut q: Query<

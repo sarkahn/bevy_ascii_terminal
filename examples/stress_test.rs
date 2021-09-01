@@ -2,6 +2,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use bevy::prelude::*;
 
+use bevy::render::camera::ScalingMode;
 use bevy_ascii_terminal::{terminal::Terminal, terminal::Tile, TerminalBundle, TerminalPlugin};
 use rand::prelude::ThreadRng;
 use rand::Rng;
@@ -14,11 +15,10 @@ fn setup(mut commands: Commands) {
         .spawn_bundle(TerminalBundle::with_size(50, 50))
         .insert(Pause);
 
-    let mut cam = PerspectiveCameraBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 60.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    };
-    cam.transform.translation += Vec3::new(25.0, 25.5, 0.0);
+        let mut cam = OrthographicCameraBundle::new_2d();
+        cam.orthographic_projection.scaling_mode = ScalingMode::FixedVertical;
+        cam.orthographic_projection.scale = 25.0;
+        cam.transform.translation += Vec3::new(25.0, 25.0, 0.0);
 
     commands.spawn_bundle(cam);
 }
@@ -52,6 +52,9 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
                 bg_color: bg,
             }
         }
+        term.clear_box(0,0,25,3);
+        term.draw_box_single(0, 0, 25, 3);
+        term.put_string(1,1, "Press space to pause");
     }
 }
 

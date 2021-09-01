@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::camera::ScalingMode};
 
 use bevy_ascii_terminal::{render::TerminalRendererFont, TerminalBundle, TerminalPlugin};
 
@@ -13,10 +13,9 @@ fn spawn_terminal(mut commands: Commands) {
     term_bundle.terminal.put_string(1, 1, "Press spacebar");
     commands.spawn_bundle(term_bundle);
 
-    let mut cam = PerspectiveCameraBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 20.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    };
+    let mut cam = OrthographicCameraBundle::new_2d();
+    cam.orthographic_projection.scaling_mode = ScalingMode::FixedVertical;
+    cam.orthographic_projection.scale = 6.0;
     cam.transform.translation += Vec3::new(10.0, 1.5, 0.0);
 
     commands.spawn_bundle(cam);
