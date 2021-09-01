@@ -43,18 +43,33 @@ impl Terminal {
         Terminal {
             tiles: vec![Tile::default(); width * height],
             size: (width, height),
+            ..Default::default()
         }
     }
 
-    fn width(&self) -> usize {
+    pub fn width(&self) -> usize {
         self.size.0
     }
+    pub fn height(&self) -> usize {
+        self.size.1
+    }
 
-    fn put_char(&mut self, x: i32, y: i32, glyph: char) {
+    pub fn put_char(&mut self, x: i32, y: i32, glyph: char) {
         self.get_tile_mut(x,y).glyph = glyph;
     }
 
-    fn put_string(&mut self, x: i32, y: i32, string: &str) {
+    pub fn put_char_color(&mut self, x: i32, y: i32, glyph: char, fg_color: Color) {
+        let t = self.get_tile_mut(x,y);
+        t.glyph = glyph;
+        t.fg_color = fg_color;
+    }
+
+    pub fn put_tile(&mut self, x: i32, y: i32, tile: Tile) {
+        let t = self.get_tile_mut(x,y);
+        *t = tile;
+    }
+
+    pub fn put_string(&mut self, x: i32, y: i32, string: &str) {
         let chars = string.chars();
 
         let mut i = 0_usize;
@@ -79,11 +94,11 @@ impl Terminal {
         }
     }
 
-    fn get_char(&self, x: i32, y: i32) -> char {
+    pub fn get_char(&self, x: i32, y: i32) -> char {
         self.get_tile(x,y).glyph
     }
 
-    fn get_string(&self, x: i32, y: i32, len: usize) -> String {
+    pub fn get_string(&self, x: i32, y: i32, len: usize) -> String {
         let (width,height) = self.size;
 
         debug_assert!((x as usize) < width &&
@@ -106,24 +121,64 @@ impl Terminal {
         String::from_iter(chars)
     }
 
-    fn get_tile(&self, x: i32, y: i32) -> &Tile {
+    pub fn get_tile(&self, x: i32, y: i32) -> &Tile {
         let x = x as usize;
         let y = y as usize;
         self.tiles.get(y * self.width() + x).unwrap()
     }
 
-    fn get_tile_mut(&mut self, x: i32, y: i32) -> &mut Tile {
+    pub fn get_tile_mut(&mut self, x: i32, y: i32) -> &mut Tile {
         let x = x as usize;
         let y = y as usize;
         let width = self.width();
-        self.tiles.get_mut(y * width + x).unwrap()
+        debug_assert!(x < self.width(), "get_tile_mut(x = {}) out of bounds. Width {}", x, self.width());
+        debug_assert!(y < self.height(), "get_tile_mut(y = {}) out of bounds: {}", y, self.height());
+        let i = y * width + x;
+        debug_assert!(i < self.tiles.len(), "get_tile_mut({},{}) resulting index {} is out of bounds of len {}",x, y, i, self.tiles.len());
+
+        self.tiles.get_mut(i).unwrap()
     }
 
-    fn iter(&self) -> Iter<Tile> {
+    pub fn draw_box_single(&mut self, x: i32, y: i32, width: usize, height: usize, ) {
+        let width = width as i32;
+        let height = height as i32;
+        
+        let l = x;
+        let r = x + width - 1;
+        let b = y;
+        let t = y + height - 1;
+
+        for y in b + 1..t {
+            self.put_char(l, y, '│');
+            self.put_char(r, y, '│');
+        }
+
+        for x in l + 1..r {
+            self.put_char(x, t, '─');
+            self.put_char(x, b, '─');
+        }
+
+        self.put_char(l, b, '└');
+        self.put_char(l, t, '┌');
+        self.put_char(r, t, '┐');
+        self.put_char(r, b, '┘');
+    }
+
+    pub fn draw_border_single(&mut self) {
+        self.draw_box_single(0,0, self.width(), self.height());
+    }
+
+    pub fn clear(&mut self) {
+        for tile in self.tiles.iter_mut() {
+            *tile = Tile::default();
+        }
+    }
+
+    pub fn iter(&self) -> Iter<Tile> {
         self.tiles.iter()
     }
 
-    fn iter_mut(&mut self) -> IterMut<Tile> {
+    pub fn iter_mut(&mut self) -> IterMut<Tile> {
         self.tiles.iter_mut()
     }
 }
@@ -149,5 +204,12 @@ mod tests {
 
         term.put_string(18,19, "Hello");
         assert_eq!("He", term.get_string(18,19,2));
+    }
+
+    #[test]
+    fn edges() {
+        let mut term = Terminal::new(25,20);
+        term.put_char(0,0,'a');
+        term.put_char(24,19,'a');
     }
 }

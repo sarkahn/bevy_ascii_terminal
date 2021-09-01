@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 bevy = "0.5"
 ron = "0.6.4"
+
+[dev-dependencies]
+rand = "0.7.3"
