@@ -12,9 +12,11 @@ pub mod terminal;
 pub struct TerminalBundle {
     pub terminal: Terminal,
     size: TerminalSize,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
 
     #[bundle]
-    renderer_bundle: TerminalRendererBundle,
+    pub renderer: TerminalRendererBundle,
 }
 
 impl TerminalBundle {
@@ -24,11 +26,12 @@ impl TerminalBundle {
             size: TerminalSize {
                 size: (width, height),
             },
-            renderer_bundle: TerminalRendererBundle {
+            renderer: TerminalRendererBundle {
                 vert_data: TerminalRendererVertexData::with_size(width, height),
                 tile_data: TerminalRendererTileData::with_size(width, height),
                 ..Default::default()
             },
+            ..Default::default()
         }
     }
 }

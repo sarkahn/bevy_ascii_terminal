@@ -9,22 +9,24 @@ pub struct TerminalRendererVertexData {
 impl TerminalRendererVertexData {
     pub fn with_size(width: usize, height: usize) -> Self {
         let mut v = Self::default();
-        v.resize(width, height);
+        v.resize(width, height, (1, 1));
         v
     }
 
-    pub fn resize(&mut self, width: usize, height: usize) {
+    pub fn resize(&mut self, width: usize, height: usize, tile_size: (usize, usize)) {
         let len = width * height;
 
         self.verts.resize(len * 4, Default::default());
         self.indices.resize(len * 6, 0);
 
+        let (tx, ty) = (tile_size.0 as f32, tile_size.1 as f32);
+
         for i in 0..len {
-            let x = i % width;
-            let y = i / width;
-            let origin = Vec3::new(x as f32, y as f32, 0.0);
-            let right = Vec3::X;
-            let up = Vec3::Y;
+            let x = (i % width) as f32 * tx;
+            let y = (i / width) as f32 * ty;
+            let origin = Vec3::new(x, y, 0.0);
+            let right = Vec3::X * tx;
+            let up = Vec3::Y * ty;
 
             let vi = i * 4;
             // 0---2

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy::prelude::*;
 
 use bevy_ascii_terminal::{render::TerminalRendererFont, TerminalBundle, TerminalPlugin};
 
@@ -14,9 +14,8 @@ fn spawn_terminal(mut commands: Commands) {
     commands.spawn_bundle(term_bundle);
 
     let mut cam = OrthographicCameraBundle::new_2d();
-    cam.orthographic_projection.scaling_mode = ScalingMode::FixedVertical;
-    cam.orthographic_projection.scale = 6.0;
-    cam.transform.translation += Vec3::new(10.0, 1.5, 0.0);
+    cam.orthographic_projection.scale = 1.0 / 3.0;
+    cam.transform = Transform::from_xyz(150.0, 0.0, 0.0);
 
     commands.spawn_bundle(cam);
 }
@@ -35,12 +34,11 @@ fn change_font(
 }
 
 fn main() {
-    println!("Out of order :(");
-    // App::build()
-    //     .init_resource::<FontIndex>()
-    //     .add_plugins(DefaultPlugins)
-    //     .add_plugin(TerminalPlugin)
-    //     .add_startup_system(spawn_terminal.system())
-    //     .add_system(change_font.system())
-    //     .run()
+    App::build()
+        .init_resource::<FontIndex>()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(TerminalPlugin)
+        .add_startup_system(spawn_terminal.system())
+        .add_system(change_font.system())
+        .run()
 }

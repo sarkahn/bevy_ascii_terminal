@@ -57,7 +57,14 @@ impl Terminal {
         self.get_tile_mut(x, y).glyph = glyph;
     }
 
-    pub fn put_char_color(&mut self, x: i32, y: i32, glyph: char, fg_color: Color, bg_color: Color) {
+    pub fn put_char_color(
+        &mut self,
+        x: i32,
+        y: i32,
+        glyph: char,
+        fg_color: Color,
+        bg_color: Color,
+    ) {
         let t = self.get_tile_mut(x, y);
         t.glyph = glyph;
         t.fg_color = fg_color;
@@ -112,7 +119,7 @@ impl Terminal {
             self.put_char_color(dx as i32, dy as i32, ch, fg, bg);
 
             dx += 1;
-        }  
+        }
     }
 
     pub fn get_char(&self, x: i32, y: i32) -> char {
@@ -182,7 +189,7 @@ impl Terminal {
     pub fn clear_box(&mut self, x: i32, y: i32, width: usize, height: usize) {
         for x in x..x + width as i32 {
             for y in y..y + height as i32 {
-                self.put_tile(x,y, Tile::default());
+                self.put_tile(x, y, Tile::default());
             }
         }
     }

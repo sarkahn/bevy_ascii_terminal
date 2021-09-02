@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy::prelude::*;
 
 use bevy_ascii_terminal::{terminal::Terminal, TerminalBundle, TerminalPlugin};
 
@@ -10,10 +10,7 @@ fn spawn_terminal(mut commands: Commands) {
     commands.spawn_bundle(term_bundle);
 
     let mut cam = OrthographicCameraBundle::new_2d();
-    cam.orthographic_projection.scaling_mode = ScalingMode::FixedVertical;
-    cam.orthographic_projection.scale = 10.0;
-    cam.transform.translation += Vec3::new(10.0, 1.5, 0.0);
-
+    cam.orthographic_projection.scale = 1.0 / 2.0;
     commands.spawn_bundle(cam);
 }
 

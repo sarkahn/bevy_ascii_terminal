@@ -1,17 +1,28 @@
 pub mod entity;
 pub mod pipeline;
 
+mod font_data;
 mod glyph_mapping;
 pub mod renderer_tile_data;
 pub mod renderer_vertex_data;
 
 use self::{
-    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
+    font_data::{
+        check_terminal_assets_loading, terminal_load_assets, LoadingTerminalTextures, TerminalFonts,
+    },
+    renderer_tile_data::TerminalRendererTileData,
+    renderer_vertex_data::TerminalRendererVertexData,
 };
 use crate::terminal::{Terminal, TerminalSize};
-use bevy::{asset::LoadState, prelude::*, render::{mesh::Indices, pipeline::{PipelineDescriptor, PrimitiveTopology}}};
+use bevy::{
+    prelude::*,
+    render::{
+        mesh::Indices,
+        pipeline::{PipelineDescriptor, PrimitiveTopology},
+    },
+};
 
-const DEFAULT_TEX_PATH: &str = "textures/alloy_curses_12x12.png";
+const DEFAULT_TEX_PATH: &str = "alloy_curses_12x12.png";
 
 pub struct TerminalRendererFont(pub String);
 impl Default for TerminalRendererFont {
@@ -21,9 +32,24 @@ impl Default for TerminalRendererFont {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-enum AppState {
+pub(crate) enum AppState {
     AssetsLoading,
     AssetsDoneLoading,
+}
+
+#[derive(Clone, Copy)]
+pub enum TerminalTileScaling {
+    /// Scale terminal tiles based on the size of their texture, such that 1 pixel == 1 world unit.
+    /// This behavior matches the expected defaults for bevy's orthographic camera.
+    Pixels,
+    /// Each tile will take 1 unit of world space
+    Window,
+}
+
+impl Default for TerminalTileScaling {
+    fn default() -> Self {
+        TerminalTileScaling::Pixels
+    }
 }
 
 pub struct TerminalRendererPlugin;
@@ -33,79 +59,62 @@ impl Plugin for TerminalRendererPlugin {
         {
             let world = &mut app.world_mut();
 
-            let pipeline = pipeline::build_terminal_pipeline(&mut world.get_resource_mut::<Assets<Shader>>().unwrap());
-            let mut pipelines = world.get_resource_mut::<Assets<PipelineDescriptor>>().unwrap();
+            let pipeline = pipeline::build_terminal_pipeline(
+                &mut world.get_resource_mut::<Assets<Shader>>().unwrap(),
+            );
+            let mut pipelines = world
+                .get_resource_mut::<Assets<PipelineDescriptor>>()
+                .unwrap();
             pipelines.set_untracked(pipeline::TERMINAL_RENDERER_PIPELINE, pipeline);
         }
 
-        app
-        .init_resource::<LoadingTerminalTextures>()
-        .add_state(AppState::AssetsLoading) 
-
-        .add_system_set(SystemSet::on_enter(AppState::AssetsLoading)
-            .with_system(terminal_load_assets.system())
-        )
-        .add_system_set(SystemSet::on_update(AppState::AssetsLoading)
-            .with_system(check_terminal_assets_loading.system())
-        )
-
-        .add_system_set(SystemSet::on_enter(AppState::AssetsDoneLoading)
-             .with_system(
-                 terminal_renderer_init.system()
-             )
-        )
-        .add_system_set(SystemSet::on_update(AppState::AssetsDoneLoading)
-            .with_system(
-                terminal_renderer_update_material.system()
-                .label("terminal_update_material")
+        app.init_resource::<LoadingTerminalTextures>()
+            .init_resource::<TerminalFonts>()
+            .add_state(AppState::AssetsLoading)
+            .add_system_set(
+                SystemSet::on_enter(AppState::AssetsLoading)
+                    .with_system(terminal_load_assets.system()),
             )
-            .with_system(
-                terminal_renderer_update_size.system()
-                .after("terminal_update_material")
-                .label("terminal_update_size")
+            .add_system_set(
+                SystemSet::on_update(AppState::AssetsLoading)
+                    .with_system(check_terminal_assets_loading.system()),
             )
-            .with_system(
-                terminal_renderer_update_tile_data.system()
-                .after("terminal_update_size")
-                .label("terminal_update_tile_data")
+            .add_system_set(
+                SystemSet::on_enter(AppState::AssetsDoneLoading)
+                    .with_system(terminal_renderer_init.system()),
             )
-            .with_system(
-                terminal_renderer_update_mesh.system()
-                .after("terminal_update_tile_data")
-                .label("terminal_update_mesh")
-            )
-        );
-    }
-}
-
-#[derive(Default)]
-struct LoadingTerminalTextures(Vec<HandleUntyped>);
-
-fn terminal_load_assets(
-    asset_server: Res<AssetServer>,
-    mut loading: ResMut<LoadingTerminalTextures>,
-) {
-    //info!("Loading terminal textures");
-    loading.0 = asset_server.load_folder("textures").expect("Error loading terminal textures folder");
-}
-
-fn check_terminal_assets_loading(
-    asset_server: Res<AssetServer>,
-    loading: Res<LoadingTerminalTextures>,
-    mut state: ResMut<State<AppState>>,
-) {
-    if let LoadState::Loaded = asset_server.get_group_load_state(loading.0.iter().map(|h|h.id)) {
-        //info!("Done loading terminal textures");
-        state.set(AppState::AssetsDoneLoading).unwrap();
+            .add_system_set(
+                SystemSet::on_update(AppState::AssetsDoneLoading)
+                    .with_system(
+                        terminal_renderer_update_material
+                            .system()
+                            .label("terminal_update_material"),
+                    )
+                    .with_system(
+                        terminal_renderer_update_size
+                            .system()
+                            .after("terminal_update_material")
+                            .label("terminal_update_size"),
+                    )
+                    .with_system(
+                        terminal_renderer_update_tile_data
+                            .system()
+                            .after("terminal_update_size")
+                            .label("terminal_update_tile_data"),
+                    )
+                    .with_system(
+                        terminal_renderer_update_mesh
+                            .system()
+                            .after("terminal_update_tile_data")
+                            .label("terminal_update_mesh"),
+                    ),
+            );
     }
 }
 
 pub fn terminal_renderer_init(
     mut meshes: ResMut<Assets<Mesh>>,
-    mut q: Query<
-        &mut Handle<Mesh>,
-        (Added<Handle<Mesh>>, With<TerminalRendererVertexData>),
-    >,
+    mut q: Query<&mut Handle<Mesh>, (Added<Handle<Mesh>>, With<TerminalRendererVertexData>)>,
 ) {
     for mut mesh in q.iter_mut() {
         //info!("Initializing terminal renderer");
@@ -131,7 +140,9 @@ pub fn terminal_renderer_update_material(
             materials.remove(mat.clone_weak());
         }
 
-        let tex_handle = asset_server.load(font.0.as_str());
+        let mut path = "textures/".to_owned();
+        path.push_str(font.0.as_str());
+        let tex_handle = asset_server.load(path.as_str());
         let tex = textures.get(tex_handle.clone());
         debug_assert!(tex.is_some());
         *mat = materials.add(ColorMaterial::texture(tex_handle));
@@ -140,19 +151,32 @@ pub fn terminal_renderer_update_material(
 
 pub fn terminal_renderer_update_size(
     mut meshes: ResMut<Assets<Mesh>>,
+    fonts: Res<TerminalFonts>,
     mut q: Query<
         (
             &TerminalSize,
+            &TerminalRendererFont,
+            &TerminalTileScaling,
             &mut Handle<Mesh>,
             &mut TerminalRendererVertexData,
             &mut TerminalRendererTileData,
         ),
-        Or<(Changed<TerminalSize>, Changed<Handle<Mesh>>)>,
+        Or<(
+            Changed<TerminalSize>,
+            Changed<Handle<Mesh>>,
+            Changed<TerminalTileScaling>,
+        )>,
     >,
 ) {
-    for (size, mesh, mut vert_data, mut tile_data) in q.iter_mut() {
+    for (size, font, scaling, mesh, mut vert_data, mut tile_data) in q.iter_mut() {
         let (w, h) = size.into();
-        vert_data.resize(w, h);
+
+        let mut tile_size = (1, 1);
+        if let TerminalTileScaling::Pixels = scaling {
+            tile_size = fonts.get(font.0.as_str()).tile_size;
+        }
+
+        vert_data.resize(w, h, tile_size);
         tile_data.resize(w, h);
 
         let mesh = meshes
