@@ -143,7 +143,7 @@ impl Terminal {
                 if y >= height {
                     return String::from_iter(chars);
                 }
-                dx = dx % width;
+                dx %= width;
             }
             chars[i] = self.get_char(dx as i32, y as i32);
         }

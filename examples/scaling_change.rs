@@ -8,10 +8,7 @@ use bevy_ascii_terminal::{render::TerminalTileScaling, TerminalBundle, TerminalP
 #[derive(Default)]
 struct FontIndex(pub usize);
 
-fn spawn_terminal(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-) {
+fn spawn_terminal(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     let mut term_bundle = TerminalBundle::with_size(20, 3);
 
     term_bundle.terminal.draw_border_single();
@@ -19,7 +16,7 @@ fn spawn_terminal(
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Quad{
+        mesh: meshes.add(Mesh::from(shape::Quad {
             size: Vec2::ONE,
             flip: false,
         })),
@@ -43,7 +40,7 @@ fn change_font(
                 TerminalTileScaling::Pixels => TerminalTileScaling::Window,
                 TerminalTileScaling::Window => TerminalTileScaling::Pixels,
             };
-            term_scaling = scaling.clone();
+            term_scaling = *scaling;
         }
 
         for mut cam in cam_q.iter_mut() {
