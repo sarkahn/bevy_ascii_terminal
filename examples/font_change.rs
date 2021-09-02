@@ -35,11 +35,12 @@ fn change_font(
 }
 
 fn main() {
-    App::build()
-        .init_resource::<FontIndex>()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
-        .add_startup_system(spawn_terminal.system())
-        .add_system(change_font.system())
-        .run()
+    println!("Out of order :(");
+    // App::build()
+    //     .init_resource::<FontIndex>()
+    //     .add_plugins(DefaultPlugins)
+    //     .add_plugin(TerminalPlugin)
+    //     .add_startup_system(spawn_terminal.system())
+    //     .add_system(change_font.system())
+    //     .run()
 }

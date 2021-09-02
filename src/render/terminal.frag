@@ -26,7 +26,7 @@ void main() {
         color.rgb *= texColor.rgb * Frag_FG_Color;
     }
 # endif
-    color = vec4(1.0);
+    //color = vec4(1.0);
     //color.a = 1.0;
     o_Target = color;
 }
