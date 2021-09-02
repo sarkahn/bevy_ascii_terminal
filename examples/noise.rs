@@ -1,5 +1,7 @@
 use bevy::{prelude::*, render::camera::ScalingMode};
-use bevy_ascii_terminal::{Terminal, TerminalBundle, TerminalPlugin, render::TerminalTileScaling, terminal::Tile};
+use bevy_ascii_terminal::{
+    render::TerminalTileScaling, terminal::Tile, Terminal, TerminalBundle, TerminalPlugin,
+};
 
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;
@@ -26,11 +28,10 @@ impl Default for Noise {
             NoiseType::CubicFractal,
         ];
         let default_type = NoiseType::Simplex;
-        let i = types.iter().position(|&n|n == default_type).unwrap();
+        let i = types.iter().position(|&n| n == default_type).unwrap();
         Noise {
-
             noise: get_noise(types[i]),
-            types: types,
+            types,
             curr: i,
             timer: 0.0,
         }
@@ -65,11 +66,9 @@ fn get_noise(t: NoiseType) -> FastNoise {
     noise.set_noise_type(t);
     noise.set_frequency(0.1);
     noise
-} 
+}
 
-fn setup(
-    mut commands: Commands,
-) {
+fn setup(mut commands: Commands) {
     let mut term = TerminalBundle::with_size(50, 50);
     term.renderer.scaling = TerminalTileScaling::Window;
     commands.spawn_bundle(term);
@@ -82,29 +81,22 @@ fn setup(
     commands.spawn_bundle(cam);
 }
 
-fn change_noise(
-    keys: Res<Input<KeyCode>>,
-    mut noise: ResMut<Noise>,
-) {
+fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
     if keys.just_pressed(KeyCode::Space) {
         noise.next();
     }
 }
 
-fn noise(
-    time: Res<Time>,
-    mut noise: ResMut<Noise>,
-    mut q: Query<&mut Terminal>,
-) {
+fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<&mut Terminal>) {
     let mut term = q.single_mut().unwrap();
 
     noise.timer += (time.delta().as_millis() as f32) / 1500.0;
     let t = noise.timer;
-    
+
     noise.noise.set_frequency(t);
-    
+
     let (width, height) = term.size;
-    for (i,t) in term.iter_mut().enumerate() {
+    for (i, t) in term.iter_mut().enumerate() {
         let x = i % width;
         let y = i / height;
 
@@ -116,20 +108,19 @@ fn noise(
         *t = Tile {
             glyph: '▒',
             fg_color: Color::rgb(col, col, col),
-            bg_color: Color::BLACK
+            bg_color: Color::BLACK,
         };
     }
 
-    term.clear_box(0,0,30,3);
+    term.clear_box(0, 0, 30, 3);
     term.draw_box_single(0, 0, 30, 3);
-    term.put_string(1,1,"Press space to change noise");
+    term.put_string(1, 1, "Press space to change noise");
 
     let t = noise.noise.get_noise_type();
     let string = to_string(t);
     let h = term.height() as i32;
-    term.clear_box(0,h - 1,string.len(),1);
+    term.clear_box(0, h - 1, string.len(), 1);
     term.put_string(0, h - 1, &string);
-
 }
 
 fn main() {
