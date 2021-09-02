@@ -8,12 +8,24 @@ use bevy_ascii_terminal::{render::TerminalTileScaling, TerminalBundle, TerminalP
 #[derive(Default)]
 struct FontIndex(pub usize);
 
-fn spawn_terminal(mut commands: Commands) {
+fn spawn_terminal(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+) {
     let mut term_bundle = TerminalBundle::with_size(20, 3);
 
     term_bundle.terminal.draw_border_single();
     term_bundle.terminal.put_string(1, 1, "Press spacebar");
     commands.spawn_bundle(term_bundle);
+
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Quad{
+            size: Vec2::ONE,
+            flip: false,
+        })),
+        transform: Transform::from_xyz(-1.5, -0.5, 0.0),
+        ..Default::default()
+    });
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 }
