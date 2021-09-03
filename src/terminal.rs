@@ -47,14 +47,14 @@ impl Terminal {
         self.size.y as usize
     }
 
-    pub fn put_char(&mut self, x: i32, y: i32, glyph: char) {
+    pub fn put_char(&mut self, x: usize, y: usize, glyph: char) {
         self.get_tile_mut(x, y).glyph = glyph;
     }
 
     pub fn put_char_color(
         &mut self,
-        x: i32,
-        y: i32,
+        x: usize,
+        y: usize,
         glyph: char,
         fg_color: Color,
         bg_color: Color,
@@ -65,139 +65,66 @@ impl Terminal {
         t.bg_color = bg_color;
     }
 
-    pub fn put_tile(&mut self, x: i32, y: i32, tile: Tile) {
+    pub fn put_tile(&mut self, x: usize, y: usize, tile: Tile) {
         let t = self.get_tile_mut(x, y);
         *t = tile;
     }
 
-    pub fn put_string(&mut self, x: i32, y: i32, string: &str) {
-        let chars = string.chars();
+    pub fn put_string(&mut self, x: usize, y: usize, string: &str) {
+        let tiles = self.mut_slice(x,y,string.len());
+        let chars = string.chars().take(tiles.len());
 
-        let mut dy = y as usize;
-        let mut dx = x as usize;
-
-        let (width, height) = (self.width(), self.height());
-
-        for ch in chars {
-            if dx >= width {
-                dy += 1;
-                if dy >= height {
-                    return;
-                }
-                dx %= width;
-            }
-
-            self.put_char(dx as i32, dy as i32, ch);
-
-            dx += 1;
+        for (i,char) in chars.enumerate() {
+            tiles[i].glyph = char;
         }
     }
 
-    pub fn put_string_color(&mut self, x: i32, y: i32, string: &str, fg: Color, bg: Color) {
-        let chars = string.chars();
-
-        let mut dy = y as usize;
-        let mut dx = x as usize;
-
-        let (width, height) = (self.width(), self.height());
-
-        for ch in chars {
-            if dx >= width {
-                dy += 1;
-                if dy >= height {
-                    return;
-                }
-                dx %= width;
-            }
-
-            self.put_char_color(dx as i32, dy as i32, ch, fg, bg);
-
-            dx += 1;
-        }
-    }
-
-    pub fn get_char(&self, x: i32, y: i32) -> char {
+    pub fn get_char(&self, x: usize, y: usize) -> char {
         self.get_tile(x, y).glyph
     }
 
-    pub fn get_string(&self, x: i32, y: i32, len: usize) -> String {
-        let (width, height) = (self.width(), self.height());
+    pub fn get_string(&self, x: usize, y: usize, len: usize) -> String {
+        let slice = self.slice(x,y,len);
+        let mut chars: Vec<char> = vec![' '; slice.len()];
 
-        debug_assert!(
-            (x as usize) < width && (y as usize) < height,
-            "Trying to get string out of bounds"
-        );
-
-        let mut y = y as usize;
-        let mut chars: Vec<char> = vec![' '; len];
-        for i in 0..len {
-            let mut dx = i + x as usize;
-            if dx >= width {
-                y += 1;
-                if y >= height {
-                    return String::from_iter(chars);
-                }
-                dx %= width;
-            }
-            chars[i] = self.get_char(dx as i32, y as i32);
+        for(i,t) in slice.iter().enumerate() {
+            chars[i] = t.glyph;
         }
 
         String::from_iter(chars)
     }
 
-    pub fn get_tile(&self, x: i32, y: i32) -> &Tile {
+    pub fn get_tile(&self, x: usize, y: usize) -> &Tile {
         let x = x as usize;
         let y = y as usize;
         self.tiles.get(y * self.width() + x).unwrap()
     }
 
-    pub fn get_tile_mut(&mut self, x: i32, y: i32) -> &mut Tile {
+    pub fn get_tile_mut(&mut self, x: usize, y: usize) -> &mut Tile {
         let x = x as usize;
         let y = y as usize;
         let width = self.width();
-        debug_assert!(
-            x < self.width(),
-            "get_tile_mut(x = {}) out of bounds. Width {}",
-            x,
-            self.width()
-        );
-        debug_assert!(
-            y < self.height(),
-            "get_tile_mut(y = {}) out of bounds: {}",
-            y,
-            self.height()
-        );
-        let i = y * width + x;
-        debug_assert!(
-            i < self.tiles.len(),
-            "get_tile_mut({},{}) resulting index {} is out of bounds of len {}",
-            x,
-            y,
-            i,
-            self.tiles.len()
-        );
-
-        self.tiles.get_mut(i).unwrap()
+        self.tiles.get_mut(y * width + x).unwrap()
     }
 
-    pub fn clear_box(&mut self, x: i32, y: i32, width: usize, height: usize) {
-        for x in x..x + width as i32 {
-            for y in y..y + height as i32 {
+    pub fn clear_box(&mut self, x: usize, y: usize, width: usize, height: usize) {
+        for x in x..x + width {
+            for y in y..y + height {
                 self.put_tile(x, y, Tile::default());
             }
         }
     }
 
-    pub fn draw_box_single(&mut self, x: i32, y: i32, width: usize, height: usize) {
-        let width = width as i32;
-        let height = height as i32;
+    pub fn draw_box_single(&mut self, x: usize, y: usize, width: usize, height: usize) {
+        let width = width;
+        let height = height;
 
         let left = x;
         let right = x + width - 1;
-        let bottom = y;
-        let top = y + height - 1;
+        let top = y;
+        let bottom = y + height - 1;
 
-        for y in bottom + 1..top {
+        for y in top + 1..bottom {
             self.put_char(left, y, '│');
             self.put_char(right, y, '│');
         }
@@ -229,6 +156,20 @@ impl Terminal {
 
     pub fn iter_mut(&mut self) -> IterMut<Tile> {
         self.tiles.iter_mut()
+    }
+
+    pub fn slice(&self, x: usize, y: usize, len: usize) -> &[Tile] {
+        let i = y  * self.width() + x;
+        let end = usize::min(i + len, self.tiles.len());
+
+        &self.tiles[i..end]
+    }
+
+    pub fn mut_slice(&mut self, x: usize, y: usize, len: usize) -> &mut[Tile] {
+        let i = y  * self.width() + x;
+        let end = usize::min(i + len, self.tiles.len());
+
+        &mut self.tiles[i..end]
     }
 }
 

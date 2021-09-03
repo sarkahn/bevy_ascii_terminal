@@ -41,8 +41,7 @@ impl TerminalRendererTileData {
 
         for (i, tile) in tiles.iter().enumerate() {
             let glyph = tile.glyph;
-            // flip y so 0 == top tile on sprite sheet
-            let (tile_x, tile_y) = self.mapping.get_index(glyph); //[glyph % 16, glyph / 16];
+            let (tile_x, tile_y) = self.mapping.get_index(glyph);
 
             let origin = Vec2::new(tile_x as f32 * uv_size.x, tile_y as f32 * uv_size.y);
 

@@ -116,7 +116,7 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<(&mut Terminal,
 
         let t = noise.noise.get_noise_type();
         let string = to_string(t);
-        let h = term.height() as i32;
+        let h = term.height();
         term.clear_box(0, h - 1, string.len(), 1);
         term.put_string(0, h - 1, &string);
     }
