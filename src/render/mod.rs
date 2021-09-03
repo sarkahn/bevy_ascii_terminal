@@ -24,6 +24,16 @@ use bevy::{
 
 const DEFAULT_TEX_PATH: &str = "alloy_curses_12x12.png";
 
+pub struct TerminalPivot(Vec2);
+impl Default for TerminalPivot {
+    fn default() -> Self {
+        Self(Vec2::new(0.5, 0.5))
+    }
+}
+
+#[derive(Default)]
+pub struct TilePivot(Vec2);
+
 pub struct TerminalRendererFont(pub String);
 impl Default for TerminalRendererFont {
     fn default() -> Self {
@@ -42,8 +52,8 @@ pub enum TerminalTileScaling {
     /// Scale terminal tiles based on the size of their texture, such that 1 pixel == 1 world unit.
     /// This behavior matches the expected defaults for bevy's orthographic camera.
     Pixels,
-    /// Each tile will take 1 unit of world space
-    Window,
+    /// Each tile will take up 1 unit of world space
+    World,
 }
 
 impl Default for TerminalTileScaling {
@@ -157,6 +167,8 @@ pub fn terminal_renderer_update_size(
             &TerminalSize,
             &TerminalRendererFont,
             &TerminalTileScaling,
+            &TerminalPivot,
+            &TilePivot,
             &mut Handle<Mesh>,
             &mut TerminalRendererVertexData,
             &mut TerminalRendererTileData,
@@ -168,16 +180,15 @@ pub fn terminal_renderer_update_size(
         )>,
     >,
 ) {
-    for (size, font, scaling, mesh, mut vert_data, mut tile_data) in q.iter_mut() {
-        let (w, h) = size.into();
+    for (size, font, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in q.iter_mut() {
 
-        let mut tile_size = (1, 1);
+        let mut tile_size = UVec2::ONE;
         if let TerminalTileScaling::Pixels = scaling {
             tile_size = fonts.get(font.0.as_str()).tile_size;
         }
 
-        vert_data.resize(w, h, tile_size);
-        tile_data.resize(w, h);
+        vert_data.resize(size.value, term_pivot.0, tile_pivot.0, tile_size);
+        tile_data.resize(size.value);
 
         let mesh = meshes
             .get_mut(mesh.clone())

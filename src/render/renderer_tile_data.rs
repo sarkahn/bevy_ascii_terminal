@@ -1,4 +1,4 @@
-use bevy::{math::Vec2, prelude::Color};
+use bevy::{math::{UVec2, Vec2}, prelude::Color};
 
 use crate::terminal::Tile;
 
@@ -17,14 +17,14 @@ fn to_mesh_color(col: Color) -> [f32; 3] {
 }
 
 impl TerminalRendererTileData {
-    pub fn with_size(width: usize, height: usize) -> Self {
+    pub fn with_size(size: UVec2) -> Self {
         let mut v = Self::default();
-        v.resize(width, height);
+        v.resize(size);
         v
     }
 
-    pub fn resize(&mut self, width: usize, height: usize) {
-        let len = width * height;
+    pub fn resize(&mut self, size: UVec2) {
+        let len = (size.x * size.y) as usize;
 
         self.fg_colors.resize(len * 4, Default::default());
         self.bg_colors.resize(len * 4, Default::default());
@@ -60,7 +60,7 @@ impl TerminalRendererTileData {
 
 #[cfg(test)]
 mod tests {
-    use bevy::prelude::Color;
+    use bevy::{math::UVec2, prelude::Color};
 
     use crate::{render::renderer_tile_data::TerminalRendererTileData, terminal::Tile};
 
@@ -75,7 +75,7 @@ mod tests {
             }
         }
 
-        let mut colors: TerminalRendererTileData = TerminalRendererTileData::with_size(25, 25);
+        let mut colors: TerminalRendererTileData = TerminalRendererTileData::with_size(UVec2::new(25, 25));
         colors.update_from_tiles(&tiles);
 
         assert_eq!([0.0, 0.0, 1.0], colors.fg_colors[0]);

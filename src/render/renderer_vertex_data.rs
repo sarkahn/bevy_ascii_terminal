@@ -1,4 +1,6 @@
-use bevy::math::Vec3;
+use bevy::math::{UVec2, Vec2, Vec3};
+
+use super::{TerminalPivot, TilePivot};
 
 #[derive(Default)]
 pub struct TerminalRendererVertexData {
@@ -7,24 +9,42 @@ pub struct TerminalRendererVertexData {
 }
 
 impl TerminalRendererVertexData {
-    pub fn with_size(width: usize, height: usize) -> Self {
+    pub fn with_size(size: UVec2) -> Self {
         let mut v = Self::default();
-        v.resize(width, height, (1, 1));
+        let term_pivot = TerminalPivot::default();
+        let tile_pivot = TilePivot::default();
+        v.resize(size, term_pivot.0, tile_pivot.0, UVec2::ONE);
         v
     }
 
-    pub fn resize(&mut self, width: usize, height: usize, tile_size: (usize, usize)) {
-        let len = width * height;
+    pub fn resize(&mut self, 
+        term_size: UVec2,
+        term_pivot: Vec2,
+        tile_pivot: Vec2,
+        tile_size: UVec2,
+    ) {
+        let len = (term_size.x * term_size.y) as usize;
+
+        let size = term_size.as_f32();
+        let tile_size = tile_size.as_f32();
+
+        let world_size = size * tile_size;
+
+        let term_pivot = world_size * term_pivot;
+        let tile_pivot = tile_size * tile_pivot;
+
+        let term_pivot = -Vec3::new(term_pivot.x, term_pivot.y, 0.0);
+        let tile_pivot = -Vec3::new(tile_pivot.x, tile_pivot.y, 0.0);
 
         self.verts.resize(len * 4, Default::default());
         self.indices.resize(len * 6, 0);
 
-        let (tx, ty) = (tile_size.0 as f32, tile_size.1 as f32);
+        let (tx, ty) = tile_size.into();
 
         for i in 0..len {
-            let x = (i % width) as f32 * tx;
-            let y = (i / width) as f32 * ty;
-            let origin = Vec3::new(x, y, 0.0);
+            let x = (i % term_size.x as usize) as f32 * tx;
+            let y = (i / term_size.x as usize) as f32 * ty;
+            let origin = Vec3::new(x, y, 0.0) + term_pivot + tile_pivot;
             let right = Vec3::X * tx;
             let up = Vec3::Y * ty;
 

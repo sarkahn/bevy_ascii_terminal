@@ -2,9 +2,8 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use bevy::prelude::*;
 
-use bevy::render::camera::ScalingMode;
-use bevy_ascii_terminal::render::TerminalTileScaling;
 use bevy_ascii_terminal::{terminal::Terminal, terminal::Tile, TerminalBundle, TerminalPlugin};
+use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
 use rand::prelude::ThreadRng;
 use rand::Rng;
 
@@ -12,16 +11,12 @@ use rand::Rng;
 struct Pause(bool);
 
 fn setup(mut commands: Commands) {
-    let mut term = TerminalBundle::with_size(50, 50);
-    term.renderer.scaling = TerminalTileScaling::Window;
+    let (w,h) = (80, 50);
+
+    let term = TerminalBundle::with_size(w, h);
     commands.spawn_bundle(term).insert(Pause);
 
-    let mut cam = OrthographicCameraBundle::new_2d();
-    cam.orthographic_projection.scaling_mode = ScalingMode::FixedVertical;
-    cam.orthographic_projection.scale = 25.0;
-    cam.transform.translation += Vec3::new(25.0, 25.0, 0.0);
-
-    commands.spawn_bundle(cam);
+    commands.spawn_bundle(PixelCameraBundle::from_resolution(w as i32 * 12, h as i32 * 12));
 }
 
 fn rand_color(rng: &mut ThreadRng) -> Color {
@@ -64,6 +59,8 @@ fn main() {
         .init_resource::<Pause>()
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
+        .add_plugin(PixelCameraPlugin)
+        .add_plugin(PixelBorderPlugin { color: Color::BLACK })
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_startup_system(setup.system())

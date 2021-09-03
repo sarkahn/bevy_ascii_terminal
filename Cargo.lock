@@ -223,9 +223,10 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "bevy",
+ "bevy_pixel_camera",
  "bracket-noise",
  "bracket-random",
  "rand 0.7.3",
@@ -484,6 +485,15 @@ dependencies = [
  "bevy_render",
  "bevy_transform",
  "bevy_window",
+]
+
+[[package]]
+name = "bevy_pixel_camera"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4825b4a00fdd7238d9e63b8c2ef4c45aded54f0f7b92b5a9d9d89c019e94fc06"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

@@ -5,10 +5,7 @@ use bevy::{
 
 use crate::render::pipeline::TERMINAL_RENDERER_PIPELINE;
 
-use super::{
-    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
-    TerminalRendererFont, TerminalTileScaling,
-};
+use super::{TerminalPivot, TerminalRendererFont, TerminalTileScaling, TilePivot, renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData};
 
 #[derive(Bundle)]
 pub struct TerminalRendererBundle {
@@ -22,6 +19,8 @@ pub struct TerminalRendererBundle {
     pub visible: Visible,
     pub render_pipelines: RenderPipelines,
     pub main_pass: MainPass,
+    pub terminal_pivot: TerminalPivot,
+    pub tile_pivot: TilePivot,
 }
 
 impl Default for TerminalRendererBundle {
@@ -40,6 +39,8 @@ impl Default for TerminalRendererBundle {
             mesh: Default::default(),
             draw: Default::default(),
             main_pass: Default::default(),
+            terminal_pivot: Default::default(),
+            tile_pivot: Default::default(),
         }
     }
 }

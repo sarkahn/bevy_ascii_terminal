@@ -11,9 +11,9 @@ use super::AppState;
 pub struct TerminalFontData {
     pub name: String,
     pub path: String,
-    pub tile_count: (usize, usize),
-    pub tile_size: (usize, usize),
-    pub texture_size: (usize, usize),
+    pub tile_count: UVec2,
+    pub tile_size: UVec2,
+    pub texture_size: UVec2,
 }
 
 #[derive(Default)]
@@ -58,14 +58,14 @@ pub(crate) fn check_terminal_assets_loading(
         let paths: Vec<PathBuf> = dir.map(|entry| entry.unwrap().path()).collect();
 
         for (tex, path) in textures.iter().zip(paths.iter()) {
-            let (width, height) = (tex.size.width as usize, tex.size.height as usize);
-            let tile_count = (16, 16);
+            let tex_size = UVec2::new(tex.size.width, tex.size.height);
+            let tile_count = UVec2::new(16, 16);
             fonts.add(TerminalFontData {
                 name: String::from(path.file_name().unwrap().to_str().unwrap()),
                 path: String::from(path.to_str().unwrap()),
-                tile_count: (16, 16),
-                tile_size: (width / tile_count.0, height / tile_count.0),
-                texture_size: (width, height),
+                tile_count: tile_count,
+                tile_size: tex_size / tile_count,
+                texture_size: tex_size,
             });
         }
 

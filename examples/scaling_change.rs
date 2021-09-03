@@ -4,12 +4,14 @@ use bevy::{
 };
 
 use bevy_ascii_terminal::{render::TerminalTileScaling, TerminalBundle, TerminalPlugin};
+use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
 
 #[derive(Default)]
 struct FontIndex(pub usize);
 
 fn spawn_terminal(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    let mut term_bundle = TerminalBundle::with_size(20, 3);
+    let (w,h) = (20,3);
+    let mut term_bundle = TerminalBundle::with_size(w, h);
 
     term_bundle.terminal.draw_border_single();
     term_bundle.terminal.put_string(1, 1, "Press spacebar");
@@ -24,7 +26,7 @@ fn spawn_terminal(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
         ..Default::default()
     });
 
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(PixelCameraBundle::from_resolution(w as i32 * 12, h as i32 * 12));
 }
 
 fn change_font(
@@ -37,8 +39,8 @@ fn change_font(
 
         for mut scaling in q.iter_mut() {
             *scaling = match *scaling {
-                TerminalTileScaling::Pixels => TerminalTileScaling::Window,
-                TerminalTileScaling::Window => TerminalTileScaling::Pixels,
+                TerminalTileScaling::Pixels => TerminalTileScaling::World,
+                TerminalTileScaling::World => TerminalTileScaling::Pixels,
             };
             term_scaling = *scaling;
         }
@@ -49,7 +51,7 @@ fn change_font(
                     cam.scaling_mode = ScalingMode::WindowSize;
                     cam.scale = 1.0;
                 }
-                TerminalTileScaling::Window => {
+                TerminalTileScaling::World => {
                     cam.scaling_mode = ScalingMode::FixedVertical;
                     cam.scale = 12.0;
                 }
@@ -59,15 +61,12 @@ fn change_font(
 }
 
 fn main() {
-    // TODO: Remove after bevy 0.5.0
-    println!(
-        "Warning! There's a bug in bevy 0.5.0 that prevents the camera from detecing changes. 
-    You can force it to update by toggling maximing the window."
-    );
     App::build()
         .init_resource::<FontIndex>()
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
+        .add_plugin(PixelCameraPlugin)
+        .add_plugin(PixelBorderPlugin { color: Color::BLACK} )
         .add_startup_system(spawn_terminal.system())
         .add_system(change_font.system())
         .run()

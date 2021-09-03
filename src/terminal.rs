@@ -13,19 +13,13 @@ pub struct Tile {
 
 #[derive(Default)]
 pub struct TerminalSize {
-    pub size: (usize, usize),
-}
-
-impl From<&TerminalSize> for (usize, usize) {
-    fn from(val: &TerminalSize) -> Self {
-        val.size
-    }
+    pub value: UVec2,
 }
 
 #[derive(Default)]
 pub struct Terminal {
     pub tiles: Vec<Tile>,
-    pub size: (usize, usize),
+    size: UVec2,
 }
 
 impl Default for Tile {
@@ -42,15 +36,15 @@ impl Terminal {
     pub fn new(width: usize, height: usize) -> Terminal {
         Terminal {
             tiles: vec![Tile::default(); width * height],
-            size: (width, height),
+            size: UVec2::new(width as u32, height as u32),
         }
     }
 
     pub fn width(&self) -> usize {
-        self.size.0
+        self.size.x as usize
     }
     pub fn height(&self) -> usize {
-        self.size.1
+        self.size.y as usize
     }
 
     pub fn put_char(&mut self, x: i32, y: i32, glyph: char) {
@@ -82,7 +76,7 @@ impl Terminal {
         let mut dy = y as usize;
         let mut dx = x as usize;
 
-        let (width, height) = self.size;
+        let (width, height) = (self.width(), self.height());
 
         for ch in chars {
             if dx >= width {
@@ -105,7 +99,7 @@ impl Terminal {
         let mut dy = y as usize;
         let mut dx = x as usize;
 
-        let (width, height) = self.size;
+        let (width, height) = (self.width(), self.height());
 
         for ch in chars {
             if dx >= width {
@@ -127,7 +121,7 @@ impl Terminal {
     }
 
     pub fn get_string(&self, x: i32, y: i32, len: usize) -> String {
-        let (width, height) = self.size;
+        let (width, height) = (self.width(), self.height());
 
         debug_assert!(
             (x as usize) < width && (y as usize) < height,

@@ -11,7 +11,7 @@ pub mod terminal;
 #[derive(Bundle, Default)]
 pub struct TerminalBundle {
     pub terminal: Terminal,
-    size: TerminalSize,
+    pub size: TerminalSize,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
 
@@ -21,14 +21,15 @@ pub struct TerminalBundle {
 
 impl TerminalBundle {
     pub fn with_size(width: usize, height: usize) -> Self {
+        let size = UVec2::new(width as u32, height as u32);
         Self {
             terminal: Terminal::new(width, height),
             size: TerminalSize {
-                size: (width, height),
+                value: size,
             },
             renderer: TerminalRendererBundle {
-                vert_data: TerminalRendererVertexData::with_size(width, height),
-                tile_data: TerminalRendererTileData::with_size(width, height),
+                vert_data: TerminalRendererVertexData::with_size(size),
+                tile_data: TerminalRendererTileData::with_size(size),
                 ..Default::default()
             },
             ..Default::default()

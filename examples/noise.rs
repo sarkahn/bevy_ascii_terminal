@@ -1,8 +1,7 @@
 use bevy::{prelude::*, render::camera::ScalingMode};
-use bevy_ascii_terminal::{
-    render::TerminalTileScaling, terminal::Tile, Terminal, TerminalBundle, TerminalPlugin,
-};
+use bevy_ascii_terminal::{Terminal, TerminalBundle, TerminalPlugin, TerminalSize, render::TerminalTileScaling, terminal::Tile};
 
+use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;
 
@@ -69,16 +68,11 @@ fn get_noise(t: NoiseType) -> FastNoise {
 }
 
 fn setup(mut commands: Commands) {
-    let mut term = TerminalBundle::with_size(50, 50);
-    term.renderer.scaling = TerminalTileScaling::Window;
-    commands.spawn_bundle(term);
+    let (w,h) = (46,50);
 
-    let mut cam = OrthographicCameraBundle::new_2d();
-    cam.orthographic_projection.scaling_mode = ScalingMode::FixedVertical;
-    cam.orthographic_projection.scale = 25.0;
-    cam.transform.translation += Vec3::new(25.0, 25.0, 0.0);
+    commands.spawn_bundle(TerminalBundle::with_size(w, h));
 
-    commands.spawn_bundle(cam);
+    commands.spawn_bundle(PixelCameraBundle::from_resolution(w as i32 * 12, h as i32 * 12));
 }
 
 fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
@@ -87,46 +81,51 @@ fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
     }
 }
 
-fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<&mut Terminal>) {
-    let mut term = q.single_mut().unwrap();
+fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<(&mut Terminal, &TerminalSize)>) {
 
-    noise.timer += (time.delta().as_millis() as f32) / 1500.0;
-    let t = noise.timer;
-
-    noise.noise.set_frequency(t);
-
-    let (width, height) = term.size;
-    for (i, t) in term.iter_mut().enumerate() {
-        let x = i % width;
-        let y = i / height;
-
-        let x = x as f32 - width as f32 / 2.0;
-        let y = y as f32 - height as f32 / 2.0;
-
-        let n = noise.noise.get_noise(x as f32, y as f32);
-        let col = (n + 1.0) * 0.5;
-        *t = Tile {
-            glyph: '▒',
-            fg_color: Color::rgb(col, col, col),
-            bg_color: Color::BLACK,
-        };
+    for (mut term,size) in q.iter_mut() {
+        noise.timer += (time.delta().as_millis() as f32) / 1500.0;
+        let t = noise.timer;
+    
+        noise.noise.set_frequency(t);
+    
+        let (width, height) = size.value.into();
+        let half_width = width as f32 / 2.0;
+        let half_height = height as f32 / 2.0;
+        for (i, t) in term.iter_mut().enumerate() {
+            let x = (i % width as usize) as f32;
+            let y = (i / height as usize) as f32;
+    
+            let x = x - half_width;
+            let y = y - half_height;
+    
+            let n = noise.noise.get_noise(x, y);
+            let col = (n + 1.0) * 0.5;
+            *t = Tile {
+                glyph: '▒',
+                fg_color: Color::rgb(col, col, col),
+                bg_color: Color::BLACK,
+            };
+        }
+    
+        term.clear_box(0, 0, 30, 3);
+        term.draw_box_single(0, 0, 30, 3);
+        term.put_string(1, 1, "Press space to change noise");
+    
+        let t = noise.noise.get_noise_type();
+        let string = to_string(t);
+        let h = term.height() as i32;
+        term.clear_box(0, h - 1, string.len(), 1);
+        term.put_string(0, h - 1, &string);
     }
-
-    term.clear_box(0, 0, 30, 3);
-    term.draw_box_single(0, 0, 30, 3);
-    term.put_string(1, 1, "Press space to change noise");
-
-    let t = noise.noise.get_noise_type();
-    let string = to_string(t);
-    let h = term.height() as i32;
-    term.clear_box(0, h - 1, string.len(), 1);
-    term.put_string(0, h - 1, &string);
 }
 
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
+        .add_plugin(PixelCameraPlugin)
+        .add_plugin(PixelBorderPlugin { color: Color::BLACK })
         .init_resource::<Noise>()
         .add_startup_system(setup.system())
         .add_system(noise.system())
