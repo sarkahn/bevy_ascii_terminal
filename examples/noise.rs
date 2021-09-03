@@ -68,7 +68,7 @@ fn get_noise(t: NoiseType) -> FastNoise {
 }
 
 fn setup(mut commands: Commands) {
-    let (w, h) = (46, 50);
+    let (w, h) = (40, 40);
 
     commands.spawn_bundle(TerminalBundle::with_size(w, h));
 
@@ -96,7 +96,7 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<(&mut Terminal,
         let half_height = height as f32 / 2.0;
         for (i, t) in term.iter_mut().enumerate() {
             let x = (i % width as usize) as f32;
-            let y = (i / height as usize) as f32;
+            let y = (i / width as usize) as f32;
 
             let x = x - half_width;
             let y = y - half_height;
