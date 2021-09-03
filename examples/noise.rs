@@ -84,8 +84,12 @@ fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
     }
 }
 
-fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<(&mut Terminal, &TerminalSize)>) {
-    for (mut term, size) in q.iter_mut() {
+fn noise(
+    time: Res<Time>,
+    mut noise: ResMut<Noise>,
+    mut query: Query<(&mut Terminal, &TerminalSize)>,
+) {
+    for (mut term, size) in query.iter_mut() {
         noise.timer += (time.delta().as_millis() as f32) / 1500.0;
         let t = noise.timer;
 
@@ -101,8 +105,8 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<(&mut Terminal,
             let x = x - half_width;
             let y = y - half_height;
 
-            let n = noise.noise.get_noise(x, y);
-            let col = (n + 1.0) * 0.5;
+            let noise = noise.noise.get_noise(x, y);
+            let col = (noise + 1.0) * 0.5;
             *t = Tile {
                 glyph: '▒',
                 fg_color: Color::rgb(col, col, col),

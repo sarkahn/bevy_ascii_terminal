@@ -86,18 +86,18 @@ impl Terminal {
     /// next line if it reaches the edge and will truncate at the
     /// end of the console
     pub fn put_string_color(
-        &mut self, 
-        x: usize, 
-        y: usize, 
-        string: &str, 
+        &mut self,
+        x: usize,
+        y: usize,
+        string: &str,
         fg_color: Color,
-        bg_color: Color
+        bg_color: Color,
     ) {
         let tiles = self.mut_slice(x, y, string.len());
         let chars = string.chars().take(tiles.len());
 
         for (i, char) in chars.enumerate() {
-            let  t = &mut tiles[i];
+            let t = &mut tiles[i];
             t.glyph = char;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
