@@ -71,10 +71,10 @@ impl Terminal {
     }
 
     pub fn put_string(&mut self, x: usize, y: usize, string: &str) {
-        let tiles = self.mut_slice(x,y,string.len());
+        let tiles = self.mut_slice(x, y, string.len());
         let chars = string.chars().take(tiles.len());
 
-        for (i,char) in chars.enumerate() {
+        for (i, char) in chars.enumerate() {
             tiles[i].glyph = char;
         }
     }
@@ -84,10 +84,10 @@ impl Terminal {
     }
 
     pub fn get_string(&self, x: usize, y: usize, len: usize) -> String {
-        let slice = self.slice(x,y,len);
+        let slice = self.slice(x, y, len);
         let mut chars: Vec<char> = vec![' '; slice.len()];
 
-        for(i,t) in slice.iter().enumerate() {
+        for (i, t) in slice.iter().enumerate() {
             chars[i] = t.glyph;
         }
 
@@ -159,14 +159,14 @@ impl Terminal {
     }
 
     pub fn slice(&self, x: usize, y: usize, len: usize) -> &[Tile] {
-        let i = y  * self.width() + x;
+        let i = y * self.width() + x;
         let end = usize::min(i + len, self.tiles.len());
 
         &self.tiles[i..end]
     }
 
-    pub fn mut_slice(&mut self, x: usize, y: usize, len: usize) -> &mut[Tile] {
-        let i = y  * self.width() + x;
+    pub fn mut_slice(&mut self, x: usize, y: usize, len: usize) -> &mut [Tile] {
+        let i = y * self.width() + x;
         let end = usize::min(i + len, self.tiles.len());
 
         &mut self.tiles[i..end]
