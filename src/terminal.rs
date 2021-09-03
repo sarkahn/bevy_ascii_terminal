@@ -70,12 +70,37 @@ impl Terminal {
         *t = tile;
     }
 
+    /// Write a string to the console. The string will move to the
+    /// next line if it reaches the edge and will truncate at the
+    /// end of the console
     pub fn put_string(&mut self, x: usize, y: usize, string: &str) {
         let tiles = self.mut_slice(x, y, string.len());
         let chars = string.chars().take(tiles.len());
 
         for (i, char) in chars.enumerate() {
             tiles[i].glyph = char;
+        }
+    }
+
+    /// Write a string to the console. The string will move to the
+    /// next line if it reaches the edge and will truncate at the
+    /// end of the console
+    pub fn put_string_color(
+        &mut self, 
+        x: usize, 
+        y: usize, 
+        string: &str, 
+        fg_color: Color,
+        bg_color: Color
+    ) {
+        let tiles = self.mut_slice(x, y, string.len());
+        let chars = string.chars().take(tiles.len());
+
+        for (i, char) in chars.enumerate() {
+            let  t = &mut tiles[i];
+            t.glyph = char;
+            t.fg_color = fg_color;
+            t.bg_color = bg_color;
         }
     }
 
@@ -115,6 +140,7 @@ impl Terminal {
         }
     }
 
+    /// Draw a box with a single-line border
     pub fn draw_box_single(&mut self, x: usize, y: usize, width: usize, height: usize) {
         let width = width;
         let height = height;
@@ -140,10 +166,14 @@ impl Terminal {
         self.put_char(right, bottom, '┘');
     }
 
+    /// Draw a border around the edges of the console with
+    // single-line edges.
     pub fn draw_border_single(&mut self) {
         self.draw_box_single(0, 0, self.width(), self.height());
     }
 
+    /// Clear the console tiles to default - empty tiles with
+    /// a black background
     pub fn clear(&mut self) {
         for tile in self.tiles.iter_mut() {
             *tile = Tile::default();
