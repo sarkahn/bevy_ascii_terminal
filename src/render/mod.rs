@@ -180,8 +180,9 @@ pub fn terminal_renderer_update_size(
         )>,
     >,
 ) {
-    for (size, font, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in q.iter_mut() {
-
+    for (size, font, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in
+        q.iter_mut()
+    {
         let mut tile_size = UVec2::ONE;
         if let TerminalTileScaling::Pixels = scaling {
             tile_size = fonts.get(font.0.as_str()).tile_size;

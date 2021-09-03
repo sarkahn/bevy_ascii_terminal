@@ -5,7 +5,10 @@ use bevy::{
 
 use crate::render::pipeline::TERMINAL_RENDERER_PIPELINE;
 
-use super::{TerminalPivot, TerminalRendererFont, TerminalTileScaling, TilePivot, renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData};
+use super::{
+    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
+    TerminalPivot, TerminalRendererFont, TerminalTileScaling, TilePivot,
+};
 
 #[derive(Bundle)]
 pub struct TerminalRendererBundle {

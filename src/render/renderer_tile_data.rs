@@ -1,4 +1,7 @@
-use bevy::{math::{UVec2, Vec2}, prelude::Color};
+use bevy::{
+    math::{UVec2, Vec2},
+    prelude::Color,
+};
 
 use crate::terminal::Tile;
 
@@ -75,7 +78,8 @@ mod tests {
             }
         }
 
-        let mut colors: TerminalRendererTileData = TerminalRendererTileData::with_size(UVec2::new(25, 25));
+        let mut colors: TerminalRendererTileData =
+            TerminalRendererTileData::with_size(UVec2::new(25, 25));
         colors.update_from_tiles(&tiles);
 
         assert_eq!([0.0, 0.0, 1.0], colors.fg_colors[0]);

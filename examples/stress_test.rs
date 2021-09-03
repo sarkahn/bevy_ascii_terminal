@@ -11,12 +11,15 @@ use rand::Rng;
 struct Pause(bool);
 
 fn setup(mut commands: Commands) {
-    let (w,h) = (80, 50);
+    let (w, h) = (80, 50);
 
     let term = TerminalBundle::with_size(w, h);
     commands.spawn_bundle(term).insert(Pause);
 
-    commands.spawn_bundle(PixelCameraBundle::from_resolution(w as i32 * 12, h as i32 * 12));
+    commands.spawn_bundle(PixelCameraBundle::from_resolution(
+        w as i32 * 12,
+        h as i32 * 12,
+    ));
 }
 
 fn rand_color(rng: &mut ThreadRng) -> Color {
@@ -60,7 +63,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .add_plugin(PixelCameraPlugin)
-        .add_plugin(PixelBorderPlugin { color: Color::BLACK })
+        .add_plugin(PixelBorderPlugin {
+            color: Color::BLACK,
+        })
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_startup_system(setup.system())

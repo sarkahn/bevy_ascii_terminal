@@ -17,7 +17,8 @@ impl TerminalRendererVertexData {
         v
     }
 
-    pub fn resize(&mut self, 
+    pub fn resize(
+        &mut self,
         term_size: UVec2,
         term_pivot: Vec2,
         tile_pivot: Vec2,

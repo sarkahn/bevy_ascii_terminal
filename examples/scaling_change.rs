@@ -10,7 +10,7 @@ use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin}
 struct FontIndex(pub usize);
 
 fn spawn_terminal(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    let (w,h) = (20,3);
+    let (w, h) = (20, 3);
     let mut term_bundle = TerminalBundle::with_size(w, h);
 
     term_bundle.terminal.draw_border_single();
@@ -26,7 +26,10 @@ fn spawn_terminal(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
         ..Default::default()
     });
 
-    commands.spawn_bundle(PixelCameraBundle::from_resolution(w as i32 * 12, h as i32 * 12));
+    commands.spawn_bundle(PixelCameraBundle::from_resolution(
+        w as i32 * 12,
+        h as i32 * 12,
+    ));
 }
 
 fn change_font(
@@ -66,7 +69,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .add_plugin(PixelCameraPlugin)
-        .add_plugin(PixelBorderPlugin { color: Color::BLACK} )
+        .add_plugin(PixelBorderPlugin {
+            color: Color::BLACK,
+        })
         .add_startup_system(spawn_terminal.system())
         .add_system(change_font.system())
         .run()

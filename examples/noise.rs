@@ -1,5 +1,5 @@
-use bevy::{prelude::*, render::camera::ScalingMode};
-use bevy_ascii_terminal::{Terminal, TerminalBundle, TerminalPlugin, TerminalSize, render::TerminalTileScaling, terminal::Tile};
+use bevy::prelude::*;
+use bevy_ascii_terminal::{terminal::Tile, Terminal, TerminalBundle, TerminalPlugin, TerminalSize};
 
 use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
 use bracket_noise::prelude::{FastNoise, NoiseType};
@@ -68,11 +68,14 @@ fn get_noise(t: NoiseType) -> FastNoise {
 }
 
 fn setup(mut commands: Commands) {
-    let (w,h) = (46,50);
+    let (w, h) = (46, 50);
 
     commands.spawn_bundle(TerminalBundle::with_size(w, h));
 
-    commands.spawn_bundle(PixelCameraBundle::from_resolution(w as i32 * 12, h as i32 * 12));
+    commands.spawn_bundle(PixelCameraBundle::from_resolution(
+        w as i32 * 12,
+        h as i32 * 12,
+    ));
 }
 
 fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
@@ -82,23 +85,22 @@ fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
 }
 
 fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<(&mut Terminal, &TerminalSize)>) {
-
-    for (mut term,size) in q.iter_mut() {
+    for (mut term, size) in q.iter_mut() {
         noise.timer += (time.delta().as_millis() as f32) / 1500.0;
         let t = noise.timer;
-    
+
         noise.noise.set_frequency(t);
-    
+
         let (width, height) = size.value.into();
         let half_width = width as f32 / 2.0;
         let half_height = height as f32 / 2.0;
         for (i, t) in term.iter_mut().enumerate() {
             let x = (i % width as usize) as f32;
             let y = (i / height as usize) as f32;
-    
+
             let x = x - half_width;
             let y = y - half_height;
-    
+
             let n = noise.noise.get_noise(x, y);
             let col = (n + 1.0) * 0.5;
             *t = Tile {
@@ -107,11 +109,11 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut q: Query<(&mut Terminal,
                 bg_color: Color::BLACK,
             };
         }
-    
+
         term.clear_box(0, 0, 30, 3);
         term.draw_box_single(0, 0, 30, 3);
         term.put_string(1, 1, "Press space to change noise");
-    
+
         let t = noise.noise.get_noise_type();
         let string = to_string(t);
         let h = term.height() as i32;
@@ -125,7 +127,9 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .add_plugin(PixelCameraPlugin)
-        .add_plugin(PixelBorderPlugin { color: Color::BLACK })
+        .add_plugin(PixelBorderPlugin {
+            color: Color::BLACK,
+        })
         .init_resource::<Noise>()
         .add_startup_system(setup.system())
         .add_system(noise.system())

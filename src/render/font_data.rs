@@ -63,7 +63,7 @@ pub(crate) fn check_terminal_assets_loading(
             fonts.add(TerminalFontData {
                 name: String::from(path.file_name().unwrap().to_str().unwrap()),
                 path: String::from(path.to_str().unwrap()),
-                tile_count: tile_count,
+                tile_count,
                 tile_size: tex_size / tile_count,
                 texture_size: tex_size,
             });

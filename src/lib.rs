@@ -24,9 +24,7 @@ impl TerminalBundle {
         let size = UVec2::new(width as u32, height as u32);
         Self {
             terminal: Terminal::new(width, height),
-            size: TerminalSize {
-                value: size,
-            },
+            size: TerminalSize { value: size },
             renderer: TerminalRendererBundle {
                 vert_data: TerminalRendererVertexData::with_size(size),
                 tile_data: TerminalRendererTileData::with_size(size),
