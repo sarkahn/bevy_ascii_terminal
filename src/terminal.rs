@@ -33,6 +33,33 @@ impl Default for Tile {
     }
 }
 
+pub struct BorderGlyphs {
+    vertical: char,
+    horizontal: char,
+    tl: char,
+    tr: char,
+    bl: char,
+    br: char,
+}
+
+const SINGLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
+    vertical: '|',
+    horizontal: '─',
+    tl: '┌',
+    tr: '┐',
+    bl: '└',
+    br: '┘',
+};
+
+const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
+    vertical: '║',
+    horizontal: '═',
+    tl: '╔',
+    tr: '╗',
+    bl: '╚',
+    br: '╝',
+};
+
 impl Terminal {
     pub fn new(width: usize, height: usize) -> Terminal {
         Terminal {
@@ -151,38 +178,108 @@ impl Terminal {
         }
     }
 
-    /// Draw a box with a single-line border
-    pub fn draw_box_single(&mut self, x: usize, y: usize, width: usize, height: usize) {
+    pub fn draw_box(&mut self, x: usize, y: usize, width: usize, height: usize, border_glyphs: BorderGlyphs) {
         let left = x;
         let right = x + width - 1;
         let top = y;
         let bottom = y + height - 1;
 
         for t in self.row_iter_mut(top).skip(left).take(width) {
-            t.glyph = '─';
+            t.glyph = border_glyphs.horizontal;
         }
         for t in self.row_iter_mut(bottom).skip(left).take(width) {
-            t.glyph = '─';
+            t.glyph = border_glyphs.horizontal;
         }
         for t in self.column_iter_mut(left).skip(top).take(height) {
-            t.glyph = '│';
+            t.glyph = border_glyphs.vertical;
         }
         for t in self.column_iter_mut(right).skip(top).take(height) {
-            t.glyph = '│';
+            t.glyph = border_glyphs.vertical;
         }
 
-        self.put_char(left, bottom, '└');
-        self.put_char(left, top, '┌');
-        self.put_char(right, top, '┐');
-        self.put_char(right, bottom, '┘');
+        self.put_char(left, bottom, border_glyphs.bl);
+        self.put_char(left, top, border_glyphs.tl);
+        self.put_char(right, top, border_glyphs.tr);
+        self.put_char(right, bottom, border_glyphs.br);
     }
+
+    /// Draw a box with a single-line border of the given colors
+    pub fn draw_box_color(
+        &mut self, 
+        x: usize, 
+        y: usize, 
+        width: usize, 
+        height: usize,
+        fg_color: Color,
+        bg_color: Color,
+        border_glyphs: BorderGlyphs
+    ) {
+        let left = x;
+        let right = x + width - 1;
+        let top = y;
+        let bottom = y + height - 1;
+
+        for t in self.row_iter_mut(top).skip(left).take(width) {
+            t.glyph = border_glyphs.horizontal;
+            t.fg_color = fg_color;
+            t.bg_color = bg_color;
+        }
+        for t in self.row_iter_mut(bottom).skip(left).take(width) {
+            t.glyph = border_glyphs.horizontal;
+            t.fg_color = fg_color;
+            t.bg_color = bg_color;
+        }
+        for t in self.column_iter_mut(left).skip(top).take(height) {
+            t.glyph = border_glyphs.vertical;
+            t.fg_color = fg_color;
+            t.bg_color = bg_color;
+        }
+        for t in self.column_iter_mut(right).skip(top).take(height) {
+            t.glyph = border_glyphs.vertical;
+            t.fg_color = fg_color;
+            t.bg_color = bg_color;
+        }
+
+        self.put_char_color(left, bottom, border_glyphs.bl, fg_color, bg_color);
+        self.put_char_color(left, top, border_glyphs.tl, fg_color, bg_color);
+        self.put_char_color(right, top, border_glyphs.tr, fg_color, bg_color);
+        self.put_char_color(right, bottom, border_glyphs.br, fg_color, bg_color);
+    }
+    
+
+    /// Draw a box with a single-line border
+    pub fn draw_box_single(&mut self, x: usize, y: usize, width: usize, height: usize) {
+        self.draw_box(x, y, width, height, SINGLE_LINE_GLYPHS);
+    }
+    pub fn draw_box_single_color(&mut self, x: usize, y: usize, width: usize, height: usize, fg_color: Color, bg_color: Color) {
+        self.draw_box_color(x,y,width,height,fg_color,bg_color, SINGLE_LINE_GLYPHS);
+    }
+
+    /// Draw a box with a double-line border
+    pub fn draw_box_double(&mut self, x: usize, y: usize, width: usize, height: usize) {
+        self.draw_box(x, y, width, height, DOUBLE_LINE_GLYPHS);
+    }
+    pub fn draw_box_double_color(&mut self, x: usize, y: usize, width: usize, height: usize, fg_color: Color, bg_color: Color) {
+        self.draw_box_color(x,y,width,height,fg_color,bg_color, DOUBLE_LINE_GLYPHS);
+    }
+
 
     /// Draw a border around the edges of the console with
     // single-line edges.
     pub fn draw_border_single(&mut self) {
         self.draw_box_single(0, 0, self.width(), self.height());
     }
+    pub fn draw_border_single_color(&mut self, fg_color: Color, bg_color: Color) {
+        self.draw_box_single_color(0, 0, self.width(), self.height(), fg_color, bg_color);
+    }
 
+    pub fn draw_border_double(&mut self) {
+        self.draw_box_double(0, 0, self.width(), self.height());
+    }
+    pub fn draw_border_double_color(&mut self, fg_color: Color, bg_color: Color) {
+        self.draw_box_double_color(0, 0, self.width(), self.height(), fg_color, bg_color);
+    }
+    
     /// Clear the console tiles to default - empty tiles with
     /// a black background
     pub fn clear(&mut self) {

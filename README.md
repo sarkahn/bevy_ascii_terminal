@@ -20,14 +20,7 @@ While not a direct dependency, I would *highly* recommend importing [bevy_pixel_
 
 ## Getting Started
 
-Include `bevy_ascii_terminal` as a dependency in your `Cargo.toml`:
-
-```toml
-[dependencies]
-bevy_ascii_terminal = "0.5.0"
-``` 
-
-Then add the plugin and spawn a bundle with a camera. 
+Include [bevy_ascii_terminal](https://crates.io/crates/bevy_ascii_terminal) as a dependency in your `Cargo.toml`, then add the plugin and spawn a bundle with a camera. 
 
 ```rust
 fn spawn_terminal(mut commands: Commands) {
@@ -63,7 +56,7 @@ And that's it. You can write to the terminal when you create it, or from a query
 fn write_to_terminal(mut q: Query<&mut Terminal>) {
     let term = q.single_mut().unwrap();
     term.clear();
-    term.draw_border();
+    term.draw_border_single();
     term.put_char(1,1, '☺');
     term.put_string(2,1, "451");
 }

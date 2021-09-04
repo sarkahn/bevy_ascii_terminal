@@ -52,7 +52,7 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
             }
         }
         term.clear_box(0, 0, 25, 3);
-        term.draw_box_single(0, 0, 25, 3);
+        term.draw_border_single();
         term.put_string(1, 1, "Press space to pause");
     }
 }
