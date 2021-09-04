@@ -39,11 +39,8 @@ fn main() {
         .init_resource::<FontIndex>()
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugin(PixelCameraPlugin)
-        .add_plugin(PixelBorderPlugin {
-            color: Color::BLACK,
-        })
-        .add_startup_system(spawn_terminal.system())
         .add_system(change_font.system())
         .run()
 }

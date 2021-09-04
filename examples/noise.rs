@@ -134,9 +134,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .add_plugin(PixelCameraPlugin)
-        .add_plugin(PixelBorderPlugin {
-            color: Color::BLACK,
-        })
+        .insert_resource(ClearColor(Color::BLACK))
         .init_resource::<Noise>()
         .add_startup_system(setup.system())
         .add_system(noise.system())

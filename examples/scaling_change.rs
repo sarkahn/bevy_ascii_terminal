@@ -69,9 +69,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .add_plugin(PixelCameraPlugin)
-        .add_plugin(PixelBorderPlugin {
-            color: Color::BLACK,
-        })
+        .insert_resource(ClearColor(Color::BLACK))
         .add_startup_system(spawn_terminal.system())
         .add_system(change_font.system())
         .run()
