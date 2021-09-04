@@ -1,6 +1,7 @@
 use std::iter::FromIterator;
 use std::slice::Iter;
 use std::slice::IterMut;
+use std::iter::StepBy;
 
 use bevy::prelude::*;
 
@@ -47,6 +48,18 @@ impl Terminal {
         self.size.y as usize
     }
 
+    #[inline]
+    pub fn to_index(&self, x: usize, y: usize) -> usize {
+        y * self.width() + x
+    }
+    
+    #[inline]
+    pub fn to_xy(&self, i: usize) -> (usize,usize) {
+        let x = i % self.width();
+        let y = i / self.width();
+        (x,y)
+    }
+
     pub fn put_char(&mut self, x: usize, y: usize, glyph: char) {
         self.get_tile_mut(x, y).glyph = glyph;
     }
@@ -74,11 +87,12 @@ impl Terminal {
     /// next line if it reaches the edge and will truncate at the
     /// end of the console
     pub fn put_string(&mut self, x: usize, y: usize, string: &str) {
-        let tiles = self.mut_slice(x, y, string.len());
+        let i = self.to_index(x,y);
+        let tiles = self.tiles[i..].iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
-        for (i, char) in chars.enumerate() {
-            tiles[i].glyph = char;
+        for (char, mut t) in chars.zip(tiles) {
+            t.glyph = char;
         }
     }
 
@@ -93,11 +107,11 @@ impl Terminal {
         fg_color: Color,
         bg_color: Color,
     ) {
-        let tiles = self.mut_slice(x, y, string.len());
+        let i = self.to_index(x,y);
+        let tiles = self.tiles[i..].iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
-        for (i, char) in chars.enumerate() {
-            let t = &mut tiles[i];
+        for (char, mut t) in chars.zip(tiles) {
             t.glyph = char;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
@@ -109,10 +123,11 @@ impl Terminal {
     }
 
     pub fn get_string(&self, x: usize, y: usize, len: usize) -> String {
-        let slice = self.slice(x, y, len);
+        let i = self.to_index(x,y);
+        let slice = self.tiles[i..].iter().take(len);
         let mut chars: Vec<char> = vec![' '; slice.len()];
 
-        for (i, t) in slice.iter().enumerate() {
+        for (i, t) in slice.enumerate() {
             chars[i] = t.glyph;
         }
 
@@ -120,21 +135,17 @@ impl Terminal {
     }
 
     pub fn get_tile(&self, x: usize, y: usize) -> &Tile {
-        let x = x as usize;
-        let y = y as usize;
-        self.tiles.get(y * self.width() + x).unwrap()
+        &self.tiles[self.to_index(x,y)]
     }
 
     pub fn get_tile_mut(&mut self, x: usize, y: usize) -> &mut Tile {
-        let x = x as usize;
-        let y = y as usize;
-        let width = self.width();
-        self.tiles.get_mut(y * width + x).unwrap()
+        let i = self.to_index(x,y);
+        &mut self.tiles[i]
     }
 
     pub fn clear_box(&mut self, x: usize, y: usize, width: usize, height: usize) {
-        for x in x..x + width {
-            for y in y..y + height {
+        for y in y..y + height {
+            for x in x..x + width {
                 self.put_tile(x, y, Tile::default());
             }
         }
@@ -147,14 +158,17 @@ impl Terminal {
         let top = y;
         let bottom = y + height - 1;
 
-        for y in top + 1..bottom {
-            self.put_char(left, y, '│');
-            self.put_char(right, y, '│');
+        for t in self.row_iter_mut(top).skip(left).take(width) {
+            t.glyph = '─';
         }
-
-        for x in left + 1..right {
-            self.put_char(x, top, '─');
-            self.put_char(x, bottom, '─');
+        for t in self.row_iter_mut(bottom).skip(left).take(width) {
+            t.glyph = '─';
+        }
+        for t in self.column_iter_mut(left).skip(top).take(height) {
+            t.glyph = '│';
+        }
+        for t in self.column_iter_mut(right).skip(top).take(height) {
+            t.glyph = '│';
         }
 
         self.put_char(left, bottom, '└');
@@ -172,9 +186,9 @@ impl Terminal {
     /// Clear the console tiles to default - empty tiles with
     /// a black background
     pub fn clear(&mut self) {
-        for tile in self.tiles.iter_mut() {
-            *tile = Tile::default();
-        }
+        for t in self.tiles.iter_mut() {
+            *t = Tile::default()
+        } 
     }
 
     pub fn iter(&self) -> Iter<Tile> {
@@ -185,18 +199,27 @@ impl Terminal {
         self.tiles.iter_mut()
     }
 
-    pub fn slice(&self, x: usize, y: usize, len: usize) -> &[Tile] {
-        let i = y * self.width() + x;
-        let end = usize::min(i + len, self.tiles.len());
-
-        &self.tiles[i..end]
+    /// An iterator over an entire row of tiles in  the terminal.
+    pub fn row_iter(&self, y: usize) -> Iter<Tile> {
+        self.tiles[y * self.width()..self.width()].iter()
     }
 
-    pub fn mut_slice(&mut self, x: usize, y: usize, len: usize) -> &mut [Tile] {
-        let i = y * self.width() + x;
-        let end = usize::min(i + len, self.tiles.len());
+    // A mutable iterator over an entire row of tiles in the terminal.
+    pub fn row_iter_mut(&mut self, y: usize) -> IterMut<Tile> {
+        let w = self.width();
+        let i = y * w;
+        self.tiles[i..i + w].iter_mut()
+    }
 
-        &mut self.tiles[i..end]
+    // An iterator over an entire column of tiles in the terminal.
+    pub fn column_iter(&self, x: usize) -> StepBy<Iter<Tile>> {
+        return self.tiles[x..].iter().step_by(self.width())
+    }
+
+    // A mutable iterator over an entire column of tiles in the terminal.
+    pub fn column_iter_mut(&mut self, x: usize) -> StepBy<IterMut<Tile>> {
+        let w = self.width();
+        return self.tiles[x..].iter_mut().step_by(w)
     }
 }
 
@@ -228,5 +251,33 @@ mod tests {
         let mut term = Terminal::new(25, 20);
         term.put_char(0, 0, 'a');
         term.put_char(24, 19, 'a');
+    }
+
+    #[test]
+    fn column_get() {
+        let mut term = Terminal::new(15, 10);
+        term.put_char(3,0,'H');
+        term.put_char(3,1,'e');
+        term.put_char(3,2,'l');
+        term.put_char(3,3,'l');
+        term.put_char(3,4,'o');
+
+        let chars: Vec<_> = term.column_iter(3).take(5).map(|t|t.glyph).collect();
+        assert_eq!("Hello", String::from_iter(chars));
+    }
+
+    #[test]
+    fn column_put() {
+        let mut term = Terminal::new(15, 10);
+        let text = "Hello".chars();
+        for (mut t, c) in term.column_iter_mut(5).take(5).zip(text) {
+            t.glyph = c;
+        }
+
+        assert_eq!('H', term.get_char(5,0));
+        assert_eq!('e', term.get_char(5,1));
+        assert_eq!('l', term.get_char(5,2));
+        assert_eq!('l', term.get_char(5,3));
+        assert_eq!('o', term.get_char(5,4));
     }
 }

@@ -20,7 +20,14 @@ While not a direct dependency, I would *highly* recommend importing [bevy_pixel_
 
 ## Getting Started
 
-First add the plugin and spawn a bundle with a camera. 
+Include `bevy_ascii_terminal` as a dependency in your `Cargo.toml`:
+
+```toml
+[dependencies]
+bevy_ascii_terminal = "0.5.0"
+``` 
+
+Then add the plugin and spawn a bundle with a camera. 
 
 ```rust
 fn spawn_terminal(mut commands: Commands) {
@@ -50,7 +57,7 @@ fn main() {
 }
 ```
 
-You can write to the terminal when you create it, or from a query:
+And that's it. You can write to the terminal when you create it, or from a query:
 
 ```rust
 fn write_to_terminal(mut q: Query<&mut Terminal>) {
@@ -69,7 +76,7 @@ You can check the [examples](examples) for more.
 ## Changing Fonts
 
 If you want to change fonts, you should [find a new cp437 texture atlas online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself, then put it into the assets/textures folder. To load your new font you just need to modify the `TerminalFont` component attached to the terminal:
-```rs
+```rust
 fn change_font(
     keys: Res<Input<KeyCode>>,
     mut q: Query<&mut TerminalRendererFont>,
