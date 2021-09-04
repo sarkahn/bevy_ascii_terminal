@@ -2,17 +2,22 @@ pub mod entity;
 
 mod font_data;
 mod glyph_mapping;
+pub mod plugin;
 pub mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
-pub mod plugin;
 
 use self::{
-    font_data::{ TerminalFonts },
-    renderer_tile_data::TerminalRendererTileData,
+    font_data::TerminalFonts, renderer_tile_data::TerminalRendererTileData,
     renderer_vertex_data::TerminalRendererVertexData,
 };
 use crate::terminal::{Terminal, TerminalSize};
-use bevy::{prelude::*, reflect::TypeUuid, render::{mesh::Indices, pipeline::{PrimitiveTopology}, renderer::RenderResources, shader::ShaderDefs}};
+use bevy::{
+    prelude::*,
+    reflect::TypeUuid,
+    render::{
+        mesh::Indices, pipeline::PrimitiveTopology, renderer::RenderResources, shader::ShaderDefs,
+    },
+};
 
 const DEFAULT_TEX_PATH: &str = "alloy_curses_12x12.png";
 
@@ -65,7 +70,7 @@ impl Default for TerminalTileScaling {
 pub struct TerminalMaterial {
     pub color: Color,
     pub clip_color: Color,
-    #[shader_def]
+    #[shader_def] // This doesn't work for some reason...
     pub texture: Option<Handle<Texture>>,
 }
 
@@ -73,7 +78,7 @@ impl TerminalMaterial {
     pub fn from_texture(tex: Handle<Texture>, clip_color: Color) -> Self {
         TerminalMaterial {
             color: Color::WHITE,
-            clip_color: clip_color,
+            clip_color,
             texture: Some(tex),
         }
     }

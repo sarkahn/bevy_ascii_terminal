@@ -142,9 +142,6 @@ impl Terminal {
 
     /// Draw a box with a single-line border
     pub fn draw_box_single(&mut self, x: usize, y: usize, width: usize, height: usize) {
-        let width = width;
-        let height = height;
-
         let left = x;
         let right = x + width - 1;
         let top = y;

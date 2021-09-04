@@ -2,36 +2,15 @@
 
 A simple ascii terminal integrated into bevy's ecs framework. 
 
-# What Is It
+## What Is It
 
-bevy_ascii_terminal is a utility to easily render colorful ascii in bevy. It was designed with "[traditional roguelikes](http://roguebasin.com/index.php/Main_Page)" in mind, but should serve effectively as a simple, no fuss UI tool if needed. The API is designed to be as simple and straightforward as possible to use. 
+bevy_ascii_terminal is a utility to easily render colorful ascii in bevy. It was made  with "[traditional roguelikes](http://roguebasin.com/index.php/Main_Page)" in mind, but should serve effectively as a simple, no fuss UI tool if needed. The API is designed to be as simple and straightforward as possible. 
 
-# What Can It Do
+## What Can It Do
 
- You can set a single tile or group of tiles to any ascii character that's been mapped, and can set foreground and background colors per tile.
+ It can set a single tile or group of tiles to any ascii character that's been mapped, and can set foreground and background colors per tile.
  
  As far as what it can render, it currently supports a fixed size tileset and by default expects a [code page 437 layout](https://en.wikipedia.org/wiki/Code_page_437) on the textures, though this can be changed via a configuration file. There are [plenty more fonts available](https://dwarffortresswiki.org/Tileset_repository) around the internet, and [changing fonts](#changing-fonts) is as simple as setting a string.
-
-# Terminal Functions
-
- Some of the more important functions are explained below:
-
-`clear()`: Clear the terminal to default tiles (empty tiles with a black background).
-
-`put_char(x, y, char)`: Write an ascii character to a certain tile.
-
-`put_string(x, y, string)`: Write a string to the terminal.
-
-`put_char_color(x, y, string, fg_color, bg_color)`: Write an ascii character with the given foreground and background colors.
-
-`draw_box_single(x, y, width, height)`: Draw a box with a single-line-border.
-
-`draw_border_single()`: Draw a single-line-border around the entire terminal.
-
-`clear_box(x, y, width, height)`: Clear the specified area of the terminal to default tiles.
-
-
-**Note:** For all functions the y coordinate is flipped in the terminal, so `put_char(0,0,'x')` refers to the top left corner of the terminal, and `put_char(width - 1, height - 1, 'x')` refers to the bottom right corner. This was done because the terminal is meant to display readable text from left to right, top to bottom.
 
 ## Dependencies
 
@@ -47,7 +26,7 @@ First add the plugin and spawn a bundle with a camera.
 fn spawn_terminal(mut commands: Commands) {
     let (w, h) = (80, 25);
     let mut term_bundle = TerminalBundle::with_size(w, h);
-    term_bundle.terminal.put_string(0,0, "Hello, world!");
+    term_bundle.terminal.put_string(1,1, "Hello, world!");
     commands.spawn_bundle(term_bundle);
 
     // 12 is the size of the default terminal font. This setting 
@@ -65,7 +44,7 @@ fn main() {
     .add_plugins(DefaultPlugins)
     .add_plugin(TerminalPlugin)
     .add_plugin(PixelCameraPlugin)
-    .add_plugin(PixelBorderPlugin{ color: Color::BLACK }
+    .insert_resource(ClearColor(Color::BLACK))
     .add_startup_system(spawn_terminal.system())
     .run()
 }
@@ -83,11 +62,13 @@ fn write_to_terminal(mut q: Query<&mut Terminal>) {
 }
 ```
 
-You can check [the examples](https://github.com/sarkahn/bevy_ascii_terminal/tree/main/examples) for more.
+You can check the [examples](examples) for more.
+
+**Note:** For all terminal functions the y coordinate is flipped in the terminal, so `put_char(0,0,'x')` refers to the top left corner of the terminal, and `put_char(width - 1, height - 1, 'x')` refers to the bottom right corner. This was done because the terminal is meant to display readable text from left to right, top to bottom.
 
 ## Changing Fonts
 
-If you want to change fonts, you should [find a new font online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself, then put it into the assets/textures folder. To load your new font you just need to modify the `TerminalFont` component attached to the terminal:
+If you want to change fonts, you should [find a new cp437 texture atlas online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself, then put it into the assets/textures folder. To load your new font you just need to modify the `TerminalFont` component attached to the terminal:
 ```rs
 fn change_font(
     keys: Res<Input<KeyCode>>,

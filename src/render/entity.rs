@@ -3,10 +3,12 @@ use bevy::{
     render::{pipeline::RenderPipeline, render_graph::base::MainPass},
 };
 
-
 use crate::render::plugin::TERMINAL_RENDERER_PIPELINE;
 
-use super::{TerminalPivot, TerminalRendererFont, TerminalMaterial, TerminalTileScaling, TilePivot, renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData};
+use super::{
+    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
+    TerminalMaterial, TerminalPivot, TerminalRendererFont, TerminalTileScaling, TilePivot,
+};
 
 #[derive(Bundle)]
 pub struct TerminalRendererBundle {

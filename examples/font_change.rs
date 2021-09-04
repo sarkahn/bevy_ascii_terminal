@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use bevy_ascii_terminal::{render::TerminalRendererFont, TerminalBundle, TerminalPlugin};
-use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
+use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
 const FONTS: [&str; 2] = ["alloy_curses_12x12.png", "zx_evolution_8x8.png"];
 #[derive(Default)]
@@ -41,6 +41,7 @@ fn main() {
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugin(PixelCameraPlugin)
+        .add_startup_system(spawn_terminal.system())
         .add_system(change_font.system())
         .run()
 }

@@ -4,7 +4,7 @@ use bevy::{
 };
 
 use bevy_ascii_terminal::{render::TerminalTileScaling, TerminalBundle, TerminalPlugin};
-use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
+use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
 #[derive(Default)]
 struct FontIndex(pub usize);

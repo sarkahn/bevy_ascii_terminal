@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use bevy_ascii_terminal::{terminal::Terminal, TerminalBundle, TerminalPlugin};
-use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
+use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
 fn spawn_terminal(mut commands: Commands) {
     let (w, h) = (20, 3);

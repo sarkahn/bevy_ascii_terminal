@@ -64,7 +64,7 @@ impl TerminalRendererVertexData {
             let ii = i * 6;
             let vi = vi as u32;
             let indices = &mut self.indices;
-            indices[ii] = vi + 0;
+            indices[ii] = vi;
             indices[ii + 1] = vi + 1;
             indices[ii + 2] = vi + 2;
             indices[ii + 3] = vi + 3;

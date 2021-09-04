@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_ascii_terminal::{terminal::Tile, Terminal, TerminalBundle, TerminalPlugin, TerminalSize};
 
-use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin};
+use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;
 
