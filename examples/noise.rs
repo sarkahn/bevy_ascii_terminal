@@ -5,6 +5,9 @@ use bevy_pixel_camera::{PixelBorderPlugin, PixelCameraBundle, PixelCameraPlugin}
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;
 
+// Original example from the bracket noise library
+// https://github.com/amethyst/bracket-lib/blob/master/bracket-noise/examples/value.rs
+
 struct Noise {
     pub noise: FastNoise,
     types: Vec<NoiseType>,

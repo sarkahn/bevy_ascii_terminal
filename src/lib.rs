@@ -1,8 +1,5 @@
 use bevy::prelude::*;
-use render::{
-    entity::TerminalRendererBundle, renderer_tile_data::TerminalRendererTileData,
-    renderer_vertex_data::TerminalRendererVertexData, TerminalRendererPlugin,
-};
+use render::{entity::TerminalRendererBundle, plugin::TerminalRendererPlugin, renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData};
 pub use terminal::{Terminal, TerminalSize};
 
 pub mod render;
@@ -24,7 +21,9 @@ impl TerminalBundle {
         let size = UVec2::new(width as u32, height as u32);
         Self {
             terminal: Terminal::new(width, height),
-            size: TerminalSize { value: size },
+            size: TerminalSize {
+                value: size,
+            },
             renderer: TerminalRendererBundle {
                 vert_data: TerminalRendererVertexData::with_size(size),
                 tile_data: TerminalRendererTileData::with_size(size),

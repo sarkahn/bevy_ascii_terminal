@@ -29,7 +29,7 @@ fn change_font(
     if keys.just_pressed(KeyCode::Space) {
         for mut font in q.iter_mut() {
             font_index.0 = 1 - font_index.0;
-            font.0 = String::from(FONTS[font_index.0]);
+            font.font_name = String::from(FONTS[font_index.0]);
         }
     }
 }

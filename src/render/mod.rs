@@ -1,26 +1,18 @@
 pub mod entity;
-pub mod pipeline;
 
 mod font_data;
 mod glyph_mapping;
 pub mod renderer_tile_data;
-pub mod renderer_vertex_data;
+pub(crate) mod renderer_vertex_data;
+pub mod plugin;
 
 use self::{
-    font_data::{
-        check_terminal_assets_loading, terminal_load_assets, LoadingTerminalTextures, TerminalFonts,
-    },
+    font_data::{ TerminalFonts },
     renderer_tile_data::TerminalRendererTileData,
     renderer_vertex_data::TerminalRendererVertexData,
 };
 use crate::terminal::{Terminal, TerminalSize};
-use bevy::{
-    prelude::*,
-    render::{
-        mesh::Indices,
-        pipeline::{PipelineDescriptor, PrimitiveTopology},
-    },
-};
+use bevy::{prelude::*, reflect::TypeUuid, render::{mesh::Indices, pipeline::{PrimitiveTopology}, renderer::RenderResources, shader::ShaderDefs}};
 
 const DEFAULT_TEX_PATH: &str = "alloy_curses_12x12.png";
 
@@ -34,10 +26,16 @@ impl Default for TerminalPivot {
 #[derive(Default)]
 pub struct TilePivot(Vec2);
 
-pub struct TerminalRendererFont(pub String);
+pub struct TerminalRendererFont {
+    pub font_name: String,
+    pub clip_color: Color,
+}
 impl Default for TerminalRendererFont {
     fn default() -> Self {
-        Self(String::from(DEFAULT_TEX_PATH))
+        Self {
+            font_name: String::from(DEFAULT_TEX_PATH),
+            clip_color: Color::BLACK,
+        }
     }
 }
 
@@ -62,63 +60,22 @@ impl Default for TerminalTileScaling {
     }
 }
 
-pub struct TerminalRendererPlugin;
+#[derive(Debug, RenderResources, ShaderDefs, Default, TypeUuid)]
+#[uuid = "1e01121c-0b4a-315e-1bca-36733b11127e"]
+pub struct TerminalMaterial {
+    pub color: Color,
+    pub clip_color: Color,
+    #[shader_def]
+    pub texture: Option<Handle<Texture>>,
+}
 
-impl Plugin for TerminalRendererPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        {
-            let world = &mut app.world_mut();
-
-            let pipeline = pipeline::build_terminal_pipeline(
-                &mut world.get_resource_mut::<Assets<Shader>>().unwrap(),
-            );
-            let mut pipelines = world
-                .get_resource_mut::<Assets<PipelineDescriptor>>()
-                .unwrap();
-            pipelines.set_untracked(pipeline::TERMINAL_RENDERER_PIPELINE, pipeline);
+impl TerminalMaterial {
+    pub fn from_texture(tex: Handle<Texture>, clip_color: Color) -> Self {
+        TerminalMaterial {
+            color: Color::WHITE,
+            clip_color: clip_color,
+            texture: Some(tex),
         }
-
-        app.init_resource::<LoadingTerminalTextures>()
-            .init_resource::<TerminalFonts>()
-            .add_state(AppState::AssetsLoading)
-            .add_system_set(
-                SystemSet::on_enter(AppState::AssetsLoading)
-                    .with_system(terminal_load_assets.system()),
-            )
-            .add_system_set(
-                SystemSet::on_update(AppState::AssetsLoading)
-                    .with_system(check_terminal_assets_loading.system()),
-            )
-            .add_system_set(
-                SystemSet::on_enter(AppState::AssetsDoneLoading)
-                    .with_system(terminal_renderer_init.system()),
-            )
-            .add_system_set(
-                SystemSet::on_update(AppState::AssetsDoneLoading)
-                    .with_system(
-                        terminal_renderer_update_material
-                            .system()
-                            .label("terminal_update_material"),
-                    )
-                    .with_system(
-                        terminal_renderer_update_size
-                            .system()
-                            .after("terminal_update_material")
-                            .label("terminal_update_size"),
-                    )
-                    .with_system(
-                        terminal_renderer_update_tile_data
-                            .system()
-                            .after("terminal_update_size")
-                            .label("terminal_update_tile_data"),
-                    )
-                    .with_system(
-                        terminal_renderer_update_mesh
-                            .system()
-                            .after("terminal_update_tile_data")
-                            .label("terminal_update_mesh"),
-                    ),
-            );
     }
 }
 
@@ -135,10 +92,10 @@ pub fn terminal_renderer_init(
 
 pub fn terminal_renderer_update_material(
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut materials: ResMut<Assets<TerminalMaterial>>,
     textures: Res<Assets<Texture>>,
     mut q: Query<
-        (&TerminalRendererFont, &mut Handle<ColorMaterial>),
+        (&TerminalRendererFont, &mut Handle<TerminalMaterial>),
         Changed<TerminalRendererFont>,
     >,
 ) {
@@ -151,11 +108,12 @@ pub fn terminal_renderer_update_material(
         }
 
         let mut path = "textures/".to_owned();
-        path.push_str(font.0.as_str());
+        path.push_str(font.font_name.as_str());
         let tex_handle = asset_server.load(path.as_str());
         let tex = textures.get(tex_handle.clone());
         debug_assert!(tex.is_some());
-        *mat = materials.add(ColorMaterial::texture(tex_handle));
+
+        *mat = materials.add(TerminalMaterial::from_texture(tex_handle, font.clip_color));
     }
 }
 
@@ -185,7 +143,7 @@ pub fn terminal_renderer_update_size(
     {
         let mut tile_size = UVec2::ONE;
         if let TerminalTileScaling::Pixels = scaling {
-            tile_size = fonts.get(font.0.as_str()).tile_size;
+            tile_size = fonts.get(font.font_name.as_str()).tile_size;
         }
 
         vert_data.resize(size.value, term_pivot.0, tile_pivot.0, tile_size);

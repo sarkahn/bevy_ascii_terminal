@@ -1,16 +1,28 @@
 ![](images/title.png)
 
-A simple ascii terminal integrated into bevy's ecs framework. The api was designed to be as simple and straightforward as possible. 
+A simple ascii terminal integrated into bevy's ecs framework. 
 
-You can set a single tile or group of tiles to any ascii characters and can set foreground and background colors per tile. Some of the important ones:
+# What Is It
 
-`clear()`: Clear the terminal to default tiles (empty tiles with a black background)
+bevy_ascii_terminal is a utility to easily render colorful ascii in bevy. It was designed with "[traditional roguelikes](http://roguebasin.com/index.php/Main_Page)" in mind, but should serve effectively as a simple, no fuss UI tool if needed. The API is designed to be as simple and straightforward as possible to use. 
+
+# What Can It Do
+
+ You can set a single tile or group of tiles to any ascii character that's been mapped, and can set foreground and background colors per tile.
+ 
+ As far as what it can render, it currently supports a fixed size tileset and by default expects a [code page 437 layout](https://en.wikipedia.org/wiki/Code_page_437) on the textures, though this can be changed via a configuration file. There are [plenty more fonts available](https://dwarffortresswiki.org/Tileset_repository) around the internet, and [changing fonts](#changing-fonts) is as simple as setting a string.
+
+# Terminal Functions
+
+ Some of the more important functions are explained below:
+
+`clear()`: Clear the terminal to default tiles (empty tiles with a black background).
 
 `put_char(x, y, char)`: Write an ascii character to a certain tile.
 
 `put_string(x, y, string)`: Write a string to the terminal.
 
-`put_char_color(x, y, string, fg_color, bg_color`: Write an ascii character with the given foreground and background colors.
+`put_char_color(x, y, string, fg_color, bg_color)`: Write an ascii character with the given foreground and background colors.
 
 `draw_box_single(x, y, width, height)`: Draw a box with a single-line-border.
 
@@ -35,13 +47,13 @@ First add the plugin and spawn a bundle with a camera.
 fn spawn_terminal(mut commands: Commands) {
     let (w, h) = (80, 25);
     let mut term_bundle = TerminalBundle::with_size(w, h);
-    term_bundle.terminal.put_char(0,0, "Hello, world!");
+    term_bundle.terminal.put_string(0,0, "Hello, world!");
     commands.spawn_bundle(term_bundle);
 
     // 12 is the size of the default terminal font. This setting 
     // will ensure the camera scales up the viewport so the 
-    // terminal takes up as much space as possible while still 
-    // remaining pixel-perfect
+    // terminal takes up as much space as possible on the screen
+    // given it's current size, while still remaining pixel-perfect
     commands.spawn_bundle(PixelCameraBundle::from_resolution(
         w as i32 * 12, 
         h as i32 * 12,
@@ -73,23 +85,37 @@ fn write_to_terminal(mut q: Query<&mut Terminal>) {
 
 You can check [the examples](https://github.com/sarkahn/bevy_ascii_terminal/tree/main/examples) for more.
 
-## How It Works
-At it's lowest level the terminal renderer builds a dynamic mesh that bevy renders. It should be fast enough to clear and re-write to every frame, and it won't rebuild the mesh unless you make a change to the terminal.
+## Changing Fonts
+
+If you want to change fonts, you should [find a new font online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself, then put it into the assets/textures folder. To load your new font you just need to modify the `TerminalFont` component attached to the terminal:
+```rs
+fn change_font(
+    keys: Res<Input<KeyCode>>,
+    mut q: Query<&mut TerminalRendererFont>,
+) {
+    if keys.just_pressed(KeyCode::Space) {
+        for mut font in q.iter_mut() {
+            font.font_name = String::from("zx_evolution_8x8.png");
+            font.clip_color = Color::BLACK;
+        }
+    }
+}
+```
+
+Notice the `clip_color` field above - this refers to the "background" color of the texture. The shader will swap this color out for whatever background color you set for a given tile in the terminal. For the included fonts, this should be black. Many fonts you'll find online use magenta as the background color.
 
 ## Other Features
 
-There are several components you can modify to alter how the terminal is drawn. To name a few:
+There are several other components you can modify to alter how the terminal is drawn. To name a few:
 
 `Transform`: The terminal is a normal bevy entity, you can move and transform it at will.
 
 `TerminalTileScaling`: Alters how tiles are sized when building the mesh.
 
-`TerminalFont`: Changes which texture the terminal is using to draw glyphs.
-
 `TerminalPivot`: Determines how the terminal mesh is aligned. Defaults to (0.5,0.5) which will nicely center the terminal mesh regardless of size.
 
-`TilePivot`: Similar to `TerminalPivot` but for tiles - this defaults to (0.0,0.0) so a tile's bottom left corner sits on the pivot. 
+`TilePivot`: Similar to `TerminalPivot` but for tiles - this defaults to (0.0,0.0), so a tile's bottom left corner sits on the pivot. 
 
 ## Feedback
 
-This is my first real rust project - I'm open to any and all [feedback](https://github.com/sarkahn/bevy_ascii_terminal/issues), particularly with regards to improving the api or project structure. Thanks!
+This is my first real rust project - I'm open to any and all [feedback and suggestions](https://github.com/sarkahn/bevy_ascii_terminal/issues), particularly with regards to improving the api or project structure. Thanks!
