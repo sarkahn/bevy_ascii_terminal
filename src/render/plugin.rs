@@ -63,7 +63,6 @@ impl Plugin for TerminalRendererPlugin {
                     ),
             );
 
-
         // Set up material/pipline
 
         let cell = app.world_mut().cell();

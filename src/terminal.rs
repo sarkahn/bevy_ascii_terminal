@@ -1,7 +1,7 @@
 use std::iter::FromIterator;
+use std::iter::StepBy;
 use std::slice::Iter;
 use std::slice::IterMut;
-use std::iter::StepBy;
 
 use bevy::prelude::*;
 
@@ -79,12 +79,12 @@ impl Terminal {
     pub fn to_index(&self, x: usize, y: usize) -> usize {
         y * self.width() + x
     }
-    
+
     #[inline]
-    pub fn to_xy(&self, i: usize) -> (usize,usize) {
+    pub fn to_xy(&self, i: usize) -> (usize, usize) {
         let x = i % self.width();
         let y = i / self.width();
-        (x,y)
+        (x, y)
     }
 
     pub fn put_char(&mut self, x: usize, y: usize, glyph: char) {
@@ -114,7 +114,7 @@ impl Terminal {
     /// next line if it reaches the edge and will truncate at the
     /// end of the console
     pub fn put_string(&mut self, x: usize, y: usize, string: &str) {
-        let i = self.to_index(x,y);
+        let i = self.to_index(x, y);
         let tiles = self.tiles[i..].iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
@@ -134,7 +134,7 @@ impl Terminal {
         fg_color: Color,
         bg_color: Color,
     ) {
-        let i = self.to_index(x,y);
+        let i = self.to_index(x, y);
         let tiles = self.tiles[i..].iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
@@ -150,7 +150,7 @@ impl Terminal {
     }
 
     pub fn get_string(&self, x: usize, y: usize, len: usize) -> String {
-        let i = self.to_index(x,y);
+        let i = self.to_index(x, y);
         let slice = self.tiles[i..].iter().take(len);
         let mut chars: Vec<char> = vec![' '; slice.len()];
 
@@ -162,11 +162,11 @@ impl Terminal {
     }
 
     pub fn get_tile(&self, x: usize, y: usize) -> &Tile {
-        &self.tiles[self.to_index(x,y)]
+        &self.tiles[self.to_index(x, y)]
     }
 
     pub fn get_tile_mut(&mut self, x: usize, y: usize) -> &mut Tile {
-        let i = self.to_index(x,y);
+        let i = self.to_index(x, y);
         &mut self.tiles[i]
     }
 
@@ -178,7 +178,14 @@ impl Terminal {
         }
     }
 
-    pub fn draw_box(&mut self, x: usize, y: usize, width: usize, height: usize, border_glyphs: BorderGlyphs) {
+    pub fn draw_box(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        border_glyphs: BorderGlyphs,
+    ) {
         let left = x;
         let right = x + width - 1;
         let top = y;
@@ -205,14 +212,14 @@ impl Terminal {
 
     /// Draw a box with a single-line border of the given colors
     pub fn draw_box_color(
-        &mut self, 
-        x: usize, 
-        y: usize, 
-        width: usize, 
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
         height: usize,
         fg_color: Color,
         bg_color: Color,
-        border_glyphs: BorderGlyphs
+        border_glyphs: BorderGlyphs,
     ) {
         let left = x;
         let right = x + width - 1;
@@ -245,24 +252,38 @@ impl Terminal {
         self.put_char_color(right, top, border_glyphs.tr, fg_color, bg_color);
         self.put_char_color(right, bottom, border_glyphs.br, fg_color, bg_color);
     }
-    
 
     /// Draw a box with a single-line border
     pub fn draw_box_single(&mut self, x: usize, y: usize, width: usize, height: usize) {
         self.draw_box(x, y, width, height, SINGLE_LINE_GLYPHS);
     }
-    pub fn draw_box_single_color(&mut self, x: usize, y: usize, width: usize, height: usize, fg_color: Color, bg_color: Color) {
-        self.draw_box_color(x,y,width,height,fg_color,bg_color, SINGLE_LINE_GLYPHS);
+    pub fn draw_box_single_color(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        fg_color: Color,
+        bg_color: Color,
+    ) {
+        self.draw_box_color(x, y, width, height, fg_color, bg_color, SINGLE_LINE_GLYPHS);
     }
 
     /// Draw a box with a double-line border
     pub fn draw_box_double(&mut self, x: usize, y: usize, width: usize, height: usize) {
         self.draw_box(x, y, width, height, DOUBLE_LINE_GLYPHS);
     }
-    pub fn draw_box_double_color(&mut self, x: usize, y: usize, width: usize, height: usize, fg_color: Color, bg_color: Color) {
-        self.draw_box_color(x,y,width,height,fg_color,bg_color, DOUBLE_LINE_GLYPHS);
+    pub fn draw_box_double_color(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+        fg_color: Color,
+        bg_color: Color,
+    ) {
+        self.draw_box_color(x, y, width, height, fg_color, bg_color, DOUBLE_LINE_GLYPHS);
     }
-
 
     /// Draw a border around the edges of the console with
     // single-line edges.
@@ -279,13 +300,13 @@ impl Terminal {
     pub fn draw_border_double_color(&mut self, fg_color: Color, bg_color: Color) {
         self.draw_box_double_color(0, 0, self.width(), self.height(), fg_color, bg_color);
     }
-    
+
     /// Clear the console tiles to default - empty tiles with
     /// a black background
     pub fn clear(&mut self) {
         for t in self.tiles.iter_mut() {
             *t = Tile::default()
-        } 
+        }
     }
 
     pub fn iter(&self) -> Iter<Tile> {
@@ -310,13 +331,13 @@ impl Terminal {
 
     // An iterator over an entire column of tiles in the terminal.
     pub fn column_iter(&self, x: usize) -> StepBy<Iter<Tile>> {
-        return self.tiles[x..].iter().step_by(self.width())
+        return self.tiles[x..].iter().step_by(self.width());
     }
 
     // A mutable iterator over an entire column of tiles in the terminal.
     pub fn column_iter_mut(&mut self, x: usize) -> StepBy<IterMut<Tile>> {
         let w = self.width();
-        return self.tiles[x..].iter_mut().step_by(w)
+        return self.tiles[x..].iter_mut().step_by(w);
     }
 }
 
@@ -353,13 +374,13 @@ mod tests {
     #[test]
     fn column_get() {
         let mut term = Terminal::new(15, 10);
-        term.put_char(3,0,'H');
-        term.put_char(3,1,'e');
-        term.put_char(3,2,'l');
-        term.put_char(3,3,'l');
-        term.put_char(3,4,'o');
+        term.put_char(3, 0, 'H');
+        term.put_char(3, 1, 'e');
+        term.put_char(3, 2, 'l');
+        term.put_char(3, 3, 'l');
+        term.put_char(3, 4, 'o');
 
-        let chars: Vec<_> = term.column_iter(3).take(5).map(|t|t.glyph).collect();
+        let chars: Vec<_> = term.column_iter(3).take(5).map(|t| t.glyph).collect();
         assert_eq!("Hello", String::from_iter(chars));
     }
 
@@ -371,10 +392,10 @@ mod tests {
             t.glyph = c;
         }
 
-        assert_eq!('H', term.get_char(5,0));
-        assert_eq!('e', term.get_char(5,1));
-        assert_eq!('l', term.get_char(5,2));
-        assert_eq!('l', term.get_char(5,3));
-        assert_eq!('o', term.get_char(5,4));
+        assert_eq!('H', term.get_char(5, 0));
+        assert_eq!('e', term.get_char(5, 1));
+        assert_eq!('l', term.get_char(5, 2));
+        assert_eq!('l', term.get_char(5, 3));
+        assert_eq!('o', term.get_char(5, 4));
     }
 }
