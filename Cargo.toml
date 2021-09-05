@@ -1,7 +1,7 @@
 [package]
 name = "bevy_ascii_terminal"
 description = "A simple terminal for rendering ascii in bevy."
-version = "0.5.2"
+version = "0.5.3"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/bevy_ascii_terminal"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
