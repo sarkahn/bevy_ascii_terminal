@@ -1,5 +1,5 @@
-use ron::{from_str};
-use std::{collections::HashMap};
+use ron::from_str;
+use std::collections::HashMap;
 
 const DEFAULT_MAPPING: &str = include_str!("../../data/code_page_437.mapping");
 

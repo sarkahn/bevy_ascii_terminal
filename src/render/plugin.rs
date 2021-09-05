@@ -1,6 +1,12 @@
-use std::path::Path;
-
-use bevy::{prelude::*, render::{pipeline::PipelineDescriptor, render_graph::{base, AssetRenderResourcesNode, RenderGraph}, shader::{ShaderStage, ShaderStages}, texture::ImageType}};
+use bevy::{
+    prelude::*,
+    render::{
+        pipeline::PipelineDescriptor,
+        render_graph::{base, AssetRenderResourcesNode, RenderGraph},
+        shader::{ShaderStage, ShaderStages},
+        texture::ImageType,
+    },
+};
 
 use super::{font_data::*, AppState, *};
 
@@ -12,16 +18,25 @@ const FRAGMENT_SHADER: &str = include_str!("terminal.frag");
 
 const TERMINAL_MATERIAL_NAME: &str = "terminal_mat";
 
-macro_rules! DEFAULT_FONT_PATH {()=> {"../../data/fonts/"}}
-pub const DEFAULT_FONT_PATH: &'static str = DEFAULT_FONT_PATH!();
+macro_rules! DEFAULT_FONT_PATH {
+    () => {
+        "../../data/fonts/"
+    };
+}
+pub const DEFAULT_FONT_PATH: &str = DEFAULT_FONT_PATH!();
 
-macro_rules! DEFAULT_FONT_NAME {()=> {"alloy_curses_12x12.png"}}
-pub const DEFAULT_FONT_NAME: &'static str = DEFAULT_FONT_NAME!();
+macro_rules! DEFAULT_FONT_NAME {
+    () => {
+        "alloy_curses_12x12.png"
+    };
+}
+pub const DEFAULT_FONT_NAME: &str = DEFAULT_FONT_NAME!();
 
-pub const DEFAULT_FONT_HANDLE: HandleUntyped = 
-HandleUntyped::weak_from_u64(Texture::TYPE_UUID, 12111322111012441362);
+pub const DEFAULT_FONT_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Texture::TYPE_UUID, 12111322111012441362);
 
-const DEFAULT_FONT_BYTES: &[u8] = include_bytes!(concat!(DEFAULT_FONT_PATH!(), DEFAULT_FONT_NAME!()));
+const DEFAULT_FONT_BYTES: &[u8] =
+    include_bytes!(concat!(DEFAULT_FONT_PATH!(), DEFAULT_FONT_NAME!()));
 
 pub struct TerminalRendererPlugin;
 
@@ -81,7 +96,6 @@ impl Plugin for TerminalRendererPlugin {
         let mut shaders = cell.get_resource_mut::<Assets<Shader>>().unwrap();
         let mut materials = cell.get_resource_mut::<Assets<TerminalMaterial>>().unwrap();
         let mut textures = cell.get_resource_mut::<Assets<Texture>>().unwrap();
-        
 
         graph.add_system_node(
             TERMINAL_MATERIAL_NAME,

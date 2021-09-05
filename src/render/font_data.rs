@@ -5,7 +5,10 @@ use bevy::{asset::LoadState, prelude::*};
 // TODO: Temp workaround for get_handle_path bug in bevy 0.5.0
 use std::fs;
 
-use super::{AppState, DEFAULT_TEX_PATH, plugin::{DEFAULT_FONT_HANDLE, DEFAULT_FONT_NAME, DEFAULT_FONT_PATH}};
+use super::{
+    plugin::{DEFAULT_FONT_HANDLE, DEFAULT_FONT_NAME},
+    AppState,
+};
 
 #[derive(Debug)]
 pub struct TerminalFontData {
@@ -20,7 +23,7 @@ impl TerminalFontData {
         let tex_size = UVec2::new(tex.size.width, tex.size.height);
         let tile_count = UVec2::new(16, 16);
         TerminalFontData {
-            handle: handle,
+            handle,
             tile_count,
             tile_size: tex_size / tile_count,
             texture_size: tex_size,
@@ -53,7 +56,7 @@ pub(crate) fn terminal_load_assets(
     //info!("Loading terminal textures");
     loading.0 = match asset_server.load_folder("textures") {
         Ok(f) => Some(f),
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
@@ -70,27 +73,37 @@ pub(crate) fn check_terminal_assets_loading(
         // Add default font
         let handle: Handle<Texture> = DEFAULT_FONT_HANDLE.typed();
         let tex = textures.get(handle.clone()).unwrap();
-        fonts.add(DEFAULT_FONT_NAME, TerminalFontData::from_texture(handle, tex));
-        
+        fonts.add(
+            DEFAULT_FONT_NAME,
+            TerminalFontData::from_texture(handle, tex),
+        );
+
         state.set(AppState::AssetsDoneLoading).unwrap();
         return;
     }
 
-
-    if let LoadState::Loaded = asset_server.get_group_load_state(loaded.unwrap().iter().map(|h| h.id)) {
-
+    if let LoadState::Loaded =
+        asset_server.get_group_load_state(loaded.unwrap().iter().map(|h| h.id))
+    {
         // Add default font
         let handle: Handle<Texture> = DEFAULT_FONT_HANDLE.typed();
         let tex = textures.get(handle.clone()).unwrap();
-        fonts.add(DEFAULT_FONT_NAME, TerminalFontData::from_texture(handle, tex));
+        fonts.add(
+            DEFAULT_FONT_NAME,
+            TerminalFontData::from_texture(handle, tex),
+        );
 
-        let handles: Vec<Handle<Texture>> = loaded.unwrap().iter().map(|h| h.clone().typed() ).collect();
         // TODO: Temporary workaround for get_handle_path bug in bevy 0.5.0. Replace in next bevy version
         let dir = fs::read_dir("assets/textures").expect("Error reading textures directory");
         let paths: Vec<PathBuf> = dir.map(|entry| entry.unwrap().path()).collect();
 
         // Add any user fonts from the "assets/textures" directory
-        for (handle, path) in  handles.into_iter().zip(paths.iter()) {
+        for (handle, path) in loaded
+            .unwrap()
+            .iter()
+            .map(|h| h.clone().typed())
+            .zip(paths.iter())
+        {
             let name = path.file_name().unwrap().to_str().unwrap();
             let tex = textures.get(handle.clone()).unwrap();
             fonts.add(name, TerminalFontData::from_texture(handle, tex));

@@ -116,7 +116,10 @@ pub fn terminal_renderer_update_material(
         let tex = textures.get(handle.clone());
         debug_assert!(tex.is_some());
 
-        *mat = materials.add(TerminalMaterial::from_texture(handle.clone(), font.clip_color));
+        *mat = materials.add(TerminalMaterial::from_texture(
+            handle.clone(),
+            font.clip_color,
+        ));
     }
 }
 
