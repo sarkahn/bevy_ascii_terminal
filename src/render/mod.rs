@@ -21,7 +21,7 @@ use bevy::{
 
 const DEFAULT_TEX_PATH: &str = "alloy_curses_12x12.png";
 
-pub struct TerminalPivot(Vec2);
+pub struct TerminalPivot(pub Vec2);
 impl Default for TerminalPivot {
     fn default() -> Self {
         Self(Vec2::new(0.5, 0.5))
@@ -89,14 +89,14 @@ pub fn terminal_renderer_init(
     mut q: Query<&mut Handle<Mesh>, (Added<Handle<Mesh>>, With<TerminalRendererVertexData>)>,
 ) {
     for mut mesh in q.iter_mut() {
-        //info!("Initializing terminal renderer");
+        //info!("Initializing ascii terminal mesh");
         let new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         *mesh = meshes.add(new_mesh);
     }
 }
 
 pub fn terminal_renderer_update_material(
-    asset_server: Res<AssetServer>,
+    fonts: Res<TerminalFonts>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
     textures: Res<Assets<Texture>>,
     mut q: Query<
@@ -112,13 +112,11 @@ pub fn terminal_renderer_update_material(
             materials.remove(mat.clone_weak());
         }
 
-        let mut path = "textures/".to_owned();
-        path.push_str(font.font_name.as_str());
-        let tex_handle = asset_server.load(path.as_str());
-        let tex = textures.get(tex_handle.clone());
+        let handle = &fonts.get(font.font_name.as_str()).handle;
+        let tex = textures.get(handle.clone());
         debug_assert!(tex.is_some());
 
-        *mat = materials.add(TerminalMaterial::from_texture(tex_handle, font.clip_color));
+        *mat = materials.add(TerminalMaterial::from_texture(handle.clone(), font.clip_color));
     }
 }
 

@@ -34,8 +34,10 @@ impl Default for Tile {
 }
 
 pub struct BorderGlyphs {
-    vertical: char,
-    horizontal: char,
+    top: char,
+    bottom: char,
+    left: char,
+    right: char,
     tl: char,
     tr: char,
     bl: char,
@@ -43,8 +45,10 @@ pub struct BorderGlyphs {
 }
 
 const SINGLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
-    vertical: '|',
-    horizontal: '─',
+    left: '│',
+    right: '│',
+    bottom: '─',
+    top: '─',
     tl: '┌',
     tr: '┐',
     bl: '└',
@@ -52,8 +56,10 @@ const SINGLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
 };
 
 const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
-    vertical: '║',
-    horizontal: '═',
+    left: '║',
+    right: '║',
+    top: '═',
+    bottom: '═',
     tl: '╔',
     tr: '╗',
     bl: '╚',
@@ -192,16 +198,16 @@ impl Terminal {
         let bottom = y + height - 1;
 
         for t in self.row_iter_mut(top).skip(left).take(width) {
-            t.glyph = border_glyphs.horizontal;
+            t.glyph = border_glyphs.top;
         }
         for t in self.row_iter_mut(bottom).skip(left).take(width) {
-            t.glyph = border_glyphs.horizontal;
+            t.glyph = border_glyphs.bottom;
         }
         for t in self.column_iter_mut(left).skip(top).take(height) {
-            t.glyph = border_glyphs.vertical;
+            t.glyph = border_glyphs.left;
         }
         for t in self.column_iter_mut(right).skip(top).take(height) {
-            t.glyph = border_glyphs.vertical;
+            t.glyph = border_glyphs.right;
         }
 
         self.put_char(left, bottom, border_glyphs.bl);
@@ -227,22 +233,22 @@ impl Terminal {
         let bottom = y + height - 1;
 
         for t in self.row_iter_mut(top).skip(left).take(width) {
-            t.glyph = border_glyphs.horizontal;
+            t.glyph = border_glyphs.top;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
         }
         for t in self.row_iter_mut(bottom).skip(left).take(width) {
-            t.glyph = border_glyphs.horizontal;
+            t.glyph = border_glyphs.bottom;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
         }
         for t in self.column_iter_mut(left).skip(top).take(height) {
-            t.glyph = border_glyphs.vertical;
+            t.glyph = border_glyphs.left;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
         }
         for t in self.column_iter_mut(right).skip(top).take(height) {
-            t.glyph = border_glyphs.vertical;
+            t.glyph = border_glyphs.right;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
         }

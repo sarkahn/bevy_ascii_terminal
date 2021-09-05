@@ -1,5 +1,7 @@
-use ron::de::from_reader;
-use std::{collections::HashMap, fs::File};
+use ron::{from_str};
+use std::{collections::HashMap};
+
+const DEFAULT_MAPPING: &str = include_str!("../../data/code_page_437.mapping");
 
 pub struct GlyphMapping {
     mapping: HashMap<char, (usize, usize)>,
@@ -24,14 +26,13 @@ impl GlyphMapping {
         }
     }
 
-    fn from_file(path: &str, width: usize) -> Self {
-        let f = File::open(path).expect("Error opening file");
-        let mapping = from_reader(f).expect("Error parsing mapping file");
+    fn from_string(string: &str, width: usize) -> Self {
+        let mapping = from_str(string).expect("Error parsing mapping file");
         GlyphMapping::new(mapping, width)
     }
 
     pub fn code_page_437() -> Self {
-        GlyphMapping::from_file("assets/code_page_437.mapping", 16)
+        GlyphMapping::from_string(DEFAULT_MAPPING, 16)
     }
 
     pub fn get_glyph(&self, index_x: usize, index_y: usize) -> char {
