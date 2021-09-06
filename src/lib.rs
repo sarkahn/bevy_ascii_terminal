@@ -1,12 +1,12 @@
+pub mod render;
+pub mod terminal;
+
 use bevy::prelude::*;
 use render::{
     entity::TerminalRendererBundle, plugin::TerminalRendererPlugin,
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
 };
 pub use terminal::{Terminal, TerminalSize};
-
-pub mod render;
-pub mod terminal;
 
 #[derive(Bundle, Default)]
 pub struct TerminalBundle {

@@ -76,8 +76,8 @@ fn setup(mut commands: Commands) {
     commands.spawn_bundle(TerminalBundle::with_size(w, h));
 
     commands.spawn_bundle(PixelCameraBundle::from_resolution(
-        w as i32 * 12,
-        h as i32 * 12,
+        w as i32 * 8,
+        h as i32 * 8,
     ));
 }
 

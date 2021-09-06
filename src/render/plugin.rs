@@ -1,16 +1,13 @@
-use bevy::{
-    prelude::*,
-    render::{
+use bevy::{prelude::*, reflect::TypeUuid, render::{
         pipeline::PipelineDescriptor,
         render_graph::{base, AssetRenderResourcesNode, RenderGraph},
         shader::{ShaderStage, ShaderStages},
         texture::ImageType,
-    },
-};
+    }};
 
-use super::{font_data::*, AppState, *};
+use super::{*, font::*};
 
-pub const TERMINAL_RENDERER_PIPELINE: HandleUntyped =
+pub(crate) const TERMINAL_RENDERER_PIPELINE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 12121362113012541389);
 
 const VERTEX_SHADER: &str = include_str!("terminal.vert");
@@ -18,27 +15,13 @@ const FRAGMENT_SHADER: &str = include_str!("terminal.frag");
 
 const TERMINAL_MATERIAL_NAME: &str = "terminal_mat";
 
-macro_rules! DEFAULT_FONT_PATH {
-    () => {
-        "../../data/fonts/"
-    };
-}
-pub const DEFAULT_FONT_PATH: &str = DEFAULT_FONT_PATH!();
-
-macro_rules! DEFAULT_FONT_NAME {
-    () => {
-        "alloy_curses_12x12.png"
-    };
-}
-pub const DEFAULT_FONT_NAME: &str = DEFAULT_FONT_NAME!();
-
-pub const DEFAULT_FONT_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Texture::TYPE_UUID, 12111322111012441362);
-
-const DEFAULT_FONT_BYTES: &[u8] =
-    include_bytes!(concat!(DEFAULT_FONT_PATH!(), DEFAULT_FONT_NAME!()));
-
 pub struct TerminalRendererPlugin;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) enum AppState {
+    AssetsLoading,
+    AssetsDoneLoading,
+}
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -85,8 +68,7 @@ impl Plugin for TerminalRendererPlugin {
                     ),
             );
 
-        // Set up material/pipline
-
+        // Set up material/pipline for default terminal construction
         let cell = app.world_mut().cell();
 
         let mut graph = cell.get_resource_mut::<RenderGraph>().unwrap();
@@ -117,7 +99,9 @@ impl Plugin for TerminalRendererPlugin {
 
         pipelines.set_untracked(TERMINAL_RENDERER_PIPELINE, pipeline);
 
-        let tex = Texture::from_buffer(DEFAULT_FONT_BYTES, ImageType::Extension("png")).unwrap();
+        // Set up a font handle for default terminal construction
+        let bytes = font::DEFAULT_FONT.bytes;
+        let tex = Texture::from_buffer(bytes, ImageType::Extension("png")).unwrap();
 
         textures.set_untracked(DEFAULT_FONT_HANDLE, tex);
     }

@@ -1,12 +1,18 @@
 use ron::from_str;
 use std::collections::HashMap;
 
-const DEFAULT_MAPPING: &str = include_str!("../../data/code_page_437.mapping");
+const DEFAULT_MAPPING: &str = include_str!("../../assets/code_page_437.mapping");
 
 pub struct GlyphMapping {
     mapping: HashMap<char, (usize, usize)>,
     reverse_mapping: HashMap<(usize, usize), char>,
     //size: (usize, usize),
+}
+
+impl Default for GlyphMapping {
+    fn default() -> Self {
+        GlyphMapping::code_page_437()
+    }
 }
 
 impl GlyphMapping {
@@ -47,11 +53,6 @@ impl GlyphMapping {
     }
 }
 
-impl Default for GlyphMapping {
-    fn default() -> Self {
-        GlyphMapping::code_page_437()
-    }
-}
 
 #[cfg(test)]
 mod tests {

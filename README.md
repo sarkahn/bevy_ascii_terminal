@@ -68,7 +68,8 @@ You can check the [examples](examples) for more.
 
 ## Changing Fonts
 
-If you want to change fonts, you should [find a new cp437 texture atlas online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself, then put it into the assets/textures folder. To load your new font you just need to modify the `TerminalFont` component attached to the terminal:
+The terminal comes with several fonts built in, or you could [fine one online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself. If you add a font you must put it in the "assets/textures" folder. To load a font you just need to modify the `TerminalFont` component attached to the terminal:
+
 ```rust
 fn change_font(
     keys: Res<Input<KeyCode>>,
@@ -76,14 +77,14 @@ fn change_font(
 ) {
     if keys.just_pressed(KeyCode::Space) {
         for mut font in q.iter_mut() {
-            font.font_name = String::from("zx_evolution_8x8.png");
+            font.font_name = FONT_TAFFER_10X10.name.to_string();
             font.clip_color = Color::BLACK;
         }
     }
 }
 ```
 
-Notice the `clip_color` field above - this refers to the "background" color of the texture. The shader will swap this color out for whatever background color you set for a given tile in the terminal. For the included fonts, this should be black. Many fonts you'll find online use magenta as the background color.
+Assuming the name you set is a valid filename from the built in fonts or your own "assets/textures" folder, the terminal will swap to the new font. Notice the `clip_color` field above - this refers to the "background" color of the texture. The shader will swap this color out for whatever background color you set for a given tile in the terminal. For the included fonts this can remain at the default black. Many fonts you'll find online use magenta as the background color.
 
 ## Other Features
 

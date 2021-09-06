@@ -26,8 +26,8 @@ fn setup(mut commands: Commands) {
     let view_size = (40, 21);
 
     let origin = Vec3::ZERO;
-    let right = Vec3::X * view_size.0 as f32 * 12.0;
-    let up = Vec3::Y * view_size.1 as f32 * 12.0;
+    let right = Vec3::X * view_size.0 as f32 * 8.0;
+    let up = Vec3::Y * view_size.1 as f32 * 8.0;
 
     let pivot_bl = Vec2::ZERO;
     let pivot_right = Vec2::X;
@@ -53,7 +53,7 @@ fn setup(mut commands: Commands) {
         "BottomRight",
     );
 
-    let (view_x, view_y) = (view_size.0 * 12, view_size.1 * 12);
+    let (view_x, view_y) = (view_size.0 * 8, view_size.1 * 8);
 
     let mut cam = PixelCameraBundle::from_resolution(view_x, view_y);
 

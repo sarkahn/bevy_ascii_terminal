@@ -1,13 +1,13 @@
 pub mod entity;
 
-mod font_data;
+pub mod font;
 mod glyph_mapping;
 pub mod plugin;
-pub mod renderer_tile_data;
+pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
 
 use self::{
-    font_data::TerminalFonts, renderer_tile_data::TerminalRendererTileData,
+    font::TerminalFonts, renderer_tile_data::TerminalRendererTileData,
     renderer_vertex_data::TerminalRendererVertexData,
 };
 use crate::terminal::{Terminal, TerminalSize};
@@ -18,8 +18,6 @@ use bevy::{
         mesh::Indices, pipeline::PrimitiveTopology, renderer::RenderResources, shader::ShaderDefs,
     },
 };
-
-const DEFAULT_TEX_PATH: &str = "alloy_curses_12x12.png";
 
 pub struct TerminalPivot(pub Vec2);
 impl Default for TerminalPivot {
@@ -38,17 +36,13 @@ pub struct TerminalRendererFont {
 impl Default for TerminalRendererFont {
     fn default() -> Self {
         Self {
-            font_name: String::from(DEFAULT_TEX_PATH),
+            font_name: String::from(font::DEFAULT_FONT.name),
             clip_color: Color::BLACK,
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum AppState {
-    AssetsLoading,
-    AssetsDoneLoading,
-}
+
 
 #[derive(Clone, Copy)]
 pub enum TerminalTileScaling {
@@ -95,7 +89,7 @@ pub fn terminal_renderer_init(
     }
 }
 
-pub fn terminal_renderer_update_material(
+fn terminal_renderer_update_material(
     fonts: Res<TerminalFonts>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
     textures: Res<Assets<Texture>>,
@@ -112,7 +106,7 @@ pub fn terminal_renderer_update_material(
             materials.remove(mat.clone_weak());
         }
 
-        let handle = &fonts.get(font.font_name.as_str()).handle;
+        let handle = &fonts.get(font.font_name.as_str()).0;
         let tex = textures.get(handle.clone());
         debug_assert!(tex.is_some());
 
@@ -123,7 +117,7 @@ pub fn terminal_renderer_update_material(
     }
 }
 
-pub fn terminal_renderer_update_size(
+fn terminal_renderer_update_size(
     mut meshes: ResMut<Assets<Mesh>>,
     fonts: Res<TerminalFonts>,
     mut q: Query<
@@ -141,6 +135,7 @@ pub fn terminal_renderer_update_size(
             Changed<TerminalSize>,
             Changed<Handle<Mesh>>,
             Changed<TerminalTileScaling>,
+            Changed<TerminalRendererFont>,
         )>,
     >,
 ) {
@@ -149,7 +144,7 @@ pub fn terminal_renderer_update_size(
     {
         let mut tile_size = UVec2::ONE;
         if let TerminalTileScaling::Pixels = scaling {
-            tile_size = fonts.get(font.font_name.as_str()).tile_size;
+            tile_size = fonts.get(font.font_name.as_str()).1.tile_size;
         }
 
         vert_data.resize(size.value, term_pivot.0, tile_pivot.0, tile_size);

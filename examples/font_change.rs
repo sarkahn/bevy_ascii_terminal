@@ -1,18 +1,32 @@
 use bevy::prelude::*;
 
-use bevy_ascii_terminal::{render::TerminalRendererFont, TerminalBundle, TerminalPlugin};
+use bevy_ascii_terminal::{Terminal, TerminalBundle, TerminalPlugin, render::{TerminalRendererFont, font::{self, TerminalFontBuiltIn}}};
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
-const FONTS: [&str; 2] = ["alloy_curses_12x12.png", "zx_evolution_8x8.png"];
+const FONTS: &[TerminalFontBuiltIn] = &[
+    font::FONT_PX437_8X8,
+    font::FONT_ZX_EVOLUTION_8X8,
+    font::FONT_JT_CURSES_12X12,
+    font::FONT_PASTICHE_8X8,
+    font::FONT_TAFFER_10X10,
+];
+
 #[derive(Default)]
 struct FontIndex(pub usize);
 
 fn spawn_terminal(mut commands: Commands) {
-    let (w, h) = (20, 3);
+    let (w, h) = (47, 12);
     let mut term_bundle = TerminalBundle::with_size(w, h);
 
     term_bundle.terminal.draw_border_single();
-    term_bundle.terminal.put_string(1, 1, "Press spacebar");
+    
+    draw_title(&mut term_bundle.terminal, FONTS[0].name);
+
+    term_bundle.terminal.put_string(1, 2, "Press spacebar to change fonts");
+    term_bundle.terminal.put_string(1, 4, "!@#$%^&*()_+=-`~");
+    term_bundle.terminal.put_string(1, 6, "The quick brown fox jumps over the lazy dog.");
+    term_bundle.terminal.put_string(1, 8, "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
+    term_bundle.terminal.put_string(1, 10, "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(PixelCameraBundle::from_resolution(
@@ -21,15 +35,27 @@ fn spawn_terminal(mut commands: Commands) {
     ));
 }
 
+fn draw_title(term: &mut Terminal, title: &str) {
+
+    let title = &title[0..title.len() - 4];
+
+    term.draw_border_single_color(Color::WHITE, Color::BLACK);
+    term.put_string(1, 0, "[ ");
+    term.put_string_color(3, 0, title.to_string().to_uppercase().as_str(), Color::BLUE, Color::BLACK);
+    term.put_string(4 + title.len() - 1, 0, " ]");
+}
+
 fn change_font(
     keys: Res<Input<KeyCode>>,
     mut font_index: ResMut<FontIndex>,
-    mut q: Query<&mut TerminalRendererFont>,
+    mut q: Query<(&mut Terminal, &mut TerminalRendererFont)>,
 ) {
     if keys.just_pressed(KeyCode::Space) {
-        for mut font in q.iter_mut() {
-            font_index.0 = 1 - font_index.0;
-            font.font_name = String::from(FONTS[font_index.0]);
+        for (mut term, mut font) in q.iter_mut() {
+            font_index.0 = (font_index.0 + 1) % FONTS.len();
+            let new_font = &FONTS[font_index.0];
+            font.font_name = String::from(new_font.name);
+            draw_title(&mut term, new_font.name);
         }
     }
 }

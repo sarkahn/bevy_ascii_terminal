@@ -17,8 +17,8 @@ fn setup(mut commands: Commands) {
     commands.spawn_bundle(term).insert(Pause);
 
     commands.spawn_bundle(PixelCameraBundle::from_resolution(
-        w as i32 * 12,
-        h as i32 * 12,
+        w as i32 * 8,
+        h as i32 * 8,
     ));
 }
 
@@ -52,7 +52,7 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
             }
         }
         term.clear_box(0, 0, 25, 3);
-        term.draw_border_single();
+        term.draw_border_single_color(Color::WHITE, Color::BLACK);
         term.put_string(1, 1, "Press space to pause");
     }
 }
