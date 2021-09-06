@@ -53,7 +53,6 @@ impl GlyphMapping {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

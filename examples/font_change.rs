@@ -1,6 +1,12 @@
 use bevy::prelude::*;
 
-use bevy_ascii_terminal::{Terminal, TerminalBundle, TerminalPlugin, render::{TerminalRendererFont, font::{self, TerminalFontBuiltIn}}};
+use bevy_ascii_terminal::{
+    render::{
+        font::{self, TerminalFontBuiltIn},
+        TerminalRendererFont,
+    },
+    Terminal, TerminalBundle, TerminalPlugin,
+};
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
 const FONTS: &[TerminalFontBuiltIn] = &[
@@ -19,14 +25,22 @@ fn spawn_terminal(mut commands: Commands) {
     let mut term_bundle = TerminalBundle::with_size(w, h);
 
     term_bundle.terminal.draw_border_single();
-    
+
     draw_title(&mut term_bundle.terminal, FONTS[0].name);
 
-    term_bundle.terminal.put_string(1, 2, "Press spacebar to change fonts");
+    term_bundle
+        .terminal
+        .put_string(1, 2, "Press spacebar to change fonts");
     term_bundle.terminal.put_string(1, 4, "!@#$%^&*()_+=-`~");
-    term_bundle.terminal.put_string(1, 6, "The quick brown fox jumps over the lazy dog.");
-    term_bundle.terminal.put_string(1, 8, "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
-    term_bundle.terminal.put_string(1, 10, "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
+    term_bundle
+        .terminal
+        .put_string(1, 6, "The quick brown fox jumps over the lazy dog.");
+    term_bundle
+        .terminal
+        .put_string(1, 8, "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
+    term_bundle
+        .terminal
+        .put_string(1, 10, "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(PixelCameraBundle::from_resolution(
@@ -36,12 +50,17 @@ fn spawn_terminal(mut commands: Commands) {
 }
 
 fn draw_title(term: &mut Terminal, title: &str) {
-
     let title = &title[0..title.len() - 4];
 
     term.draw_border_single_color(Color::WHITE, Color::BLACK);
     term.put_string(1, 0, "[ ");
-    term.put_string_color(3, 0, title.to_string().to_uppercase().as_str(), Color::BLUE, Color::BLACK);
+    term.put_string_color(
+        3,
+        0,
+        title.to_string().to_uppercase().as_str(),
+        Color::BLUE,
+        Color::BLACK,
+    );
     term.put_string(4 + title.len() - 1, 0, " ]");
 }
 

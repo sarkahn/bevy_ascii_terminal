@@ -16,7 +16,7 @@ macro_rules! DEFAULT_FONT_PATH {
 macro_rules! include_font {
     ($font_name:expr) => {
         include_bytes!(concat!(DEFAULT_FONT_PATH!(), $font_name))
-    }
+    };
 }
 
 pub struct TerminalFontBuiltIn<'a> {
@@ -76,7 +76,7 @@ pub(crate) struct TerminalFonts {
 
 impl TerminalFonts {
     pub fn add(&mut self, name: &str, handle: Handle<Texture>, data: TerminalFontData) {
-        self.map.insert(name.to_string(), (handle,data));
+        self.map.insert(name.to_string(), (handle, data));
     }
 
     pub fn get(&self, font_name: &str) -> &(Handle<Texture>, TerminalFontData) {
@@ -100,8 +100,8 @@ pub(crate) fn terminal_load_assets(
 fn load_default_font(
     fonts: &mut ResMut<TerminalFonts>,
     textures: &mut ResMut<Assets<Texture>>,
-    font: &TerminalFontBuiltIn) {
-
+    font: &TerminalFontBuiltIn,
+) {
     let tex = Texture::from_buffer(font.bytes, ImageType::Extension("png")).unwrap();
     let data = TerminalFontData::from_texture(&tex);
     let handle = textures.add(tex);
@@ -110,13 +110,13 @@ fn load_default_font(
 
 fn load_default_fonts(
     mut textures: &mut ResMut<Assets<Texture>>,
-    mut fonts: &mut ResMut<TerminalFonts>) {
-
-        load_default_font(&mut fonts, &mut textures, &FONT_JT_CURSES_12X12);
-        load_default_font(&mut fonts, &mut textures, &FONT_PASTICHE_8X8);
-        load_default_font(&mut fonts, &mut textures, &FONT_PX437_8X8);
-        load_default_font(&mut fonts, &mut textures, &FONT_TAFFER_10X10);
-        load_default_font(&mut fonts, &mut textures, &FONT_ZX_EVOLUTION_8X8);
+    mut fonts: &mut ResMut<TerminalFonts>,
+) {
+    load_default_font(&mut fonts, &mut textures, &FONT_JT_CURSES_12X12);
+    load_default_font(&mut fonts, &mut textures, &FONT_PASTICHE_8X8);
+    load_default_font(&mut fonts, &mut textures, &FONT_PX437_8X8);
+    load_default_font(&mut fonts, &mut textures, &FONT_TAFFER_10X10);
+    load_default_font(&mut fonts, &mut textures, &FONT_ZX_EVOLUTION_8X8);
 }
 
 pub(crate) fn check_terminal_assets_loading(
@@ -126,7 +126,6 @@ pub(crate) fn check_terminal_assets_loading(
     mut state: ResMut<State<AppState>>,
     mut fonts: ResMut<TerminalFonts>,
 ) {
-
     let loaded = loading.0.as_ref();
 
     if loaded.is_none() {
@@ -163,5 +162,3 @@ pub(crate) fn check_terminal_assets_loading(
         state.set(AppState::AssetsDoneLoading).unwrap();
     }
 }
-
-

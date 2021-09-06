@@ -42,8 +42,6 @@ impl Default for TerminalRendererFont {
     }
 }
 
-
-
 #[derive(Clone, Copy)]
 pub enum TerminalTileScaling {
     /// Scale terminal tiles based on the size of their texture, such that 1 pixel == 1 world unit.

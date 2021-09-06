@@ -1,11 +1,15 @@
-use bevy::{prelude::*, reflect::TypeUuid, render::{
+use bevy::{
+    prelude::*,
+    reflect::TypeUuid,
+    render::{
         pipeline::PipelineDescriptor,
         render_graph::{base, AssetRenderResourcesNode, RenderGraph},
         shader::{ShaderStage, ShaderStages},
         texture::ImageType,
-    }};
+    },
+};
 
-use super::{*, font::*};
+use super::{font::*, *};
 
 pub(crate) const TERMINAL_RENDERER_PIPELINE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 12121362113012541389);
