@@ -20,7 +20,7 @@ While not a direct dependency, I would *highly* recommend importing [bevy_pixel_
 
 ## Getting Started
 
-Include [bevy_ascii_terminal](https://crates.io/crates/bevy_ascii_terminal) as a dependency in your `Cargo.toml`, then add the plugin and spawn a bundle with a camera. 
+Include [bevy_ascii_terminal](https://crates.io/crates/bevy_ascii_terminal) as a dependency in your `Cargo.toml`, then add the plugin and spawn a bundle with a camera: 
 
 ```rust
 fn spawn_terminal(mut commands: Commands) {
@@ -29,13 +29,13 @@ fn spawn_terminal(mut commands: Commands) {
     term_bundle.terminal.put_string(1,1, "Hello, world!");
     commands.spawn_bundle(term_bundle);
 
-    // 12 is the size of the default terminal font. This setting 
+    // 8 is the size of the default terminal font. This setting 
     // will ensure the camera scales up the viewport so the 
     // terminal takes up as much space as possible on the screen
     // given it's current size, while still remaining pixel-perfect
     commands.spawn_bundle(PixelCameraBundle::from_resolution(
-        w as i32 * 12, 
-        h as i32 * 12,
+        w as i32 * 8, 
+        h as i32 * 8,
     ));
 }
 
