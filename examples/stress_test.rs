@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
 fn rand_color(rng: &mut ThreadRng) -> Color {
     let r = rng.gen_range(0, 255) as f32 / 255.0;
     let g = rng.gen_range(0, 255) as f32 / 255.0;
-    let b = rng.gen_range(0, 255) as f32/ 255.0;
+    let b = rng.gen_range(0, 255) as f32 / 255.0;
     Color::rgb(r, g, b)
 }
 

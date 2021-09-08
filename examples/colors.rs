@@ -2,18 +2,15 @@ use bevy::prelude::*;
 use bevy_ascii_terminal::{Terminal, TerminalBundle, TerminalPlugin};
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
-
-fn setup(
-    mut commands: Commands
-) {
-    let (w,h) = (10,26);
-    let mut bundle = TerminalBundle::with_size(w,h);
+fn setup(mut commands: Commands) {
+    let (w, h) = (10, 26);
+    let mut bundle = TerminalBundle::with_size(w, h);
     draw_colors(&mut bundle.terminal);
     commands.spawn_bundle(bundle);
 
     commands.spawn_bundle(PixelCameraBundle::from_resolution(
         w as i32 * 8,
-        h as i32 * 8
+        h as i32 * 8,
     ));
 }
 
@@ -50,10 +47,10 @@ fn draw_colors(term: &mut Terminal) {
 
 fn main() {
     App::build()
-    .add_plugins(DefaultPlugins)
-    .add_plugin(TerminalPlugin)
-    .add_plugin(PixelCameraPlugin)
-    .insert_resource(ClearColor(Color::BLACK))
-    .add_startup_system(setup.system())
-    .run();
+        .add_plugins(DefaultPlugins)
+        .add_plugin(TerminalPlugin)
+        .add_plugin(PixelCameraPlugin)
+        .insert_resource(ClearColor(Color::BLACK))
+        .add_startup_system(setup.system())
+        .run();
 }

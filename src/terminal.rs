@@ -152,11 +152,11 @@ impl Terminal {
     }
 
     pub fn put_fg_color(&mut self, x: usize, y: usize, col: Color) {
-        self.get_tile_mut(x,y).fg_color = col;
+        self.get_tile_mut(x, y).fg_color = col;
     }
 
     pub fn put_bg_color(&mut self, x: usize, y: usize, col: Color) {
-        self.get_tile_mut(x,y).bg_color = col;
+        self.get_tile_mut(x, y).bg_color = col;
     }
 
     pub fn get_char(&self, x: usize, y: usize) -> char {
