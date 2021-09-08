@@ -16,7 +16,8 @@ pub struct TerminalRendererTileData {
 }
 
 fn to_mesh_color(col: Color) -> [f32; 3] {
-    [col.r(), col.g(), col.b()]
+    let col = col.as_linear_rgba_f32();
+    [col[0], col[1], col[2]]
 }
 
 impl TerminalRendererTileData {

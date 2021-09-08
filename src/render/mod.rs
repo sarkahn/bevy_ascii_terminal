@@ -176,10 +176,10 @@ pub fn terminal_renderer_update_mesh(
 ) {
     for (tile_data, mesh) in q.iter_mut() {
         let mesh = meshes.get_mut(mesh).expect("Error accessing terminal mesh");
-        // info!("writing colors and uvs to mesh");
-        // info!("First fg Colors: {:?}", &tile_data.fg_colors[0..4]);
-        // info!("First bg Colors: {:?}", &tile_data.bg_colors[0..4]);
-        // info!("First uvs: {:?}", &tile_data.uvs[0..4]);
+        //info!("writing colors and uvs to mesh");
+        //info!("First fg Colors: {:?}", &tile_data.fg_colors[0..4]);
+        //info!("First bg Colors: {:?}", &tile_data.bg_colors[0..4]);
+        //info!("First uvs: {:?}", &tile_data.uvs[0..4]);
         mesh.set_attribute("FG_Color", tile_data.fg_colors.clone());
         mesh.set_attribute("BG_Color", tile_data.bg_colors.clone());
         mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tile_data.uvs.clone());

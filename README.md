@@ -68,7 +68,7 @@ You can check the [examples](examples) for more.
 
 ## Changing Fonts
 
-The terminal comes with several fonts built in, or you could [fine one online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself. If you add a font you must put it in the "assets/textures" folder. To load a font you just need to modify the `TerminalFont` component attached to the terminal:
+The terminal comes with several fonts built in, or you could [find one online](https://dwarffortresswiki.org/Tileset_repository) or make one yourself. If you add a font you must put it in the "assets/textures" folder. To load a font you just need to modify the `TerminalFont` component attached to the terminal:
 
 ```rust
 fn change_font(
