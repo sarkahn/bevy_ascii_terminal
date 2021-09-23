@@ -12,8 +12,21 @@ layout(set = 1, binding = 1) uniform TerminalMaterial_clip_color {
 layout(set = 1, binding = 2) uniform texture2D TerminalMaterial_texture;
 layout(set = 1, binding = 3) uniform sampler TerminalMaterial_texture_sampler;
 
-layout(location = 1) in vec3 Frag_FG_Color;
-layout(location = 2) in vec3 Frag_BG_Color;
+layout(location = 1) in vec4 Frag_FG_Color;
+layout(location = 2) in vec4 Frag_BG_Color;
+
+// float to_linear(float f) {
+//         return f <= 0.0031308
+//             ? f * 12.92
+//             : pow(f, 1.0 / 2.4) * 1.055 - 0.55;
+// }
+
+// vec4 to_linear(vec4 vec) {
+//     vec.r = to_linear(vec.r);
+//     vec.g = to_linear(vec.g);
+//     vec.b = to_linear(vec.b);
+//     return vec;
+// }
 
 void main() {
     vec4 color = Base_Color;
@@ -23,11 +36,11 @@ void main() {
         v_Uv);
 
     if(texColor.rgb == Clip_Color.rgb) {
-        color.rgb = Frag_BG_Color;
+        color = Frag_BG_Color;
     } else {
-        color.rgb *= texColor.rgb * Frag_FG_Color;
+        color.rgb *= texColor.rgb * Frag_FG_Color.rgb;
+        color.a = Frag_FG_Color.a;
     }
 
-    //color = vec4(1.0);
     o_Target = color;
 }

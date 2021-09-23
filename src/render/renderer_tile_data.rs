@@ -1,23 +1,19 @@
 use bevy::{
     math::{UVec2, Vec2},
-    prelude::Color,
 };
 
-use crate::terminal::Tile;
+use crate::{terminal::Tile};
 
 use super::glyph_mapping::GlyphMapping;
 
 #[derive(Default)]
 pub struct TerminalRendererTileData {
-    pub fg_colors: Vec<[f32; 3]>,
-    pub bg_colors: Vec<[f32; 3]>,
+    //pub fg_colors: Vec<[f32; 4]>,
+    //pub bg_colors: Vec<[f32; 4]>,
+    pub fg_colors: Vec<[u8;4]>,
+    pub bg_colors: Vec<[u8;4]>,
     pub uvs: Vec<[f32; 2]>,
     pub mapping: GlyphMapping,
-}
-
-fn to_mesh_color(col: Color) -> [f32; 3] {
-    let col = col.as_linear_rgba_f32();
-    [col[0], col[1], col[2]]
 }
 
 impl TerminalRendererTileData {
@@ -54,8 +50,8 @@ impl TerminalRendererTileData {
             uvs[vi + 3] = (origin + up + right).into();
 
             for j in vi..vi + 4 {
-                self.fg_colors[j] = to_mesh_color(tile.fg_color);
-                self.bg_colors[j] = to_mesh_color(tile.bg_color);
+                self.fg_colors[j] = tile.fg_color.into();
+                self.bg_colors[j] = tile.bg_color.into();
             }
         }
     }
@@ -63,9 +59,11 @@ impl TerminalRendererTileData {
 
 #[cfg(test)]
 mod tests {
-    use bevy::{math::UVec2, prelude::Color};
+    use bevy::{math::UVec2};
 
     use crate::{render::renderer_tile_data::TerminalRendererTileData, terminal::Tile};
+
+    use crate::color::*;
 
     #[test]
     fn resize_test() {
@@ -73,7 +71,7 @@ mod tests {
 
         for tile in tiles.iter_mut() {
             *tile = Tile {
-                fg_color: Color::BLUE,
+                fg_color: BLUE,
                 ..Default::default()
             }
         }
@@ -82,6 +80,6 @@ mod tests {
             TerminalRendererTileData::with_size(UVec2::new(25, 25));
         colors.update_from_tiles(&tiles);
 
-        assert_eq!([0.0, 0.0, 1.0], colors.fg_colors[0]);
+        assert_eq!([0,0,u8::MAX,u8::MAX], colors.fg_colors[0]);
     }
 }

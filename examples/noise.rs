@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{terminal::Tile, Terminal, TerminalBundle, TerminalPlugin, TerminalSize};
+use bevy_ascii_terminal::{color::*, terminal::Tile, Terminal, TerminalBundle, TerminalPlugin, TerminalSize};
 
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 use bracket_noise::prelude::{FastNoise, NoiseType};
@@ -112,8 +112,8 @@ fn noise(
             let col = (noise + 1.0) * 0.5;
             *t = Tile {
                 glyph: '▒',
-                fg_color: Color::rgb(col, col, col),
-                bg_color: Color::BLACK,
+                fg_color: TerminalColor::rgba_f32(col, col, col),
+                bg_color: BLACK,
             };
         }
 
@@ -124,8 +124,8 @@ fn noise(
         let t = noise.noise.get_noise_type();
         let string = to_string(t);
         let h = term.height();
-        term.clear_box(0, h - 1, string.len(), 1);
-        term.put_string(0, h - 1, &string);
+        term.clear_box(0, h as i32 - 1, string.len(), 1);
+        term.put_string(0, h as i32 - 1, &string);
     }
 }
 

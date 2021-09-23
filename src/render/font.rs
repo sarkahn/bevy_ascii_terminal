@@ -19,6 +19,7 @@ macro_rules! include_font {
     };
 }
 
+
 pub struct TerminalFontBuiltIn<'a> {
     pub name: &'a str,
     pub(crate) bytes: &'a [u8],
@@ -49,6 +50,19 @@ pub const FONT_ZX_EVOLUTION_8X8: TerminalFontBuiltIn = TerminalFontBuiltIn {
 pub(crate) const DEFAULT_FONT: TerminalFontBuiltIn = FONT_PX437_8X8;
 pub(crate) const DEFAULT_FONT_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Texture::TYPE_UUID, 11121232112011521357);
+
+pub struct TerminalRendererFont {
+    pub font_name: String,
+    pub clip_color: Color,
+}
+impl Default for TerminalRendererFont {
+    fn default() -> Self {
+        Self {
+            font_name: String::from(DEFAULT_FONT.name),
+            clip_color: Color::BLACK,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct TerminalFontData {

@@ -1,10 +1,16 @@
 pub mod render;
 pub mod terminal;
+pub mod color;
+pub mod colors;
+pub mod color_blend;
 
 use bevy::prelude::*;
-use render::{
-    entity::TerminalRendererBundle, plugin::TerminalRendererPlugin,
-    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
+use render::bundle::TerminalRendererBundle;
+pub use render::{
+    font::*,
+    plugin::TerminalRendererPlugin,
+    renderer_tile_data::TerminalRendererTileData, 
+    renderer_vertex_data::TerminalRendererVertexData,
 };
 pub use terminal::{Terminal, TerminalSize};
 
@@ -23,7 +29,7 @@ impl TerminalBundle {
     pub fn with_size(width: usize, height: usize) -> Self {
         let size = UVec2::new(width as u32, height as u32);
         Self {
-            terminal: Terminal::new(width, height),
+            terminal: Terminal::with_size(width, height),
             size: TerminalSize { value: size },
             renderer: TerminalRendererBundle {
                 vert_data: TerminalRendererVertexData::with_size(size),

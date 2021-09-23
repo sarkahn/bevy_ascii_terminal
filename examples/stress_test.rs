@@ -2,7 +2,7 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use bevy::prelude::*;
 
-use bevy_ascii_terminal::{terminal::Terminal, terminal::Tile, TerminalBundle, TerminalPlugin};
+use bevy_ascii_terminal::{terminal::Terminal, terminal::Tile, color::*, TerminalBundle, TerminalPlugin};
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 use rand::prelude::ThreadRng;
 use rand::Rng;
@@ -22,11 +22,11 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-fn rand_color(rng: &mut ThreadRng) -> Color {
-    let r = rng.gen_range(0, 255) as f32 / 255.0;
-    let g = rng.gen_range(0, 255) as f32 / 255.0;
-    let b = rng.gen_range(0, 255) as f32 / 255.0;
-    Color::rgb(r, g, b)
+fn rand_color(rng: &mut ThreadRng) -> TerminalColor {
+    let r = rng.gen_range(0, 255) as u8;
+    let g = rng.gen_range(0, 255) as u8;
+    let b = rng.gen_range(0, 255) as u8;
+    TerminalColor::rgb(r, g, b)
 }
 
 fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Query<&mut Terminal>) {
@@ -52,7 +52,7 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
             }
         }
         term.clear_box(0, 0, 25, 3);
-        term.draw_border_single_color(Color::WHITE, Color::BLACK);
+        term.draw_border_single_color(WHITE, BLACK);
         term.put_string(1, 1, "Press space to pause");
     }
 }

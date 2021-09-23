@@ -2,12 +2,12 @@
 
 layout(location = 0) in vec3 Vertex_Position;
 layout(location = 1) in vec2 Vertex_Uv;
-layout(location = 2) in vec3 FG_Color;
-layout(location = 3) in vec3 BG_Color;
+layout(location = 2) in vec4 FG_Color;
+layout(location = 3) in vec4 BG_Color;
 
 layout(location = 0) out vec2 v_Uv;
-layout(location = 1) out vec3 Frag_FG_Color;
-layout(location = 2) out vec3 Frag_BG_Color;
+layout(location = 1) out vec4 Frag_FG_Color;
+layout(location = 2) out vec4 Frag_BG_Color;
 
 layout(set = 0, binding = 0) uniform CameraViewProj {
     mat4 ViewProj;

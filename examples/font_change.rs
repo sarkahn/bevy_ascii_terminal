@@ -1,20 +1,14 @@
 use bevy::prelude::*;
-
-use bevy_ascii_terminal::{
-    render::{
-        font::{self, TerminalFontBuiltIn},
-        TerminalRendererFont,
-    },
-    Terminal, TerminalBundle, TerminalPlugin,
-};
+use bevy_ascii_terminal::*;
+use bevy_ascii_terminal::color::*;
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
 const FONTS: &[TerminalFontBuiltIn] = &[
-    font::FONT_PX437_8X8,
-    font::FONT_ZX_EVOLUTION_8X8,
-    font::FONT_JT_CURSES_12X12,
-    font::FONT_PASTICHE_8X8,
-    font::FONT_TAFFER_10X10,
+    FONT_PX437_8X8,
+    FONT_ZX_EVOLUTION_8X8,
+    FONT_JT_CURSES_12X12,
+    FONT_PASTICHE_8X8,
+    FONT_TAFFER_10X10,
 ];
 
 #[derive(Default)]
@@ -52,16 +46,16 @@ fn spawn_terminal(mut commands: Commands) {
 fn draw_title(term: &mut Terminal, title: &str) {
     let title = &title[0..title.len() - 4];
 
-    term.draw_border_single_color(Color::WHITE, Color::BLACK);
+    term.draw_border_single_color(WHITE, BLACK);
     term.put_string(1, 0, "[ ");
     term.put_string_color(
         3,
         0,
         title.to_string().to_uppercase().as_str(),
-        Color::BLUE,
-        Color::BLACK,
+        BLUE,
+        BLACK,
     );
-    term.put_string(4 + title.len() - 1, 0, " ]");
+    term.put_string(4 + title.len() as i32 - 1, 0, " ]");
 }
 
 fn change_font(
