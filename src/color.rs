@@ -1,6 +1,12 @@
-use std::{fmt::Display, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign}};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
+};
 
-use bevy::{math::{IVec4, Vec4}, prelude::{Color}};
+use bevy::{
+    math::{IVec4, Vec4},
+    prelude::Color,
+};
 
 pub use super::color_blend::ColorBlend;
 pub use super::colors::*;
@@ -21,20 +27,15 @@ impl Display for TerminalColor {
 
 impl TerminalColor {
     pub fn rgb(r: u8, g: u8, b: u8) -> Self {
-        Self::rgba(r,g,b,u8::MAX)
+        Self::rgba(r, g, b, u8::MAX)
     }
 
     pub fn rgba_f32(r: f32, g: f32, b: f32) -> Self {
-        [r,g,b,1.0].into()
+        [r, g, b, 1.0].into()
     }
 
     pub fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
-        Self {
-            r,
-            g,
-            b,
-            a,
-        }
+        Self { r, g, b, a }
     }
 
     /// Component-wise min
@@ -61,18 +62,13 @@ impl TerminalColor {
         let lhs: Vec4 = self.into();
         let rhs: Vec4 = rhs.into();
         (lhs + (rhs - lhs) * t).into()
-    } 
+    }
 }
 
 /// Note the resulting values are NOT normalized.
 impl From<TerminalColor> for Vec4 {
     fn from(c: TerminalColor) -> Self {
-        Vec4::new(
-            c.r as f32,
-            c.g as f32,
-            c.b as f32,
-            c.a as f32,
-        )
+        Vec4::new(c.r as f32, c.g as f32, c.b as f32, c.a as f32)
     }
 }
 
@@ -90,28 +86,23 @@ impl From<Vec4> for TerminalColor {
 
 impl From<TerminalColor> for IVec4 {
     fn from(c: TerminalColor) -> Self {
-        Self::new(
-            c.r as i32,
-            c.g as i32,
-            c.b as i32,
-            c.a as i32,
-        )
+        Self::new(c.r as i32, c.g as i32, c.b as i32, c.a as i32)
     }
 }
 
 impl From<IVec4> for TerminalColor {
     fn from(v: IVec4) -> Self {
         Self {
-            r: v.x  as u8,
-            g: v.y  as u8,
-            b: v.z  as u8,
-            a: v.w  as u8,
+            r: v.x as u8,
+            g: v.y as u8,
+            b: v.z as u8,
+            a: v.w as u8,
         }
     }
 }
 
-impl From<[f32;4]> for TerminalColor {
-    fn from(c: [f32;4]) -> Self {
+impl From<[f32; 4]> for TerminalColor {
+    fn from(c: [f32; 4]) -> Self {
         TerminalColor {
             r: (c[0] * 255.0) as u8,
             g: (c[1] * 255.0) as u8,
@@ -121,14 +112,9 @@ impl From<[f32;4]> for TerminalColor {
     }
 }
 
-impl From<TerminalColor> for [f32;4] {
+impl From<TerminalColor> for [f32; 4] {
     fn from(c: TerminalColor) -> Self {
-        [
-            c.r as f32,
-            c.g as f32,
-            c.b as f32,
-            c.a as f32,
-        ]
+        [c.r as f32, c.g as f32, c.b as f32, c.a as f32]
     }
 }
 
@@ -246,7 +232,7 @@ impl Mul<f32> for TerminalColor {
     type Output = TerminalColor;
 
     fn mul(self, rhs: f32) -> Self::Output {
-        let mut col:Vec4 = self.into();
+        let mut col: Vec4 = self.into();
         col *= rhs;
         TerminalColor::from(col)
     }
@@ -269,31 +255,28 @@ impl AddAssign<TerminalColor> for TerminalColor {
     }
 }
 
-
 pub fn rgb(r: u8, g: u8, b: u8) -> TerminalColor {
-    TerminalColor::rgba(r,g,b,u8::MAX)
+    TerminalColor::rgba(r, g, b, u8::MAX)
 }
-
 
 impl From<Color> for TerminalColor {
     fn from(c: Color) -> Self {
         //let rgba = c.as_rgba_f32();
         let rgba = c.as_linear_rgba_f32();
-        TerminalColor { 
-            r: (rgba[0] * 255.0) as u8, 
-            g: (rgba[1] * 255.0) as u8, 
-            b: (rgba[2] * 255.0) as u8, 
-            a: (rgba[3] * 255.0) as u8, 
+        TerminalColor {
+            r: (rgba[0] * 255.0) as u8,
+            g: (rgba[1] * 255.0) as u8,
+            b: (rgba[2] * 255.0) as u8,
+            a: (rgba[3] * 255.0) as u8,
         }
     }
 }
 
-impl From<TerminalColor> for [u8;4] {
+impl From<TerminalColor> for [u8; 4] {
     fn from(c: TerminalColor) -> Self {
-        [c.r,c.g,c.b,c.a]
+        [c.r, c.g, c.b, c.a]
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -321,7 +304,7 @@ mod tests {
         assert_eq!(Vec4::new(255.0, 0.0, 0.0, 255.0), v);
 
         let c: TerminalColor = v.into();
-        
+
         assert_eq!(RED, c);
     }
 
@@ -345,16 +328,16 @@ mod tests {
 
     #[test]
     fn add() {
-        let a = TerminalColor::rgb(15,15,15);
-        assert_eq!(TerminalColor::rgb(30,30,30), a + a);
-        let a = TerminalColor::rgb(200,200,200);
+        let a = TerminalColor::rgb(15, 15, 15);
+        assert_eq!(TerminalColor::rgb(30, 30, 30), a + a);
+        let a = TerminalColor::rgb(200, 200, 200);
         assert_eq!(WHITE, a + a);
     }
 
     #[test]
     fn sub() {
-        let a = TerminalColor::rgb(15,15,15);
-        assert_eq!(BLACK, a - a );
+        let a = TerminalColor::rgb(15, 15, 15);
+        assert_eq!(BLACK, a - a);
         assert_eq!(BLACK, a - a - a);
     }
 }

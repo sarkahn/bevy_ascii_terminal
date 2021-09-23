@@ -37,7 +37,6 @@ fn add_alpha(a: u8, b: u8, alpha: u8) -> u8 {
     let b = b as i32;
     let alpha = alpha as i32;
     (b + alpha * a / 255) as u8
-
 }
 
 impl ColorBlend {
@@ -47,9 +46,7 @@ impl ColorBlend {
             ColorBlend::Multiply => old * new,
             ColorBlend::Lighten => old.max(&new),
             ColorBlend::Darken => old.min(&new),
-            ColorBlend::Screen => {
-                WHITE - (WHITE - new) * (WHITE - old)
-            },
+            ColorBlend::Screen => WHITE - (WHITE - new) * (WHITE - old),
             ColorBlend::ColorDodge => {
                 if new == WHITE {
                     new
@@ -59,13 +56,11 @@ impl ColorBlend {
             }
             ColorBlend::Add => old + new,
             ColorBlend::Burn => old + new - WHITE,
-            ColorBlend::Overlay => {
-                TerminalColor::rgb(
-                    overlay(old.r, new.r),
-                    overlay(old.g, new.g),
-                    overlay(old.b, new.b),
-                )
-            },
+            ColorBlend::Overlay => TerminalColor::rgb(
+                overlay(old.r, new.r),
+                overlay(old.g, new.g),
+                overlay(old.b, new.b),
+            ),
             ColorBlend::AddAlpha => {
                 let alpha = old.a;
                 TerminalColor::rgb(
@@ -73,14 +68,10 @@ impl ColorBlend {
                     add_alpha(old.g, new.g, alpha),
                     add_alpha(old.b, new.b, alpha),
                 )
-            },
+            }
         }
     }
 }
 
-
 #[cfg(test)]
-mod tests {
-}
-
-
+mod tests {}

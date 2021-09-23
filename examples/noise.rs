@@ -1,5 +1,7 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{color::*, terminal::Tile, Terminal, TerminalBundle, TerminalPlugin, TerminalSize};
+use bevy_ascii_terminal::{
+    color::*, terminal::Tile, Terminal, TerminalBundle, TerminalPlugin, TerminalSize,
+};
 
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 use bracket_noise::prelude::{FastNoise, NoiseType};

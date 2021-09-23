@@ -1,15 +1,13 @@
+pub mod color;
+pub mod color_blend;
+pub mod colors;
 pub mod render;
 pub mod terminal;
-pub mod color;
-pub mod colors;
-pub mod color_blend;
 
 use bevy::prelude::*;
 use render::bundle::TerminalRendererBundle;
 pub use render::{
-    font::*,
-    plugin::TerminalRendererPlugin,
-    renderer_tile_data::TerminalRendererTileData, 
+    font::*, plugin::TerminalRendererPlugin, renderer_tile_data::TerminalRendererTileData,
     renderer_vertex_data::TerminalRendererVertexData,
 };
 pub use terminal::{Terminal, TerminalSize};

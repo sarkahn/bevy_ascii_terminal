@@ -19,7 +19,6 @@ macro_rules! include_font {
     };
 }
 
-
 pub struct TerminalFontBuiltIn<'a> {
     pub name: &'a str,
     pub(crate) bytes: &'a [u8],

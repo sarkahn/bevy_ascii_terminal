@@ -13,10 +13,7 @@ fn setup(mut commands: Commands) {
     ));
 }
 
-fn draw_colors(
-    time: Res<Time>,
-    mut q: Query<&mut Terminal>
-) {
+fn draw_colors(time: Res<Time>, mut q: Query<&mut Terminal>) {
     let hue_count = 24;
     let hue_max = 360.0;
     let hue_step = hue_max / hue_count as f32;
@@ -30,7 +27,7 @@ fn draw_colors(
         let col: TerminalColor = Color::hsl(hue, 1.0, 0.05).into();
         term.put_bg_color(0, y, col);
         for x in 1..10 {
-            let col:TerminalColor = Color::hsl(hue, 1.0, x as f32 / 10.0).into();
+            let col: TerminalColor = Color::hsl(hue, 1.0, x as f32 / 10.0).into();
             term.put_bg_color(x, y, col);
         }
     }
@@ -45,7 +42,7 @@ fn draw_colors(
         if x <= 5 {
             light_scale = 0.75;
         };
-        let col:TerminalColor = Color::hsl(35.0, 0.33, v * light_scale).into();
+        let col: TerminalColor = Color::hsl(35.0, 0.33, v * light_scale).into();
         term.put_bg_color(x, 25, col);
     }
 

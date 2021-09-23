@@ -8,8 +8,7 @@ pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
 
 use self::{
-    renderer_tile_data::TerminalRendererTileData,
-    renderer_vertex_data::TerminalRendererVertexData,
+    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
 };
 use crate::terminal::{Terminal, TerminalSize};
 use bevy::{

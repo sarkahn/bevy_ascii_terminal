@@ -1,4 +1,13 @@
-use bevy::{prelude::*, reflect::TypeUuid, render::{pipeline::{PipelineDescriptor}, render_graph::{base, AssetRenderResourcesNode, RenderGraph}, shader::{ShaderStage, ShaderStages}, texture::{ImageType}}};
+use bevy::{
+    prelude::*,
+    reflect::TypeUuid,
+    render::{
+        pipeline::PipelineDescriptor,
+        render_graph::{base, AssetRenderResourcesNode, RenderGraph},
+        shader::{ShaderStage, ShaderStages},
+        texture::ImageType,
+    },
+};
 
 use super::{font::*, *};
 
@@ -101,7 +110,6 @@ impl Plugin for TerminalRendererPlugin {
         textures.set_untracked(DEFAULT_FONT_HANDLE, tex);
     }
 }
-
 
 pub fn terminal_renderer_init(
     mut meshes: ResMut<Assets<Mesh>>,

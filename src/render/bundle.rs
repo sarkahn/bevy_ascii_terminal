@@ -3,7 +3,7 @@ use bevy::{
     render::{pipeline::RenderPipeline, render_graph::base::MainPass},
 };
 
-use crate::{TerminalRendererFont, render::plugin::TERMINAL_RENDERER_PIPELINE};
+use crate::{render::plugin::TERMINAL_RENDERER_PIPELINE, TerminalRendererFont};
 
 use super::*;
 

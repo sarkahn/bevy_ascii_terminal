@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::*;
 use bevy_ascii_terminal::color::*;
+use bevy_ascii_terminal::*;
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 
 const FONTS: &[TerminalFontBuiltIn] = &[
@@ -48,13 +48,7 @@ fn draw_title(term: &mut Terminal, title: &str) {
 
     term.draw_border_single_color(WHITE, BLACK);
     term.put_string(1, 0, "[ ");
-    term.put_string_color(
-        3,
-        0,
-        title.to_string().to_uppercase().as_str(),
-        BLUE,
-        BLACK,
-    );
+    term.put_string_color(3, 0, title.to_string().to_uppercase().as_str(), BLUE, BLACK);
     term.put_string(4 + title.len() as i32 - 1, 0, " ]");
 }
 

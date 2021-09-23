@@ -1,8 +1,6 @@
-use bevy::{
-    math::{UVec2, Vec2},
-};
+use bevy::math::{UVec2, Vec2};
 
-use crate::{terminal::Tile};
+use crate::terminal::Tile;
 
 use super::glyph_mapping::GlyphMapping;
 
@@ -10,8 +8,8 @@ use super::glyph_mapping::GlyphMapping;
 pub struct TerminalRendererTileData {
     //pub fg_colors: Vec<[f32; 4]>,
     //pub bg_colors: Vec<[f32; 4]>,
-    pub fg_colors: Vec<[u8;4]>,
-    pub bg_colors: Vec<[u8;4]>,
+    pub fg_colors: Vec<[u8; 4]>,
+    pub bg_colors: Vec<[u8; 4]>,
     pub uvs: Vec<[f32; 2]>,
     pub mapping: GlyphMapping,
 }
@@ -59,7 +57,7 @@ impl TerminalRendererTileData {
 
 #[cfg(test)]
 mod tests {
-    use bevy::{math::UVec2};
+    use bevy::math::UVec2;
 
     use crate::{render::renderer_tile_data::TerminalRendererTileData, terminal::Tile};
 
@@ -80,6 +78,6 @@ mod tests {
             TerminalRendererTileData::with_size(UVec2::new(25, 25));
         colors.update_from_tiles(&tiles);
 
-        assert_eq!([0,0,u8::MAX,u8::MAX], colors.fg_colors[0]);
+        assert_eq!([0, 0, u8::MAX, u8::MAX], colors.fg_colors[0]);
     }
 }

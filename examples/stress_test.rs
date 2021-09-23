@@ -2,7 +2,9 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use bevy::prelude::*;
 
-use bevy_ascii_terminal::{terminal::Terminal, terminal::Tile, color::*, TerminalBundle, TerminalPlugin};
+use bevy_ascii_terminal::{
+    color::*, terminal::Terminal, terminal::Tile, TerminalBundle, TerminalPlugin,
+};
 use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 use rand::prelude::ThreadRng;
 use rand::Rng;

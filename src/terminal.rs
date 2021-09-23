@@ -103,9 +103,12 @@ impl Terminal {
         self.put_char(p.x, p.y, glyph);
     }
 
-    pub fn try_put_char_pos(&mut self, p: IVec2, glyph: char) -> Result<(),String> {
+    pub fn try_put_char_pos(&mut self, p: IVec2, glyph: char) -> Result<(), String> {
         if !self.is_pos_in_bounds(p) {
-            return Err(format!("try_put_char_pos error, p {} is out of bounds {}", p, self.size));
+            return Err(format!(
+                "try_put_char_pos error, p {} is out of bounds {}",
+                p, self.size
+            ));
         }
         self.put_char_pos(p, glyph);
         Ok(())
@@ -364,8 +367,7 @@ impl Terminal {
     }
 
     pub fn is_pos_in_bounds(&self, p: IVec2) -> bool {
-        p.x >= 0 && p.y >= 0 && 
-        (p.x as usize) < self.width() && (p.y as usize) < self.height()
+        p.x >= 0 && p.y >= 0 && (p.x as usize) < self.width() && (p.y as usize) < self.height()
     }
 
     pub fn iter(&self) -> Iter<Tile> {
