@@ -229,8 +229,8 @@ pub mod tests {
 
     #[test]
     fn mesh_test() {
-        let mut world = World::default();
+        let _world = World::default();
 
-        let mut update_stage = SystemStage::parallel();
+        let _update_stage = SystemStage::parallel();
     }
 }

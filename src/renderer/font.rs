@@ -208,13 +208,13 @@ fn terminal_check_loading_fonts(
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    
     use bevy::prelude::*;
 
     #[test]
     fn change_font() {
-        let mut world = World::default();
+        let _world = World::default();
 
-        let mut update_stage = SystemStage::parallel();
+        let _update_stage = SystemStage::parallel();
     }
 }
