@@ -208,7 +208,7 @@ fn terminal_check_loading_fonts(
 
 #[cfg(test)]
 mod tests {
-    
+
     use bevy::prelude::*;
 
     #[test]
