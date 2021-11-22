@@ -1,12 +1,12 @@
 [package]
 name = "bevy_ascii_terminal"
 description = "A simple terminal for rendering ascii in bevy."
-version = "0.6.0"
+version = "0.7.0"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/bevy_ascii_terminal"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
 license = "MIT"
-edition = "2018"
+edition = "2021"
 exclude = ["images/*"]
 
 
@@ -19,4 +19,4 @@ ron = "0.6.4"
 rand = "0.7.3"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
-bevy_pixel_camera = "0.1.1"
+bevy_tiled_camera = "0.2.3"

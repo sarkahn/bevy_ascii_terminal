@@ -1,12 +1,20 @@
+//! Maps glyphs to sprites on texture.
+//!
+//! GlyphMapping is used by the [super::TerminalRendererTileData] component
+
 use ron::from_str;
 use std::collections::HashMap;
 
 const DEFAULT_MAPPING: &str = include_str!("../../assets/code_page_437.mapping");
 
+/// Maps terminal glyphs to their corresponding sprites on a texture.
+///
+/// Can be loaded from a string. By default this maps to a [code page 437](https://en.wikipedia.org/wiki/Code_page_437) format.
+/// See [the default mapping](https://github.com/sarkahn/bevy_ascii_terminal/blob/main/assets/code_page_437.mapping)
+/// for an example.
 pub struct GlyphMapping {
     mapping: HashMap<char, (usize, usize)>,
     reverse_mapping: HashMap<(usize, usize), char>,
-    //size: (usize, usize),
 }
 
 impl Default for GlyphMapping {
@@ -33,7 +41,7 @@ impl GlyphMapping {
     }
 
     fn from_string(string: &str, width: usize) -> Self {
-        let mapping = from_str(string).expect("Error parsing mapping file");
+        let mapping = from_str(string).expect("Error parsing mapping string");
         GlyphMapping::new(mapping, width)
     }
 

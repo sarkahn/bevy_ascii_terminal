@@ -1,20 +1,30 @@
 use bevy::prelude::*;
 
 use bevy_ascii_terminal::{TerminalBundle, TerminalPlugin};
-use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
+use bevy_tiled_camera::*;
+
+fn main() {
+    App::build()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(TerminalPlugin)
+        .add_plugin(TiledCameraPlugin)
+        .insert_resource(ClearColor(Color::BLACK))
+        .add_startup_system(setup.system())
+        .run()
+}
 
 fn make_terminal(
     commands: &mut Commands,
     pos: Vec3,
-    size: (usize, usize),
-    pivot: Vec2,
+    size: (u32, u32),
+    pivot: (f32, f32),
     string: &str,
 ) {
-    let mut term_bundle = TerminalBundle::with_size(size.0, size.1);
-    term_bundle.renderer.terminal_pivot.0 = pivot;
+    let mut term_bundle = TerminalBundle::new().with_size(size);
+    term_bundle.renderer.terminal_pivot.0 = Vec2::from(pivot);
 
     term_bundle.terminal.draw_border_single();
-    term_bundle.terminal.put_string(1, 1, string);
+    term_bundle.terminal.put_string((1, 1), string);
 
     term_bundle.transform.translation = pos;
 
@@ -26,22 +36,34 @@ fn setup(mut commands: Commands) {
     let view_size = (40, 21);
 
     let origin = Vec3::ZERO;
-    let right = Vec3::X * view_size.0 as f32 * 8.0;
-    let up = Vec3::Y * view_size.1 as f32 * 8.0;
+    let right = Vec3::X * view_size.0 as f32;
+    let up = Vec3::Y * view_size.1 as f32;
 
     let pivot_bl = Vec2::ZERO;
     let pivot_right = Vec2::X;
     let pivot_top = Vec2::Y;
 
-    make_terminal(&mut commands, origin, term_size, pivot_bl, "BottomLeft");
+    make_terminal(
+        &mut commands,
+        origin,
+        term_size,
+        pivot_bl.into(),
+        "BottomLeft",
+    );
 
-    make_terminal(&mut commands, origin + up, term_size, pivot_top, "TopLeft");
+    make_terminal(
+        &mut commands,
+        origin + up,
+        term_size,
+        pivot_top.into(),
+        "TopLeft",
+    );
 
     make_terminal(
         &mut commands,
         origin + up + right,
         term_size,
-        pivot_right + pivot_top,
+        (pivot_right + pivot_top).into(),
         "TopRight",
     );
 
@@ -49,27 +71,16 @@ fn setup(mut commands: Commands) {
         &mut commands,
         origin + right,
         term_size,
-        pivot_right,
+        pivot_right.into(),
         "BottomRight",
     );
 
-    let (view_x, view_y) = (view_size.0 * 8, view_size.1 * 8);
+    let view_pos = UVec2::from(view_size) / 2;
 
-    let mut cam = PixelCameraBundle::from_resolution(view_x, view_y);
-
-    let x = view_x as f32 / 2.0;
-    let y = view_y as f32 / 2.0;
-
-    cam.transform = Transform::from_xyz(x, y, 0.0);
-    commands.spawn_bundle(cam);
-}
-
-fn main() {
-    App::build()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
-        .add_plugin(PixelCameraPlugin)
-        .insert_resource(ClearColor(Color::BLACK))
-        .add_startup_system(setup.system())
-        .run()
+    commands.spawn_bundle(
+        TiledCameraBundle::new()
+            .with_pixels_per_tile(8)
+            .with_tile_count(view_size.into())
+            .with_camera_position(view_pos.as_f32().into()),
+    );
 }

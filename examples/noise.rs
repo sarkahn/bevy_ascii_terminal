@@ -1,11 +1,22 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{
-    color::*, terminal::Tile, Terminal, TerminalBundle, TerminalPlugin, TerminalSize,
-};
+use bevy_ascii_terminal::*;
+use bevy_tiled_camera::*;
 
-use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;
+
+fn main() {
+    App::build()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(TerminalPlugin)
+        .add_plugin(TiledCameraPlugin)
+        .insert_resource(ClearColor(Color::BLACK))
+        .init_resource::<Noise>()
+        .add_startup_system(setup.system())
+        .add_system(noise.system())
+        .add_system(change_noise.system())
+        .run();
+}
 
 // Original example from the bracket noise library
 // https://github.com/amethyst/bracket-lib/blob/master/bracket-noise/examples/value.rs
@@ -73,14 +84,10 @@ fn get_noise(t: NoiseType) -> FastNoise {
 }
 
 fn setup(mut commands: Commands) {
-    let (w, h) = (40, 40);
+    let size = (40, 40);
 
-    commands.spawn_bundle(TerminalBundle::with_size(w, h));
-
-    commands.spawn_bundle(PixelCameraBundle::from_resolution(
-        w as i32 * 8,
-        h as i32 * 8,
-    ));
+    commands.spawn_bundle(TerminalBundle::new().with_size(size));
+    commands.spawn_bundle(TiledCameraBundle::new().with_tile_count(size));
 }
 
 fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
@@ -114,32 +121,19 @@ fn noise(
             let col = (noise + 1.0) * 0.5;
             *t = Tile {
                 glyph: '▒',
-                fg_color: TerminalColor::rgba_f32(col, col, col),
+                fg_color: TileColor::rgba_f32_normalized(col, col, col),
                 bg_color: BLACK,
             };
         }
 
-        term.clear_box(0, 0, 30, 3);
-        term.draw_box_single(0, 0, 30, 3);
-        term.put_string(1, 1, "Press space to change noise");
+        term.clear_box((0, 0), (30, 3));
+        term.draw_box_single((0, 0), (30, 3));
+        term.put_string((1, 1), "Press space to change noise");
 
         let t = noise.noise.get_noise_type();
         let string = to_string(t);
         let h = term.height();
-        term.clear_box(0, h as i32 - 1, string.len(), 1);
-        term.put_string(0, h as i32 - 1, &string);
+        term.clear_box((0, h as i32 - 1), (string.len() as u32, 1));
+        term.put_string((0, h as i32 - 1), &string);
     }
-}
-
-fn main() {
-    App::build()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
-        .add_plugin(PixelCameraPlugin)
-        .insert_resource(ClearColor(Color::BLACK))
-        .init_resource::<Noise>()
-        .add_startup_system(setup.system())
-        .add_system(noise.system())
-        .add_system(change_noise.system())
-        .run();
 }

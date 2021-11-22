@@ -2,33 +2,46 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 
 use bevy::prelude::*;
 
-use bevy_ascii_terminal::{
-    color::*, terminal::Terminal, terminal::Tile, TerminalBundle, TerminalPlugin,
-};
-use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
+use bevy_ascii_terminal::*;
+use bevy_tiled_camera::*;
 use rand::prelude::ThreadRng;
 use rand::Rng;
+
+fn main() {
+    App::build()
+        .init_resource::<Pause>()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(TerminalPlugin)
+        .add_plugin(TiledCameraPlugin)
+        .insert_resource(ClearColor(Color::BLACK))
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_startup_system(setup.system())
+        .add_system(spam_terminal.system())
+        .run();
+}
 
 #[derive(Default)]
 struct Pause(bool);
 
 fn setup(mut commands: Commands) {
-    let (w, h) = (80, 50);
+    let size = (80, 50);
 
-    let term = TerminalBundle::with_size(w, h);
+    let term = TerminalBundle::new().with_size(size);
     commands.spawn_bundle(term).insert(Pause);
 
-    commands.spawn_bundle(PixelCameraBundle::from_resolution(
-        w as i32 * 8,
-        h as i32 * 8,
-    ));
+    commands.spawn_bundle(
+        TiledCameraBundle::new()
+            .with_pixels_per_tile(8)
+            .with_tile_count(size),
+    );
 }
 
-fn rand_color(rng: &mut ThreadRng) -> TerminalColor {
+fn rand_color(rng: &mut ThreadRng) -> TileColor {
     let r = rng.gen_range(0, 255) as u8;
     let g = rng.gen_range(0, 255) as u8;
     let b = rng.gen_range(0, 255) as u8;
-    TerminalColor::rgb(r, g, b)
+    TileColor::rgb(r, g, b)
 }
 
 fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Query<&mut Terminal>) {
@@ -53,22 +66,8 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
                 bg_color: bg,
             }
         }
-        term.clear_box(0, 0, 25, 3);
+        term.clear_box((0, 0), (25, 3));
         term.draw_border_single_color(WHITE, BLACK);
-        term.put_string(1, 1, "Press space to pause");
+        term.put_string((1, 1), "Press space to pause");
     }
-}
-
-fn main() {
-    App::build()
-        .init_resource::<Pause>()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
-        .add_plugin(PixelCameraPlugin)
-        .insert_resource(ClearColor(Color::BLACK))
-        .add_plugin(LogDiagnosticsPlugin::default())
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_startup_system(setup.system())
-        .add_system(spam_terminal.system())
-        .run();
 }

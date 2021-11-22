@@ -40,7 +40,7 @@ fn add_alpha(a: u8, b: u8, alpha: u8) -> u8 {
 }
 
 impl ColorBlend {
-    pub fn blend(&self, old: TerminalColor, new: TerminalColor) -> TerminalColor {
+    pub fn blend(&self, old: TileColor, new: TileColor) -> TileColor {
         match self {
             ColorBlend::Set => new,
             ColorBlend::Multiply => old * new,
@@ -56,14 +56,14 @@ impl ColorBlend {
             }
             ColorBlend::Add => old + new,
             ColorBlend::Burn => old + new - WHITE,
-            ColorBlend::Overlay => TerminalColor::rgb(
+            ColorBlend::Overlay => TileColor::rgb(
                 overlay(old.r, new.r),
                 overlay(old.g, new.g),
                 overlay(old.b, new.b),
             ),
             ColorBlend::AddAlpha => {
                 let alpha = old.a;
-                TerminalColor::rgb(
+                TileColor::rgb(
                     add_alpha(old.r, new.r, alpha),
                     add_alpha(old.g, new.g, alpha),
                     add_alpha(old.b, new.b, alpha),

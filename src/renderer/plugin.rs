@@ -1,3 +1,12 @@
+//! Default plugin for rendering the terminal to a bevy mesh.
+
+pub mod terminal_renderer_system_names {
+    pub const TERMINAL_UPDATE_MATERIAL: &str = "terminal_update_material";
+    pub const TERMINAL_UPDATE_SIZE: &str = "terminal_update_size";
+    pub const TERMINAL_UPDATE_TILE_DATA: &str = "terminal_update_tile_data";
+    pub const TERMINAL_UPDATE_MESH: &str = "terminal_update_mesh";
+}
+
 use bevy::{
     prelude::*,
     reflect::TypeUuid,
@@ -5,9 +14,10 @@ use bevy::{
         pipeline::PipelineDescriptor,
         render_graph::{base, AssetRenderResourcesNode, RenderGraph},
         shader::{ShaderStage, ShaderStages},
-        texture::ImageType,
     },
 };
+
+use crate::TerminalSize;
 
 use super::{font::*, *};
 
@@ -29,18 +39,13 @@ pub(crate) enum AppState {
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.init_resource::<LoadingTerminalTextures>()
-            .init_resource::<TerminalFonts>()
-            .add_asset::<TerminalMaterial>()
-            .add_state(AppState::AssetsLoading)
-            .add_system_set(
-                SystemSet::on_enter(AppState::AssetsLoading)
-                    .with_system(terminal_load_assets.system()),
-            )
-            .add_system_set(
-                SystemSet::on_update(AppState::AssetsLoading)
-                    .with_system(check_terminal_assets_loading.system()),
-            )
+        use terminal_renderer_system_names::*;
+
+        app.add_state(AppState::AssetsLoading);
+
+        app.add_plugin(TerminalFontPlugin);
+
+        app.add_asset::<TerminalMaterial>()
             .add_system_set(
                 SystemSet::on_enter(AppState::AssetsDoneLoading)
                     .with_system(terminal_renderer_init.system()),
@@ -50,25 +55,25 @@ impl Plugin for TerminalRendererPlugin {
                     .with_system(
                         terminal_renderer_update_material
                             .system()
-                            .label("terminal_update_material"),
+                            .label(TERMINAL_UPDATE_MATERIAL),
                     )
                     .with_system(
                         terminal_renderer_update_size
                             .system()
-                            .after("terminal_update_material")
-                            .label("terminal_update_size"),
+                            .after(TERMINAL_UPDATE_MATERIAL)
+                            .label(TERMINAL_UPDATE_SIZE),
                     )
                     .with_system(
                         terminal_renderer_update_tile_data
                             .system()
-                            .after("terminal_update_size")
-                            .label("terminal_update_tile_data"),
+                            .after(TERMINAL_UPDATE_SIZE)
+                            .label(TERMINAL_UPDATE_TILE_DATA),
                     )
                     .with_system(
                         terminal_renderer_update_mesh
                             .system()
-                            .after("terminal_update_tile_data")
-                            .label("terminal_update_mesh"),
+                            .after(TERMINAL_UPDATE_TILE_DATA)
+                            .label(TERMINAL_UPDATE_MESH),
                     ),
             );
 
@@ -81,7 +86,7 @@ impl Plugin for TerminalRendererPlugin {
             .unwrap();
         let mut shaders = cell.get_resource_mut::<Assets<Shader>>().unwrap();
         let mut materials = cell.get_resource_mut::<Assets<TerminalMaterial>>().unwrap();
-        let mut textures = cell.get_resource_mut::<Assets<Texture>>().unwrap();
+        //let mut textures = cell.get_resource_mut::<Assets<Texture>>().unwrap();
 
         graph.add_system_node(
             TERMINAL_MATERIAL_NAME,
@@ -104,10 +109,10 @@ impl Plugin for TerminalRendererPlugin {
         pipelines.set_untracked(TERMINAL_RENDERER_PIPELINE, pipeline);
 
         // Set up a font handle for default terminal construction
-        let bytes = font::DEFAULT_FONT.bytes;
-        let tex = Texture::from_buffer(bytes, ImageType::Extension("png")).unwrap();
+        //let bytes = font::DEFAULT_FONT.bytes;
+        //let tex = Texture::from_buffer(bytes, ImageType::Extension("png")).unwrap();
 
-        textures.set_untracked(DEFAULT_FONT_HANDLE, tex);
+        //textures.set_untracked(DEFAULT_FONT_HANDLE, tex);
     }
 }
 
@@ -126,10 +131,7 @@ fn terminal_renderer_update_material(
     fonts: Res<TerminalFonts>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
     textures: Res<Assets<Texture>>,
-    mut q: Query<
-        (&TerminalRendererFont, &mut Handle<TerminalMaterial>),
-        Changed<TerminalRendererFont>,
-    >,
+    mut q: Query<(&TerminalFont, &mut Handle<TerminalMaterial>), Changed<TerminalFont>>,
 ) {
     for (font, mut mat) in q.iter_mut() {
         //info!("Updating terminal renderer material");
@@ -139,7 +141,7 @@ fn terminal_renderer_update_material(
             materials.remove(mat.clone_weak());
         }
 
-        let handle = &fonts.get(font.font_name.as_str()).0;
+        let handle = &fonts.get(font.file_name.as_str()).0;
         let tex = textures.get(handle.clone());
         debug_assert!(tex.is_some());
 
@@ -156,7 +158,7 @@ fn terminal_renderer_update_size(
     mut q: Query<
         (
             &TerminalSize,
-            &TerminalRendererFont,
+            &TerminalFont,
             &TerminalTileScaling,
             &TerminalPivot,
             &TilePivot,
@@ -168,7 +170,7 @@ fn terminal_renderer_update_size(
             Changed<TerminalSize>,
             Changed<Handle<Mesh>>,
             Changed<TerminalTileScaling>,
-            Changed<TerminalRendererFont>,
+            Changed<TerminalFont>,
         )>,
     >,
 ) {
@@ -177,7 +179,7 @@ fn terminal_renderer_update_size(
     {
         let mut tile_size = UVec2::ONE;
         if let TerminalTileScaling::Pixels = scaling {
-            tile_size = fonts.get(font.font_name.as_str()).1.tile_size;
+            tile_size = fonts.get(font.file_name.as_str()).1.tile_size;
         }
 
         vert_data.resize(size.value, term_pivot.0, tile_pivot.0, tile_size);
@@ -218,5 +220,17 @@ pub fn terminal_renderer_update_mesh(
         mesh.set_attribute("FG_Color", tile_data.fg_colors.clone());
         mesh.set_attribute("BG_Color", tile_data.bg_colors.clone());
         mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tile_data.uvs.clone());
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use bevy::prelude::*;
+
+    #[test]
+    fn mesh_test() {
+        let mut world = World::default();
+
+        let mut update_stage = SystemStage::parallel();
     }
 }

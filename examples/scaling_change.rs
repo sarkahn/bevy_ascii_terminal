@@ -3,18 +3,30 @@ use bevy::{
     render::camera::{OrthographicProjection, ScalingMode},
 };
 
-use bevy_ascii_terminal::{render::TerminalTileScaling, TerminalBundle, TerminalPlugin};
-use bevy_pixel_camera::{PixelCameraBundle, PixelCameraPlugin};
+use bevy_ascii_terminal::{renderer::TerminalTileScaling, TerminalBundle, TerminalPlugin};
+use bevy_tiled_camera::*;
+
+fn main() {
+    App::build()
+        .init_resource::<FontIndex>()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(TerminalPlugin)
+        .add_plugin(TiledCameraPlugin)
+        .insert_resource(ClearColor(Color::BLACK))
+        .add_startup_system(setup.system())
+        .add_system(change_font.system())
+        .run()
+}
 
 #[derive(Default)]
 struct FontIndex(pub usize);
 
-fn spawn_terminal(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    let (w, h) = (20, 3);
-    let mut term_bundle = TerminalBundle::with_size(w, h);
+fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+    let size = (20, 3);
+    let mut term_bundle = TerminalBundle::new().with_size(size);
 
     term_bundle.terminal.draw_border_single();
-    term_bundle.terminal.put_string(1, 1, "Press spacebar");
+    term_bundle.terminal.put_string((1, 1), "Press spacebar");
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(PbrBundle {
@@ -26,10 +38,11 @@ fn spawn_terminal(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
         ..Default::default()
     });
 
-    commands.spawn_bundle(PixelCameraBundle::from_resolution(
-        w as i32 * 8,
-        h as i32 * 8,
-    ));
+    commands.spawn_bundle(
+        TiledCameraBundle::new()
+            .with_pixels_per_tile(8)
+            .with_tile_count(size),
+    );
 }
 
 fn change_font(
@@ -61,16 +74,4 @@ fn change_font(
             }
         }
     }
-}
-
-fn main() {
-    App::build()
-        .init_resource::<FontIndex>()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
-        .add_plugin(PixelCameraPlugin)
-        .insert_resource(ClearColor(Color::BLACK))
-        .add_startup_system(spawn_terminal.system())
-        .add_system(change_font.system())
-        .run()
 }

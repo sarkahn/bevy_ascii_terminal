@@ -1,38 +1,41 @@
-use crate::color::TerminalColor;
+use crate::color::TileColor;
 
-pub const RED: TerminalColor = TerminalColor {
-    r: u8::MAX,
+const MAX: u8 = u8::MAX;
+const HALF: u8 = 128;
+
+pub const RED: TileColor = TileColor {
+    r: MAX,
     g: 0,
     b: 0,
-    a: u8::MAX,
+    a: MAX,
 };
-pub const GREEN: TerminalColor = TerminalColor {
+pub const GREEN: TileColor = TileColor {
     r: 0,
-    g: u8::MAX,
+    g: MAX,
     b: 0,
-    a: u8::MAX,
+    a: MAX,
 };
-pub const BLUE: TerminalColor = TerminalColor {
+pub const BLUE: TileColor = TileColor {
     r: 0,
     g: 0,
-    b: u8::MAX,
-    a: u8::MAX,
+    b: MAX,
+    a: MAX,
 };
-pub const BLACK: TerminalColor = TerminalColor {
+pub const BLACK: TileColor = TileColor {
     r: 0,
     g: 0,
     b: 0,
-    a: u8::MAX,
+    a: MAX,
 };
-pub const WHITE: TerminalColor = TerminalColor {
-    r: u8::MAX,
-    g: u8::MAX,
-    b: u8::MAX,
-    a: u8::MAX,
+pub const WHITE: TileColor = TileColor {
+    r: MAX,
+    g: MAX,
+    b: MAX,
+    a: MAX,
 };
-pub const GREY: TerminalColor = TerminalColor {
-    r: 128,
-    g: 128,
-    b: 128,
-    a: u8::MAX,
+pub const GREY: TileColor = TileColor {
+    r: HALF,
+    g: HALF,
+    b: HALF,
+    a: MAX,
 };

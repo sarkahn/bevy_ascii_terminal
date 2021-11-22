@@ -6,8 +6,6 @@ use super::glyph_mapping::GlyphMapping;
 
 #[derive(Default)]
 pub struct TerminalRendererTileData {
-    //pub fg_colors: Vec<[f32; 4]>,
-    //pub bg_colors: Vec<[f32; 4]>,
     pub fg_colors: Vec<[u8; 4]>,
     pub bg_colors: Vec<[u8; 4]>,
     pub uvs: Vec<[f32; 2]>,
@@ -59,7 +57,7 @@ impl TerminalRendererTileData {
 mod tests {
     use bevy::math::UVec2;
 
-    use crate::{render::renderer_tile_data::TerminalRendererTileData, terminal::Tile};
+    use crate::{renderer::renderer_tile_data::TerminalRendererTileData, terminal::Tile};
 
     use crate::color::*;
 
