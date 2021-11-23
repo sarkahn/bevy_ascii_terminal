@@ -52,4 +52,4 @@ fn main () {
 }
 ```
 
-**You can check the [examples](examples) and the [documentation](https://docs.rs/bevy_tiled_camera/) for more.**
+**You can check the [examples](examples) and the [documentation](https://docs.rs/bevy_ascii_terminal/) for more.**
