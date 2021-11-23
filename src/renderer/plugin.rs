@@ -180,8 +180,9 @@ fn terminal_renderer_update_size(
             tile_size = fonts.get(font.file_name.as_str()).1.tile_size;
         }
 
-        vert_data.resize(terminal.size(), term_pivot.0, tile_pivot.0, tile_size);
-        tile_data.resize(terminal.size());
+        let size = UVec2::from(terminal.size());
+        vert_data.resize(size, term_pivot.0, tile_pivot.0, tile_size);
+        tile_data.resize(size);
 
         let mesh = meshes
             .get_mut(mesh.clone())

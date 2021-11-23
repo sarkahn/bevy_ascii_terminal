@@ -115,8 +115,8 @@ impl Terminal {
         self.size.y
     }
 
-    pub fn size(&self) -> UVec2 {
-        self.size
+    pub fn size(&self) -> (u32, u32) {
+        self.size.into()
     }
 
     /// Convert a 2D position to it's corresponding 1D index

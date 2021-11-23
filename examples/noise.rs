@@ -103,7 +103,7 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut query: Query<&mut Termin
 
         noise.noise.set_frequency(t);
 
-        let (width, height) = term.size().into();
+        let (width, height) = term.size();
         let half_width = width as f32 / 2.0;
         let half_height = height as f32 / 2.0;
         for (i, t) in term.iter_mut().enumerate() {

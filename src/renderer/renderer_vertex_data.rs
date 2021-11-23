@@ -34,8 +34,8 @@ impl TerminalRendererVertexData {
         let term_pivot = world_size * term_pivot;
         let tile_pivot = tile_size * tile_pivot;
 
-        let term_pivot = -Vec3::new(term_pivot.x, term_pivot.y, 0.0);
-        let tile_pivot = -Vec3::new(tile_pivot.x, tile_pivot.y, 0.0);
+        let term_pivot = -term_pivot.extend(0.0);
+        let tile_pivot = -tile_pivot.extend(0.0);
 
         self.verts.resize(len * 4, Default::default());
         self.indices.resize(len * 6, 0);
