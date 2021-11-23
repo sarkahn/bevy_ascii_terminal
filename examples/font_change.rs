@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::renderer::font::BUILT_IN_FONT_NAMES;
+use bevy_ascii_terminal::renderer::font::BUILT_IN_FONTS;
 use bevy_ascii_terminal::renderer::{TerminalFont, TerminalFonts};
 use bevy_ascii_terminal::*;
 use bevy_tiled_camera::*;
@@ -25,7 +25,7 @@ fn spawn_terminal(mut commands: Commands) {
 
     term_bundle.terminal.draw_border_single();
 
-    draw_title(&mut term_bundle.terminal, BUILT_IN_FONT_NAMES[0]);
+    draw_title(&mut term_bundle.terminal, BUILT_IN_FONTS[0].name);
 
     term_bundle
         .terminal
@@ -73,12 +73,13 @@ fn change_font(
     if keys.just_pressed(KeyCode::Space) {
         let mut projection = q_cam_projection.single_mut().unwrap();
         for (mut term, mut font) in q.iter_mut() {
-            font_index.0 = (font_index.0 + 1) % BUILT_IN_FONT_NAMES.len();
-            let new_font = BUILT_IN_FONT_NAMES[font_index.0];
-            let font_data = fonts.get(new_font);
+            font_index.0 = (font_index.0 + 1) % BUILT_IN_FONTS.len();
+            let new_font_name = BUILT_IN_FONTS[font_index.0].name;
+            
+            let font_data = fonts.get(new_font_name);
             projection.pixels_per_tile = font_data.1.tile_size.y;
-            font.file_name = String::from(new_font);
-            draw_title(&mut term, new_font);
+            font.file_name = String::from(new_font_name);
+            draw_title(&mut term, new_font_name);
         }
     }
 }

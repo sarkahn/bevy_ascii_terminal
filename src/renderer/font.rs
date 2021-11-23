@@ -48,6 +48,7 @@
 //! }
 //! ```
 
+use bevy::render::texture::ImageType;
 use bevy::{asset::LoadState, prelude::*};
 use std::{collections::HashMap, path::PathBuf};
 
@@ -59,12 +60,44 @@ use super::plugin::AppState;
 
 pub const DEFAULT_FONT_NAME: &str = "px437_8x8.png";
 
-pub const BUILT_IN_FONT_NAMES: &[&str] = &[
-    "jt_curses_12x12.png",
-    "pastiche_8x8.png",
-    "px437_8x8.png",
-    "taffer_10x10.png",
-    "zx_evolution_8x8.png",
+macro_rules! BUILT_IN_FONT_PATH {
+    () => {
+        "../../embedded/"
+    };
+}
+
+macro_rules! include_font {
+    ($font_name:expr) => {
+        include_bytes!(concat!(BUILT_IN_FONT_PATH!(), $font_name))
+    };
+}
+
+pub struct BuiltInFontData<'a> {
+    pub name: &'a str,
+    pub bytes: &'a [u8]
+}
+
+pub const BUILT_IN_FONTS : &[BuiltInFontData] = &[
+    BuiltInFontData {
+        name: "jt_curses_12x12.png",
+        bytes: include_font!("jt_curses_12x12.png"),
+    },
+    BuiltInFontData {
+        name: "pastiche_8x8.png",
+        bytes: include_font!("pastiche_8x8.png"),
+    },
+    BuiltInFontData {
+        name: "px437_8x8.png",
+        bytes: include_font!("px437_8x8.png"),
+    },
+    BuiltInFontData {
+        name: "taffer_10x10.png",
+        bytes: include_font!("taffer_10x10.png"),
+    },
+    BuiltInFontData {
+        name: "zx_evolution_8x8.png",
+        bytes: include_font!("zx_evolution_8x8.png"),
+    },
 ];
 
 /// Terminal component that determines which texture is rendered by the terminal.
@@ -160,10 +193,26 @@ struct LoadingTerminalTextures(Option<Vec<HandleUntyped>>);
 fn terminal_load_fonts(
     asset_server: Res<AssetServer>,
     mut loading: ResMut<LoadingTerminalTextures>,
+    mut textures: ResMut<Assets<Texture>>,
+    mut fonts: ResMut<TerminalFonts>,
 ) {
     loading.0 = match asset_server.load_folder("textures") {
-        Ok(f) => Some(f),
+        Ok(fonts) => Some(fonts),
         Err(_) => None,
+    };
+
+    load_built_in_fonts(&mut fonts, &mut textures);
+}
+
+fn load_built_in_fonts(
+    fonts: &mut TerminalFonts,
+    textures: &mut ResMut<Assets<Texture>>,
+) {
+    for font_data in BUILT_IN_FONTS {    
+        let tex = Texture::from_buffer(font_data.bytes, ImageType::Extension("png")).unwrap();
+        let size_data = TerminalFontData::from_texture(&tex);
+        let handle = textures.add(tex);
+        fonts.add(font_data.name, handle, size_data);
     }
 }
 
@@ -217,3 +266,4 @@ mod tests {
         let _update_stage = SystemStage::parallel();
     }
 }
+
