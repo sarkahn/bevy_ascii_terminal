@@ -3,7 +3,7 @@ use bevy::{
     render::camera::{OrthographicProjection, ScalingMode},
 };
 
-use bevy_ascii_terminal::{renderer::TerminalTileScaling, TerminalBundle, TerminalPlugin};
+use bevy_ascii_terminal::{renderer::TileScaling, TerminalBundle, TerminalPlugin};
 use bevy_tiled_camera::*;
 
 fn main() {
@@ -47,27 +47,27 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
 
 fn change_font(
     keys: Res<Input<KeyCode>>,
-    mut q: Query<&mut TerminalTileScaling>,
+    mut q: Query<&mut TileScaling>,
     mut cam_q: Query<&mut OrthographicProjection>,
 ) {
     if keys.just_pressed(KeyCode::Space) {
-        let mut term_scaling = TerminalTileScaling::default();
+        let mut term_scaling = TileScaling::default();
 
         for mut scaling in q.iter_mut() {
             *scaling = match *scaling {
-                TerminalTileScaling::Pixels => TerminalTileScaling::World,
-                TerminalTileScaling::World => TerminalTileScaling::Pixels,
+                TileScaling::Pixels => TileScaling::World,
+                TileScaling::World => TileScaling::Pixels,
             };
             term_scaling = *scaling;
         }
 
         for mut cam in cam_q.iter_mut() {
             match term_scaling {
-                TerminalTileScaling::Pixels => {
+                TileScaling::Pixels => {
                     cam.scaling_mode = ScalingMode::WindowSize;
                     cam.scale = 1.0;
                 }
-                TerminalTileScaling::World => {
+                TileScaling::World => {
                     cam.scaling_mode = ScalingMode::FixedVertical;
                     cam.scale = 12.0;
                 }

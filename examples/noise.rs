@@ -96,18 +96,14 @@ fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {
     }
 }
 
-fn noise(
-    time: Res<Time>,
-    mut noise: ResMut<Noise>,
-    mut query: Query<(&mut Terminal, &TerminalSize)>,
-) {
-    for (mut term, size) in query.iter_mut() {
+fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut query: Query<&mut Terminal>) {
+    for mut term in query.iter_mut() {
         noise.timer += (time.delta().as_millis() as f32) / 1500.0;
         let t = noise.timer;
 
         noise.noise.set_frequency(t);
 
-        let (width, height) = size.value.into();
+        let (width, height) = term.size().into();
         let half_width = width as f32 / 2.0;
         let half_height = height as f32 / 2.0;
         for (i, t) in term.iter_mut().enumerate() {

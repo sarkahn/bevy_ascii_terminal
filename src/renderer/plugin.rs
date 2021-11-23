@@ -17,8 +17,6 @@ use bevy::{
     },
 };
 
-use crate::TerminalSize;
-
 use super::{font::*, *};
 
 pub(crate) const TERMINAL_RENDERER_PIPELINE: HandleUntyped =
@@ -157,9 +155,9 @@ fn terminal_renderer_update_size(
     fonts: Res<TerminalFonts>,
     mut q: Query<
         (
-            &TerminalSize,
+            &Terminal,
             &TerminalFont,
-            &TerminalTileScaling,
+            &TileScaling,
             &TerminalPivot,
             &TilePivot,
             &mut Handle<Mesh>,
@@ -167,23 +165,23 @@ fn terminal_renderer_update_size(
             &mut TerminalRendererTileData,
         ),
         Or<(
-            Changed<TerminalSize>,
+            Changed<Terminal>,
             Changed<Handle<Mesh>>,
-            Changed<TerminalTileScaling>,
+            Changed<TileScaling>,
             Changed<TerminalFont>,
         )>,
     >,
 ) {
-    for (size, font, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in
+    for (terminal, font, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in
         q.iter_mut()
     {
         let mut tile_size = UVec2::ONE;
-        if let TerminalTileScaling::Pixels = scaling {
+        if let TileScaling::Pixels = scaling {
             tile_size = fonts.get(font.file_name.as_str()).1.tile_size;
         }
 
-        vert_data.resize(size.value, term_pivot.0, tile_pivot.0, tile_size);
-        tile_data.resize(size.value);
+        vert_data.resize(terminal.size(), term_pivot.0, tile_pivot.0, tile_size);
+        tile_data.resize(terminal.size());
 
         let mesh = meshes
             .get_mut(mesh.clone())

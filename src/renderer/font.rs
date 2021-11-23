@@ -182,8 +182,7 @@ fn terminal_check_loading_fonts(
         // TODO: Temporary workaround for get_handle_path bug in bevy 0.5.0. Replace with get_handle_path in next bevy version
         // https://github.com/bevyengine/bevy/pull/2310
         let dir = fs::read_dir("assets/textures");
-        if dir.is_ok() {
-            let dir = dir.unwrap();
+        if let Ok(dir) = dir {
             let paths: Vec<PathBuf> = dir.map(|entry| entry.unwrap().path()).collect();
 
             // Add any user fonts from the "assets/textures" directory

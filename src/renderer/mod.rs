@@ -42,7 +42,7 @@ pub struct TilePivot(Vec2);
 
 /// Terminal component specifying how terminal mesh tiles will be scaled.
 #[derive(Clone, Copy)]
-pub enum TerminalTileScaling {
+pub enum TileScaling {
     /// Each tile will take up 1 unit of world space.
     ///
     /// This matches how [TiledCamera](https://crates.io/crates/bevy_tiled_camera) is set up.
@@ -54,9 +54,9 @@ pub enum TerminalTileScaling {
     Pixels,
 }
 
-impl Default for TerminalTileScaling {
+impl Default for TileScaling {
     fn default() -> Self {
-        TerminalTileScaling::World
+        TileScaling::World
     }
 }
 
@@ -87,7 +87,7 @@ pub struct TerminalRendererBundle {
     pub tile_data: TerminalRendererTileData,
     pub font: TerminalFont,
     pub terminal_mat: Handle<TerminalMaterial>,
-    pub scaling: TerminalTileScaling,
+    pub scaling: TileScaling,
     pub mesh: Handle<Mesh>,
     pub draw: Draw,
     pub visible: Visible,

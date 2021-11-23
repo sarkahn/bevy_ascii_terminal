@@ -57,26 +57,6 @@ pub use terminal::{BorderGlyphs, Terminal, Tile};
 use bevy::prelude::*;
 use renderer::{TerminalRendererBundle, TerminalRendererPlugin};
 
-/// Terminal component which determines the size of the terminal.
-///
-/// You can query for and modify this component to change the size
-/// of the terminal.
-///
-/// # Example
-/// ```
-/// use bevy::prelude::*;
-/// use bevy_ascii_terminal::*;
-///
-/// fn change_size(mut q: Query<&mut TerminalSize>) {
-///     let mut size = q.single_mut().unwrap();
-///     size.value = UVec2::new(15,5);
-/// }
-/// ```
-#[derive(Default)]
-pub struct TerminalSize {
-    pub value: UVec2,
-}
-
 /// A bundle with all the required components for a terminal.
 ///
 /// Can specify properties of the terminal on initilaization.
@@ -96,7 +76,6 @@ pub struct TerminalSize {
 #[derive(Bundle, Default)]
 pub struct TerminalBundle {
     pub terminal: Terminal,
-    pub size: TerminalSize,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
 
@@ -112,7 +91,6 @@ impl TerminalBundle {
     /// Set the initial size of the terminal.
     pub fn with_size(mut self, size: (u32, u32)) -> Self {
         self.terminal.resize(size);
-        self.size.value = UVec2::from(size);
         self
     }
 
