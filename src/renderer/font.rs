@@ -206,7 +206,7 @@ fn terminal_load_fonts(
 ) {
     loading.0 = match asset_server.load_folder("textures") {
         Ok(fonts) => Some(fonts),
-        Err(_) => None,
+        Err(_) => Some(Vec::new()),
     };
 
     load_built_in_fonts(&mut fonts, &mut textures);
@@ -231,6 +231,10 @@ fn terminal_check_loading_fonts(
 ) {
     let loaded = loading.0.as_ref();
 
+    if loaded.is_none() {
+        return;
+    }
+
     if let LoadState::Loaded =
         asset_server.get_group_load_state(loaded.unwrap().iter().map(|h| h.id))
     {
@@ -254,7 +258,7 @@ fn terminal_check_loading_fonts(
                 fonts.add(font);
             }
         }
-
+        
         state.set(AppState::AssetsDoneLoading).unwrap();
     }
 }
