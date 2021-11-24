@@ -9,7 +9,7 @@ pub use plugin::TerminalRendererPlugin;
 pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
 
-mod glyph_mapping;
+pub mod glyph_mapping;
 
 use self::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,

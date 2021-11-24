@@ -1,6 +1,4 @@
 //! Maps glyphs to sprites on texture.
-//!
-//! GlyphMapping is used by the [super::TerminalRendererTileData] component
 
 use ron::from_str;
 use std::collections::HashMap;

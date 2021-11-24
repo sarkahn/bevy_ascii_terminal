@@ -13,7 +13,7 @@ use crate::color::*;
 #[derive(Clone, Copy, Debug)]
 pub struct Tile {
     /// The glyph for the tile. Glyphs are mapped to sprites via the
-    /// terminal's [renderer::glyph_mapping::GlyphMapping]
+    /// terminal's [GlyphMapping](super::renderer::glyph_mapping::GlyphMapping)
     pub glyph: char,
     /// The forergound color for the tile.
     pub fg_color: TileColor,

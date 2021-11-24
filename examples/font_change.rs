@@ -74,11 +74,12 @@ fn change_font(
         let mut projection = q_cam_projection.single_mut().unwrap();
         for (mut term, mut font) in q.iter_mut() {
             font_index.0 = (font_index.0 + 1) % BUILT_IN_FONTS.len();
+
             let new_font_name = BUILT_IN_FONTS[font_index.0].name;
-            
-            let font_data = fonts.get(new_font_name);
-            projection.pixels_per_tile = font_data.1.tile_size.y;
-            font.file_name = String::from(new_font_name);
+
+            let new_font = fonts.get(new_font_name);
+            projection.pixels_per_tile = new_font.pixels_per_unit();
+            font.change_font(new_font_name);
             draw_title(&mut term, new_font_name);
         }
     }

@@ -106,7 +106,7 @@ impl TerminalBundle {
     ///     .with_font("zx_evolution_8x8.png");
     /// ```
     pub fn with_font(mut self, font_name: &str) -> Self {
-        self.renderer.font.file_name = String::from(font_name);
+        self.renderer.font.change_font(font_name);
         self
     }
 }

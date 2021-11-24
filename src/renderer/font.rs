@@ -6,7 +6,7 @@
 //! modifying the [TerminalFont] component on the terminal entity. Font data can be read from the
 //! [TerminalFonts] resource.
 //!
-//! Texture sprites are mapped to glyphs via [super::glyph_mapping::GlyphMapping].
+//! Texture sprites are mapped to glyphs via [GlyphMapping](super::glyph_mapping::GlyphMapping).
 //!
 //! ## Included Fonts
 //! The terminal comes with several built in fonts:
@@ -15,8 +15,6 @@
 //! - px437_8x8.png
 //! - taffer_10x10.png
 //! - zx_evolution_8x8.png
-//!
-//! ## Examples
 //!
 //! ### Changing Fonts
 //!
@@ -29,22 +27,7 @@
 //!     mut q_font: Query<&mut TerminalFont>,
 //! ) {
 //!     let mut font = q_font.single_mut().unwrap();
-//!     font.file_name = String::from("taffer_10x10.png");
-//! }
-//! ```
-//!
-//! ### Reading Font Data
-//!
-//! ```
-//! use bevy_ascii_terminal::*;
-//! use bevy_ascii_terminal::renderer::TerminalFonts;
-//! use bevy::prelude::*;
-//!
-//! fn read_font_data(
-//!     fonts: Res<TerminalFonts>,
-//! ) {
-//!     let font_data = fonts.get("pastiche_8x8.png");
-//!     info!("Pastich glyphs are {} pixels high", font_data.1.tile_size.y);
+//!     font.change_font("taffer_10x10.png");
 //! }
 //! ```
 
@@ -58,119 +41,144 @@ use std::fs;
 
 use super::plugin::AppState;
 
-pub const DEFAULT_FONT_NAME: &str = "px437_8x8.png";
-
-macro_rules! BUILT_IN_FONT_PATH {
-    () => {
-        "../../embedded/"
-    };
-}
-
-macro_rules! include_font {
-    ($font_name:expr) => {
-        include_bytes!(concat!(BUILT_IN_FONT_PATH!(), $font_name))
-    };
-}
-
-pub struct BuiltInFontData<'a> {
-    pub name: &'a str,
-    pub bytes: &'a [u8]
-}
-
-pub const BUILT_IN_FONTS : &[BuiltInFontData] = &[
-    BuiltInFontData {
-        name: "jt_curses_12x12.png",
-        bytes: include_font!("jt_curses_12x12.png"),
-    },
-    BuiltInFontData {
-        name: "pastiche_8x8.png",
-        bytes: include_font!("pastiche_8x8.png"),
-    },
-    BuiltInFontData {
-        name: "px437_8x8.png",
-        bytes: include_font!("px437_8x8.png"),
-    },
-    BuiltInFontData {
-        name: "taffer_10x10.png",
-        bytes: include_font!("taffer_10x10.png"),
-    },
-    BuiltInFontData {
-        name: "zx_evolution_8x8.png",
-        bytes: include_font!("zx_evolution_8x8.png"),
-    },
-];
-
 /// Terminal component that determines which texture is rendered by the terminal.
 ///
-/// # Example
-/// ```
-/// use bevy_ascii_terminal::*;
-/// use bevy_ascii_terminal::renderer::TerminalFont;
-/// use bevy::prelude::*;
-///
-/// fn change_font(
-///     mut q_font: Query<&mut TerminalFont>,
-/// ) {
-///     let mut font = q_font.single_mut().unwrap();
-///     font.file_name = String::from("taffer_10x10.png");
-/// }
-/// ```
+/// Also contains various functions to inspect details of the font.
 pub struct TerminalFont {
     /// The file name (including extension) of the texture to render
-    pub file_name: String,
+    name: String,
     /// The color on the texture that should be treated as the background
-    pub clip_color: Color,
+    clip_color: Color,
+    tex_handle: Handle<Texture>,
+    pixels_per_unit: u32,
+    //tile_count: UVec2,
 }
 impl Default for TerminalFont {
     fn default() -> Self {
         Self {
-            file_name: String::from(DEFAULT_FONT_NAME),
+            name: String::from(DEFAULT_FONT_NAME),
             clip_color: Color::BLACK,
+            tex_handle: Default::default(),
+            pixels_per_unit: Default::default(),
+            //tile_count: Default::default(),
         }
     }
 }
 
-/// Size data for a terminal font
-#[derive(Debug)]
-pub struct TerminalFontData {
-    /// The number of tiles in the textures
-    pub tile_count: UVec2,
-    /// Size in pixels of a single sprite in the texture
-    pub tile_size: UVec2,
-    pub texture_size: UVec2,
-}
+impl TerminalFont {
+    /// The file name of the font, including extension.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 
-impl TerminalFontData {
-    pub fn from_texture(tex: &Texture) -> Self {
-        let tex_size = UVec2::new(tex.size.width, tex.size.height);
+    /// Change the terminal's font.
+    ///
+    /// The name provided must be the full file name of the font,
+    /// including extension.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// use bevy_ascii_terminal::renderer::TerminalFont;
+    /// use bevy::prelude::*;
+    ///
+    /// fn change_font_system(
+    ///     mut q_font: Query<&mut TerminalFont>,
+    /// ) {
+    ///     let mut font = q_font.single_mut().unwrap();
+    ///     font.change_font("taffer_10x10.png");
+    /// }
+    /// ```
+    pub fn change_font(&mut self, font_name: &str) {
+        self.name = String::from(font_name);
+    }
+
+    /// The clip color of the font texture.
+    ///
+    /// Clip color determines which part of the texture is regarded as
+    /// "background color".
+    pub fn clip_color(&self) -> Color {
+        self.clip_color
+    }
+
+    /// Change the clip color of the font's texture.
+    ///
+    /// Clip color determines which part of the texture is regarded as
+    /// "background color".
+    pub fn change_clip_color(&mut self, color: Color) {
+        self.clip_color = color;
+    }
+
+    /// How many vertical pixels for a single character.
+    pub fn pixels_per_unit(&self) -> u32 {
+        self.pixels_per_unit
+    }
+
+    /// Handle to the underlying font texture.
+    pub(crate) fn texture_handle(&self) -> &Handle<Texture> {
+        &self.tex_handle
+    }
+
+    /// Construct a font from a texture. This assumes the texture has already been
+    /// added to `Assets<Texture>`
+    pub(crate) fn from_texture(
+        name: &str,
+        tex_handle: Handle<Texture>,
+        textures: &Assets<Texture>,
+    ) -> Self {
+        let texture = textures.get(tex_handle.clone_weak()).unwrap();
+        let tex_size = UVec2::new(texture.size.width, texture.size.height);
         let tile_count = UVec2::new(16, 16);
-        TerminalFontData {
-            tile_count,
-            tile_size: tex_size / tile_count,
-            texture_size: tex_size,
+        let pixels_per_tile = (tex_size / tile_count).y;
+
+        TerminalFont {
+            name: String::from(name),
+            pixels_per_unit: pixels_per_tile,
+            tex_handle,
+            //tile_count,
+            ..Default::default()
         }
     }
 }
 
-/// Resource used to store and retrieve font data.
+/// Resource used to store and retrieve terminal fonts.
 ///
-/// Fonts should not be added from code - to add a font, place the font texture
+/// Fonts should not be added from user code - to add a font, place the font texture
 /// in the `assets/textures` directory.
 #[derive(Default)]
 pub struct TerminalFonts {
-    map: HashMap<String, (Handle<Texture>, TerminalFontData)>,
+    map: HashMap<String, TerminalFont>,
 }
 
 impl TerminalFonts {
-    pub(crate) fn add(&mut self, name: &str, handle: Handle<Texture>, data: TerminalFontData) {
-        self.map.insert(name.to_string(), (handle, data));
+    pub(crate) fn add(&mut self, font: TerminalFont) {
+        self.map.insert(font.name.clone(), font);
     }
 
-    pub fn get(&self, font_name: &str) -> &(Handle<Texture>, TerminalFontData) {
+    /// Retrieve a font by name.
+    ///
+    /// The name provided must be the full file name of the font, including extension.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// use bevy_ascii_terminal::renderer::TerminalFonts;
+    /// use bevy::prelude::*;
+    ///
+    /// fn read_font_data(
+    ///     fonts: Res<TerminalFonts>,
+    /// ) {
+    ///     let font = fonts.get("pastiche_8x8.png");
+    ///     info!("Pastich glyphs are {} pixels high", font.pixels_per_unit());
+    /// }
+    /// ```
+    pub fn get(&self, font_name: &str) -> &TerminalFont {
         &self.map[font_name]
     }
 }
 
+/// Plugin for systems and resources related to terminal font rendering.
 pub(crate) struct TerminalFontPlugin;
 impl Plugin for TerminalFontPlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -204,22 +212,20 @@ fn terminal_load_fonts(
     load_built_in_fonts(&mut fonts, &mut textures);
 }
 
-fn load_built_in_fonts(
-    fonts: &mut TerminalFonts,
-    textures: &mut ResMut<Assets<Texture>>,
-) {
-    for font_data in BUILT_IN_FONTS {    
+fn load_built_in_fonts(fonts: &mut TerminalFonts, textures: &mut ResMut<Assets<Texture>>) {
+    for font_data in BUILT_IN_FONTS {
         let tex = Texture::from_buffer(font_data.bytes, ImageType::Extension("png")).unwrap();
-        let size_data = TerminalFontData::from_texture(&tex);
         let handle = textures.add(tex);
-        fonts.add(font_data.name, handle, size_data);
+
+        let font = TerminalFont::from_texture(font_data.name, handle, textures);
+        fonts.add(font);
     }
 }
 
 fn terminal_check_loading_fonts(
     asset_server: Res<AssetServer>,
     loading: Res<LoadingTerminalTextures>,
-    textures: Res<Assets<Texture>>,
+    mut textures: ResMut<Assets<Texture>>,
     mut state: ResMut<State<AppState>>,
     mut fonts: ResMut<TerminalFonts>,
 ) {
@@ -243,10 +249,9 @@ fn terminal_check_loading_fonts(
             {
                 let name = path.file_name().unwrap().to_str().unwrap();
 
-                let tex = textures.get(handle.clone()).unwrap();
-                let data = TerminalFontData::from_texture(tex);
+                let font = TerminalFont::from_texture(name, handle, &mut textures);
 
-                fonts.add(name, handle, data);
+                fonts.add(font);
             }
         }
 
@@ -254,16 +259,44 @@ fn terminal_check_loading_fonts(
     }
 }
 
-#[cfg(test)]
-mod tests {
+pub const DEFAULT_FONT_NAME: &str = "px437_8x8.png";
 
-    use bevy::prelude::*;
-
-    #[test]
-    fn change_font() {
-        let _world = World::default();
-
-        let _update_stage = SystemStage::parallel();
-    }
+macro_rules! BUILT_IN_FONT_PATH {
+    () => {
+        "../../embedded/"
+    };
 }
 
+macro_rules! include_font {
+    ($font_name:expr) => {
+        include_bytes!(concat!(BUILT_IN_FONT_PATH!(), $font_name))
+    };
+}
+
+pub struct BuiltInFontData<'a> {
+    pub name: &'a str,
+    pub bytes: &'a [u8],
+}
+
+pub const BUILT_IN_FONTS: &[BuiltInFontData] = &[
+    BuiltInFontData {
+        name: "jt_curses_12x12.png",
+        bytes: include_font!("jt_curses_12x12.png"),
+    },
+    BuiltInFontData {
+        name: "pastiche_8x8.png",
+        bytes: include_font!("pastiche_8x8.png"),
+    },
+    BuiltInFontData {
+        name: "px437_8x8.png",
+        bytes: include_font!("px437_8x8.png"),
+    },
+    BuiltInFontData {
+        name: "taffer_10x10.png",
+        bytes: include_font!("taffer_10x10.png"),
+    },
+    BuiltInFontData {
+        name: "zx_evolution_8x8.png",
+        bytes: include_font!("zx_evolution_8x8.png"),
+    },
+];

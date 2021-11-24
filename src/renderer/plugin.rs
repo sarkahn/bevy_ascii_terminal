@@ -105,12 +105,6 @@ impl Plugin for TerminalRendererPlugin {
         });
 
         pipelines.set_untracked(TERMINAL_RENDERER_PIPELINE, pipeline);
-
-        // Set up a font handle for default terminal construction
-        //let bytes = font::DEFAULT_FONT.bytes;
-        //let tex = Texture::from_buffer(bytes, ImageType::Extension("png")).unwrap();
-
-        //textures.set_untracked(DEFAULT_FONT_HANDLE, tex);
     }
 }
 
@@ -128,7 +122,6 @@ pub fn terminal_renderer_init(
 fn terminal_renderer_update_material(
     fonts: Res<TerminalFonts>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
-    textures: Res<Assets<Texture>>,
     mut q: Query<(&TerminalFont, &mut Handle<TerminalMaterial>), Changed<TerminalFont>>,
 ) {
     for (font, mut mat) in q.iter_mut() {
@@ -139,13 +132,11 @@ fn terminal_renderer_update_material(
             materials.remove(mat.clone_weak());
         }
 
-        let handle = &fonts.get(font.file_name.as_str()).0;
-        let tex = textures.get(handle.clone());
-        debug_assert!(tex.is_some());
+        let handle = fonts.get(font.name()).texture_handle();
 
         *mat = materials.add(TerminalMaterial::from_texture(
             handle.clone(),
-            font.clip_color,
+            font.clip_color(),
         ));
     }
 }
@@ -177,7 +168,7 @@ fn terminal_renderer_update_size(
     {
         let mut tile_size = UVec2::ONE;
         if let TileScaling::Pixels = scaling {
-            tile_size = fonts.get(font.file_name.as_str()).1.tile_size;
+            tile_size *= fonts.get(font.name()).pixels_per_unit();
         }
 
         let size = UVec2::from(terminal.size());
