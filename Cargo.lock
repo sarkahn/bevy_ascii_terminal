@@ -223,7 +223,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "bevy",
  "bevy_tiled_camera",
