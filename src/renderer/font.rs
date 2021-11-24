@@ -258,7 +258,7 @@ fn terminal_check_loading_fonts(
                 fonts.add(font);
             }
         }
-        
+
         state.set(AppState::AssetsDoneLoading).unwrap();
     }
 }
