@@ -78,7 +78,7 @@ fn change_font(
             let new_font_name = BUILT_IN_FONTS[font_index.0].name;
 
             let new_font = fonts.get(new_font_name);
-            projection.pixels_per_tile = new_font.pixels_per_unit();
+            projection.pixels_per_tile = new_font.pixels_per_unit().y;
             font.change_font(new_font_name);
             draw_title(&mut term, new_font_name);
         }
