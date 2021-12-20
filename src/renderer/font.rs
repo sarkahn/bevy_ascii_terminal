@@ -50,7 +50,7 @@ pub struct TerminalFont {
     /// The color on the texture that should be treated as the background
     clip_color: Color,
     tex_handle: Handle<Texture>,
-    pixels_per_unit: u32,
+    pixels_per_unit: UVec2,
     //tile_count: UVec2,
 }
 impl Default for TerminalFont {
@@ -111,7 +111,7 @@ impl TerminalFont {
     }
 
     /// How many vertical pixels for a single character.
-    pub fn pixels_per_unit(&self) -> u32 {
+    pub fn pixels_per_unit(&self) -> UVec2 {
         self.pixels_per_unit
     }
 
@@ -130,7 +130,7 @@ impl TerminalFont {
         let texture = textures.get(tex_handle.clone_weak()).unwrap();
         let tex_size = UVec2::new(texture.size.width, texture.size.height);
         let tile_count = UVec2::new(16, 16);
-        let pixels_per_tile = (tex_size / tile_count).y;
+        let pixels_per_tile = tex_size / tile_count;
 
         TerminalFont {
             name: String::from(name),
