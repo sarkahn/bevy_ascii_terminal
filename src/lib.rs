@@ -57,6 +57,8 @@ pub use terminal::{BorderGlyphs, Terminal, Tile};
 use bevy::prelude::*;
 use renderer::{TerminalRendererBundle, TerminalRendererPlugin};
 
+pub use renderer::TerminalAssetLoadState;
+
 /// A bundle with all the required components for a terminal.
 ///
 /// Can specify properties of the terminal on initilaization.

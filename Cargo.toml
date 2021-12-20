@@ -12,7 +12,7 @@ exclude = ["images/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy" }
+bevy = "0.5"
 ron = "0.6.4"
 
 [dev-dependencies]

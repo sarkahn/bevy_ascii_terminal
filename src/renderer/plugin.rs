@@ -29,8 +29,20 @@ const TERMINAL_MATERIAL_NAME: &str = "terminal_mat";
 
 pub struct TerminalRendererPlugin;
 
+/// AppState for loading terminal assets.
+/// 
+/// Systems can be added to the [AssetsDoneLoading](AssetsDoneLoading) state to safely read terminal assets.
+/// 
+/// ## Example 
+/// 
+/// ```ignore
+/// App::build().add_system_set(
+///     SystemSet::on_enter(TerminalAssetLoadState::AssetsDoneLoading)
+///         .with_system(read_font_system.system());
+/// )
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum TerminalAssetsLoading {
+pub enum TerminalAssetLoadState {
     AssetsLoading,
     AssetsDoneLoading,
 }
@@ -39,17 +51,17 @@ impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut AppBuilder) {
         use terminal_renderer_system_names::*;
 
-        app.add_state(TerminalAssetsLoading::AssetsLoading);
+        app.add_state(TerminalAssetLoadState::AssetsLoading);
 
         app.add_plugin(TerminalFontPlugin);
 
         app.add_asset::<TerminalMaterial>()
             .add_system_set(
-                SystemSet::on_enter(TerminalAssetsLoading::AssetsDoneLoading)
+                SystemSet::on_enter(TerminalAssetLoadState::AssetsDoneLoading)
                     .with_system(terminal_renderer_init.system()),
             )
             .add_system_set(
-                SystemSet::on_update(TerminalAssetsLoading::AssetsDoneLoading)
+                SystemSet::on_update(TerminalAssetLoadState::AssetsDoneLoading)
                     .with_system(
                         terminal_renderer_update_material
                             .system()

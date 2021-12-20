@@ -2,9 +2,13 @@
 //!
 //! By default the terminal expects a [code page 437](https://dwarffortresswiki.org/Tileset_repository)
 //! texture with 16x16 characters. New font textures can be placed in the `assets/textures`
-//! directory and they will be loaded when the application runs. The terminal font can be changed by
-//! modifying the [TerminalFont] component on the terminal entity. Font data can be read from the
-//! [TerminalFonts] resource.
+//! directory and they will be loaded when the application runs.
+//! 
+//! The terminal can handle non-square fonts but only if using [TileScaling::Pixels](super::TileScaling::Pixels).
+//! TileScaling is a component on the terminal that can be changed during construction or at runtime.
+//! 
+//! The terminal font can be changed by modifying the [TerminalFont] component on the terminal entity. 
+//! Font data can be read from the [TerminalFonts] resource.
 //!
 //! Texture sprites are mapped to glyphs via [GlyphMapping](super::glyph_mapping::GlyphMapping).
 //!
@@ -39,7 +43,7 @@ use std::{collections::HashMap, path::PathBuf};
 // https://github.com/bevyengine/bevy/pull/2310
 use std::fs;
 
-use super::plugin::TerminalAssetsLoading;
+use super::plugin::TerminalAssetLoadState;
 
 /// Terminal component that determines which texture is rendered by the terminal.
 ///
@@ -110,7 +114,7 @@ impl TerminalFont {
         self.clip_color = color;
     }
 
-    /// How many vertical pixels for a single character.
+    /// How many pixels for a single character.
     pub fn pixels_per_unit(&self) -> UVec2 {
         self.pixels_per_unit
     }
@@ -185,11 +189,11 @@ impl Plugin for TerminalFontPlugin {
         app.init_resource::<LoadingTerminalTextures>()
             .init_resource::<TerminalFonts>()
             .add_system_set(
-                SystemSet::on_enter(TerminalAssetsLoading::AssetsLoading)
+                SystemSet::on_enter(TerminalAssetLoadState::AssetsLoading)
                     .with_system(terminal_load_fonts.system()),
             )
             .add_system_set(
-                SystemSet::on_update(TerminalAssetsLoading::AssetsLoading)
+                SystemSet::on_update(TerminalAssetLoadState::AssetsLoading)
                     .with_system(terminal_check_loading_fonts.system()),
             );
     }
@@ -226,7 +230,7 @@ fn terminal_check_loading_fonts(
     asset_server: Res<AssetServer>,
     loading: Res<LoadingTerminalTextures>,
     mut textures: ResMut<Assets<Texture>>,
-    mut state: ResMut<State<TerminalAssetsLoading>>,
+    mut state: ResMut<State<TerminalAssetLoadState>>,
     mut fonts: ResMut<TerminalFonts>,
 ) {
     let loaded = loading.0.as_ref();
@@ -259,7 +263,7 @@ fn terminal_check_loading_fonts(
             }
         }
 
-        state.set(TerminalAssetsLoading::AssetsDoneLoading).unwrap();
+        state.set(TerminalAssetLoadState::AssetsDoneLoading).unwrap();
     }
 }
 
