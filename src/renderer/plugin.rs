@@ -30,7 +30,7 @@ const TERMINAL_MATERIAL_NAME: &str = "terminal_mat";
 pub struct TerminalRendererPlugin;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum AppState {
+pub(crate) enum TerminalAssetsLoading {
     AssetsLoading,
     AssetsDoneLoading,
 }
@@ -39,17 +39,17 @@ impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut AppBuilder) {
         use terminal_renderer_system_names::*;
 
-        app.add_state(AppState::AssetsLoading);
+        app.add_state(TerminalAssetsLoading::AssetsLoading);
 
         app.add_plugin(TerminalFontPlugin);
 
         app.add_asset::<TerminalMaterial>()
             .add_system_set(
-                SystemSet::on_enter(AppState::AssetsDoneLoading)
+                SystemSet::on_enter(TerminalAssetsLoading::AssetsDoneLoading)
                     .with_system(terminal_renderer_init.system()),
             )
             .add_system_set(
-                SystemSet::on_update(AppState::AssetsDoneLoading)
+                SystemSet::on_update(TerminalAssetsLoading::AssetsDoneLoading)
                     .with_system(
                         terminal_renderer_update_material
                             .system()
@@ -84,7 +84,6 @@ impl Plugin for TerminalRendererPlugin {
             .unwrap();
         let mut shaders = cell.get_resource_mut::<Assets<Shader>>().unwrap();
         let mut materials = cell.get_resource_mut::<Assets<TerminalMaterial>>().unwrap();
-        //let mut textures = cell.get_resource_mut::<Assets<Texture>>().unwrap();
 
         graph.add_system_node(
             TERMINAL_MATERIAL_NAME,

@@ -39,7 +39,7 @@ use std::{collections::HashMap, path::PathBuf};
 // https://github.com/bevyengine/bevy/pull/2310
 use std::fs;
 
-use super::plugin::AppState;
+use super::plugin::TerminalAssetsLoading;
 
 /// Terminal component that determines which texture is rendered by the terminal.
 ///
@@ -185,11 +185,11 @@ impl Plugin for TerminalFontPlugin {
         app.init_resource::<LoadingTerminalTextures>()
             .init_resource::<TerminalFonts>()
             .add_system_set(
-                SystemSet::on_enter(AppState::AssetsLoading)
+                SystemSet::on_enter(TerminalAssetsLoading::AssetsLoading)
                     .with_system(terminal_load_fonts.system()),
             )
             .add_system_set(
-                SystemSet::on_update(AppState::AssetsLoading)
+                SystemSet::on_update(TerminalAssetsLoading::AssetsLoading)
                     .with_system(terminal_check_loading_fonts.system()),
             );
     }
@@ -226,7 +226,7 @@ fn terminal_check_loading_fonts(
     asset_server: Res<AssetServer>,
     loading: Res<LoadingTerminalTextures>,
     mut textures: ResMut<Assets<Texture>>,
-    mut state: ResMut<State<AppState>>,
+    mut state: ResMut<State<TerminalAssetsLoading>>,
     mut fonts: ResMut<TerminalFonts>,
 ) {
     let loaded = loading.0.as_ref();
@@ -259,7 +259,7 @@ fn terminal_check_loading_fonts(
             }
         }
 
-        state.set(AppState::AssetsDoneLoading).unwrap();
+        state.set(TerminalAssetsLoading::AssetsDoneLoading).unwrap();
     }
 }
 
