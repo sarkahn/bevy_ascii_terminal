@@ -9,7 +9,7 @@ license = "MIT"
 edition = "2021"
 exclude = ["images/*"]
 readme = "README.md"
-keywords = ["bevy", "ascii", "terminal", "console", "roguelike", "2d", "ui", "tilemap"]
+keywords = ["bevy", "ascii", "terminal", "roguelike", "tilemap"]
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
