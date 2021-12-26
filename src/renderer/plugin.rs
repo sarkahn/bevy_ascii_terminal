@@ -30,11 +30,11 @@ const TERMINAL_MATERIAL_NAME: &str = "terminal_mat";
 pub struct TerminalRendererPlugin;
 
 /// AppState for loading terminal assets.
-/// 
+///
 /// Systems can be added to the [AssetsDoneLoading](AssetsDoneLoading) state to safely read terminal assets.
-/// 
-/// ## Example 
-/// 
+///
+/// ## Example
+///
 /// ```ignore
 /// App::build().add_system_set(
 ///     SystemSet::on_enter(TerminalAssetLoadState::AssetsDoneLoading)
@@ -119,6 +119,7 @@ impl Plugin for TerminalRendererPlugin {
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn terminal_renderer_init(
     mut meshes: ResMut<Assets<Mesh>>,
     mut q: Query<&mut Handle<Mesh>, (Added<Handle<Mesh>>, With<TerminalRendererVertexData>)>,
@@ -152,6 +153,7 @@ fn terminal_renderer_update_material(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn terminal_renderer_update_size(
     mut meshes: ResMut<Assets<Mesh>>,
     fonts: Res<TerminalFonts>,
@@ -182,7 +184,7 @@ fn terminal_renderer_update_size(
             tile_size *= fonts.get(font.name()).pixels_per_unit();
         }
 
-        let size = UVec2::from(terminal.size());
+        let size = terminal.size();
         vert_data.resize(size, term_pivot.0, tile_pivot.0, tile_size);
         tile_data.resize(size);
 

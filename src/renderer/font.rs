@@ -3,11 +3,11 @@
 //! By default the terminal expects a [code page 437](https://dwarffortresswiki.org/Tileset_repository)
 //! texture with 16x16 characters. New font textures can be placed in the `assets/textures`
 //! directory and they will be loaded when the application runs.
-//! 
+//!
 //! The terminal can handle non-square fonts but only if using [TileScaling::Pixels](super::TileScaling::Pixels).
 //! TileScaling is a component on the terminal that can be changed during construction or at runtime.
-//! 
-//! The terminal font can be changed by modifying the [TerminalFont] component on the terminal entity. 
+//!
+//! The terminal font can be changed by modifying the [TerminalFont] component on the terminal entity.
 //! Font data can be read from the [TerminalFonts] resource.
 //!
 //! Texture sprites are mapped to glyphs via [GlyphMapping](super::glyph_mapping::GlyphMapping).
@@ -229,7 +229,7 @@ fn load_built_in_fonts(fonts: &mut TerminalFonts, textures: &mut ResMut<Assets<T
 fn terminal_check_loading_fonts(
     asset_server: Res<AssetServer>,
     loading: Res<LoadingTerminalTextures>,
-    mut textures: ResMut<Assets<Texture>>,
+    textures: ResMut<Assets<Texture>>,
     mut state: ResMut<State<TerminalAssetLoadState>>,
     mut fonts: ResMut<TerminalFonts>,
 ) {
@@ -257,13 +257,15 @@ fn terminal_check_loading_fonts(
             {
                 let name = path.file_name().unwrap().to_str().unwrap();
 
-                let font = TerminalFont::from_texture(name, handle, &mut textures);
+                let font = TerminalFont::from_texture(name, handle, &textures);
 
                 fonts.add(font);
             }
         }
 
-        state.set(TerminalAssetLoadState::AssetsDoneLoading).unwrap();
+        state
+            .set(TerminalAssetLoadState::AssetsDoneLoading)
+            .unwrap();
     }
 }
 

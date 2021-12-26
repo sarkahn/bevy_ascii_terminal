@@ -7,8 +7,7 @@ pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
 
 pub use font::{TerminalFont, TerminalFonts};
-pub use plugin::{TerminalRendererPlugin, TerminalAssetLoadState};
-
+pub use plugin::{TerminalAssetLoadState, TerminalRendererPlugin};
 
 pub mod glyph_mapping;
 use self::{
@@ -82,7 +81,7 @@ impl TerminalMaterial {
 }
 
 /// A bundle of all the components required to render a terminal.
-/// 
+///
 /// Has various functions to help with the construction of a terminal.
 #[derive(Bundle)]
 pub struct TerminalRendererBundle {
