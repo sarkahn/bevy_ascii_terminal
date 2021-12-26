@@ -11,8 +11,6 @@ exclude = ["images/*"]
 readme = "README.md"
 keywords = ["bevy", "ascii", "terminal", "roguelike", "tilemap"]
 
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 bevy = {version = "0.5", default-features = false, features = ["render"]}
 ron = "0.6.4"
