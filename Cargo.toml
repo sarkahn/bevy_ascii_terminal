@@ -14,10 +14,11 @@ keywords = ["bevy", "ascii", "terminal", "console", "roguelike", "2d", "ui", "ti
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bevy = { version = "0.5", default-features = false }
+bevy = {version = "0.5", default-features = false, features = ["render"]}
 ron = "0.6.4"
 
 [dev-dependencies]
+bevy = {version = "0.5", default-features = false, features = ["png", "bevy_winit", "bevy_wgpu"]}
 rand = "0.7.3"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
