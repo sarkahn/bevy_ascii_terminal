@@ -115,27 +115,69 @@ impl Terminal {
         self.size.y
     }
 
-    pub fn size(&self) -> (u32, u32) {
-        self.size.into()
+    pub fn size(&self) -> UVec2 {
+        self.size
     }
 
     /// Convert a 2D position to it's corresponding 1D index
-    /// given the dimensions of the terminal.
+    /// in the terminal.
+    /// 
+    /// Note that in the terminal the y axis goes from top to bottom. 
     #[inline]
     pub fn to_index(&self, xy: (i32, i32)) -> usize {
         let (x, y) = xy;
         (y * self.width() as i32 + x) as usize
     }
 
+    /// Convert a 2D position to it's corresponding 1D index
+    /// in the terminal with the y axis flipped.
+    /// 
+    /// In the terminal the y axis goes from top to bottom. 
+    /// This should be used when passing in coordinates where
+    /// the y axis goes from bottom to top.
+    #[inline]
+    pub fn to_index_flipped(&self, xy: (i32, i32)) -> usize {
+        let (x,y) = self.y_flip(xy).into();
+        (y * self.width() as i32 + x) as usize
+    }
+
     /// Convert 1D index to it's 2D position given the dimensions
     /// of the terminal.
+    /// 
+    /// Note that in the terminal the y axis goes from top to bottom. 
     #[inline]
-    pub fn to_xy(&self, i: usize) -> (i32, i32) {
-        let w = self.width() as usize;
+    pub fn to_xy(&self, i: usize) -> IVec2 {
+        let i = i as i32;
+        let w = self.width() as i32;
         let x = i % w;
         let y = i / w;
-        (x as i32, y as i32)
+        IVec2::new(x,y)
     }
+
+    /// Convert 1D index to it's 2D position given the dimensions
+    /// of the terminal.
+    /// 
+    /// In the terminal the y axis goes from top to bottom. 
+    /// This should be used when passing in an index derived from 
+    /// coordinates where the y axis goes from bottom to top.
+    #[inline]
+    pub fn to_xy_flipped(&self, i: usize) -> IVec2 {
+        let xy = self.to_xy(i);
+        self.y_flip(xy.into())
+    }
+
+    /// Flip the given position based on the height of the terminal.
+    /// 
+    /// In the terminal the y axis goes from top to bottom. 
+    /// This should be used when passing in coordinates where 
+    /// the y axis goes from bottom to top.
+    #[inline]
+    pub fn y_flip(&self, pos: (i32, i32)) -> IVec2 {
+        let (x,y) = pos;
+        let y = self.height() as i32 - 1 - y;
+        IVec2::new(x,y)
+    }
+
 
     /// Insert a character.
     ///

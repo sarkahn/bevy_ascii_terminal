@@ -1,18 +1,20 @@
 [package]
 name = "bevy_ascii_terminal"
 description = "A simple terminal for rendering ascii in bevy."
-version = "0.7.5"
+version = "0.7.6"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/bevy_ascii_terminal"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
 license = "MIT"
 edition = "2021"
 exclude = ["images/*"]
+readme = "README.md"
+keywords = ["bevy", "ascii", "terminal", "console", "roguelike", "2d", "ui", "tilemap"]
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bevy = "0.5"
+bevy = { version = "0.5", default-features = false }
 ron = "0.6.4"
 
 [dev-dependencies]
