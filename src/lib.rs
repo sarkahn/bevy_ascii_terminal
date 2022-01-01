@@ -44,7 +44,7 @@
 //!     .run();
 //! }
 //! ```
-pub mod renderer;
+//pub mod renderer;
 
 mod color;
 mod color_blend;
@@ -55,9 +55,9 @@ pub use color::*;
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
 use bevy::prelude::*;
-use renderer::{TerminalRendererBundle, TerminalRendererPlugin};
+//use renderer::{TerminalRendererBundle, TerminalRendererPlugin};
 
-pub use renderer::TerminalAssetLoadState;
+//pub use renderer::TerminalAssetLoadState;
 
 /// A bundle with all the required components for a terminal.
 ///
@@ -81,8 +81,8 @@ pub struct TerminalBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
 
-    #[bundle]
-    pub renderer: TerminalRendererBundle,
+    //#[bundle]
+    //pub renderer: TerminalRendererBundle,
 }
 
 impl TerminalBundle {
@@ -91,7 +91,7 @@ impl TerminalBundle {
     }
 
     /// Set the initial size of the terminal.
-    pub fn with_size(mut self, size: (u32, u32)) -> Self {
+    pub fn with_size(mut self, size: [u32;2]) -> Self {
         self.terminal.resize(size);
         self
     }
@@ -108,7 +108,7 @@ impl TerminalBundle {
     ///     .with_font("zx_evolution_8x8.png");
     /// ```
     pub fn with_font(mut self, font_name: &str) -> Self {
-        self.renderer.font.change_font(font_name);
+        //self.renderer.font.change_font(font_name);
         self
     }
 }
@@ -116,7 +116,7 @@ impl TerminalBundle {
 /// Plugin for terminal rendering and related components and systems.
 pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
-    fn build(&self, app: &mut AppBuilder) {
-        app.add_plugin(TerminalRendererPlugin);
+    fn build(&self, app: &mut App) {
+        //app.add_plugin(TerminalRendererPlugin);
     }
 }

@@ -12,12 +12,13 @@ readme = "README.md"
 keywords = ["bevy", "ascii", "terminal", "roguelike", "tilemap"]
 
 [dependencies]
-bevy = {version = "0.5", default-features = false, features = ["render"]}
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "5479047aa213ab0276565f7d6048e01deb7d326a", default-features = false, features = ["render"] }
 ron = "0.6.4"
+sark_grids = "0.1.4"
 
 [dev-dependencies]
-bevy = {version = "0.5", default-features = false, features = ["png", "bevy_winit", "bevy_wgpu"]}
+bevy = {git = "https://github.com/bevyengine/bevy", rev = "5479047aa213ab0276565f7d6048e01deb7d326a", features = ["png", "bevy_winit", "bevy_render"]}
 rand = "0.7.3"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
-bevy_tiled_camera = "0.2.3"
+bevy_tiled_camera = { path = "../bevy_tiled_camera", version = "0.3.0" }

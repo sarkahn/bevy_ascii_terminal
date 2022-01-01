@@ -7,6 +7,8 @@ use bevy::prelude::*;
 
 use crate::color::*;
 
+use sark_grids::Grid;
+
 /// A single tile of the terminal.
 ///
 /// Defaults to a blank glyph with a black background and a white foreground.
@@ -37,9 +39,9 @@ pub struct Tile {
 ///
 /// let hello = term.get_string((1,1), 5);
 /// ```
-#[derive(Default)]
+#[derive(Component, Default)]
 pub struct Terminal {
-    pub tiles: Vec<Tile>,
+    pub tiles: Grid<Tile>,
     size: UVec2,
 }
 
@@ -93,18 +95,16 @@ const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
 
 impl Terminal {
     /// Construct a terminal with the given size
-    pub fn with_size(size: (u32, u32)) -> Terminal {
-        let len = (size.0 * size.1) as usize;
+    pub fn with_size(size: [u32;2]) -> Terminal {
         Terminal {
-            tiles: vec![Tile::default(); len],
+            tiles: Grid::default(size),
             size: UVec2::from(size),
         }
     }
 
     /// Resize the terminal's internal tile data.
-    pub fn resize(&mut self, size: (u32, u32)) {
-        let len = (size.0 * size.1) as usize;
-        self.tiles = vec![Tile::default(); len];
+    pub fn resize(&mut self, size: [u32;2]) {
+        self.tiles = Grid::default(size);
         self.size = UVec2::from(size);
     }
 
@@ -124,9 +124,8 @@ impl Terminal {
     ///
     /// Note that in the terminal the y axis goes from top to bottom.
     #[inline]
-    pub fn to_index(&self, xy: (i32, i32)) -> usize {
-        let (x, y) = xy;
-        (y * self.width() as i32 + x) as usize
+    pub fn to_index(&self, xy: [i32;2]) -> usize {
+        self.tiles.pos_to_index(xy)
     }
 
     /// Convert a 2D position to it's corresponding 1D index
@@ -136,7 +135,7 @@ impl Terminal {
     /// This should be used when passing in coordinates where
     /// the y axis goes from bottom to top.
     #[inline]
-    pub fn to_index_flipped(&self, xy: (i32, i32)) -> usize {
+    pub fn to_index_flipped(&self, xy: [i32;2]) -> usize {
         let (x, y) = self.y_flip(xy).into();
         (y * self.width() as i32 + x) as usize
     }
@@ -172,8 +171,8 @@ impl Terminal {
     /// This should be used when passing in coordinates where
     /// the y axis goes from bottom to top.
     #[inline]
-    pub fn y_flip(&self, pos: (i32, i32)) -> IVec2 {
-        let (x, y) = pos;
+    pub fn y_flip(&self, pos: [i32;2]) -> IVec2 {
+        let [x, y] = pos;
         let y = self.height() as i32 - 1 - y;
         IVec2::new(x, y)
     }
@@ -181,7 +180,7 @@ impl Terminal {
     /// Insert a character.
     ///
     /// The existing foreground and background color of the tile will remain.
-    pub fn put_char(&mut self, xy: (i32, i32), glyph: char) {
+    pub fn put_char(&mut self, xy: [i32;2], glyph: char) {
         self.get_tile_mut(xy).glyph = glyph;
     }
 
@@ -189,7 +188,7 @@ impl Terminal {
     ///
     /// The existing foreground and background colors of the tile will remain.
     /// Returns an error if the position is out of bounds.
-    pub fn try_put_char_pos(&mut self, xy: (i32, i32), glyph: char) -> Result<(), String> {
+    pub fn try_put_char_pos(&mut self, xy: [i32;2], glyph: char) -> Result<(), String> {
         if !self.is_in_bounds(xy) {
             return Err(format!(
                 "try_put_char_pos error, p {} is out of bounds {}",
@@ -204,7 +203,7 @@ impl Terminal {
     /// Insert a character with colors.
     pub fn put_char_color(
         &mut self,
-        xy: (i32, i32),
+        xy: [i32;2],
         glyph: char,
         fg_color: TileColor,
         bg_color: TileColor,
@@ -216,7 +215,7 @@ impl Terminal {
     }
 
     /// Insert a [Tile].
-    pub fn put_tile(&mut self, xy: (i32, i32), tile: Tile) {
+    pub fn put_tile(&mut self, xy: [i32;2], tile: Tile) {
         let t = self.get_tile_mut(xy);
         *t = tile;
     }
@@ -225,9 +224,9 @@ impl Terminal {
     ///
     /// The string will move to the next line if it reaches the edge
     /// and will truncate at the end of the terminal.
-    pub fn put_string(&mut self, xy: (i32, i32), string: &str) {
+    pub fn put_string(&mut self, xy: [i32;2], string: &str) {
         let i = self.to_index(xy);
-        let tiles = self.tiles[i..].iter_mut().take(string.len());
+        let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
         for (char, mut t) in chars.zip(tiles) {
@@ -241,13 +240,13 @@ impl Terminal {
     /// and will truncate at the end of the terminal.
     pub fn put_string_color(
         &mut self,
-        xy: (i32, i32),
+        xy: [i32;2],
         string: &str,
         fg_color: TileColor,
         bg_color: TileColor,
     ) {
         let i = self.to_index(xy);
-        let tiles = self.tiles[i..].iter_mut().take(string.len());
+        let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
         for (char, mut t) in chars.zip(tiles) {
@@ -260,26 +259,26 @@ impl Terminal {
     /// Set the foreground color of a tile.
     ///
     /// The existing background color and glyph of the tile will remain.
-    pub fn put_fg_color(&mut self, xy: (i32, i32), col: TileColor) {
+    pub fn put_fg_color(&mut self, xy: [i32;2], col: TileColor) {
         self.get_tile_mut(xy).fg_color = col;
     }
 
     /// Set the background color of a tile.
     ///
     /// The existing foreground color and glyph of the tile will remain.
-    pub fn put_bg_color(&mut self, xy: (i32, i32), col: TileColor) {
+    pub fn put_bg_color(&mut self, xy: [i32;2], col: TileColor) {
         self.get_tile_mut(xy).bg_color = col;
     }
 
     /// Retrieve the char from a tile.
-    pub fn get_char(&self, xy: (i32, i32)) -> char {
+    pub fn get_char(&self, xy: [i32;2]) -> char {
         self.get_tile(xy).glyph
     }
 
     /// Retrieve a string from the terminal.
-    pub fn get_string(&self, xy: (i32, i32), len: usize) -> String {
+    pub fn get_string(&self, xy: [i32;2], len: usize) -> String {
         let i = self.to_index(xy);
-        let slice = self.tiles[i..].iter().take(len);
+        let slice = self.tiles.slice(i..).iter().take(len);
         let mut chars: Vec<char> = vec![' '; slice.len()];
 
         for (i, t) in slice.enumerate() {
@@ -290,31 +289,31 @@ impl Terminal {
     }
 
     /// Retrieve an immutable reference to a tile in the terminal.
-    pub fn get_tile(&self, xy: (i32, i32)) -> &Tile {
+    pub fn get_tile(&self, xy: [i32;2]) -> &Tile {
         &self.tiles[self.to_index(xy)]
     }
 
     /// Retrieve a mutable reference to a tile in the terminal.
-    pub fn get_tile_mut(&mut self, xy: (i32, i32)) -> &mut Tile {
+    pub fn get_tile_mut(&mut self, xy: [i32;2]) -> &mut Tile {
         let i = self.to_index(xy);
         &mut self.tiles[i]
     }
 
     /// Clear an area of the terminal to the default [Tile].
-    pub fn clear_box(&mut self, xy: (i32, i32), size: (u32, u32)) {
-        let (width, height) = size;
-        let (x, y) = xy;
+    pub fn clear_box(&mut self, xy: [i32;2], size: [u32;2]) {
+        let [width, height] = size;
+        let [x, y] = xy;
         for y in y..y + height as i32 {
             for x in x..x + width as i32 {
-                self.put_tile((x, y), Tile::default());
+                self.put_tile([x, y], Tile::default());
             }
         }
     }
 
     /// Draw a box on the terminal using [BorderGlyphs].
-    pub fn draw_box(&mut self, xy: (i32, i32), size: (u32, u32), border_glyphs: BorderGlyphs) {
-        let (x, y) = xy;
-        let (width, height) = size;
+    pub fn draw_box(&mut self, xy: [i32;2], size: [u32;2], border_glyphs: BorderGlyphs) {
+        let [x, y] = xy;
+        let [width, height] = size;
         let width = width as usize;
         let height = height as usize;
         let left = x as usize;
@@ -340,23 +339,23 @@ impl Terminal {
         let top = top as i32;
         let bottom = bottom as i32;
 
-        self.put_char((left, bottom), border_glyphs.bottom_left);
-        self.put_char((left, top), border_glyphs.top_left);
-        self.put_char((right, top), border_glyphs.top_right);
-        self.put_char((right, bottom), border_glyphs.bottom_right);
+        self.put_char([left, bottom], border_glyphs.bottom_left);
+        self.put_char([left, top], border_glyphs.top_left);
+        self.put_char([right, top], border_glyphs.top_right);
+        self.put_char([right, bottom], border_glyphs.bottom_right);
     }
 
     /// Draw a box with box with the specified colors and [BorderGlyphs].
     pub fn draw_box_color(
         &mut self,
-        xy: (i32, i32),
-        size: (u32, u32),
+        xy: [i32;2],
+        size: [u32;2],
         fg_color: TileColor,
         bg_color: TileColor,
         border_glyphs: BorderGlyphs,
     ) {
-        let (x, y) = xy;
-        let (width, height) = size;
+        let [x, y] = xy;
+        let [width, height] = size;
         let width = width as usize;
         let height = height as usize;
         let x = x as usize;
@@ -393,15 +392,15 @@ impl Terminal {
         let bottom = bottom as i32;
 
         self.put_char_color(
-            (left, bottom),
+            [left, bottom],
             border_glyphs.bottom_left,
             fg_color,
             bg_color,
         );
-        self.put_char_color((left, top), border_glyphs.top_left, fg_color, bg_color);
-        self.put_char_color((right, top), border_glyphs.top_right, fg_color, bg_color);
+        self.put_char_color([left, top], border_glyphs.top_left, fg_color, bg_color);
+        self.put_char_color([right, top], border_glyphs.top_right, fg_color, bg_color);
         self.put_char_color(
-            (right, bottom),
+            [right, bottom],
             border_glyphs.bottom_right,
             fg_color,
             bg_color,
@@ -409,14 +408,14 @@ impl Terminal {
     }
 
     /// Draw a box with a single-line border.
-    pub fn draw_box_single(&mut self, xy: (i32, i32), size: (u32, u32)) {
+    pub fn draw_box_single(&mut self, xy: [i32;2], size: [u32;2]) {
         self.draw_box(xy, size, SINGLE_LINE_GLYPHS);
     }
     /// Draw a box with a colored single-line border.
     pub fn draw_box_single_color(
         &mut self,
-        xy: (i32, i32),
-        size: (u32, u32),
+        xy: [i32;2],
+        size: [u32;2],
         fg_color: TileColor,
         bg_color: TileColor,
     ) {
@@ -424,14 +423,14 @@ impl Terminal {
     }
 
     /// Draw a box with a double-line border.
-    pub fn draw_box_double(&mut self, xy: (i32, i32), size: (u32, u32)) {
+    pub fn draw_box_double(&mut self, xy: [i32;2], size: [u32;2]) {
         self.draw_box(xy, size, DOUBLE_LINE_GLYPHS);
     }
     /// Draw a box with a colored double-line border.
     pub fn draw_box_double_color(
         &mut self,
-        xy: (i32, i32),
-        size: (u32, u32),
+        xy: [i32;2],
+        size: [u32;2],
         fg_color: TileColor,
         bg_color: TileColor,
     ) {
@@ -440,21 +439,21 @@ impl Terminal {
 
     /// Draw a single-line border around the edge of the whole terminal.
     pub fn draw_border_single(&mut self) {
-        self.draw_box_single((0, 0), self.size.into());
+        self.draw_box_single([0,0], self.size.into());
     }
 
     /// Draw a colored single-line border around the edge of the whole terminal.
     pub fn draw_border_single_color(&mut self, fg_color: TileColor, bg_color: TileColor) {
-        self.draw_box_single_color((0, 0), self.size.into(), fg_color, bg_color);
+        self.draw_box_single_color([0, 0], self.size.into(), fg_color, bg_color);
     }
 
     /// Draw a double-line border around the edge of the whole terminal.
     pub fn draw_border_double(&mut self) {
-        self.draw_box_double((0, 0), self.size.into());
+        self.draw_box_double([0, 0], self.size.into());
     }
     /// Draw a colored double-line border around the edge of the whole terminal.
     pub fn draw_border_double_color(&mut self, fg_color: TileColor, bg_color: TileColor) {
-        self.draw_box_double_color((0, 0), self.size.into(), fg_color, bg_color);
+        self.draw_box_double_color([0, 0], self.size.into(), fg_color, bg_color);
     }
 
     /// Clear the terminal tiles to default - empty tiles with
@@ -466,8 +465,8 @@ impl Terminal {
     }
 
     /// Returns true if the given position is inside the bounds of the terminal.
-    pub fn is_in_bounds(&self, xy: (i32, i32)) -> bool {
-        let (x, y) = xy;
+    pub fn is_in_bounds(&self, xy: [i32;2]) -> bool {
+        let [x, y] = xy;
         (x as u32) < self.width() && (y as u32) < self.height()
     }
 
@@ -483,27 +482,22 @@ impl Terminal {
 
     /// An immutable iterator over an entire row of tiles in the terminal.
     pub fn row_iter(&self, y: usize) -> Iter<Tile> {
-        self.tiles[y * self.width() as usize..self.width() as usize].iter()
+        self.tiles.row_iter(y)
     }
 
     /// A mutable iterator over an entire row of tiles in the terminal.
     pub fn row_iter_mut(&mut self, y: usize) -> IterMut<Tile> {
-        let w = self.width() as usize;
-        let i = y * w;
-        self.tiles[i..i + w].iter_mut()
+        self.tiles.row_iter_mut(y)
     }
 
     /// An immutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter(&self, x: i32) -> StepBy<Iter<Tile>> {
-        return self.tiles[x as usize..]
-            .iter()
-            .step_by(self.width() as usize);
+    pub fn column_iter(&self, x: usize) -> StepBy<Iter<Tile>> {
+        self.tiles.column_iter(x)
     }
 
     /// A mutable iterator over an entire column of tiles in the terminal.
     pub fn column_iter_mut(&mut self, x: usize) -> StepBy<IterMut<Tile>> {
-        let w = self.width() as usize;
-        return self.tiles[x..].iter_mut().step_by(w);
+        self.tiles.column_iter_mut(x)
     }
 }
 
@@ -513,38 +507,38 @@ mod tests {
 
     #[test]
     fn put_char() {
-        let mut term = Terminal::with_size((20, 20));
+        let mut term = Terminal::with_size([20, 20]);
 
-        term.put_char((5, 5), 'h');
+        term.put_char([5, 5], 'h');
 
-        assert_eq!('h', term.get_char((5, 5)));
+        assert_eq!('h', term.get_char([5, 5]));
     }
 
     #[test]
     fn put_string() {
-        let mut term = Terminal::with_size((20, 20));
-        term.put_string((0, 0), "Hello");
-        assert_eq!("Hello", term.get_string((0, 0), 5));
+        let mut term = Terminal::with_size([20, 20]);
+        term.put_string([0, 0], "Hello");
+        assert_eq!("Hello", term.get_string([0, 0], 5));
 
-        term.put_string((18, 19), "Hello");
-        assert_eq!("He", term.get_string((18, 19), 2));
+        term.put_string([18, 19], "Hello");
+        assert_eq!("He", term.get_string([18, 19], 2));
     }
 
     #[test]
     fn edges() {
-        let mut term = Terminal::with_size((25, 20));
-        term.put_char((0, 0), 'a');
-        term.put_char((24, 19), 'a');
+        let mut term = Terminal::with_size([25, 20]);
+        term.put_char([0, 0], 'a');
+        term.put_char([24, 19], 'a');
     }
 
     #[test]
     fn column_get() {
-        let mut term = Terminal::with_size((15, 10));
-        term.put_char((3, 0), 'H');
-        term.put_char((3, 1), 'e');
-        term.put_char((3, 2), 'l');
-        term.put_char((3, 3), 'l');
-        term.put_char((3, 4), 'o');
+        let mut term = Terminal::with_size([15, 10]);
+        term.put_char([3, 0], 'H');
+        term.put_char([3, 1], 'e');
+        term.put_char([3, 2], 'l');
+        term.put_char([3, 3], 'l');
+        term.put_char([3, 4], 'o');
 
         let chars: Vec<_> = term.column_iter(3).take(5).map(|t| t.glyph).collect();
         assert_eq!("Hello", String::from_iter(chars));
@@ -552,27 +546,27 @@ mod tests {
 
     #[test]
     fn column_put() {
-        let mut term = Terminal::with_size((15, 10));
+        let mut term = Terminal::with_size([15, 10]);
         let text = "Hello".chars();
         for (mut t, c) in term.column_iter_mut(5).take(5).zip(text) {
             t.glyph = c;
         }
 
-        assert_eq!('H', term.get_char((5, 0)));
-        assert_eq!('e', term.get_char((5, 1)));
-        assert_eq!('l', term.get_char((5, 2)));
-        assert_eq!('l', term.get_char((5, 3)));
-        assert_eq!('o', term.get_char((5, 4)));
+        assert_eq!('H', term.get_char([5, 0]));
+        assert_eq!('e', term.get_char([5, 1]));
+        assert_eq!('l', term.get_char([5, 2]));
+        assert_eq!('l', term.get_char([5, 3]));
+        assert_eq!('o', term.get_char([5, 4]));
     }
 
     #[test]
     fn border_test() {
-        let mut term = Terminal::with_size((10, 10));
-        term.draw_box_single((0, 0), (5, 5));
+        let mut term = Terminal::with_size([10, 10]);
+        term.draw_box_single([0, 0], [5, 5]);
 
-        assert_eq!(term.get_char((0, 0)), SINGLE_LINE_GLYPHS.top_left);
-        assert_eq!(term.get_char((0, 4)), SINGLE_LINE_GLYPHS.bottom_left);
-        assert_eq!(term.get_char((4, 0)), SINGLE_LINE_GLYPHS.top_right);
-        assert_eq!(term.get_char((4, 4)), SINGLE_LINE_GLYPHS.bottom_right);
+        assert_eq!(term.get_char([0, 0]), SINGLE_LINE_GLYPHS.top_left);
+        assert_eq!(term.get_char([0, 4]), SINGLE_LINE_GLYPHS.bottom_left);
+        assert_eq!(term.get_char([4, 0]), SINGLE_LINE_GLYPHS.top_right);
+        assert_eq!(term.get_char([4, 4]), SINGLE_LINE_GLYPHS.bottom_right);
     }
 }
