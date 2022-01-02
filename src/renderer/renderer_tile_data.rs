@@ -1,10 +1,10 @@
-use bevy::math::{UVec2, Vec2};
+use bevy::{math::{UVec2, Vec2}, prelude::Component};
 
 use crate::terminal::Tile;
 
 use super::glyph_mapping::GlyphMapping;
 
-#[derive(Default)]
+#[derive(Component, Default)]
 pub struct TerminalRendererTileData {
     pub fg_colors: Vec<[u8; 4]>,
     pub bg_colors: Vec<[u8; 4]>,

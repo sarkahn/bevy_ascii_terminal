@@ -32,12 +32,12 @@ pub struct Tile {
 /// ```
 /// use bevy_ascii_terminal::Terminal;
 ///
-/// let mut term = Terminal::with_size((10,10));
+/// let mut term = Terminal::with_size([10,10]);
 ///
-/// term.put_char((1,1), 'h');
-/// term.put_string((2,1), "ello");
+/// term.put_char([1,1], 'h');
+/// term.put_string([2,1], "ello");
 ///
-/// let hello = term.get_string((1,1), 5);
+/// let hello = term.get_string([1,1], 5);
 /// ```
 #[derive(Component, Default)]
 pub struct Terminal {

@@ -1,7 +1,6 @@
 [package]
 name = "bevy_ascii_terminal"
-description = "A simple terminal for rendering ascii in bevy."
-version = "0.7.6"
+version = "0.8.0"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/bevy_ascii_terminal"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
@@ -9,16 +8,18 @@ license = "MIT"
 edition = "2021"
 exclude = ["images/*"]
 readme = "README.md"
+description = "A simple terminal for rendering ascii in bevy."
 keywords = ["bevy", "ascii", "terminal", "roguelike", "tilemap"]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "5479047aa213ab0276565f7d6048e01deb7d326a", default-features = false, features = ["render"] }
+bevy = { git = "https://github.com/Davier/bevy", branch = "mesh2d", default-features = false, features = ["render"] }
 ron = "0.6.4"
-sark_grids = "0.1.4"
+sark_grids = { path = "../sark_grids", version = "0.1.4" }
+bitflags = "1.2"
 
 [dev-dependencies]
-bevy = {git = "https://github.com/bevyengine/bevy", rev = "5479047aa213ab0276565f7d6048e01deb7d326a", features = ["png", "bevy_winit", "bevy_render"]}
+bevy = { git = "https://github.com/Davier/bevy", branch = "mesh2d", features = ["png", "bevy_winit", "bevy_render"] }
 rand = "0.7.3"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
-bevy_tiled_camera = { path = "../bevy_tiled_camera", version = "0.3.0" }
+bevy_tiled_camera = { path = "../bevy_tiled_camera" }

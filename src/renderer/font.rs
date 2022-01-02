@@ -48,12 +48,13 @@ use super::plugin::TerminalAssetLoadState;
 /// Terminal component that determines which texture is rendered by the terminal.
 ///
 /// Also contains various functions to inspect details of the font.
+#[derive(Component)]
 pub struct TerminalFont {
     /// The file name (including extension) of the texture to render
     name: String,
     /// The color on the texture that should be treated as the background
     clip_color: Color,
-    tex_handle: Handle<Texture>,
+    tex_handle: Handle<Image>,
     pixels_per_unit: UVec2,
     //tile_count: UVec2,
 }
@@ -120,7 +121,7 @@ impl TerminalFont {
     }
 
     /// Handle to the underlying font texture.
-    pub(crate) fn texture_handle(&self) -> &Handle<Texture> {
+    pub(crate) fn texture_handle(&self) -> &Handle<Image> {
         &self.tex_handle
     }
 
@@ -128,11 +129,12 @@ impl TerminalFont {
     /// added to `Assets<Texture>`
     pub(crate) fn from_texture(
         name: &str,
-        tex_handle: Handle<Texture>,
-        textures: &Assets<Texture>,
+        tex_handle: Handle<Image>,
+        textures: &Assets<Image>,
     ) -> Self {
-        let texture = textures.get(tex_handle.clone_weak()).unwrap();
-        let tex_size = UVec2::new(texture.size.width, texture.size.height);
+        let image = textures.get(tex_handle.clone_weak()).unwrap();
+        let tex_size = UVec2::ZERO;//UVec2::new(image.descriptor.width, image.size.height);
+        todo!();
         let tile_count = UVec2::new(16, 16);
         let pixels_per_tile = tex_size / tile_count;
 
@@ -185,7 +187,7 @@ impl TerminalFonts {
 /// Plugin for systems and resources related to terminal font rendering.
 pub(crate) struct TerminalFontPlugin;
 impl Plugin for TerminalFontPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.init_resource::<LoadingTerminalTextures>()
             .init_resource::<TerminalFonts>()
             .add_system_set(
@@ -205,7 +207,7 @@ struct LoadingTerminalTextures(Option<Vec<HandleUntyped>>);
 fn terminal_load_fonts(
     asset_server: Res<AssetServer>,
     mut loading: ResMut<LoadingTerminalTextures>,
-    mut textures: ResMut<Assets<Texture>>,
+    mut textures: ResMut<Assets<Image>>,
     mut fonts: ResMut<TerminalFonts>,
 ) {
     loading.0 = match asset_server.load_folder("textures") {
@@ -216,9 +218,9 @@ fn terminal_load_fonts(
     load_built_in_fonts(&mut fonts, &mut textures);
 }
 
-fn load_built_in_fonts(fonts: &mut TerminalFonts, textures: &mut ResMut<Assets<Texture>>) {
+fn load_built_in_fonts(fonts: &mut TerminalFonts, textures: &mut ResMut<Assets<Image>>) {
     for font_data in BUILT_IN_FONTS {
-        let tex = Texture::from_buffer(font_data.bytes, ImageType::Extension("png")).unwrap();
+        let tex = Image::from_buffer(font_data.bytes, ImageType::Extension("png")).unwrap();
         let handle = textures.add(tex);
 
         let font = TerminalFont::from_texture(font_data.name, handle, textures);
@@ -229,7 +231,7 @@ fn load_built_in_fonts(fonts: &mut TerminalFonts, textures: &mut ResMut<Assets<T
 fn terminal_check_loading_fonts(
     asset_server: Res<AssetServer>,
     loading: Res<LoadingTerminalTextures>,
-    textures: ResMut<Assets<Texture>>,
+    textures: ResMut<Assets<Image>>,
     mut state: ResMut<State<TerminalAssetLoadState>>,
     mut fonts: ResMut<TerminalFonts>,
 ) {

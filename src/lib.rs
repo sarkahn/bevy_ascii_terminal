@@ -21,13 +21,13 @@
 //! use bevy_tiled_camera::*;
 //!
 //! fn setup(mut commands: Commands) {
-//!     let size = (20, 3);
+//!     let size = [20, 3];
 //!
 //!     let mut term_bundle = TerminalBundle::new().with_size(size);
 //!     let terminal = &mut term_bundle.terminal;
 //!
 //!     terminal.draw_border_single();
-//!     terminal.put_string((1, 1), "Hello world!");
+//!     terminal.put_string([1, 1], "Hello world!");
 //!
 //!     commands.spawn_bundle(term_bundle);
 //!
@@ -36,7 +36,7 @@
 //! }
 //!
 //! fn main () {
-//!     App::build()
+//!     App::new()
 //!     .add_plugins(DefaultPlugins)
 //!     .add_plugin(TerminalPlugin)
 //!     .add_plugin(TiledCameraPlugin)
@@ -44,7 +44,7 @@
 //!     .run();
 //! }
 //! ```
-//pub mod renderer;
+pub mod renderer;
 
 mod color;
 mod color_blend;
@@ -55,7 +55,10 @@ pub use color::*;
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
 use bevy::prelude::*;
-//use renderer::{TerminalRendererBundle, TerminalRendererPlugin};
+use renderer::{
+    TerminalRendererBundle, 
+    TerminalRendererPlugin
+};
 
 //pub use renderer::TerminalAssetLoadState;
 
@@ -70,7 +73,7 @@ use bevy::prelude::*;
 ///
 /// fn setup(mut commands: Commands) {
 ///     commands.spawn_bundle(TerminalBundle::new()
-///         .with_size((10,10))
+///         .with_size([10,10])
 ///         .with_font("jt_curses_12x12.png"));
 ///     }
 ///
@@ -81,8 +84,8 @@ pub struct TerminalBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
 
-    //#[bundle]
-    //pub renderer: TerminalRendererBundle,
+    #[bundle]
+    pub renderer: TerminalRendererBundle,
 }
 
 impl TerminalBundle {
@@ -117,6 +120,6 @@ impl TerminalBundle {
 pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
-        //app.add_plugin(TerminalRendererPlugin);
+        app.add_plugin(TerminalRendererPlugin);
     }
 }
