@@ -15,7 +15,7 @@ use bevy::{
     }, sprite::Mesh2dHandle,
 };
 
-use super::{font::*, *, pipeline::TerminalPipelinePlugin};
+use super::{font::*, *, pipeline::{TerminalMeshPipeline, TerminalMeshPipelinePlugin}};
 
 //pub(crate) const TERMINAL_RENDERER_PIPELINE: HandleUntyped = 
 //  HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 12121362113012541389);
@@ -51,9 +51,9 @@ impl Plugin for TerminalRendererPlugin {
 
         app.add_state(TerminalAssetLoadState::AssetsLoading);
 
-        app.add_plugin(TerminalPipelinePlugin);
+        app.add_plugin(TerminalMeshPipelinePlugin);
 
-        // app.add_plugin(TerminalFontPlugin);
+        app.add_plugin(TerminalFontPlugin);
 
         app //.add_asset::<TerminalMaterial>()
             .add_system_set(
@@ -68,7 +68,7 @@ impl Plugin for TerminalRendererPlugin {
                     // )
                     .with_system(
                         terminal_renderer_update_size
-                            .after(TERMINAL_UPDATE_MATERIAL)
+                            //.after(TERMINAL_UPDATE_MATERIAL)
                             .label(TERMINAL_UPDATE_SIZE),
                     )
                     .with_system(
@@ -99,7 +99,7 @@ pub fn terminal_renderer_init(
     mut q: Query<&mut Mesh2dHandle, (Added<Mesh2dHandle>, With<TerminalRendererVertexData>)>,
 ) {
     for mut mesh in q.iter_mut() {
-        //info!("Initializing ascii terminal mesh");
+        info!("Initializing ascii terminal mesh");
         let new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         *mesh = Mesh2dHandle(meshes.add(new_mesh));
     }
@@ -166,9 +166,9 @@ fn terminal_renderer_update_size(
             .get_mut(mesh.0.clone())
             .expect("Error retrieving mesh from terminal renderer");
 
-        //info!("Renderer update size: {}!", vert_data.indices.len());
-        //info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
-        //info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
+        info!("Changing mesh size size: {}, Length: {}", size, vert_data.indices.len());
+        info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
+        info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
         mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
         mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
     }
@@ -178,7 +178,7 @@ pub fn terminal_renderer_update_tile_data(
     mut q: Query<(&Terminal, &mut TerminalRendererTileData), Changed<Terminal>>,
 ) {
     for (term, mut data) in q.iter_mut() {
-        //info!("Renderer update tile data!");
+        info!("Renderer update tile data (colors)!");
         //info!("First tiles: {:?}", &term.tiles[0..4]);
         data.update_from_tiles(&term.tiles.slice(..));
     }
@@ -186,11 +186,11 @@ pub fn terminal_renderer_update_tile_data(
 
 pub fn terminal_renderer_update_mesh(
     mut meshes: ResMut<Assets<Mesh>>,
-    mut q: Query<(&TerminalRendererTileData, &Handle<Mesh>), Changed<TerminalRendererTileData>>,
+    mut q: Query<(&TerminalRendererTileData, &Mesh2dHandle), Changed<TerminalRendererTileData>>,
 ) {
     for (tile_data, mesh) in q.iter_mut() {
-        let mesh = meshes.get_mut(mesh).expect("Error accessing terminal mesh");
-        //info!("writing colors and uvs to mesh");
+        let mesh = meshes.get_mut(&mesh.0).expect("Error accessing terminal mesh");
+        info!("writing colors and uvs to mesh");
         //info!("First fg Colors: {:?}", &tile_data.fg_colors[0..4]);
         //info!("First bg Colors: {:?}", &tile_data.bg_colors[0..4]);
         //info!("First uvs: {:?}", &tile_data.uvs[0..4]);
@@ -199,7 +199,7 @@ pub fn terminal_renderer_update_mesh(
         
         //mesh.set_attribute("FG_Color", tile_data.fg_colors.clone());
         //mesh.set_attribute("BG_Color", tile_data.bg_colors.clone());
-        //mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tile_data.uvs.clone());
+        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tile_data.uvs.clone());
     }
 }
 

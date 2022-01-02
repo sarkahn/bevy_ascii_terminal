@@ -1,6 +1,7 @@
 //! Handles mesh construction and rendering for the terminal.
 
 mod pipeline;
+mod material;
 pub mod font;
 pub mod plugin;
 
@@ -12,19 +13,14 @@ pub use plugin::{TerminalAssetLoadState, TerminalRendererPlugin};
 
 pub mod glyph_mapping;
 use self::{
-    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData, pipeline::ColoredMesh2d,
+    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData, pipeline::TerminalMeshRender,
 };
 use crate::{
     //renderer::plugin::TERMINAL_RENDERER_PIPELINE, 
     terminal::Terminal
 };
 use bevy::{
-    prelude::*,
-    reflect::TypeUuid,
-    render::{
-        //mesh::Indices, pipeline::PrimitiveTopology, pipeline::RenderPipeline,
-        //render_graph::base::MainPass, renderer::RenderResources, shader::ShaderDefs,
-    }, sprite::Mesh2dHandle,
+    prelude::*, sprite::Mesh2dHandle,
 };
 
 /// Terminal component specifying the origin of the terminal mesh.
@@ -94,7 +90,7 @@ pub struct TerminalRendererBundle {
     pub tile_data: TerminalRendererTileData,
     pub font: TerminalFont,
     pub scaling: TileScaling,
-    pub renderer: ColoredMesh2d,
+    pub(crate) render_tag: TerminalMeshRender,
     pub mesh: Mesh2dHandle,
     pub terminal_pivot: TerminalPivot,
     pub tile_pivot: TilePivot,
@@ -142,9 +138,9 @@ impl Default for TerminalRendererBundle {
             mesh: Default::default(),
             terminal_pivot: Default::default(),
             tile_pivot: Default::default(),
-            renderer: ColoredMesh2d,
-            visibility: Visibility::default(),
-            computed_visibility: ComputedVisibility::default(),
+            render_tag:  Default::default(),
+            visibility: Default::default(),
+            computed_visibility: Default::default(),
         }
     }
 }

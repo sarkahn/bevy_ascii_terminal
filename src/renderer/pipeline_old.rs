@@ -4,13 +4,14 @@ use bevy::{
     prelude::*,
     reflect::TypeUuid,
     render::{
+        mesh::Indices,
         render_asset::RenderAssets,
         render_phase::{AddRenderCommand, DrawFunctions, RenderPhase, SetItemPipeline},
         render_resource::{
-            BlendState, ColorTargetState, ColorWrites, FragmentState, FrontFace, MultisampleState,
-            PolygonMode, PrimitiveState, RenderPipelineCache, RenderPipelineDescriptor,
-            SpecializedPipeline, SpecializedPipelines, TextureFormat, VertexAttribute,
-            VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+            BlendState, ColorTargetState, ColorWrites, Face, FragmentState, FrontFace,
+            MultisampleState, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineCache,
+            RenderPipelineDescriptor, SpecializedPipeline, SpecializedPipelines, TextureFormat,
+            VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
         texture::BevyDefault,
         view::VisibleEntities,
@@ -18,57 +19,28 @@ use bevy::{
     },
     sprite::{
         DrawMesh2d, Mesh2dHandle, Mesh2dPipeline, Mesh2dPipelineKey, Mesh2dUniform,
-        SetMesh2dBindGroup, SetMesh2dViewBindGroup, Material2dPipeline,
+        SetMesh2dBindGroup, SetMesh2dViewBindGroup,
     },
 };
-
-pub struct TerminalMeshPipelinePlugin;
-
-/// Handle to the custom shader with a unique random ID
-pub const COLORED_MESH2D_SHADER_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 12625545428412094821);
-
-impl Plugin for TerminalMeshPipelinePlugin {
-    fn build(&self, app: &mut App) {
-        // Load our custom shader
-        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
-        shaders.set_untracked(
-            COLORED_MESH2D_SHADER_HANDLE,
-            Shader::from_wgsl(include_str!("terminal.wgsl")),
-        );
-
-        // Register our custom draw function and pipeline, and add our render systems
-        let render_app = app.get_sub_app_mut(RenderApp).unwrap();
-        render_app
-            .add_render_command::<Transparent2d, DrawColoredMesh2d>()
-            .init_resource::<TerminalMeshPipeline>()
-            .init_resource::<SpecializedPipelines<TerminalMeshPipeline>>()
-            .add_system_to_stage(RenderStage::Extract, extract_colored_mesh2d)
-            .add_system_to_stage(RenderStage::Queue, queue_terminal_mesh);
-    }
-}
-
-
-/// A marker component for colored 2d meshes
+/// A marker component for terminal meshes
 #[derive(Component, Default)]
-pub struct TerminalMeshRender;
+pub(crate) struct TerminalMeshRender;
 
-/// Custom pipeline for 2d meshes with vertex colors
 pub struct TerminalMeshPipeline {
     /// this pipeline wraps the standard [`Mesh2dPipeline`]
-    pub(crate) mesh2d_pipeline: Mesh2dPipeline,
+    pipeline: Mesh2dPipeline,
 }
 
 impl FromWorld for TerminalMeshPipeline {
     fn from_world(world: &mut World) -> Self {
         Self {
-            mesh2d_pipeline: Mesh2dPipeline::from_world(world),
+            pipeline: Mesh2dPipeline::from_world(world),
         }
     }
 }
 
-// We implement `SpecializedPipeline` tp customize the default rendering from `Mesh2dPipeline`
-impl Material2dPipeline for TerminalMeshPipeline {
+// We implement `SpecializedPipeline` to customize the default rendering from `Mesh2dPipeline`
+impl SpecializedPipeline for TerminalMeshPipeline {
     type Key = Mesh2dPipelineKey;
 
     fn specialize(&self, key: Self::Key) -> RenderPipelineDescriptor {
@@ -83,20 +55,26 @@ impl Material2dPipeline for TerminalMeshPipeline {
                 // position is available at location 0 in the shader
                 shader_location: 0,
             },
+            //Uv
+            VertexAttribute {
+                format: VertexFormat::Float32x2,
+                offset: 28,
+                shader_location: 1,
+            },
             // Color
             VertexAttribute {
                 format: VertexFormat::Float32x4,
                 offset: 0,
-                shader_location: 1,
+                shader_location: 2,
             },
         ];
-        // This is the sum of the size of position and color attributes (12 + 16 = 28)
-        let vertex_array_stride = 28;
+        //Pos(4x3) 12 + Uv (4x2) 8 + FGColor (4x4) 16 
+        let vertex_array_stride = 36;
 
         RenderPipelineDescriptor {
             vertex: VertexState {
                 // Use our custom shader
-                shader: COLORED_MESH2D_SHADER_HANDLE.typed::<Shader>(),
+                shader: TERMINAL_MESH_SHADER_HANDLE.typed::<Shader>(),
                 entry_point: "vertex".into(),
                 shader_defs: Vec::new(),
                 // Use our custom vertex buffer
@@ -108,7 +86,7 @@ impl Material2dPipeline for TerminalMeshPipeline {
             },
             fragment: Some(FragmentState {
                 // Use our custom shader
-                shader: COLORED_MESH2D_SHADER_HANDLE.typed::<Shader>(),
+                shader: TERMINAL_MESH_SHADER_HANDLE.typed::<Shader>(),
                 shader_defs: Vec::new(),
                 entry_point: "fragment".into(),
                 targets: vec![ColorTargetState {
@@ -120,9 +98,9 @@ impl Material2dPipeline for TerminalMeshPipeline {
             // Use the two standard uniforms for 2d meshes
             layout: Some(vec![
                 // Bind group 0 is the view uniform
-                self.mesh2d_pipeline.view_layout.clone(),
+                self.pipeline.view_layout.clone(),
                 // Bind group 1 is the mesh uniform
-                self.mesh2d_pipeline.mesh_layout.clone(),
+                self.pipeline.mesh_layout.clone(),
             ]),
             primitive: PrimitiveState {
                 front_face: FrontFace::Cw,
@@ -139,7 +117,7 @@ impl Material2dPipeline for TerminalMeshPipeline {
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },
-            label: Some("colored_mesh2d_pipeline".into()),
+            label: Some("terminal_mesh_pipeline".into()),
         }
     }
 }
@@ -155,8 +133,38 @@ type DrawColoredMesh2d = (
     // Draw the mesh
     DrawMesh2d,
 );
+
+
+/// Plugin that renders [`ColoredMesh2d`]s
+pub struct TerminalMeshPipelinePlugin;
+
+/// Handle to the custom shader with a unique random ID
+pub const TERMINAL_MESH_SHADER_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 13828845428412094821);
+
+impl Plugin for TerminalMeshPipelinePlugin {
+    fn build(&self, app: &mut App) {
+        // Load our custom shader
+        let shader_string = TERMINAL_MESH_SHADER;
+        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
+        shaders.set_untracked(
+            TERMINAL_MESH_SHADER_HANDLE,
+            Shader::from_wgsl(shader_string),
+        );
+
+        // Register our custom draw function and pipeline, and add our render systems
+        let render_app = app.get_sub_app_mut(RenderApp).unwrap();
+        render_app
+            .add_render_command::<Transparent2d, DrawColoredMesh2d>()
+            .init_resource::<TerminalMeshPipeline>()
+            .init_resource::<SpecializedPipelines<TerminalMeshPipeline>>()
+            .add_system_to_stage(RenderStage::Extract, extract_terminal_mesh)
+            .add_system_to_stage(RenderStage::Queue, queue_colored_mesh2d);
+    }
+}
+
 /// Extract the [`ColoredMesh2d`] marker component into the render app
-pub fn extract_colored_mesh2d(
+fn extract_terminal_mesh(
     mut commands: Commands,
     mut previous_len: Local<usize>,
     query: Query<(Entity, &ComputedVisibility), With<TerminalMeshRender>>,
@@ -172,9 +180,9 @@ pub fn extract_colored_mesh2d(
     commands.insert_or_spawn_batch(values);
 }
 
-/// Queue the 2d meshes marked with [`ColoredMesh2d`] using our custom pipeline and draw function
+/// Queue the 2d meshes marked with [`TerminalMeshRender`] using our custom pipeline and draw function
 #[allow(clippy::too_many_arguments)]
-pub fn queue_terminal_mesh(
+fn queue_colored_mesh2d(
     transparent_draw_functions: Res<DrawFunctions<Transparent2d>>,
     colored_mesh2d_pipeline: Res<TerminalMeshPipeline>,
     mut pipelines: ResMut<SpecializedPipelines<TerminalMeshPipeline>>,
@@ -224,3 +232,51 @@ pub fn queue_terminal_mesh(
         }
     }
 }
+
+const TERMINAL_MESH_SHADER: &str = r"
+// Import the standard 2d mesh uniforms and set their bind groups
+#import bevy_sprite::mesh2d_view_bind_group
+[[group(0), binding(0)]]
+var<uniform> view: View;
+#import bevy_sprite::mesh2d_struct
+[[group(1), binding(0)]]
+var<uniform> mesh: Mesh2d;
+
+// The structure of the vertex buffer is as specified in `specialize()`
+struct Vertex {
+    [[location(0)]] position: vec3<f32>;
+    [[location(1)]] uv: vec2<f32>;
+    [[location(2)]] color: vec4<f32>;
+};
+
+struct VertexOutput {
+    // The vertex shader must set the on-screen position of the vertex
+    [[builtin(position)]] clip_position: vec4<f32>;
+    [[location(0)]] uv: vec2<f32>;
+    // We pass the vertex color to the framgent shader in location 1
+    [[location(1)]] color: vec4<f32>;
+};
+
+/// Entry point for the vertex shader
+[[stage(vertex)]]
+fn vertex(vertex: Vertex) -> VertexOutput {
+    var out: VertexOutput;
+    // Project the world position of the mesh into screen position
+    out.clip_position = view.view_proj * mesh.model * vec4<f32>(vertex.position, 1.0);
+    out.color = vertex.color;
+    return out;
+}
+
+// The input of the fragment shader must correspond to the output of the vertex shader for all `location`s
+struct FragmentInput {
+    [[location(0)]] uv: vec2<f32>;
+    // The color is interpolated between vertices by default
+    [[location(1)]] color: vec4<f32>;
+};
+
+/// Entry point for the fragment shader
+[[stage(fragment)]]
+fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
+    return in.color;
+}
+";

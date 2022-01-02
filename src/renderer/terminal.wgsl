@@ -9,14 +9,16 @@ var<uniform> mesh: Mesh2d;
 // The structure of the vertex buffer is as specified in `specialize()`
 struct Vertex {
     [[location(0)]] position: vec3<f32>;
-    [[location(1)]] color: vec4<f32>;
+    [[location(1)]] uv: vec2<f32>;
+    [[location(2)]] color: vec4<f32>;
 };
 
 struct VertexOutput {
     // The vertex shader must set the on-screen position of the vertex
     [[builtin(position)]] clip_position: vec4<f32>;
-    // We pass the vertex color to the framgent shader in location 0
-    [[location(0)]] color: vec4<f32>;
+    [[location(0)]] uv: vec2<f32>;
+    // We pass the vertex color to the framgent shader in location 1
+    [[location(1)]] color: vec4<f32>;
 };
 
 /// Entry point for the vertex shader
