@@ -15,7 +15,7 @@ use bevy::{
     }, sprite::Mesh2dHandle,
 };
 
-use super::{font::*, *, pipeline::{TerminalMeshPipeline, TerminalMeshPipelinePlugin}};
+use super::{font::*, *, material::TerminalMaterialPlugin,};
 
 //pub(crate) const TERMINAL_RENDERER_PIPELINE: HandleUntyped = 
 //  HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 12121362113012541389);
@@ -51,21 +51,20 @@ impl Plugin for TerminalRendererPlugin {
 
         app.add_state(TerminalAssetLoadState::AssetsLoading);
 
-        app.add_plugin(TerminalMeshPipelinePlugin);
-
         app.add_plugin(TerminalFontPlugin);
 
-        app //.add_asset::<TerminalMaterial>()
-            .add_system_set(
+        app.add_plugin(TerminalMaterialPlugin);
+
+        app .add_system_set(
                 SystemSet::on_enter(TerminalAssetLoadState::AssetsDoneLoading)
                     .with_system(terminal_renderer_init.system()),
             )
             .add_system_set(
                 SystemSet::on_update(TerminalAssetLoadState::AssetsDoneLoading)
-                    // .with_system(
-                    //     terminal_renderer_update_material
-                    //         .label(TERMINAL_UPDATE_MATERIAL),
-                    // )
+                    .with_system(
+                        terminal_renderer_update_material
+                            .label(TERMINAL_UPDATE_MATERIAL),
+                    )
                     .with_system(
                         terminal_renderer_update_size
                             //.after(TERMINAL_UPDATE_MATERIAL)
@@ -99,33 +98,35 @@ pub fn terminal_renderer_init(
     mut q: Query<&mut Mesh2dHandle, (Added<Mesh2dHandle>, With<TerminalRendererVertexData>)>,
 ) {
     for mut mesh in q.iter_mut() {
-        info!("Initializing ascii terminal mesh");
+        //info!("Initializing ascii terminal mesh");
         let new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         *mesh = Mesh2dHandle(meshes.add(new_mesh));
     }
 }
 
-// fn terminal_renderer_update_material(
-//     fonts: Res<TerminalFonts>,
-//     mut materials: ResMut<Assets<TerminalMaterial>>,
-//     mut q: Query<(&TerminalFont, &mut Handle<TerminalMaterial>), Changed<TerminalFont>>,
-// ) {
-//     for (font, mut mat) in q.iter_mut() {
-//         //info!("Updating terminal renderer material");
-//         let existing_mat = materials.get(mat.clone_weak());
+fn terminal_renderer_update_material(
+    fonts: Res<TerminalFonts>,
+    mut materials: ResMut<Assets<TerminalMaterial>>,
+    mut q: Query<(&TerminalFont, &mut Handle<TerminalMaterial>), Changed<TerminalFont>>,
+) {
+    for (font, mut mat) in q.iter_mut() {
+        //info!("Updating terminal renderer material");
+        let existing_mat = materials.get(mat.clone_weak());
 
-//         if existing_mat.is_some() {
-//             materials.remove(mat.clone_weak());
-//         }
+        if existing_mat.is_some() {
+            materials.remove(mat.clone_weak());
+        }
 
-//         let handle = fonts.get(font.name()).texture_handle();
+        let handle = fonts.get(font.name()).texture_handle();
 
-//         *mat = materials.add(TerminalMaterial::from_texture(
-//             handle.clone(),
-//             font.clip_color(),
-//         ));
-//     }
-// }
+        *mat = materials.add(
+            TerminalMaterial { 
+                clip_color: font.clip_color(), 
+                texture: Some(handle.clone()), 
+            }
+        );
+    }
+}
 
 #[allow(clippy::type_complexity)]
 fn terminal_renderer_update_size(
@@ -166,9 +167,9 @@ fn terminal_renderer_update_size(
             .get_mut(mesh.0.clone())
             .expect("Error retrieving mesh from terminal renderer");
 
-        info!("Changing mesh size size: {}, Length: {}", size, vert_data.indices.len());
-        info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
-        info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
+        // info!("Changing mesh size size: {}, Length: {}", size, vert_data.indices.len());
+        // info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
+        // info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
         mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
         mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
     }
@@ -178,7 +179,7 @@ pub fn terminal_renderer_update_tile_data(
     mut q: Query<(&Terminal, &mut TerminalRendererTileData), Changed<Terminal>>,
 ) {
     for (term, mut data) in q.iter_mut() {
-        info!("Renderer update tile data (colors)!");
+        //info!("Renderer update tile data (colors)!");
         //info!("First tiles: {:?}", &term.tiles[0..4]);
         data.update_from_tiles(&term.tiles.slice(..));
     }
@@ -190,15 +191,15 @@ pub fn terminal_renderer_update_mesh(
 ) {
     for (tile_data, mesh) in q.iter_mut() {
         let mesh = meshes.get_mut(&mesh.0).expect("Error accessing terminal mesh");
-        info!("writing colors and uvs to mesh");
+        //info!("writing colors and uvs to mesh");
         //info!("First fg Colors: {:?}", &tile_data.fg_colors[0..4]);
         //info!("First bg Colors: {:?}", &tile_data.bg_colors[0..4]);
         //info!("First uvs: {:?}", &tile_data.uvs[0..4]);
 
-        mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, tile_data.fg_colors.clone());
+        //mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, tile_data.fg_colors.clone());
         
-        //mesh.set_attribute("FG_Color", tile_data.fg_colors.clone());
-        //mesh.set_attribute("BG_Color", tile_data.bg_colors.clone());
+        mesh.set_attribute("bg_color", tile_data.bg_colors.clone());
+        mesh.set_attribute("fg_color", tile_data.fg_colors.clone());
         mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tile_data.uvs.clone());
     }
 }

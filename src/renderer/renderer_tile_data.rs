@@ -25,7 +25,7 @@ impl TerminalRendererTileData {
         let len = (size.x * size.y) as usize;
 
         self.fg_colors.resize(len * 4, Default::default());
-        //self.bg_colors.resize(len * 4, Default::default());
+        self.bg_colors.resize(len * 4, Default::default());
         self.uvs.resize(len * 4, Default::default());
     }
 
@@ -49,7 +49,7 @@ impl TerminalRendererTileData {
 
             for j in vi..vi + 4 {
                 self.fg_colors[j] = tile.fg_color.into();
-                //self.bg_colors[j] = tile.bg_color.into();
+                self.bg_colors[j] = tile.bg_color.into();
             }
         }
     }

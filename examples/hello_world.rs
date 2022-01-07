@@ -18,7 +18,7 @@ fn spawn_terminal(mut commands: Commands) {
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
     term_bundle.terminal.draw_border_single();
-    term_bundle.terminal.put_string([1, 1], "Press spacebar");
+    term_bundle.terminal.put_string_color([1, 1], "Press spacebar", BLUE, BLACK);
 
     commands.spawn_bundle(term_bundle);
 
@@ -35,7 +35,11 @@ fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
         for mut term in q.iter_mut() {
             term.clear();
             term.draw_border_single();
-            term.put_string([1, 1], "Hello, world!");
+            term.put_char_color([1, 1], 'H', WHITE, GREY);
+            term.put_char_color([2, 1], 'e', BLUE, WHITE);
+            term.put_char_color([3, 1], 'l', GREEN, BLUE);
+            term.put_char_color([4, 1], 'l', RED, GREEN);
+            term.put_char_color([5, 1], 'o', GREEN, GREY);
         }
     }
 }

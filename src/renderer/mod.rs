@@ -1,6 +1,5 @@
 //! Handles mesh construction and rendering for the terminal.
 
-mod pipeline;
 mod material;
 pub mod font;
 pub mod plugin;
@@ -13,7 +12,7 @@ pub use plugin::{TerminalAssetLoadState, TerminalRendererPlugin};
 
 pub mod glyph_mapping;
 use self::{
-    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData, pipeline::TerminalMeshRender,
+    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData, material::TerminalMaterial,
 };
 use crate::{
     //renderer::plugin::TERMINAL_RENDERER_PIPELINE, 
@@ -90,8 +89,8 @@ pub struct TerminalRendererBundle {
     pub tile_data: TerminalRendererTileData,
     pub font: TerminalFont,
     pub scaling: TileScaling,
-    pub(crate) render_tag: TerminalMeshRender,
     pub mesh: Mesh2dHandle,
+    pub material: Handle<TerminalMaterial>,
     pub terminal_pivot: TerminalPivot,
     pub tile_pivot: TilePivot,
     pub visibility: Visibility,
@@ -136,9 +135,9 @@ impl Default for TerminalRendererBundle {
             font: Default::default(),
             scaling: Default::default(),
             mesh: Default::default(),
+            material: Default::default(),
             terminal_pivot: Default::default(),
             tile_pivot: Default::default(),
-            render_tag:  Default::default(),
             visibility: Default::default(),
             computed_visibility: Default::default(),
         }
