@@ -56,7 +56,8 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
     let mut rng = rand::thread_rng();
     for mut term in q.iter_mut() {
         for t in term.iter_mut() {
-            let glyph = (rng.gen_range(0, 255) as u8) as char;
+            let index = rng.gen_range(0, 255) as u8;
+            let glyph = code_page_437::index_to_glyph(index);
             let fg = rand_color(&mut rng);
             let bg = rand_color(&mut rng);
 

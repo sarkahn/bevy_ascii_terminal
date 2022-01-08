@@ -6,11 +6,12 @@ pub mod plugin;
 
 pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
+pub(crate) mod uv_mapping;
+pub mod code_page_437;
 
 pub use font::{TerminalFont, TerminalFonts};
 pub use plugin::{TerminalAssetLoadState, TerminalRendererPlugin};
 
-pub mod glyph_mapping;
 use self::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData, material::TerminalMaterial,
 };
@@ -59,26 +60,6 @@ impl Default for TileScaling {
         TileScaling::World
     }
 }
-
-// /// The material for the terminal renderer.
-// #[derive(Debug, RenderResources, ShaderDefs, Default, TypeUuid)]
-// #[uuid = "1e01121c-0b4a-315e-1bca-36733b11127e"]
-// pub struct TerminalMaterial {
-//     pub color: Color,
-//     pub clip_color: Color,
-//     #[shader_def] // This doesn't work for some reason...
-//     pub texture: Option<Handle<Texture>>,
-// }
-
-// impl TerminalMaterial {
-//     pub fn from_texture(tex: Handle<Texture>, clip_color: Color) -> Self {
-//         TerminalMaterial {
-//             color: Color::WHITE,
-//             clip_color,
-//             texture: Some(tex),
-//         }
-//     }
-// }
 
 /// A bundle of all the components required to render a terminal.
 ///

@@ -54,6 +54,8 @@ mod terminal;
 pub use color::*;
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
+pub use renderer::code_page_437;
+
 use bevy::prelude::*;
 use renderer::{
     TerminalRendererBundle, 

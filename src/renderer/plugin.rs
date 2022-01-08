@@ -7,20 +7,11 @@ pub const TERMINAL_UPDATE_MESH: &str = "terminal_update_mesh";
 
 use bevy::{
     prelude::*,
-    reflect::TypeUuid,
     render::{render_resource::PrimitiveTopology, mesh::Indices
-        // pipeline::PipelineDescriptor,
-        // render_graph::{base, AssetRenderResourcesNode, RenderGraph},
-        // shader::{ShaderStage, ShaderStages},
     }, sprite::Mesh2dHandle,
 };
 
 use super::{font::*, *, material::TerminalMaterialPlugin,};
-
-//pub(crate) const TERMINAL_RENDERER_PIPELINE: HandleUntyped = 
-//  HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 12121362113012541389);
-
-const TERMINAL_MATERIAL_NAME: &str = "terminal_mat";
 
 pub struct TerminalRendererPlugin;
 
@@ -31,9 +22,9 @@ pub struct TerminalRendererPlugin;
 /// ## Example
 ///
 /// ```ignore
-/// App::build().add_system_set(
+/// App::new().add_system_set(
 ///     SystemSet::on_enter(TerminalAssetLoadState::AssetsDoneLoading)
-///         .with_system(read_font_system.system());
+///         .with_system(read_font_system);
 /// )
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -132,7 +123,7 @@ fn terminal_renderer_update_size(
     mut q: Query<
         (
             &Terminal,
-            //&TerminalFont,
+            &TerminalFont,
             &TileScaling,
             &TerminalPivot,
             &TilePivot,
@@ -148,13 +139,13 @@ fn terminal_renderer_update_size(
         )>,
     >,
 ) {
-    for (terminal, /* font,*/ scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in
+    for (terminal, font, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in
         q.iter_mut()
     {
         let mut tile_size = UVec2::ONE;
-        // if let TileScaling::Pixels = scaling {
-        //     tile_size *= fonts.get(font.name()).pixels_per_unit();
-        // }
+        if let TileScaling::Pixels = scaling {
+            tile_size *= fonts.get(font.name()).pixels_per_unit();
+        }
 
         let size = terminal.size();
         vert_data.resize(size, term_pivot.0, tile_pivot.0, tile_size);
