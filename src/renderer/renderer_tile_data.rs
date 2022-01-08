@@ -6,8 +6,6 @@ use super::glyph_mapping::GlyphMapping;
 
 #[derive(Component, Default)]
 pub struct TerminalRendererTileData {
-    //pub fg_colors: Vec<[u8; 4]>,
-    //pub bg_colors: Vec<[u8; 4]>,
     pub fg_colors: Vec<[f32;4]>,
     pub bg_colors: Vec<[f32;4]>,
     pub uvs: Vec<[f32; 2]>,
@@ -79,6 +77,5 @@ mod tests {
         colors.update_from_tiles(&tiles);
 
         assert_eq!([0.0,0.0,1.0,1.0], colors.fg_colors[0]);
-        //assert_eq!([0, 0, u8::MAX, u8::MAX], colors.fg_colors[0]);
     }
 }

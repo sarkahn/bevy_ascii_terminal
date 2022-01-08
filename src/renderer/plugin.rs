@@ -20,9 +20,6 @@ use super::{font::*, *, material::TerminalMaterialPlugin,};
 //pub(crate) const TERMINAL_RENDERER_PIPELINE: HandleUntyped = 
 //  HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 12121362113012541389);
 
-const VERTEX_SHADER: &str = include_str!("terminal.vert");
-const FRAGMENT_SHADER: &str = include_str!("terminal.frag");
-
 const TERMINAL_MATERIAL_NAME: &str = "terminal_mat";
 
 pub struct TerminalRendererPlugin;
