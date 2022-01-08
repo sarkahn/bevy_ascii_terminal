@@ -181,7 +181,7 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 [[package]]
 name = "bevy"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_internal",
 ]
@@ -189,7 +189,7 @@ dependencies = [
 [[package]]
 name = "bevy-crevice-derive"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -200,7 +200,7 @@ dependencies = [
 [[package]]
 name = "bevy_app"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_derive",
  "bevy_ecs",
@@ -227,7 +227,7 @@ dependencies = [
 [[package]]
 name = "bevy_asset"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -254,7 +254,7 @@ dependencies = [
 [[package]]
 name = "bevy_audio"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -269,7 +269,7 @@ dependencies = [
 [[package]]
 name = "bevy_core"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_derive",
@@ -284,7 +284,7 @@ dependencies = [
 [[package]]
 name = "bevy_core_pipeline"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -296,7 +296,7 @@ dependencies = [
 [[package]]
 name = "bevy_crevice"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy-crevice-derive",
  "bytemuck",
@@ -307,7 +307,7 @@ dependencies = [
 [[package]]
 name = "bevy_derive"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "Inflector",
  "bevy_macro_utils",
@@ -318,7 +318,7 @@ dependencies = [
 [[package]]
 name = "bevy_diagnostic"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_core",
@@ -330,7 +330,7 @@ dependencies = [
 [[package]]
 name = "bevy_ecs"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "async-channel",
  "bevy_ecs_macros",
@@ -347,7 +347,7 @@ dependencies = [
 [[package]]
 name = "bevy_ecs_macros"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -358,7 +358,7 @@ dependencies = [
 [[package]]
 name = "bevy_gilrs"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -370,7 +370,7 @@ dependencies = [
 [[package]]
 name = "bevy_gltf"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "anyhow",
  "base64",
@@ -394,7 +394,7 @@ dependencies = [
 [[package]]
 name = "bevy_input"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -405,7 +405,7 @@ dependencies = [
 [[package]]
 name = "bevy_internal"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -438,7 +438,7 @@ dependencies = [
 [[package]]
 name = "bevy_log"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "android_log-sys",
  "bevy_app",
@@ -452,7 +452,7 @@ dependencies = [
 [[package]]
 name = "bevy_macro_utils"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "cargo-manifest",
  "quote",
@@ -462,7 +462,7 @@ dependencies = [
 [[package]]
 name = "bevy_math"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_reflect",
  "glam",
@@ -471,7 +471,7 @@ dependencies = [
 [[package]]
 name = "bevy_pbr"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -491,7 +491,7 @@ dependencies = [
 [[package]]
 name = "bevy_reflect"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_reflect_derive",
  "bevy_utils",
@@ -507,7 +507,7 @@ dependencies = [
 [[package]]
 name = "bevy_reflect_derive"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -519,7 +519,7 @@ dependencies = [
 [[package]]
 name = "bevy_render"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -553,7 +553,7 @@ dependencies = [
 [[package]]
 name = "bevy_scene"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -571,7 +571,7 @@ dependencies = [
 [[package]]
 name = "bevy_sprite"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -595,7 +595,7 @@ dependencies = [
 [[package]]
 name = "bevy_tasks"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "async-channel",
  "async-executor",
@@ -608,7 +608,7 @@ dependencies = [
 [[package]]
 name = "bevy_text"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "ab_glyph",
  "anyhow",
@@ -638,7 +638,7 @@ dependencies = [
 [[package]]
 name = "bevy_transform"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -651,7 +651,7 @@ dependencies = [
 [[package]]
 name = "bevy_ui"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -678,7 +678,7 @@ dependencies = [
 [[package]]
 name = "bevy_utils"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "ahash",
  "bevy_derive",
@@ -691,7 +691,7 @@ dependencies = [
 [[package]]
 name = "bevy_window"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "bevy_app",
  "bevy_math",
@@ -703,7 +703,7 @@ dependencies = [
 [[package]]
 name = "bevy_winit"
 version = "0.5.0"
-source = "git+https://github.com/Davier/bevy?branch=mesh2d#5fdf3ba638fbf83d5f39ec1f6cfc76bb788cfe6f"
+source = "git+https://github.com/Davier/bevy?branch=mesh2d#0adf1c3d07d6a44d1b317be64ef98abcd614e68d"
 dependencies = [
  "approx",
  "bevy_app",
@@ -787,9 +787,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.8.0"
+version = "3.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f1e260c3a9040a7c19a12468758f4c16f31a81a1fe087482be9570ec864bb6c"
+checksum = "a4a45a46ab1f2412e53d3a0ade76ffad2025804294569aae387231a0cd6e0899"
 
 [[package]]
 name = "bytemuck"
@@ -1352,9 +1352,9 @@ checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 
 [[package]]
 name = "fsevent-sys"
-version = "4.0.0"
+version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c0e564d24da983c053beff1bb7178e237501206840a3e6bf4e267b9e8ae734a"
+checksum = "76ee7a02da4d231650c7cea31349b889be2f45ddb3ef3032d2ec8185f6313fd2"
 dependencies = [
  "libc",
 ]
@@ -2440,9 +2440,9 @@ dependencies = [
 
 [[package]]
 name = "profiling"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9926767b8b8244d7b6b64546585121d193c3d0b4856ccd656b7bfa9deb91ab6a"
+checksum = "9145ac0af1d93c638c98c40cf7d25665f427b2a44ad0a99b1dccf3e2f25bb987"
 
 [[package]]
 name = "quote"
@@ -2886,9 +2886,9 @@ checksum = "8fb1df15f412ee2e9dfc1c504260fa695c1c3f10fe9f4a6ee2d2184d7d6450e2"
 
 [[package]]
 name = "syn"
-version = "1.0.84"
+version = "1.0.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecb2e6da8ee5eb9a61068762a32fa9619cc591ceb055b3687f4cd4051ec2e06b"
+checksum = "a684ac3dcd8913827e18cd09a68384ee66c1de24157e3c556c9ab16d85695fb7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3299,12 +3299,11 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "winit"
-version = "0.26.0"
+version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70466a5f4825cc88c92963591b06dbc255420bffe19d847bfcda475e82d079c0"
+checksum = "9b43cc931d58b99461188607efd7acb2a093e65fc621f54cad78517a6063e73a"
 dependencies = [
  "bitflags",
- "block",
  "cocoa",
  "core-foundation 0.9.2",
  "core-graphics 0.22.3",

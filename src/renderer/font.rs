@@ -133,7 +133,9 @@ impl TerminalFont {
         textures: &Assets<Image>,
     ) -> Self {
         let image = textures.get(tex_handle.clone_weak()).unwrap();
-        let tex_size = UVec2::new(128,128);//TODO: Use texture descriptor from imageUVec2::new(image., image.size.height);
+        let size = &image.texture_descriptor.size;
+
+        let tex_size = UVec2::new(size.width,size.height);
 
         let tile_count = UVec2::new(16, 16);
         let pixels_per_tile = tex_size / tile_count;

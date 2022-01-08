@@ -187,8 +187,7 @@ impl SpecializedMaterial2d for TerminalMaterial {
         &render_asset.bind_group
     }
 
-    // Bind group layout, lets us access our material uniform data
-    // (color and texture flags) from the shader.
+
     fn bind_group_layout(
         render_device: &RenderDevice,
     ) -> BindGroupLayout {
@@ -241,7 +240,7 @@ impl SpecializedMaterial2d for TerminalMaterial {
             // attributes have a bizarre ordering. "Built-in" attributes appear to be packed first
             // in alphabetical order, then remaining attributes appear to packed in alphabetical order
             // afterwards?
-            
+
             // Vertex_Position
             VertexAttribute {
                 format: VertexFormat::Float32x3,
