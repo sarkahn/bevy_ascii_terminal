@@ -10,7 +10,7 @@ pub(crate) mod uv_mapping;
 pub mod code_page_437;
 
 //pub use font::{TerminalFont, TerminalFonts};
-pub use plugin::{TerminalAssetLoadState, TerminalRendererPlugin};
+pub use plugin::{TerminalRendererPlugin};
 
 use self::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData, material::TerminalMaterial,

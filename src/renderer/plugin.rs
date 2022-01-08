@@ -17,30 +17,9 @@ use super::{font::*, *, material::TerminalMaterialPlugin,};
 pub struct TerminalRendererPlugin;
 
 
-/// AppState for loading terminal assets.
-///
-/// Systems can be added to the [AssetsDoneLoading](AssetsDoneLoading) state to safely read terminal assets.
-///
-/// ## Example
-///
-/// ```ignore
-/// App::new().add_system_set(
-///     SystemSet::on_enter(TerminalAssetLoadState::AssetsDoneLoading)
-///         .with_system(read_font_system);
-/// )
-/// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum TerminalAssetLoadState {
-    AssetsLoading,
-    AssetsDoneLoading,
-}
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
-        // use terminal_renderer_system_names::*;
-
-        app.add_state(TerminalAssetLoadState::AssetsLoading);
-
         //app.add_plugin(TerminalFontPlugin);
 
         app.add_plugin(TerminalMaterialPlugin);

@@ -17,34 +17,19 @@ use bevy::render::{
 };
 
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, MaterialMesh2dBundle, SpecializedMaterial2d};
+use bevy::utils::HashMap;
 
 //use super::font::BUILT_IN_FONTS;
 
 pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 3142086872234592509);
 
-pub const TERMINAL_MATERIAL_HANDLE: HandleUntyped = 
+pub const TERMINAL_DEFAULT_MATERIAL_HANDLE: HandleUntyped = 
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 2121056571224552501);
 
-pub mod built_in_fonts {
-    use bevy::{prelude::{HandleUntyped, Image}, reflect::TypeUuid};
-
-    pub const JT_CURSES_12X12_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 2122046373215392208);
-
-    pub const PASTICHE_8X8_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 1112381377212391458);
-
-    pub const PX_437_8X8_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 2113081372514792108);
-    
-    pub const TAFFER_10X10_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 3102186372218392902);
-
-    pub const ZX_EVOLUTION_8X8_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 1111086172214312409);
-    
-}
+pub const BUILTIN_FONT_NAMES: &[&str] = &[
+    "px437_8x8.png",
+];
 
 
 macro_rules! include_font {
@@ -56,6 +41,26 @@ macro_rules! include_font {
     };
 }
 
+macro_rules! add_font_resource {
+    ($font_name:expr, &images:item, &map:item) => {
+        {
+            let image = include_font!(font_name);
+            let handle = images.set(font_name, image);
+            map.insert(font_name.to_string(), handle);
+        }
+    };
+}
+
+pub struct BuiltInFontHandles {
+    map: HashMap<String,Handle<Image>>,
+}
+
+impl BuiltInFontHandles {
+    pub fn get(&self, font_name: &str) -> Option<&Handle<Image>> {
+        self.map.get(font_name)
+    }
+}
+
 
 #[derive(Default)]
 pub struct TerminalMaterialPlugin;
@@ -63,51 +68,65 @@ pub struct TerminalMaterialPlugin;
 impl Plugin for TerminalMaterialPlugin {
     fn build(&self, app: &mut App) {
         let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
+
         shaders.set_untracked(
             TERMINAL_MATERIAL_SHADER_HANDLE,
             Shader::from_wgsl(include_str!("terminal.wgsl")),
         );
         app.add_plugin(Material2dPlugin::<TerminalMaterial>::default());
 
-        use built_in_fonts::*;
+        let mut fonts = BuiltInFontHandles {
+            map: HashMap::default()
+        };
+        let font_map = &mut fonts.map;
+        //use built_in_fonts::*;
 
         let mut images = app.world.get_resource_mut::<Assets<Image>>().unwrap();
 
-        images.set_untracked(
-            PX_437_8X8_HANDLE,
-            include_font!("px437_8x8.png")
-        );
+        //let image = include_font!("px437_8x8.png");
+        //font_map.insert(images.set("px437_8x8.png", image);
         
-        images.set_untracked(
-            PASTICHE_8X8_HANDLE,
-            include_font!("pastiche_8x8.png")
-        );
+        let image = include_font!("jt_curses_12x12.png");
+        let default_font = images.set("jt_curses_12x12.png", image);
+        font_map.insert("jt_curses_12x12.png".to_string(), default_font.clone());
+
+        // images.set_untracked(
+        //     PX_437_8X8_HANDLE,
+        //     include_font!("px437_8x8.png")
+        // );
         
-        images.set_untracked(
-            JT_CURSES_12X12_HANDLE,
-            include_font!("jt_curses_12x12.png")
-        );
+        // images.set_untracked(
+        //     PASTICHE_8X8_HANDLE,
+        //     include_font!("pastiche_8x8.png")
+        // );
         
-        images.set_untracked(
-            TAFFER_10X10_HANDLE,
-            include_font!("taffer_10x10.png")
-        );
+        // images.set_untracked(
+        //     JT_CURSES_12X12_HANDLE,
+        //     include_font!("jt_curses_12x12.png")
+        // );
         
-        images.set_untracked(
-            ZX_EVOLUTION_8X8_HANDLE,
-            include_font!("zx_evolution_8x8.png")
-        );
+        // images.set_untracked(
+        //     TAFFER_10X10_HANDLE,
+        //     include_font!("taffer_10x10.png")
+        // );
+        
+        // images.set_untracked(
+        //     ZX_EVOLUTION_8X8_HANDLE,
+        //     include_font!("zx_evolution_8x8.png")
+        // );
         
         app.world
             .get_resource_mut::<Assets<TerminalMaterial>>()
             .unwrap()
             .set_untracked(
                 Handle::<TerminalMaterial>::default(),
-                built_in_fonts::JT_CURSES_12X12_HANDLE.typed().into()
+                default_font.into(),
             );
         
+        app.insert_resource(fonts);
     }
 }
+
 
 
 #[derive(Debug, Clone, TypeUuid)]

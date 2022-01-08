@@ -60,7 +60,6 @@ use bevy::prelude::*;
 use renderer::{
     TerminalRendererBundle, 
     TerminalRendererPlugin,
-    material::built_in_fonts
 };
 
 //pub use renderer::TerminalAssetLoadState;

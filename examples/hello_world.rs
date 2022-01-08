@@ -30,7 +30,7 @@ fn spawn_terminal(mut commands: Commands) {
     );
 }
 
-fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
+fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>, images: Res<Assets<Image>>) {
     if keys.just_pressed(KeyCode::Space) {
         for mut term in q.iter_mut() {
             term.clear();
