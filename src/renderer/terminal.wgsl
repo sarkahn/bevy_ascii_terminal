@@ -73,7 +73,7 @@ fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
         let tex_rgb = vec3<f32>(tex_color.rgb);
         let clip_rgb = vec3<f32>(clip_color.rgb);
         
-        if( all(tex_rgb == clip_rgb) ) {
+        if( all(tex_rgb - clip_rgb < vec3<f32>(0.001, 0.001, 0.001)) ) {
             out_color = bg_color;
         } else {
             out_color = vec4<f32>(tex_color.rgb * fg_color.rgb, fg_color.a);

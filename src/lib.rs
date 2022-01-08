@@ -59,7 +59,8 @@ pub use renderer::code_page_437;
 use bevy::prelude::*;
 use renderer::{
     TerminalRendererBundle, 
-    TerminalRendererPlugin
+    TerminalRendererPlugin,
+    material::built_in_fonts
 };
 
 //pub use renderer::TerminalAssetLoadState;

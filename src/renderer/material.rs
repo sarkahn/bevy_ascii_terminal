@@ -1,8 +1,9 @@
 use bevy::app::{App, Plugin};
-use bevy::asset::{AssetServer, Assets, Handle, HandleUntyped};
+use bevy::asset::{AssetServer, Assets, Handle, HandleUntyped, HandleId};
 use bevy::ecs::system::{lifetimeless::SRes, SystemParamItem};
 use bevy::math::Vec4;
 use bevy::reflect::TypeUuid;
+use bevy::render::texture::ImageType;
 use bevy::render::{
     color::Color,
     prelude::Shader,
@@ -17,13 +18,44 @@ use bevy::render::{
 
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, MaterialMesh2dBundle, SpecializedMaterial2d};
 
-use super::font::BUILT_IN_FONTS;
+//use super::font::BUILT_IN_FONTS;
 
 pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 3142086872234592509);
 
 pub const TERMINAL_MATERIAL_HANDLE: HandleUntyped = 
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 2121056571224552501);
+
+pub mod built_in_fonts {
+    use bevy::{prelude::{HandleUntyped, Image}, reflect::TypeUuid};
+
+    pub const JT_CURSES_12X12_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 2122046373215392208);
+
+    pub const PASTICHE_8X8_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 1112381377212391458);
+
+    pub const PX_437_8X8_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 2113081372514792108);
+    
+    pub const TAFFER_10X10_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 3102186372218392902);
+
+    pub const ZX_EVOLUTION_8X8_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Image::TYPE_UUID, 1111086172214312409);
+    
+}
+
+
+macro_rules! include_font {
+    ($font_name:expr) => {
+        {
+            let bytes = include_bytes!(concat!("builtin/", $font_name));
+            Image::from_buffer(bytes, ImageType::Extension("png")).unwrap()
+        }
+    };
+}
+
 
 #[derive(Default)]
 pub struct TerminalMaterialPlugin;
@@ -37,18 +69,46 @@ impl Plugin for TerminalMaterialPlugin {
         );
         app.add_plugin(Material2dPlugin::<TerminalMaterial>::default());
 
+        use built_in_fonts::*;
+
+        let mut images = app.world.get_resource_mut::<Assets<Image>>().unwrap();
+
+        images.set_untracked(
+            PX_437_8X8_HANDLE,
+            include_font!("px437_8x8.png")
+        );
+        
+        images.set_untracked(
+            PASTICHE_8X8_HANDLE,
+            include_font!("pastiche_8x8.png")
+        );
+        
+        images.set_untracked(
+            JT_CURSES_12X12_HANDLE,
+            include_font!("jt_curses_12x12.png")
+        );
+        
+        images.set_untracked(
+            TAFFER_10X10_HANDLE,
+            include_font!("taffer_10x10.png")
+        );
+        
+        images.set_untracked(
+            ZX_EVOLUTION_8X8_HANDLE,
+            include_font!("zx_evolution_8x8.png")
+        );
+        
         app.world
             .get_resource_mut::<Assets<TerminalMaterial>>()
             .unwrap()
             .set_untracked(
                 Handle::<TerminalMaterial>::default(),
-                TerminalMaterial {
-                    clip_color: Color::rgb(1.0, 0.0, 1.0),
-                    ..Default::default()
-                },
+                built_in_fonts::JT_CURSES_12X12_HANDLE.typed().into()
             );
+        
     }
 }
+
 
 #[derive(Debug, Clone, TypeUuid)]
 #[uuid = "e228a534-e3ca-2e1e-ab9d-4d8bc1ad8c19"]
@@ -60,7 +120,7 @@ pub struct TerminalMaterial {
 impl Default for TerminalMaterial {
     fn default() -> Self {
         TerminalMaterial {
-            clip_color: Color::rgb(1.0, 0.0, 1.0),
+            clip_color: Color::BLACK,
             texture: None,
         }
     }

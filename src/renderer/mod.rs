@@ -1,6 +1,6 @@
 //! Handles mesh construction and rendering for the terminal.
 
-mod material;
+pub mod material;
 pub mod font;
 pub mod plugin;
 
@@ -9,7 +9,7 @@ pub(crate) mod renderer_vertex_data;
 pub(crate) mod uv_mapping;
 pub mod code_page_437;
 
-pub use font::{TerminalFont, TerminalFonts};
+//pub use font::{TerminalFont, TerminalFonts};
 pub use plugin::{TerminalAssetLoadState, TerminalRendererPlugin};
 
 use self::{
@@ -68,7 +68,7 @@ impl Default for TileScaling {
 pub struct TerminalRendererBundle {
     pub vert_data: TerminalRendererVertexData,
     pub tile_data: TerminalRendererTileData,
-    pub font: TerminalFont,
+    //pub font: TerminalFont,
     pub scaling: TileScaling,
     pub mesh: Mesh2dHandle,
     pub material: Handle<TerminalMaterial>,
@@ -113,7 +113,7 @@ impl Default for TerminalRendererBundle {
         Self {
             vert_data: Default::default(),
             tile_data: Default::default(),
-            font: Default::default(),
+            //font: Default::default(),
             scaling: Default::default(),
             mesh: Default::default(),
             material: Default::default(),
