@@ -1,8 +1,11 @@
-use bevy::math::{UVec2, Vec2, Vec3};
+use bevy::{
+    math::{UVec2, Vec2, Vec3},
+    prelude::Component,
+};
 
 use super::{TerminalPivot, TilePivot};
 
-#[derive(Default)]
+#[derive(Component, Default)]
 pub struct TerminalRendererVertexData {
     pub verts: Vec<[f32; 3]>,
     pub indices: Vec<u32>,
@@ -26,8 +29,8 @@ impl TerminalRendererVertexData {
     ) {
         let len = (term_size.x * term_size.y) as usize;
 
-        let size = term_size.as_f32();
-        let tile_size = tile_size.as_f32();
+        let size = term_size.as_vec2();
+        let tile_size = tile_size.as_vec2();
 
         let world_size = size * tile_size;
 
@@ -47,6 +50,7 @@ impl TerminalRendererVertexData {
             // Flip y: y0 == the top of the terminal
             let y = size.y as usize - 1 - (i / term_size.x as usize);
             let y = y as f32 * tile_height;
+            //let y = (i / term_size.x as usize) as f32 * tile_height;
             let origin = Vec3::new(x, y, 0.0) + term_pivot + tile_pivot;
             let right = Vec3::X * tile_width;
             let up = Vec3::Y * tile_height;
