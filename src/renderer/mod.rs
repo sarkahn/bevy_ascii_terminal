@@ -3,22 +3,19 @@
 pub mod material;
 pub mod plugin;
 
+pub mod code_page_437;
 pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
 pub(crate) mod uv_mapping;
-pub mod code_page_437;
 
-pub use plugin::{TerminalRendererPlugin};
+pub use plugin::TerminalRendererPlugin;
 
 use self::{
-    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData, material::TerminalMaterial, uv_mapping::UvMapping,
+    material::TerminalMaterial, renderer_tile_data::TerminalRendererTileData,
+    renderer_vertex_data::TerminalRendererVertexData, uv_mapping::UvMapping,
 };
-use crate::{
-    terminal::Terminal
-};
-use bevy::{
-    prelude::*, sprite::Mesh2dHandle,
-};
+use crate::terminal::Terminal;
+use bevy::{prelude::*, sprite::Mesh2dHandle};
 
 /// Terminal component specifying the origin of the terminal mesh.
 ///
@@ -61,7 +58,7 @@ impl Default for TileScaling {
 /// A bundle of all the components required to render a terminal.
 ///
 /// Has various functions to help with the construction of a terminal.
-#[derive(Bundle)]
+#[derive(Default, Bundle)]
 pub struct TerminalRendererBundle {
     pub vert_data: TerminalRendererVertexData,
     pub tile_data: TerminalRendererTileData,
@@ -102,22 +99,5 @@ impl TerminalRendererBundle {
     pub fn with_tile_scaling(mut self, scaling: TileScaling) -> Self {
         self.scaling = scaling;
         self
-    }
-}
-
-impl Default for TerminalRendererBundle {
-    fn default() -> Self {
-        Self {
-            vert_data: Default::default(),
-            tile_data: Default::default(),
-            scaling: Default::default(),
-            mesh: Default::default(),
-            material: Default::default(),
-            uv_mapping: Default::default(),
-            terminal_pivot: Default::default(),
-            tile_pivot: Default::default(),
-            visibility: Default::default(),
-            computed_visibility: Default::default(),
-        }
     }
 }

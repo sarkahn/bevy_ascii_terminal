@@ -1,9 +1,9 @@
 //! The material used for terminal rendering.
-//! 
+//!
 //! By default the terminal expects a [code page 437](https://dwarffortresswiki.org/Tileset_repository)
-//! texture with 16x16 characters. New font textures can be added to the assets directory and loaded via 
+//! texture with 16x16 characters. New font textures can be added to the assets directory and loaded via
 //! the bevy `AssetLoader`.
-//! 
+//!
 //! To change the terminal font, you must assign a new `Handle<Image>` to the material's `texture` field:
 //! ```
 //! use bevy::prelude::*;
@@ -20,16 +20,16 @@
 //!     }
 //! }
 //! ```
-//! 
+//!
 //! The terminal comes with several built in fonts:
 //! - jt_curses_12x12.png
 //! - pastiche_8x8.png
 //! - px437_8x8.png
 //! - taffer_10x10.png
 //! - zx_evolution_8x8.png
-//! 
+//!
 //! These fonts can be accessed via the [BuiltInFontHandles] resource:
-//! 
+//!
 //! The `TerminalMaterial` also has a `clip_color` field. This field is used by the shader
 //! to determine what constitutes a "background color" on the terminal texture.
 
@@ -59,23 +59,24 @@ pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 3142086872234592509);
 
 /// The default material handle used by the terminal.
-pub const TERMINAL_DEFAULT_MATERIAL_HANDLE: HandleUntyped = 
+pub const TERMINAL_DEFAULT_MATERIAL_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 2121056571224552501);
 
 macro_rules! include_font {
-    ($font_name:expr) => {
-        {
-            let bytes = include_bytes!(concat!("builtin/", $font_name));
-            ($font_name, Image::from_buffer(bytes, ImageType::Extension("png")).unwrap())
-        }
-    };
+    ($font_name:expr) => {{
+        let bytes = include_bytes!(concat!("builtin/", $font_name));
+        (
+            $font_name,
+            Image::from_buffer(bytes, ImageType::Extension("png")).unwrap(),
+        )
+    }};
 }
 
 /// A resource which can be used to retrieve the image handles
 /// for the terminal's built-in fonts.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```
 /// use bevy::prelude::*;
 /// use bevy_ascii_terminal::*;
@@ -87,13 +88,13 @@ macro_rules! include_font {
 ///     for mat in q_mat.iter() {
 ///         let mut mat = materials.get_mut(mat).unwrap();
 ///         let built_in = fonts.get("zx_evolution_8x8.png").unwrap();
-/// 
+///
 ///         mat.texture = Some(built_in.clone());
 ///     }
 /// }
 /// ```
 pub struct BuiltInFontHandles {
-    map: HashMap<String,Handle<Image>>,
+    map: HashMap<String, Handle<Image>>,
 }
 
 impl BuiltInFontHandles {
@@ -104,10 +105,10 @@ impl BuiltInFontHandles {
 
     /// An iterator over the name-value-pairs of the built in font handles
     /// for the terminal.
-    /// 
+    ///
     /// Yields (&String, &Handle<Image>), where `String` is the file name of the
-    /// font texture. 
-    pub fn iter(&self) -> impl Iterator<Item=(&String,&Handle<Image>)> {
+    /// font texture.
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Handle<Image>)> {
         self.map.iter()
     }
 }
@@ -127,43 +128,40 @@ impl Plugin for TerminalMaterialPlugin {
         app.add_plugin(Material2dPlugin::<TerminalMaterial>::default());
 
         let mut fonts = BuiltInFontHandles {
-            map: HashMap::default()
+            map: HashMap::default(),
         };
-        let mut font_map = &mut fonts.map;
+        let font_map = &mut fonts.map;
 
         let mut images = app.world.get_resource_mut::<Assets<Image>>().unwrap();
 
         let font = include_font!("jt_curses_12x12.png");
-        add_font_resource(font, &mut images, &mut font_map);
-        
+        add_font_resource(font, &mut images, font_map);
+
         let font = include_font!("pastiche_8x8.png");
-        add_font_resource(font, &mut images, &mut font_map);
-        
+        add_font_resource(font, &mut images, font_map);
+
         let font = include_font!("px437_8x8.png");
-        let default_font = add_font_resource(font, &mut images, &mut font_map);
-        
+        let default_font = add_font_resource(font, &mut images, font_map);
+
         let font = include_font!("taffer_10x10.png");
-        add_font_resource(font, &mut images, &mut font_map);
-        
+        add_font_resource(font, &mut images, font_map);
+
         let font = include_font!("zx_evolution_8x8.png");
-        add_font_resource(font, &mut images, &mut font_map);
+        add_font_resource(font, &mut images, font_map);
 
         app.world
             .get_resource_mut::<Assets<TerminalMaterial>>()
             .unwrap()
-            .set_untracked(
-                Handle::<TerminalMaterial>::default(),
-                default_font.into(),
-            );
-        
+            .set_untracked(Handle::<TerminalMaterial>::default(), default_font.into());
+
         app.insert_resource(fonts);
     }
 }
 
 fn add_font_resource(
-    font: (&str, Image), 
-    images: &mut Assets<Image>, 
-    font_map: &mut HashMap<String,Handle<Image>>
+    font: (&str, Image),
+    images: &mut Assets<Image>,
+    font_map: &mut HashMap<String, Handle<Image>>,
 ) -> Handle<Image> {
     let handle = images.set(font.0, font.1);
     font_map.insert(font.0.to_string(), handle.clone());
@@ -179,7 +177,7 @@ pub struct TerminalMaterial {
     /// Clip color determines which part of the texture is regarded as
     /// "background color".
     pub clip_color: Color,
-    
+
     /// The font texture rendered by the terminal.
     pub texture: Option<Handle<Image>>,
 }
@@ -314,10 +312,7 @@ impl SpecializedMaterial2d for TerminalMaterial {
         &render_asset.bind_group
     }
 
-
-    fn bind_group_layout(
-        render_device: &RenderDevice,
-    ) -> BindGroupLayout {
+    fn bind_group_layout(render_device: &RenderDevice) -> BindGroupLayout {
         render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[
                 BindGroupLayoutEntry {
@@ -357,9 +352,7 @@ impl SpecializedMaterial2d for TerminalMaterial {
 
     type Key = ();
 
-    fn key(_material: &<Self as RenderAsset>::PreparedAsset) -> Self::Key {
-        ()
-    }
+    fn key(_material: &<Self as RenderAsset>::PreparedAsset) -> Self::Key {}
 
     fn specialize(_key: Self::Key, descriptor: &mut RenderPipelineDescriptor) {
         let vertex_attributes = vec![
@@ -405,4 +398,3 @@ impl SpecializedMaterial2d for TerminalMaterial {
         descriptor.vertex.buffers = buffers;
     }
 }
-

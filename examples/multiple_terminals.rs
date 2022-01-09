@@ -16,8 +16,8 @@ fn main() {
 fn make_terminal(
     commands: &mut Commands,
     pos: Vec3,
-    size: [u32;2],
-    pivot: [f32;2],
+    size: [u32; 2],
+    pivot: [f32; 2],
     string: &str,
 ) {
     let mut term_bundle = TerminalBundle::new().with_size(size);

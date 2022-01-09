@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{*};
+use bevy_ascii_terminal::*;
 use bevy_tiled_camera::*;
 
 fn main() {
@@ -75,7 +75,6 @@ fn change_font(
     if keys.just_pressed(KeyCode::Space) {
         let mut projection = q_cam_projection.single_mut();
         for (mut term, mat) in q.iter_mut() {
-
             let fonts: Vec<_> = built_in_fonts.iter().collect();
 
             font_index.0 = (font_index.0 + 1) % fonts.len();

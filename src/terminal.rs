@@ -95,7 +95,7 @@ const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
 
 impl Terminal {
     /// Construct a terminal with the given size
-    pub fn with_size(size: [u32;2]) -> Terminal {
+    pub fn with_size(size: [u32; 2]) -> Terminal {
         Terminal {
             tiles: Grid::default(size),
             size: UVec2::from(size),
@@ -103,7 +103,7 @@ impl Terminal {
     }
 
     /// Resize the terminal's internal tile data.
-    pub fn resize(&mut self, size: [u32;2]) {
+    pub fn resize(&mut self, size: [u32; 2]) {
         self.tiles = Grid::default(size);
         self.size = UVec2::from(size);
     }
@@ -124,7 +124,7 @@ impl Terminal {
     ///
     /// Note that in the terminal the y axis goes from top to bottom.
     #[inline]
-    pub fn to_index(&self, xy: [i32;2]) -> usize {
+    pub fn to_index(&self, xy: [i32; 2]) -> usize {
         self.tiles.pos_to_index(xy)
     }
 
@@ -135,7 +135,7 @@ impl Terminal {
     /// This should be used when passing in coordinates where
     /// the y axis goes from bottom to top.
     #[inline]
-    pub fn to_index_flipped(&self, xy: [i32;2]) -> usize {
+    pub fn to_index_flipped(&self, xy: [i32; 2]) -> usize {
         let (x, y) = self.y_flip(xy).into();
         (y * self.width() as i32 + x) as usize
     }
@@ -171,7 +171,7 @@ impl Terminal {
     /// This should be used when passing in coordinates where
     /// the y axis goes from bottom to top.
     #[inline]
-    pub fn y_flip(&self, pos: [i32;2]) -> IVec2 {
+    pub fn y_flip(&self, pos: [i32; 2]) -> IVec2 {
         let [x, y] = pos;
         let y = self.height() as i32 - 1 - y;
         IVec2::new(x, y)
@@ -180,7 +180,7 @@ impl Terminal {
     /// Insert a character.
     ///
     /// The existing foreground and background color of the tile will remain.
-    pub fn put_char(&mut self, xy: [i32;2], glyph: char) {
+    pub fn put_char(&mut self, xy: [i32; 2], glyph: char) {
         self.get_tile_mut(xy).glyph = glyph;
     }
 
@@ -188,7 +188,7 @@ impl Terminal {
     ///
     /// The existing foreground and background colors of the tile will remain.
     /// Returns an error if the position is out of bounds.
-    pub fn try_put_char_pos(&mut self, xy: [i32;2], glyph: char) -> Result<(), String> {
+    pub fn try_put_char_pos(&mut self, xy: [i32; 2], glyph: char) -> Result<(), String> {
         if !self.is_in_bounds(xy) {
             return Err(format!(
                 "try_put_char_pos error, p {} is out of bounds {}",
@@ -203,7 +203,7 @@ impl Terminal {
     /// Insert a character with colors.
     pub fn put_char_color(
         &mut self,
-        xy: [i32;2],
+        xy: [i32; 2],
         glyph: char,
         fg_color: TileColor,
         bg_color: TileColor,
@@ -215,7 +215,7 @@ impl Terminal {
     }
 
     /// Insert a [Tile].
-    pub fn put_tile(&mut self, xy: [i32;2], tile: Tile) {
+    pub fn put_tile(&mut self, xy: [i32; 2], tile: Tile) {
         let t = self.get_tile_mut(xy);
         *t = tile;
     }
@@ -224,7 +224,7 @@ impl Terminal {
     ///
     /// The string will move to the next line if it reaches the edge
     /// and will truncate at the end of the terminal.
-    pub fn put_string(&mut self, xy: [i32;2], string: &str) {
+    pub fn put_string(&mut self, xy: [i32; 2], string: &str) {
         let i = self.to_index(xy);
         let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
@@ -240,7 +240,7 @@ impl Terminal {
     /// and will truncate at the end of the terminal.
     pub fn put_string_color(
         &mut self,
-        xy: [i32;2],
+        xy: [i32; 2],
         string: &str,
         fg_color: TileColor,
         bg_color: TileColor,
@@ -259,24 +259,24 @@ impl Terminal {
     /// Set the foreground color of a tile.
     ///
     /// The existing background color and glyph of the tile will remain.
-    pub fn put_fg_color(&mut self, xy: [i32;2], col: TileColor) {
+    pub fn put_fg_color(&mut self, xy: [i32; 2], col: TileColor) {
         self.get_tile_mut(xy).fg_color = col;
     }
 
     /// Set the background color of a tile.
     ///
     /// The existing foreground color and glyph of the tile will remain.
-    pub fn put_bg_color(&mut self, xy: [i32;2], col: TileColor) {
+    pub fn put_bg_color(&mut self, xy: [i32; 2], col: TileColor) {
         self.get_tile_mut(xy).bg_color = col;
     }
 
     /// Retrieve the char from a tile.
-    pub fn get_char(&self, xy: [i32;2]) -> char {
+    pub fn get_char(&self, xy: [i32; 2]) -> char {
         self.get_tile(xy).glyph
     }
 
     /// Retrieve a string from the terminal.
-    pub fn get_string(&self, xy: [i32;2], len: usize) -> String {
+    pub fn get_string(&self, xy: [i32; 2], len: usize) -> String {
         let i = self.to_index(xy);
         let slice = self.tiles.slice(i..).iter().take(len);
         let mut chars: Vec<char> = vec![' '; slice.len()];
@@ -289,18 +289,18 @@ impl Terminal {
     }
 
     /// Retrieve an immutable reference to a tile in the terminal.
-    pub fn get_tile(&self, xy: [i32;2]) -> &Tile {
+    pub fn get_tile(&self, xy: [i32; 2]) -> &Tile {
         &self.tiles[self.to_index(xy)]
     }
 
     /// Retrieve a mutable reference to a tile in the terminal.
-    pub fn get_tile_mut(&mut self, xy: [i32;2]) -> &mut Tile {
+    pub fn get_tile_mut(&mut self, xy: [i32; 2]) -> &mut Tile {
         let i = self.to_index(xy);
         &mut self.tiles[i]
     }
 
     /// Clear an area of the terminal to the default [Tile].
-    pub fn clear_box(&mut self, xy: [i32;2], size: [u32;2]) {
+    pub fn clear_box(&mut self, xy: [i32; 2], size: [u32; 2]) {
         let [width, height] = size;
         let [x, y] = xy;
         for y in y..y + height as i32 {
@@ -311,7 +311,7 @@ impl Terminal {
     }
 
     /// Draw a box on the terminal using [BorderGlyphs].
-    pub fn draw_box(&mut self, xy: [i32;2], size: [u32;2], border_glyphs: BorderGlyphs) {
+    pub fn draw_box(&mut self, xy: [i32; 2], size: [u32; 2], border_glyphs: BorderGlyphs) {
         let [x, y] = xy;
         let [width, height] = size;
         let width = width as usize;
@@ -348,8 +348,8 @@ impl Terminal {
     /// Draw a box with box with the specified colors and [BorderGlyphs].
     pub fn draw_box_color(
         &mut self,
-        xy: [i32;2],
-        size: [u32;2],
+        xy: [i32; 2],
+        size: [u32; 2],
         fg_color: TileColor,
         bg_color: TileColor,
         border_glyphs: BorderGlyphs,
@@ -408,14 +408,14 @@ impl Terminal {
     }
 
     /// Draw a box with a single-line border.
-    pub fn draw_box_single(&mut self, xy: [i32;2], size: [u32;2]) {
+    pub fn draw_box_single(&mut self, xy: [i32; 2], size: [u32; 2]) {
         self.draw_box(xy, size, SINGLE_LINE_GLYPHS);
     }
     /// Draw a box with a colored single-line border.
     pub fn draw_box_single_color(
         &mut self,
-        xy: [i32;2],
-        size: [u32;2],
+        xy: [i32; 2],
+        size: [u32; 2],
         fg_color: TileColor,
         bg_color: TileColor,
     ) {
@@ -423,14 +423,14 @@ impl Terminal {
     }
 
     /// Draw a box with a double-line border.
-    pub fn draw_box_double(&mut self, xy: [i32;2], size: [u32;2]) {
+    pub fn draw_box_double(&mut self, xy: [i32; 2], size: [u32; 2]) {
         self.draw_box(xy, size, DOUBLE_LINE_GLYPHS);
     }
     /// Draw a box with a colored double-line border.
     pub fn draw_box_double_color(
         &mut self,
-        xy: [i32;2],
-        size: [u32;2],
+        xy: [i32; 2],
+        size: [u32; 2],
         fg_color: TileColor,
         bg_color: TileColor,
     ) {
@@ -439,7 +439,7 @@ impl Terminal {
 
     /// Draw a single-line border around the edge of the whole terminal.
     pub fn draw_border_single(&mut self) {
-        self.draw_box_single([0,0], self.size.into());
+        self.draw_box_single([0, 0], self.size.into());
     }
 
     /// Draw a colored single-line border around the edge of the whole terminal.
@@ -465,7 +465,7 @@ impl Terminal {
     }
 
     /// Returns true if the given position is inside the bounds of the terminal.
-    pub fn is_in_bounds(&self, xy: [i32;2]) -> bool {
+    pub fn is_in_bounds(&self, xy: [i32; 2]) -> bool {
         let [x, y] = xy;
         (x as u32) < self.width() && (y as u32) < self.height()
     }

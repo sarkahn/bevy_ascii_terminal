@@ -8,12 +8,11 @@ pub const TERMINAL_UPDATE_MESH: &str = "terminal_update_mesh";
 
 use bevy::{
     prelude::*,
-    render::{render_resource::PrimitiveTopology, mesh::Indices
-    }, sprite::Mesh2dHandle,
+    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    sprite::Mesh2dHandle,
 };
 
-
-use super::{*, material::TerminalMaterialPlugin, uv_mapping::UvMapping,};
+use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *};
 
 pub struct TerminalRendererPlugin;
 
@@ -21,17 +20,21 @@ impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TerminalMaterialPlugin);
 
-        app.add_system(terminal_renderer_init
-                .label(TERMINAL_INIT))
-            .add_system(terminal_renderer_update_size
-                .after(TERMINAL_INIT)
-                .label(TERMINAL_UPDATE_SIZE))
-            .add_system(terminal_renderer_update_tile_data
-                .after(TERMINAL_UPDATE_SIZE)
-                .label(TERMINAL_UPDATE_TILE_DATA))
-            .add_system(terminal_renderer_update_mesh
-                .after(TERMINAL_UPDATE_TILE_DATA)
-                .label(TERMINAL_UPDATE_MESH)
+        app.add_system(terminal_renderer_init.label(TERMINAL_INIT))
+            .add_system(
+                terminal_renderer_update_size
+                    .after(TERMINAL_INIT)
+                    .label(TERMINAL_UPDATE_SIZE),
+            )
+            .add_system(
+                terminal_renderer_update_tile_data
+                    .after(TERMINAL_UPDATE_SIZE)
+                    .label(TERMINAL_UPDATE_TILE_DATA),
+            )
+            .add_system(
+                terminal_renderer_update_mesh
+                    .after(TERMINAL_UPDATE_TILE_DATA)
+                    .label(TERMINAL_UPDATE_MESH),
             );
     }
 }
@@ -81,7 +84,7 @@ fn terminal_renderer_update_size(
             let size = image.texture_descriptor.size;
             // TODO: This will need to assignable for graphical terminals, can't necessarily
             // be derived from the texture for a non-uniform-grid tilesheet.
-            let font_size = UVec2::new(size.width, size.height) / UVec2::new(16,16);
+            let font_size = UVec2::new(size.width, size.height) / UVec2::new(16, 16);
             tile_size *= font_size;
         }
 
@@ -107,7 +110,7 @@ pub fn terminal_renderer_update_tile_data(
     for (term, mut data, uv_mapping) in q.iter_mut() {
         //info!("Renderer update tile data (colors)!");
         //info!("First tiles: {:?}", &term.tiles[0..4]);
-        data.update_from_tiles(&term.tiles.slice(..), uv_mapping);
+        data.update_from_tiles(term.tiles.slice(..), uv_mapping);
     }
 }
 
@@ -116,14 +119,16 @@ pub fn terminal_renderer_update_mesh(
     mut q: Query<(&TerminalRendererTileData, &Mesh2dHandle), Changed<TerminalRendererTileData>>,
 ) {
     for (tile_data, mesh) in q.iter_mut() {
-        let mesh = meshes.get_mut(&mesh.0).expect("Error accessing terminal mesh");
+        let mesh = meshes
+            .get_mut(&mesh.0)
+            .expect("Error accessing terminal mesh");
         //info!("writing colors and uvs to mesh");
         //info!("First fg Colors: {:?}", &tile_data.fg_colors[0..4]);
         //info!("First bg Colors: {:?}", &tile_data.bg_colors[0..4]);
         //info!("First uvs: {:?}", &tile_data.uvs[0..4]);
 
         //mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, tile_data.fg_colors.clone());
-        
+
         mesh.set_attribute("bg_color", tile_data.bg_colors.clone());
         mesh.set_attribute("fg_color", tile_data.fg_colors.clone());
         mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tile_data.uvs.clone());

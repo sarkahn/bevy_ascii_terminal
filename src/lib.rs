@@ -59,29 +59,13 @@ pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;
 
 use bevy::prelude::*;
-use renderer::{
-    TerminalRendererBundle, 
-    TerminalRendererPlugin,
-};
+use renderer::{TerminalRendererBundle, TerminalRendererPlugin};
 
 //pub use renderer::TerminalAssetLoadState;
 
 /// A bundle with all the required components for a terminal.
 ///
-/// Can specify properties of the terminal on initilaization.
-///
-/// # Example
-/// ```
-/// use bevy_ascii_terminal::*;
-/// use bevy::prelude::*;
-///
-/// fn setup(mut commands: Commands) {
-///     commands.spawn_bundle(TerminalBundle::new()
-///         .with_size([10,10])
-///         .with_font("jt_curses_12x12.png"));
-///     }
-///
-/// ```
+/// Can specify some properties of the terminal on initilaization.
 #[derive(Bundle, Default)]
 pub struct TerminalBundle {
     pub terminal: Terminal,
@@ -98,7 +82,7 @@ impl TerminalBundle {
     }
 
     /// Set the initial size of the terminal.
-    pub fn with_size(mut self, size: [u32;2]) -> Self {
+    pub fn with_size(mut self, size: [u32; 2]) -> Self {
         self.terminal.resize(size);
         self
     }

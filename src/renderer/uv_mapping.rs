@@ -6,36 +6,30 @@ use super::code_page_437::CP_437_CHARS;
 
 #[derive(Component)]
 pub struct UvMapping {
-    uv_map: HashMap<char,[[f32;2];4]>,
+    uv_map: HashMap<char, [[f32; 2]; 4]>,
 }
 
 impl UvMapping {
     pub fn code_page_437() -> Self {
-        UvMapping::from_grid([16,16], CP_437_CHARS.iter().cloned())
+        UvMapping::from_grid([16, 16], CP_437_CHARS.iter().cloned())
     }
 
-    /// Create a uv mapping where the keys from the iterator are mapped to their corresponding 
+    /// Create a uv mapping where the keys from the iterator are mapped to their corresponding
     /// uvs on a 2d tile sheet in sequential order.
-    pub fn from_grid(
-        tile_count: [u32;2], 
-        iter: impl Iterator<Item = char>
-    ) -> Self {
-
+    pub fn from_grid(tile_count: [u32; 2], iter: impl Iterator<Item = char>) -> Self {
         let mut uv_map = HashMap::default();
 
-        for (i,ch) in iter.enumerate() {
+        for (i, ch) in iter.enumerate() {
             let x = i as u32 % tile_count[0];
             let y = i as u32 / tile_count[0];
-            let uvs = Self::get_grid_uvs([x,y], tile_count);
+            let uvs = Self::get_grid_uvs([x, y], tile_count);
             uv_map.insert(ch, uvs);
         }
 
-        Self {
-            uv_map,
-        }
+        Self { uv_map }
     }
 
-    pub fn get_grid_uvs(xy: [u32;2], tile_count: [u32;2]) -> [[f32;2];4] {
+    pub fn get_grid_uvs(xy: [u32; 2], tile_count: [u32; 2]) -> [[f32; 2]; 4] {
         let xy = Vec2::new(xy[0] as f32, xy[1] as f32);
         let uv_size = Vec2::new(1.0 / tile_count[0] as f32, 1.0 / tile_count[1] as f32);
         let right = Vec2::new(uv_size.x, 0.0);
@@ -49,11 +43,11 @@ impl UvMapping {
         ]
     }
 
-    pub fn uvs_from_glyph(&self, ch: char) -> &[[f32;2];4] {
+    pub fn uvs_from_glyph(&self, ch: char) -> &[[f32; 2]; 4] {
         &self.uv_map[&ch]
     }
 
-    pub fn uvs_from_index(&self, index: u8) -> &[[f32;2];4] {
+    pub fn uvs_from_index(&self, index: u8) -> &[[f32; 2]; 4] {
         let char = code_page_437::index_to_glyph(index);
         self.uvs_from_glyph(char)
     }

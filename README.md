@@ -42,7 +42,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn main () {
-    App::build()
+    App::new()
     .add_plugins(DefaultPlugins)
     .add_plugin(TerminalPlugin)
     .add_plugin(TiledCameraPlugin)

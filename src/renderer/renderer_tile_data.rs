@@ -1,4 +1,4 @@
-use bevy::{math::{UVec2}, prelude::Component};
+use bevy::{math::UVec2, prelude::Component};
 
 use crate::terminal::Tile;
 
@@ -6,8 +6,8 @@ use super::uv_mapping::UvMapping;
 
 #[derive(Component, Default)]
 pub struct TerminalRendererTileData {
-    pub fg_colors: Vec<[f32;4]>,
-    pub bg_colors: Vec<[f32;4]>,
+    pub fg_colors: Vec<[f32; 4]>,
+    pub bg_colors: Vec<[f32; 4]>,
     pub uvs: Vec<[f32; 2]>,
 }
 
@@ -28,7 +28,6 @@ impl TerminalRendererTileData {
 
     pub fn update_from_tiles(&mut self, tiles: &[Tile], uv_mapping: &UvMapping) {
         for (i, tile) in tiles.iter().enumerate() {
-
             let glyph = tile.glyph;
 
             let vi = i * 4;
@@ -36,7 +35,7 @@ impl TerminalRendererTileData {
 
             let glyph_uvs = uv_mapping.uvs_from_glyph(glyph);
 
-            for (a,b) in uvs[vi..vi+4].iter_mut().zip(glyph_uvs) {
+            for (a, b) in uvs[vi..vi + 4].iter_mut().zip(glyph_uvs) {
                 *a = *b;
             }
 
@@ -72,6 +71,6 @@ mod tests {
             TerminalRendererTileData::with_size(UVec2::new(25, 25));
         colors.update_from_tiles(&tiles, &UvMapping::default());
 
-        assert_eq!([0.0,0.0,1.0,1.0], colors.fg_colors[0]);
+        assert_eq!([0.0, 0.0, 1.0, 1.0], colors.fg_colors[0]);
     }
 }

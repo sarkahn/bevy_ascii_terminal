@@ -60,7 +60,7 @@ fn draw_colors(time: Res<Time>, mut q: Query<&mut Terminal>) {
 
     let a = time.time_since_startup().as_secs_f32().cos() / 2.0 + 0.5;
     let col = TileColor::rgba(u8::MAX, u8::MAX, u8::MAX, (a * 255.0) as u8);
-    
+
     let t = term.get_tile_mut([11, 26]);
     t.glyph = '*';
     t.fg_color = col;
