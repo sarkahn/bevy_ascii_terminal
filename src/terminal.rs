@@ -318,8 +318,8 @@ impl Terminal {
         let height = height as usize;
         let left = x as usize;
         let right = x as usize + width - 1;
-        let top = y as usize;
-        let bottom = y as usize + height - 1;
+        let bottom = y as usize;
+        let top = y as usize + height - 1;
 
         for t in self.row_iter_mut(top).skip(left).take(width) {
             t.glyph = border_glyphs.top;
@@ -327,10 +327,10 @@ impl Terminal {
         for t in self.row_iter_mut(bottom).skip(left).take(width) {
             t.glyph = border_glyphs.bottom;
         }
-        for t in self.column_iter_mut(left).skip(top).take(height) {
+        for t in self.column_iter_mut(left).skip(bottom).take(height) {
             t.glyph = border_glyphs.left;
         }
-        for t in self.column_iter_mut(right).skip(top).take(height) {
+        for t in self.column_iter_mut(right).skip(bottom).take(height) {
             t.glyph = border_glyphs.right;
         }
 
@@ -362,8 +362,8 @@ impl Terminal {
         let y = y as usize;
         let left = x;
         let right = x + width - 1;
-        let top = y;
-        let bottom = y + height - 1;
+        let bottom = y;
+        let top = y + height - 1;
 
         for t in self.row_iter_mut(top).skip(left).take(width) {
             t.glyph = border_glyphs.top;
@@ -375,12 +375,12 @@ impl Terminal {
             t.fg_color = fg_color;
             t.bg_color = bg_color;
         }
-        for t in self.column_iter_mut(left).skip(top).take(height) {
+        for t in self.column_iter_mut(left).skip(bottom).take(height) {
             t.glyph = border_glyphs.left;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
         }
-        for t in self.column_iter_mut(right).skip(top).take(height) {
+        for t in self.column_iter_mut(right).skip(bottom).take(height) {
             t.glyph = border_glyphs.right;
             t.fg_color = fg_color;
             t.bg_color = bg_color;
@@ -499,6 +499,26 @@ impl Terminal {
     pub fn column_iter_mut(&mut self, x: usize) -> StepBy<IterMut<Tile>> {
         self.tiles.column_iter_mut(x)
     }
+
+    /// The index of the bottom row of the terminal (0).
+    pub fn bottom_index(&self) -> usize {
+        0
+    }
+
+    /// The index of the top row of the terminal.
+    pub fn top_index(&self) -> usize {
+        self.height() as usize - 1
+    }
+    
+    /// The index of the left-most column of the terminal (0).
+    pub fn left_index(&self) -> usize {
+        0
+    }
+    
+    /// THe index of the right-most column of the terminal.
+    pub fn right_index(&self) -> usize {
+        self.width() as usize - 1
+    }
 }
 
 #[cfg(test)]
@@ -564,9 +584,9 @@ mod tests {
         let mut term = Terminal::with_size([10, 10]);
         term.draw_box_single([0, 0], [5, 5]);
 
-        assert_eq!(term.get_char([0, 0]), SINGLE_LINE_GLYPHS.top_left);
-        assert_eq!(term.get_char([0, 4]), SINGLE_LINE_GLYPHS.bottom_left);
-        assert_eq!(term.get_char([4, 0]), SINGLE_LINE_GLYPHS.top_right);
-        assert_eq!(term.get_char([4, 4]), SINGLE_LINE_GLYPHS.bottom_right);
+        assert_eq!(term.get_char([0, 4]), SINGLE_LINE_GLYPHS.top_left);
+        assert_eq!(term.get_char([0, 0]), SINGLE_LINE_GLYPHS.bottom_left);
+        assert_eq!(term.get_char([4, 4]), SINGLE_LINE_GLYPHS.top_right);
+        assert_eq!(term.get_char([4, 0]), SINGLE_LINE_GLYPHS.bottom_right);
     }
 }

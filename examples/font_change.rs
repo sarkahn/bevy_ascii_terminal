@@ -18,7 +18,7 @@ fn main() {
 struct FontIndex(pub usize);
 
 fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
-    let size = [47, 12];
+    let size = [47, 13];
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
     term_bundle.terminal.draw_border_single();
@@ -27,19 +27,21 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
 
     draw_title(&mut term_bundle.terminal, fonts[0].0);
 
+    let top = term_bundle.terminal.top_index() as i32;
+
     term_bundle
         .terminal
-        .put_string([1, 2], "Press spacebar to change fonts");
+        .put_string([1, top - 2], "Press spacebar to change fonts");
     term_bundle.terminal.put_string([1, 4], "!@#$%^&*()_+=-`~");
     term_bundle
         .terminal
-        .put_string([1, 6], "The quick brown fox jumps over the lazy dog.");
+        .put_string([1, top - 6], "The quick brown fox jumps over the lazy dog.");
     term_bundle
         .terminal
-        .put_string([1, 8], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
+        .put_string([1, top - 8], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
     term_bundle
         .terminal
-        .put_string([1, 10], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
+        .put_string([1, top - 10], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(
@@ -52,15 +54,16 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
 fn draw_title(term: &mut Terminal, title: &str) {
     let title = &title[0..title.len() - 4];
 
+    let top = term.top_index() as i32;
     term.draw_border_single_color(WHITE, BLACK);
-    term.put_string([1, 0], "[ ");
+    term.put_string([1, top], "[ ");
     term.put_string_color(
-        [3, 0],
+        [3, top],
         title.to_string().to_uppercase().as_str(),
         BLUE,
         BLACK,
     );
-    term.put_string([4 + title.len() as i32 - 1, 0], " ]");
+    term.put_string([4 + title.len() as i32 - 1, top], " ]");
 }
 
 fn change_font(

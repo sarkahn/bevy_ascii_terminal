@@ -67,8 +67,9 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
                 bg_color: bg,
             }
         }
-        term.clear_box([0, 0], [25, 3]);
+        let top = term.top_index() as i32;
+        term.clear_box([0, top - 1], [25, 1]);
         term.draw_border_single_color(WHITE, BLACK);
-        term.put_string([1, 1], "Press space to pause");
+        term.put_string([1, top - 1], "Press space to pause");
     }
 }

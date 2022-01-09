@@ -21,22 +21,13 @@ fn main() {
 #[derive(Default)]
 struct FontIndex(pub usize);
 
-fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+fn setup(mut commands: Commands) {
     let size = [20, 3];
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
     term_bundle.terminal.draw_border_single();
     term_bundle.terminal.put_string([1, 1], "Press spacebar");
     commands.spawn_bundle(term_bundle);
-
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Quad {
-            size: Vec2::ONE,
-            flip: false,
-        })),
-        transform: Transform::from_xyz(-1.5, -0.5, 0.0),
-        ..Default::default()
-    });
 
     commands.spawn_bundle(
         TiledCameraBundle::new()
@@ -69,7 +60,7 @@ fn change_font(
                 }
                 TileScaling::World => {
                     cam.scaling_mode = ScalingMode::FixedVertical;
-                    cam.scale = 12.0;
+                    cam.scale = 50.0;
                 }
             }
         }
