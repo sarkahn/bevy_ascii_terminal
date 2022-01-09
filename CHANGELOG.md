@@ -3,7 +3,7 @@
 
 ### Changed
 * Added a changelog!
-* Updated to 0.6
+* Updated to bevy 0.6
 * Fonts changed to bevy assets (`Handle<Image>`). Built in fonts can be retrieved via the `BuiltInFontHandles` resource.
 * All functions taking tuples `(i32,i32)`/`(u32,u32)` now take array positions instead: `[i32;2]`/`[u32;2]`.
 * `MeshPipeline` was removed, the renderer now uses the new high level [SpecializedMaterial](https://docs.rs/bevy_pbr/0.6.0/bevy_pbr/trait.SpecializedMaterial.html) abstraction.

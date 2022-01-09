@@ -12,14 +12,14 @@ description = "A simple terminal for rendering ascii in bevy."
 keywords = ["bevy", "ascii", "terminal", "roguelike", "tilemap"]
 
 [dependencies]
-bevy = { git = "https://github.com/Davier/bevy", branch = "mesh2d", default-features = false, features = ["render"] }
+bevy = { version = "0.6", default-features = false, features = ["render"] }
 ron = "0.6.4"
 sark_grids = { path = "../sark_grids", version = "0.1.4" }
 bitflags = "1.2"
 
 [dev-dependencies]
-bevy = { git = "https://github.com/Davier/bevy", branch = "mesh2d", features = ["png", "bevy_winit", "bevy_render"] }
+bevy = { version = "0.6", features = ["png", "bevy_winit", "bevy_render"] }
 rand = "0.7.3"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
-bevy_tiled_camera = { path = "../bevy_tiled_camera" }
+bevy_tiled_camera = { path = "../bevy_tiled_camera", version = "0.3.0" }
