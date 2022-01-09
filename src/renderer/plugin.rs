@@ -1,10 +1,4 @@
-//! Default plugin for rendering the terminal to a bevy mesh.
-
-pub const TERMINAL_INIT: &str = "terminal_init_mesh";
-pub const TERMINAL_UPDATE_MATERIAL: &str = "terminal_update_material";
-pub const TERMINAL_UPDATE_SIZE: &str = "terminal_update_size";
-pub const TERMINAL_UPDATE_TILE_DATA: &str = "terminal_update_tile_data";
-pub const TERMINAL_UPDATE_MESH: &str = "terminal_update_mesh";
+//! Plugin for rendering related resources and systems.
 
 use bevy::{
     prelude::*,
@@ -40,7 +34,7 @@ impl Plugin for TerminalRendererPlugin {
 }
 
 #[allow(clippy::type_complexity)]
-pub fn terminal_renderer_init(
+fn terminal_renderer_init(
     mut meshes: ResMut<Assets<Mesh>>,
     mut q: Query<&mut Mesh2dHandle, (Added<Mesh2dHandle>, With<TerminalRendererVertexData>)>,
 ) {
@@ -104,7 +98,7 @@ fn terminal_renderer_update_size(
     }
 }
 
-pub fn terminal_renderer_update_tile_data(
+fn terminal_renderer_update_tile_data(
     mut q: Query<(&Terminal, &mut TerminalRendererTileData, &UvMapping), Changed<Terminal>>,
 ) {
     for (term, mut data, uv_mapping) in q.iter_mut() {
@@ -114,7 +108,7 @@ pub fn terminal_renderer_update_tile_data(
     }
 }
 
-pub fn terminal_renderer_update_mesh(
+fn terminal_renderer_update_mesh(
     mut meshes: ResMut<Assets<Mesh>>,
     mut q: Query<(&TerminalRendererTileData, &Mesh2dHandle), Changed<TerminalRendererTileData>>,
 ) {

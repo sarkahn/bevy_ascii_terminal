@@ -59,9 +59,6 @@ pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;
 
 use bevy::prelude::*;
-use renderer::{TerminalRendererBundle, TerminalRendererPlugin};
-
-//pub use renderer::TerminalAssetLoadState;
 
 /// A bundle with all the required components for a terminal.
 ///
@@ -73,7 +70,7 @@ pub struct TerminalBundle {
     pub global_transform: GlobalTransform,
 
     #[bundle]
-    pub renderer: TerminalRendererBundle,
+    pub renderer: renderer::TerminalRendererBundle,
 }
 
 impl TerminalBundle {
@@ -92,6 +89,6 @@ impl TerminalBundle {
 pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(TerminalRendererPlugin);
+        app.add_plugin(renderer::TerminalRendererPlugin);
     }
 }

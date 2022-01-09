@@ -1,3 +1,6 @@
+//! A terminal component which determines how glyphs are mapped to their
+//! corresponding uvs on the tile sheet.
+
 use bevy::{prelude::*, utils::HashMap};
 
 use crate::code_page_437;

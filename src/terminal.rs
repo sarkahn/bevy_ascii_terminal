@@ -15,7 +15,7 @@ use sark_grids::Grid;
 #[derive(Clone, Copy, Debug)]
 pub struct Tile {
     /// The glyph for the tile. Glyphs are mapped to sprites via the
-    /// terminal's [GlyphMapping](super::renderer::glyph_mapping::GlyphMapping)
+    /// terminal's [UvMapping](super::renderer::uv_mapping::UvMapping)
     pub glyph: char,
     /// The forergound color for the tile.
     pub fg_color: TileColor,

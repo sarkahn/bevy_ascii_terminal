@@ -21,19 +21,19 @@ terminal is displayed.
 
 ## Example
 
-```rs
+```rust
 use bevy::prelude::*;
 use bevy_ascii_terminal::*;
 use bevy_tiled_camera::*;
 
 fn setup(mut commands: Commands) {
-    let size = (20, 3);
+    let size = [20, 3];
 
     let mut term_bundle = TerminalBundle::new().with_size(size);
     let terminal = &mut term_bundle.terminal;
 
     terminal.draw_border_single();
-    terminal.put_string((1, 1), "Hello world!");
+    terminal.put_string([1, 1], "Hello world!");
 
     commands.spawn_bundle(term_bundle);
 
@@ -47,7 +47,7 @@ fn main () {
     .add_plugin(TerminalPlugin)
     .add_plugin(TiledCameraPlugin)
     .insert_resource(ClearColor(Color::BLACK))
-    .add_startup_system(setup.system())
+    .add_startup_system(setup)
     .run();
 }
 ```
