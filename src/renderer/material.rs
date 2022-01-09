@@ -1,5 +1,40 @@
+//! The material used for terminal rendering.
+//! 
+//! By default the terminal expects a [code page 437](https://dwarffortresswiki.org/Tileset_repository)
+//! texture with 16x16 characters. New font textures can be added to the assets directory and loaded via 
+//! the bevy `AssetLoader`.
+//! 
+//! To change the terminal font, you must assign a new `Handle<Image>` to the material's `texture` field:
+//! ```
+//! use bevy::prelude::*;
+//! use bevy_ascii_terminal::*;
+//! fn change_font(
+//! asset_server: Res<AssetServer>,
+//! mut materials: ResMut<Assets<TerminalMaterial>>,
+//! mut q_term: Query<&Handle<TerminalMaterial>>,
+//! ) {
+//!     for mat in q_term.iter_mut() {
+//!         let mut mat = materials.get_mut(mat).unwrap();
+//!         let new_font = asset_server.load("some_cool_font.png");
+//!         mat.texture = Some(new_font);
+//!     }
+//! }
+//! ```
+//! 
+//! The terminal comes with several built in fonts:
+//! - jt_curses_12x12.png
+//! - pastiche_8x8.png
+//! - px437_8x8.png
+//! - taffer_10x10.png
+//! - zx_evolution_8x8.png
+//! 
+//! These fonts can be accessed via the [BuiltInFontHandles] resource:
+//! 
+//! The `TerminalMaterial` also has a `clip_color` field. This field is used by the shader
+//! to determine what constitutes a "background color" on the terminal texture.
+
 use bevy::app::{App, Plugin};
-use bevy::asset::{AssetServer, Assets, Handle, HandleUntyped, HandleId};
+use bevy::asset::{AssetServer, Assets, Handle, HandleUntyped};
 use bevy::ecs::system::{lifetimeless::SRes, SystemParamItem};
 use bevy::math::Vec4;
 use bevy::reflect::TypeUuid;
@@ -16,52 +51,68 @@ use bevy::render::{
     texture::Image,
 };
 
-use bevy::sprite::{Material2dPipeline, Material2dPlugin, MaterialMesh2dBundle, SpecializedMaterial2d};
+use bevy::sprite::{Material2dPipeline, Material2dPlugin, SpecializedMaterial2d};
 use bevy::utils::HashMap;
 
-//use super::font::BUILT_IN_FONTS;
-
+/// The default shader handle used by the terminal.
 pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 3142086872234592509);
 
+/// The default material handle used by the terminal.
 pub const TERMINAL_DEFAULT_MATERIAL_HANDLE: HandleUntyped = 
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 2121056571224552501);
-
-pub const BUILTIN_FONT_NAMES: &[&str] = &[
-    "px437_8x8.png",
-];
-
 
 macro_rules! include_font {
     ($font_name:expr) => {
         {
             let bytes = include_bytes!(concat!("builtin/", $font_name));
-            Image::from_buffer(bytes, ImageType::Extension("png")).unwrap()
+            ($font_name, Image::from_buffer(bytes, ImageType::Extension("png")).unwrap())
         }
     };
 }
 
-macro_rules! add_font_resource {
-    ($font_name:expr, &images:item, &map:item) => {
-        {
-            let image = include_font!(font_name);
-            let handle = images.set(font_name, image);
-            map.insert(font_name.to_string(), handle);
-        }
-    };
-}
-
+/// A resource which can be used to retrieve the image handles
+/// for the terminal's built-in fonts.
+/// 
+/// # Example
+/// 
+/// ```
+/// use bevy::prelude::*;
+/// use bevy_ascii_terminal::*;
+/// fn change_font_built_in(
+/// fonts: Res<BuiltInFontHandles>,
+/// mut materials: ResMut<Assets<TerminalMaterial>>,
+/// q_mat: Query<&Handle<TerminalMaterial>>,
+/// ) {
+///     for mat in q_mat.iter() {
+///         let mut mat = materials.get_mut(mat).unwrap();
+///         let built_in = fonts.get("zx_evolution_8x8.png").unwrap();
+/// 
+///         mat.texture = Some(built_in.clone());
+///     }
+/// }
+/// ```
 pub struct BuiltInFontHandles {
     map: HashMap<String,Handle<Image>>,
 }
 
 impl BuiltInFontHandles {
+    /// Retrieve a built-in font handle by it's name. Must include ".png" the extension.
     pub fn get(&self, font_name: &str) -> Option<&Handle<Image>> {
         self.map.get(font_name)
     }
+
+    /// An iterator over the name-value-pairs of the built in font handles
+    /// for the terminal.
+    /// 
+    /// Yields (&String, &Handle<Image>), where `String` is the file name of the
+    /// font texture. 
+    pub fn iter(&self) -> impl Iterator<Item=(&String,&Handle<Image>)> {
+        self.map.iter()
+    }
 }
 
-
+/// Plugin for the terminal renderer. Initializes resources and systems related to rendering.
 #[derive(Default)]
 pub struct TerminalMaterialPlugin;
 
@@ -78,43 +129,25 @@ impl Plugin for TerminalMaterialPlugin {
         let mut fonts = BuiltInFontHandles {
             map: HashMap::default()
         };
-        let font_map = &mut fonts.map;
-        //use built_in_fonts::*;
+        let mut font_map = &mut fonts.map;
 
         let mut images = app.world.get_resource_mut::<Assets<Image>>().unwrap();
 
-        //let image = include_font!("px437_8x8.png");
-        //font_map.insert(images.set("px437_8x8.png", image);
+        let font = include_font!("jt_curses_12x12.png");
+        add_font_resource(font, &mut images, &mut font_map);
         
-        let image = include_font!("jt_curses_12x12.png");
-        let default_font = images.set("jt_curses_12x12.png", image);
-        font_map.insert("jt_curses_12x12.png".to_string(), default_font.clone());
+        let font = include_font!("pastiche_8x8.png");
+        add_font_resource(font, &mut images, &mut font_map);
+        
+        let font = include_font!("px437_8x8.png");
+        let default_font = add_font_resource(font, &mut images, &mut font_map);
+        
+        let font = include_font!("taffer_10x10.png");
+        add_font_resource(font, &mut images, &mut font_map);
+        
+        let font = include_font!("zx_evolution_8x8.png");
+        add_font_resource(font, &mut images, &mut font_map);
 
-        // images.set_untracked(
-        //     PX_437_8X8_HANDLE,
-        //     include_font!("px437_8x8.png")
-        // );
-        
-        // images.set_untracked(
-        //     PASTICHE_8X8_HANDLE,
-        //     include_font!("pastiche_8x8.png")
-        // );
-        
-        // images.set_untracked(
-        //     JT_CURSES_12X12_HANDLE,
-        //     include_font!("jt_curses_12x12.png")
-        // );
-        
-        // images.set_untracked(
-        //     TAFFER_10X10_HANDLE,
-        //     include_font!("taffer_10x10.png")
-        // );
-        
-        // images.set_untracked(
-        //     ZX_EVOLUTION_8X8_HANDLE,
-        //     include_font!("zx_evolution_8x8.png")
-        // );
-        
         app.world
             .get_resource_mut::<Assets<TerminalMaterial>>()
             .unwrap()
@@ -127,12 +160,27 @@ impl Plugin for TerminalMaterialPlugin {
     }
 }
 
+fn add_font_resource(
+    font: (&str, Image), 
+    images: &mut Assets<Image>, 
+    font_map: &mut HashMap<String,Handle<Image>>
+) -> Handle<Image> {
+    let handle = images.set(font.0, font.1);
+    font_map.insert(font.0.to_string(), handle.clone());
+    handle
+}
 
-
+/// The material for rendering a terminal.
 #[derive(Debug, Clone, TypeUuid)]
 #[uuid = "e228a534-e3ca-2e1e-ab9d-4d8bc1ad8c19"]
 pub struct TerminalMaterial {
+    /// The clip color for the active font texture.
+    ///
+    /// Clip color determines which part of the texture is regarded as
+    /// "background color".
     pub clip_color: Color,
+    
+    /// The font texture rendered by the terminal.
     pub texture: Option<Handle<Image>>,
 }
 
@@ -166,7 +214,7 @@ bitflags::bitflags! {
 
 /// The GPU representation of the uniform data of a [`TerminalMaterial`].
 #[derive(Clone, Default, AsStd140)]
-pub struct TerminalMaterialUniformData {
+struct TerminalMaterialUniformData {
     pub color: Vec4,
     pub flags: u32,
 }
@@ -323,9 +371,7 @@ impl SpecializedMaterial2d for TerminalMaterial {
             // Vertex_Position
             VertexAttribute {
                 format: VertexFormat::Float32x3,
-                // this offset is the size of the color attribute, which is stored first
                 offset: 0,
-                // position is available at location 0 in the shader
                 shader_location: 0,
             },
             // Vertex_UV
@@ -337,9 +383,7 @@ impl SpecializedMaterial2d for TerminalMaterial {
             // bg_color
             VertexAttribute {
                 format: VertexFormat::Float32x4,
-                // this offset is the size of the color attribute, which is stored first
                 offset: 12 + 8,
-                // position is available at location 0 in the shader
                 shader_location: 2,
             },
             // fg_color

@@ -1,3 +1,6 @@
+//! Utilities for translating between glyphs and Code Page 437 indices.
+
+/// Array containing, in order, all the chars from Code Page 437.
 pub const CP_437_CHARS: [char;255] = [
     ' ', '☺', '☻', '♥', '♦', '♣', '♠', '•', '◘', '○', '◙', '♂', '♀', '♪', '♫', '☼', 
     '►', '◄', '↕', '‼', '¶', '§', '▬', '↨', '↑', '↓', '→', '←', '∟', '↔', '▲', '▼', 
@@ -17,6 +20,7 @@ pub const CP_437_CHARS: [char;255] = [
     '≡', '±', '≥', '≤', '⌠', '⌡', '÷', '≈', '°', '∙', '·', '√', 'ⁿ', '²', '■',
     ];
 
+/// Convert an index (0..=255) to a cp437 glyph.
 pub fn index_to_glyph(i: u8) -> char {
     match i {
         0 => ' ',
@@ -24,6 +28,8 @@ pub fn index_to_glyph(i: u8) -> char {
         _ => CP_437_CHARS[i as usize]
     }
 }
+
+/// Convert a cp437 glyph to an index (0..=255)
 pub fn glyph_to_index(c: char) -> u8 {
     match c {
         '☺' => 1,

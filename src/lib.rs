@@ -55,6 +55,8 @@ pub use color::*;
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
 pub use renderer::code_page_437;
+pub use renderer::material::BuiltInFontHandles;
+pub use renderer::material::TerminalMaterial;
 
 use bevy::prelude::*;
 use renderer::{
@@ -98,22 +100,6 @@ impl TerminalBundle {
     /// Set the initial size of the terminal.
     pub fn with_size(mut self, size: [u32;2]) -> Self {
         self.terminal.resize(size);
-        self
-    }
-
-    /// Set the initial font for the terminal. This should be the file name of the font
-    /// in the `assets/textures` directory, including the extension.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use bevy_ascii_terminal::*;
-    ///
-    /// let bundle = TerminalBundle::new()
-    ///     .with_font("zx_evolution_8x8.png");
-    /// ```
-    pub fn with_font(mut self, font_name: &str) -> Self {
-        //self.renderer.font.change_font(font_name);
         self
     }
 }

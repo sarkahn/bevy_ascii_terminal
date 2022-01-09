@@ -7,7 +7,6 @@ use bevy_ascii_terminal::{renderer::TileScaling, TerminalBundle, TerminalPlugin}
 use bevy_tiled_camera::*;
 
 fn main() {
-    todo!("Scaling needs to be fixed");
     App::new()
         .init_resource::<FontIndex>()
         .add_plugins(DefaultPlugins)

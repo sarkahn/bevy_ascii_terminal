@@ -4,7 +4,7 @@ use crate::code_page_437;
 
 use super::code_page_437::CP_437_CHARS;
 
-
+#[derive(Component)]
 pub struct UvMapping {
     uv_map: HashMap<char,[[f32;2];4]>,
 }

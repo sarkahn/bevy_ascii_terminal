@@ -30,7 +30,7 @@ fn spawn_terminal(mut commands: Commands) {
     );
 }
 
-fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>, images: Res<Assets<Image>>) {
+fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
     if keys.just_pressed(KeyCode::Space) {
         for mut term in q.iter_mut() {
             term.clear();
@@ -40,6 +40,8 @@ fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>, images: R
             term.put_char_color([3, 1], 'l', GREEN, BLUE);
             term.put_char_color([4, 1], 'l', RED, GREEN);
             term.put_char_color([5, 1], 'o', GREEN, GREY);
+            
+            term.put_string([6,1], " World!");
         }
     }
 }
