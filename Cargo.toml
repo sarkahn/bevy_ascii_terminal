@@ -1,6 +1,6 @@
 [package]
 name = "bevy_ascii_terminal"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/bevy_ascii_terminal"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"

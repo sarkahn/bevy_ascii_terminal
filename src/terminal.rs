@@ -58,6 +58,7 @@ impl Default for Tile {
 /// Border glyphs used in box drawing functions.
 ///
 /// Specifies the style of lines to use along the border of the box.
+#[derive(Clone, Copy)]
 pub struct BorderGlyphs {
     pub top: char,
     pub left: char,
@@ -70,7 +71,7 @@ pub struct BorderGlyphs {
 }
 
 /// Single line border glyphs. Can be used in box drawing functions.
-const SINGLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
+pub const SINGLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
     left: '│',
     right: '│',
     bottom: '─',
@@ -82,7 +83,7 @@ const SINGLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
 };
 
 /// Double line border glyphs. Can be used in box drawing functions.
-const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
+pub const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
     left: '║',
     right: '║',
     top: '═',
@@ -128,18 +129,6 @@ impl Terminal {
         self.tiles.pos_to_index(xy)
     }
 
-    /// Convert a 2D position to it's corresponding 1D index
-    /// in the terminal with the y axis flipped.
-    ///
-    /// In the terminal the y axis goes from top to bottom.
-    /// This should be used when passing in coordinates where
-    /// the y axis goes from bottom to top.
-    #[inline]
-    pub fn to_index_flipped(&self, xy: [i32; 2]) -> usize {
-        let (x, y) = self.y_flip(xy).into();
-        (y * self.width() as i32 + x) as usize
-    }
-
     /// Convert 1D index to it's 2D position given the dimensions
     /// of the terminal.
     ///
@@ -150,30 +139,6 @@ impl Terminal {
         let w = self.width() as i32;
         let x = i % w;
         let y = i / w;
-        IVec2::new(x, y)
-    }
-
-    /// Convert 1D index to it's 2D position given the dimensions
-    /// of the terminal.
-    ///
-    /// In the terminal the y axis goes from top to bottom.
-    /// This should be used when passing in an index derived from
-    /// coordinates where the y axis goes from bottom to top.
-    #[inline]
-    pub fn to_xy_flipped(&self, i: usize) -> IVec2 {
-        let xy = self.to_xy(i);
-        self.y_flip(xy.into())
-    }
-
-    /// Flip the given position based on the height of the terminal.
-    ///
-    /// In the terminal the y axis goes from top to bottom.
-    /// This should be used when passing in coordinates where
-    /// the y axis goes from bottom to top.
-    #[inline]
-    pub fn y_flip(&self, pos: [i32; 2]) -> IVec2 {
-        let [x, y] = pos;
-        let y = self.height() as i32 - 1 - y;
         IVec2::new(x, y)
     }
 
@@ -437,6 +402,10 @@ impl Terminal {
         self.draw_box_color(xy, size, fg_color, bg_color, DOUBLE_LINE_GLYPHS);
     }
 
+    pub fn draw_border(&mut self, border_glyphs: BorderGlyphs) {
+        self.draw_box([0,0], self.size().into(), border_glyphs);
+    }
+
     /// Draw a single-line border around the edge of the whole terminal.
     pub fn draw_border_single(&mut self) {
         self.draw_box_single([0, 0], self.size.into());
@@ -454,6 +423,28 @@ impl Terminal {
     /// Draw a colored double-line border around the edge of the whole terminal.
     pub fn draw_border_double_color(&mut self, fg_color: TileColor, bg_color: TileColor) {
         self.draw_box_double_color([0, 0], self.size.into(), fg_color, bg_color);
+    }
+
+    pub fn draw_horizontal_bar(&mut self, xy: [i32;2], width: i32, value: i32, max: i32) {
+        self.draw_horizontal_bar_color(xy, width, value, max, Color::WHITE, Color::GRAY);
+    }
+
+    pub fn draw_horizontal_bar_color(&mut self, xy: [i32;2], width: i32, value: i32, max: i32,
+    filled_color: Color, empty_color: Color) {
+        let [x,y] = xy;
+        let normalized = match max {
+            0 => 0.0,
+            _ => value as f32 / max as f32
+        };
+
+        let v = f32::ceil(normalized * width as f32) as i32;
+
+        for i in 0..v{
+            self.put_char_color([x + i, y], '▓', filled_color.into(), BLACK);
+        }
+        for i in v..width {
+            self.put_char_color([x + i, y], '░', empty_color.into(), BLACK);
+        }
     }
 
     /// Clear the terminal tiles to default - empty tiles with
