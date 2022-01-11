@@ -1,5 +1,6 @@
 # Changelog
 ## [0.8.1]
+
 ### Changed
 * Inverted the y axis. Now y0 == the bottom and height 0 - 1 == the top line. This will make it simpler to translate from world
     positions to terminal positions.
