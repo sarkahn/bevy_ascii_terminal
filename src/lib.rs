@@ -50,6 +50,9 @@ mod color;
 mod color_blend;
 mod colors;
 mod terminal;
+pub mod formatting;
+mod string_formatting;
+mod grid_rect;
 
 pub use color::*;
 pub use terminal::{BorderGlyphs, Terminal, Tile};

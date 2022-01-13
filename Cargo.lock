@@ -216,6 +216,7 @@ dependencies = [
  "bitflags",
  "bracket-noise",
  "bracket-random",
+ "itertools",
  "rand 0.7.3",
  "ron 0.6.6",
  "sark_grids",

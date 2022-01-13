@@ -477,7 +477,7 @@ impl Terminal {
     }
 
     /// A mutable iterator over an entire row of tiles in the terminal.
-    pub fn row_iter_mut(&mut self, y: usize) -> IterMut<Tile> {
+    pub fn row_iter_mut(&mut self, y: usize) -> impl Iterator<Item = &mut Tile> {
         self.tiles.row_iter_mut(y)
     }
 
