@@ -1,8 +1,8 @@
 //! Handles mesh construction and rendering for the terminal.
 
+pub mod entity;
 pub mod material;
 pub mod plugin;
-pub mod entity;
 
 pub mod code_page_437;
 pub mod uv_mapping;
@@ -25,5 +25,5 @@ pub const TERMINAL_UPDATE_TILE_DATA: &str = "terminal_update_tile_data";
 /// System label for the terminal mesh update function.
 pub const TERMINAL_UPDATE_MESH: &str = "terminal_update_mesh";
 
-pub use plugin::TerminalRendererPlugin;
 pub use entity::*;
+pub use plugin::TerminalRendererPlugin;

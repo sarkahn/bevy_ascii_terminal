@@ -36,10 +36,10 @@ fn draw_colors(time: Res<Time>, mut q: Query<&mut Terminal>) {
     // Draw shaded hues
     for y in 0..hue_count {
         let hue = y as f32 * hue_step;
-        let col = Color::hsl(hue, 1.0, 0.05).into();
+        let col = Color::hsl(hue, 1.0, 0.05);
         term.put_bg_color([0, y], col);
         for x in 1..10 {
-            let col = Color::hsl(hue, 1.0, x as f32 / 10.0).into();
+            let col = Color::hsl(hue, 1.0, x as f32 / 10.0);
             term.put_bg_color([x, y], col);
         }
     }
@@ -47,14 +47,14 @@ fn draw_colors(time: Res<Time>, mut q: Query<&mut Terminal>) {
     // Draw greys/sepia
     for x in 0..10 {
         let v = x as f32 / 10.0;
-        let col = Color::rgb(v, v, v).as_rgba_linear().into();
+        let col = Color::rgb(v, v, v).as_rgba_linear();
         term.put_bg_color([x, 24], col);
 
         let mut light_scale = 0.8;
         if x <= 5 {
             light_scale = 0.6;
         };
-        let col = Color::hsl(35.0, 0.33, v * light_scale).into();
+        let col = Color::hsl(35.0, 0.33, v * light_scale);
         term.put_bg_color([x, 25], col);
     }
 

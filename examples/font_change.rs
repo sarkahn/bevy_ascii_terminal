@@ -32,15 +32,21 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
         .terminal
         .put_string_formatted([1, 2], "Press spacebar to change fonts", format);
     term_bundle.terminal.put_string([1, 4], "!@#$%^&*()_+=-`~");
-    term_bundle
-        .terminal
-        .put_string_formatted([1, 6], "The quick brown fox jumps over the lazy dog.", format);
-    term_bundle
-        .terminal
-        .put_string_formatted([1, 8], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼", format);
-    term_bundle
-        .terminal
-        .put_string_formatted([1, 10], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞", format);
+    term_bundle.terminal.put_string_formatted(
+        [1, 6],
+        "The quick brown fox jumps over the lazy dog.",
+        format,
+    );
+    term_bundle.terminal.put_string_formatted(
+        [1, 8],
+        "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼",
+        format,
+    );
+    term_bundle.terminal.put_string_formatted(
+        [1, 10],
+        "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞",
+        format,
+    );
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(

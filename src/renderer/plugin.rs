@@ -81,7 +81,7 @@ fn terminal_renderer_update_size(
             let font_size = UVec2::new(size.width, size.height) / UVec2::new(16, 16);
             tile_size *= font_size;
         }
- 
+
         let size = terminal.size();
         vert_data.resize(size, term_pivot.0, tile_pivot.0, tile_size);
         tile_data.resize(size);

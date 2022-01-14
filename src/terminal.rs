@@ -167,12 +167,7 @@ impl Terminal {
     }
 
     /// Insert a character with colors.
-    pub fn put_char_formatted(
-        &mut self,
-        xy: [i32; 2],
-        glyph: char,
-        format: CharFormat,
-    ) {
+    pub fn put_char_formatted(&mut self, xy: [i32; 2], glyph: char, format: CharFormat) {
         let xy = format.pivot.pivot_aligned_point(xy, self.size().into());
         let t = self.get_tile_mut(xy.into());
         *t = format.tile(glyph);
@@ -202,18 +197,13 @@ impl Terminal {
     ///
     /// The string will move to the next line if it reaches the edge
     /// and will truncate at the end of the terminal.
-    pub fn put_string_formatted(
-        &mut self,
-        xy: [i32; 2],
-        string: &str,
-        format: StringFormat,
-    ) {
+    pub fn put_string_formatted(&mut self, xy: [i32; 2], string: &str, format: StringFormat) {
         let xy = format.get_string_position(xy, self.size.into(), string);
         let i = self.to_index(xy.into());
         let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
-        for (char,t) in chars.zip(tiles) {
+        for (char, t) in chars.zip(tiles) {
             *t = format.tile(char);
         }
     }
@@ -344,32 +334,18 @@ impl Terminal {
         let top = top as i32;
         let bottom = bottom as i32;
 
-        self.put_char_formatted(
-            [left, bottom],
-            border_glyphs.bottom_left,
-            format,
-        );
+        self.put_char_formatted([left, bottom], border_glyphs.bottom_left, format);
         self.put_char_formatted([left, top], border_glyphs.top_left, format);
         self.put_char_formatted([right, top], border_glyphs.top_right, format);
-        self.put_char_formatted(
-            [right, bottom],
-            border_glyphs.bottom_right,
-            format
-        );
+        self.put_char_formatted([right, bottom], border_glyphs.bottom_right, format);
     }
 
     /// Draw a box with a single-line border.
     pub fn draw_box_single(&mut self, xy: [i32; 2], size: [u32; 2]) {
-        
         self.draw_box_formatted(xy, size, SINGLE_LINE_GLYPHS, CharFormat::default());
     }
     /// Draw a box with a colored single-line border.
-    pub fn draw_box_single_formatted(
-        &mut self,
-        xy: [i32; 2],
-        size: [u32; 2],
-        format: CharFormat,
-    ) {
+    pub fn draw_box_single_formatted(&mut self, xy: [i32; 2], size: [u32; 2], format: CharFormat) {
         self.draw_box_formatted(xy, size, SINGLE_LINE_GLYPHS, format);
     }
 
@@ -378,17 +354,12 @@ impl Terminal {
         self.draw_box(xy, size, DOUBLE_LINE_GLYPHS);
     }
     /// Draw a box with a colored double-line border.
-    pub fn draw_box_double_formatted(
-        &mut self,
-        xy: [i32; 2],
-        size: [u32; 2],
-        format: CharFormat,
-    ) {
+    pub fn draw_box_double_formatted(&mut self, xy: [i32; 2], size: [u32; 2], format: CharFormat) {
         self.draw_box_formatted(xy, size, DOUBLE_LINE_GLYPHS, format);
     }
 
     pub fn draw_border(&mut self, border_glyphs: BorderGlyphs) {
-        self.draw_box([0,0], self.size().into(), border_glyphs);
+        self.draw_box([0, 0], self.size().into(), border_glyphs);
     }
 
     /// Draw a single-line border around the edge of the whole terminal.
@@ -410,23 +381,30 @@ impl Terminal {
         self.draw_box_double_formatted([0, 0], self.size.into(), format);
     }
 
-    pub fn draw_horizontal_bar(&mut self, xy: [i32;2], width: i32, value: i32, max: i32) {
+    pub fn draw_horizontal_bar(&mut self, xy: [i32; 2], width: i32, value: i32, max: i32) {
         self.draw_horizontal_bar_color(xy, width, value, max, Color::WHITE, Color::GRAY);
     }
 
-    pub fn draw_horizontal_bar_color(&mut self, xy: [i32;2], width: i32, value: i32, max: i32,
-    filled_color: Color, empty_color: Color) {
-        let [x,y] = xy;
+    pub fn draw_horizontal_bar_color(
+        &mut self,
+        xy: [i32; 2],
+        width: i32,
+        value: i32,
+        max: i32,
+        filled_color: Color,
+        empty_color: Color,
+    ) {
+        let [x, y] = xy;
         let normalized = match max {
             0 => 0.0,
-            _ => value as f32 / max as f32
+            _ => value as f32 / max as f32,
         };
 
         let v = f32::ceil(normalized * width as f32) as i32;
 
         let filled_format = CharFormat::default().with_fg_color(filled_color);
         let empty_format = CharFormat::default().with_fg_color(empty_color);
-        for i in 0..v{
+        for i in 0..v {
             self.put_char_formatted([x + i, y], '▓', filled_format);
         }
         for i in v..width {
@@ -487,12 +465,12 @@ impl Terminal {
     pub fn top_index(&self) -> usize {
         self.height() as usize - 1
     }
-    
+
     /// The index of the left-most column of the terminal (0).
     pub fn left_index(&self) -> usize {
         0
     }
-    
+
     /// THe index of the right-most column of the terminal.
     pub fn right_index(&self) -> usize {
         self.width() as usize - 1

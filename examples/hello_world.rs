@@ -18,9 +18,7 @@ fn spawn_terminal(mut commands: Commands) {
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
     term_bundle.terminal.draw_border_single();
-    term_bundle
-        .terminal
-        .put_string([1, 1], "Press spacebar");
+    term_bundle.terminal.put_string([1, 1], "Press spacebar");
 
     commands.spawn_bundle(term_bundle);
 
