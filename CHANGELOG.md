@@ -2,8 +2,12 @@
 ## [0.8.1]
 
 ### Changed
-* Inverted the y axis. Now y0 == the bottom and height 0 - 1 == the top line. This will make it simpler to translate from world
-    positions to terminal positions.
+* Inverted the y axis. Now y0 == the bottom of the terminla and height 0 - 1 == the top line of the terminal. This will make it simpler to translate from world to terminal positions. You can use the format functions described below to write relative to a certain pivot on the terminal.
+* Replaced "put\_\*\_color" functions with "put\_\*\_formatted". These formatting functions let you pass in a format object which specifies colors and a pivot to draw from. Whatever position you pass will be relative to the given pivot.
+
+### Removed
+* Removed `TileColor` in favor of Bevy's built in colors.
+* ColorBlend disabled for now.
 
 ### Added
 * `draw_horizontal_bar` functions.

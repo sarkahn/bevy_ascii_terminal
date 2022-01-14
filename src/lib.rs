@@ -46,20 +46,15 @@
 //! ```
 pub mod renderer;
 
-mod color;
-mod color_blend;
-mod colors;
 mod terminal;
 pub mod formatting;
-mod string_formatting;
-mod grid_rect;
 
-pub use color::*;
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
 pub use renderer::code_page_437;
 pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;
+pub use formatting::{Pivot, CharFormat, StringFormat};
 
 use bevy::prelude::*;
 

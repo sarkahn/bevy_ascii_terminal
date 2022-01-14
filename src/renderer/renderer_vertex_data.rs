@@ -47,9 +47,6 @@ impl TerminalRendererVertexData {
 
         for i in 0..len {
             let x = (i % term_size.x as usize) as f32 * tile_width;
-            // OLD: Flip y: y0 == the top of the terminal
-            //let y = size.y as usize - 1 - (i / term_size.x as usize);
-            //let y = y as f32 * tile_height;
             let y = (i / term_size.x as usize) as f32 * tile_height;
             let origin = Vec3::new(x, y, 0.0) + term_pivot + tile_pivot;
             let right = Vec3::X * tile_width;

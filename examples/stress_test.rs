@@ -37,11 +37,11 @@ fn setup(mut commands: Commands) {
     );
 }
 
-fn rand_color(rng: &mut ThreadRng) -> TileColor {
-    let r = rng.gen_range(0, 255) as u8;
-    let g = rng.gen_range(0, 255) as u8;
-    let b = rng.gen_range(0, 255) as u8;
-    TileColor::rgb(r, g, b)
+fn rand_color(rng: &mut ThreadRng) -> Color {
+    let r: f32 = rng.gen_range(0.0..=1.0);
+    let g: f32 = rng.gen_range(0.0..=1.0);
+    let b: f32 = rng.gen_range(0.0..=1.0);
+    Color::rgb(r, g, b)
 }
 
 fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Query<&mut Terminal>) {
@@ -56,7 +56,7 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
     let mut rng = rand::thread_rng();
     for mut term in q.iter_mut() {
         for t in term.iter_mut() {
-            let index = rng.gen_range(0, 255) as u8;
+            let index = rng.gen_range(0..=255) as u8;
             let glyph = code_page_437::index_to_glyph(index);
             let fg = rand_color(&mut rng);
             let bg = rand_color(&mut rng);
@@ -69,7 +69,7 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
         }
         let top = term.top_index() as i32;
         term.clear_box([0, top - 1], [25, 1]);
-        term.draw_border_single_color(WHITE, BLACK);
+        term.draw_border_single();
         term.put_string([1, top - 1], "Press space to pause");
     }
 }

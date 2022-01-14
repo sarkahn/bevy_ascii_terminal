@@ -40,8 +40,8 @@ impl TerminalRendererTileData {
             }
 
             for j in vi..vi + 4 {
-                self.fg_colors[j] = tile.fg_color.into();
-                self.bg_colors[j] = tile.bg_color.into();
+                self.fg_colors[j] = tile.fg_color.as_linear_rgba_f32();
+                self.bg_colors[j] = tile.bg_color.as_linear_rgba_f32();
             }
         }
     }
@@ -50,11 +50,10 @@ impl TerminalRendererTileData {
 #[cfg(test)]
 mod tests {
     use bevy::math::UVec2;
+    use bevy::prelude::Color;
 
     use crate::renderer::uv_mapping::UvMapping;
     use crate::{renderer::renderer_tile_data::TerminalRendererTileData, terminal::Tile};
-
-    use crate::color::*;
 
     #[test]
     fn resize_test() {
@@ -62,7 +61,7 @@ mod tests {
 
         for tile in tiles.iter_mut() {
             *tile = Tile {
-                fg_color: BLUE,
+                fg_color: Color::BLUE,
                 ..Default::default()
             }
         }

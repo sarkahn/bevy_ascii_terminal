@@ -1,9 +1,9 @@
-use bevy::prelude::*;
-use itertools::{Itertools, Chunk, IntoChunks};
+//! Utilities for formatting strings and chars written to the terminal.
 
+use bevy::prelude::*;
 use crate::Tile;
 
-
+/// A pivot point on a 2d rect.
 #[derive(Eq, PartialEq, Clone, Copy)]
 pub enum Pivot {
     /// +X Right, +Y Down.
@@ -19,6 +19,8 @@ pub enum Pivot {
 }
 
 impl Pivot {
+    /// A Vec2 used to derive a pivot offset from the size of a
+    /// 2d rect. 
     pub fn pivot(&self) -> Vec2 {
         match self {
             Pivot::TopLeft => Vec2::new(0.0,1.0),
@@ -29,7 +31,7 @@ impl Pivot {
         }
     }
 
-    /// Coridnate axis for adjusting an aligned position.
+    /// Coordinate axis for adjusting an aligned position on a 2d rect.
     pub fn axis(&self) -> IVec2 {
         match self {
             Pivot::TopLeft => IVec2::new(1,-1),
@@ -40,7 +42,8 @@ impl Pivot {
         }
     }
 
-    /// Transform a point to it's equivalent from the perspective of this pivot.
+    /// Transform a point to it's equivalent from the perspective of
+    /// a pivot on a 2d rect.
     pub fn pivot_aligned_point(&self, point: [i32;2], size: [u32;2]) -> IVec2 {
         let point = IVec2::from(point);
         let align_offset = UVec2::from(size).as_vec2() - Vec2::ONE;
@@ -48,64 +51,140 @@ impl Pivot {
         let point = point * self.axis() + align_offset;
         point
     }
+}
 
-    pub fn pivot_aligned_rect_iter(&self, point: [i32;2], total_size: [u32;2], rect_size: [u32;2]) 
-    -> IntoChunks<impl Iterator<Item=IVec2>>
-    {
+/// Describes formatting for a char written to the terminal.
+#[derive(Copy, Clone)]
+pub struct CharFormat {
+    pub fg_color: Color,
+    pub bg_color: Color,
+    pub pivot: Pivot,
+}
 
-        let origin = self.pivot_aligned_point(point, total_size);
-
-        let axis = self.axis();
-
-        let box_size = UVec2::from(rect_size).as_ivec2();
-
-        let xy_iter = (0..box_size.x).cartesian_product(0..box_size.y);
-
-        xy_iter.map(move |(y,x)| origin + IVec2::new(x * axis.x, y * axis.y)).chunks(box_size.x as usize)
-    }
-
-    pub fn rect_iter(&self, point: [i32;2], rect_size: [u32;2], total_size: [u32;2]) {
-        let origin = self.pivot_aligned_point(point, total_size);
-
-        let axis = self.axis();
-
-        let box_size = UVec2::from(rect_size).as_ivec2();
-
-        let bottom_left = origin + (box_size * axis);
-
-
+impl Default for CharFormat {
+    fn default() -> Self {
+        Self { 
+            fg_color: Color::WHITE, 
+            bg_color: Color::BLACK, 
+            pivot: Pivot::BottomLeft, 
+        }
     }
 }
 
-pub struct CharFormatter {
-    tile: Tile,
-    alignment: Pivot,
-}
+impl CharFormat {
+    pub fn new(fg_color: Color, bg_color: Color) -> Self {
+        Self {
+            fg_color,
+            bg_color,
+            ..Default::default()
+        }
+    }
 
-impl CharFormatter {
     pub fn with_fg_color(mut self, color: Color) -> Self {
-        self.tile.fg_color = color.into();
+        self.fg_color = color.into();
         self
     }
 
     pub fn with_bg_color(mut self, color: Color) -> Self {
-        self.tile.fg_color = color.into();
+        self.fg_color = color.into();
         self
     }
 
-    pub fn with_glyph(mut self, glyph: char) -> Self {
-        self.tile.glyph = glyph;
+    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
+        self.pivot = pivot;
         self
     }
 
-    pub fn with_alignment(mut self, alignment: Pivot) -> Self {
-        self.alignment = alignment;
+    pub (crate) fn tile(&self, glyph: char) -> Tile {
+        Tile {
+            glyph,
+            fg_color: self.fg_color,
+            bg_color: self.bg_color,
+        }
+    }
+}
+
+/// Describes formatting for a string written to the terminal.
+#[derive(Copy, Clone)]
+pub struct StringFormat {
+    pub pivot: Pivot,
+    pub fg_color: Color,
+    pub bg_color: Color,
+}
+
+impl Default for StringFormat {
+    fn default() -> Self {
+        Self { 
+            pivot: Pivot::BottomLeft, 
+            fg_color: Color::WHITE,
+            bg_color: Color::BLACK, 
+        }
+    }
+}
+
+impl StringFormat {
+    pub fn new(pivot: Pivot, fg_color: Color, bg_color: Color) -> Self {
+        Self {
+            pivot,
+            fg_color,
+            bg_color, 
+        }
+    }
+
+    pub fn colors(fg_color: Color, bg_color: Color) -> Self {
+        Self {
+            fg_color,
+            bg_color,
+            ..Default::default()
+        }
+    }
+
+    pub fn pivot(pivot: Pivot) -> Self {
+        pivot.into()
+    }
+
+    pub fn with_pivot(mut self, alignment: Pivot) -> Self {
+        self.pivot = alignment;
         self
+    }
+
+    pub fn with_fg_color(mut self, color: Color) -> Self {
+        self.fg_color = color;
+        self
+    }
+
+    pub fn with_bg_color(mut self, color: Color) -> Self {
+        self.bg_color = color;
+        self
+    }
+
+    pub (crate) fn get_string_position(&self, pos: [i32;2], size: [u32;2], string: &str) -> IVec2 {
+        let len = string.len() - 1;
+        let origin = self.pivot.pivot_aligned_point(pos, size);
+        let string_offset = (len as f32 * -self.pivot.pivot().x) as i32;
+        IVec2::new(origin.x + string_offset, origin.y)
+    }
+
+    pub (crate) fn tile(&self, glyph: char) -> Tile {
+        Tile {
+            glyph,
+            fg_color: self.fg_color,
+            bg_color: self.bg_color,
+        }
+    }
+}
+
+impl From<Pivot> for StringFormat {
+    fn from(pivot: Pivot) -> Self {
+        Self {
+            pivot,
+            ..Default::default()
+        }
     }
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
@@ -136,13 +215,23 @@ mod test {
         assert_eq!([5,5], xy);
     }
     
-    #[test]
-    fn rect_iter() {
-        let iter = Pivot::TopRight.pivot_aligned_rect_iter([0,0], [15,7], [3,3]);
-        
-        for chunk in &iter {
-            chunk.skip(1).take(3).for_each(|v|println!("{}",v));
-        }
-    }
     
+    #[test]
+    fn string_positioning() {
+        let formatter = StringFormat::default().with_pivot(Pivot::TopRight);
+
+        let p = formatter.get_string_position([0,0], [10,10], "Hello");
+        assert_eq!([5,9], p.to_array());
+        
+        let p = formatter.get_string_position([1,2], [10,10], "Hello");
+        assert_eq!([4,7], p.to_array());
+
+        let formatter = StringFormat::default().with_pivot(Pivot::BottomRight);
+        
+        let p = formatter.get_string_position([0,0], [10,10], "Hello");
+        assert_eq!([5,0], p.to_array());
+        
+        let p = formatter.get_string_position([1,2], [10,10], "Hello");
+        assert_eq!([4,2], p.to_array());
+    }
 }

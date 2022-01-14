@@ -117,8 +117,8 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut query: Query<&mut Termin
             let col = (noise + 1.0) * 0.5;
             *t = Tile {
                 glyph: '▒',
-                fg_color: TileColor::rgba_f32_normalized(col, col, col),
-                bg_color: BLACK,
+                fg_color: Color::rgb(col, col, col),
+                bg_color: Color::BLACK,
             };
         }
 

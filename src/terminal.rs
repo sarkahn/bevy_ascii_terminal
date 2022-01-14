@@ -5,7 +5,8 @@ use std::slice::IterMut;
 
 use bevy::prelude::*;
 
-use crate::color::*;
+use crate::formatting::CharFormat;
+use crate::formatting::StringFormat;
 
 use sark_grids::Grid;
 
@@ -18,9 +19,9 @@ pub struct Tile {
     /// terminal's [UvMapping](super::renderer::uv_mapping::UvMapping)
     pub glyph: char,
     /// The forergound color for the tile.
-    pub fg_color: TileColor,
+    pub fg_color: Color,
     /// The background color for the tile.
-    pub bg_color: TileColor,
+    pub bg_color: Color,
 }
 
 /// A simple terminal for writing text in a readable grid.
@@ -49,8 +50,8 @@ impl Default for Tile {
     fn default() -> Self {
         Tile {
             glyph: ' ',
-            fg_color: WHITE,
-            bg_color: BLACK,
+            fg_color: Color::WHITE,
+            bg_color: Color::BLACK,
         }
     }
 }
@@ -166,17 +167,15 @@ impl Terminal {
     }
 
     /// Insert a character with colors.
-    pub fn put_char_color(
+    pub fn put_char_formatted(
         &mut self,
         xy: [i32; 2],
         glyph: char,
-        fg_color: TileColor,
-        bg_color: TileColor,
+        format: CharFormat,
     ) {
-        let t = self.get_tile_mut(xy);
-        t.glyph = glyph;
-        t.fg_color = fg_color;
-        t.bg_color = bg_color;
+        let xy = format.pivot.pivot_aligned_point(xy, self.size().into());
+        let t = self.get_tile_mut(xy.into());
+        *t = format.tile(glyph);
     }
 
     /// Insert a [Tile].
@@ -203,35 +202,33 @@ impl Terminal {
     ///
     /// The string will move to the next line if it reaches the edge
     /// and will truncate at the end of the terminal.
-    pub fn put_string_color(
+    pub fn put_string_formatted(
         &mut self,
         xy: [i32; 2],
         string: &str,
-        fg_color: TileColor,
-        bg_color: TileColor,
+        format: StringFormat,
     ) {
-        let i = self.to_index(xy);
+        let xy = format.get_string_position(xy, self.size.into(), string);
+        let i = self.to_index(xy.into());
         let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
         let chars = string.chars().take(tiles.len());
 
-        for (char, mut t) in chars.zip(tiles) {
-            t.glyph = char;
-            t.fg_color = fg_color;
-            t.bg_color = bg_color;
+        for (char,t) in chars.zip(tiles) {
+            *t = format.tile(char);
         }
     }
 
     /// Set the foreground color of a tile.
     ///
     /// The existing background color and glyph of the tile will remain.
-    pub fn put_fg_color(&mut self, xy: [i32; 2], col: TileColor) {
+    pub fn put_fg_color(&mut self, xy: [i32; 2], col: Color) {
         self.get_tile_mut(xy).fg_color = col;
     }
 
     /// Set the background color of a tile.
     ///
     /// The existing foreground color and glyph of the tile will remain.
-    pub fn put_bg_color(&mut self, xy: [i32; 2], col: TileColor) {
+    pub fn put_bg_color(&mut self, xy: [i32; 2], col: Color) {
         self.get_tile_mut(xy).bg_color = col;
     }
 
@@ -311,13 +308,12 @@ impl Terminal {
     }
 
     /// Draw a box with box with the specified colors and [BorderGlyphs].
-    pub fn draw_box_color(
+    pub fn draw_box_formatted(
         &mut self,
         xy: [i32; 2],
         size: [u32; 2],
-        fg_color: TileColor,
-        bg_color: TileColor,
         border_glyphs: BorderGlyphs,
+        format: CharFormat,
     ) {
         let [x, y] = xy;
         let [width, height] = size;
@@ -331,24 +327,16 @@ impl Terminal {
         let top = y + height - 1;
 
         for t in self.row_iter_mut(top).skip(left).take(width) {
-            t.glyph = border_glyphs.top;
-            t.fg_color = fg_color;
-            t.bg_color = bg_color;
+            *t = format.tile(border_glyphs.top);
         }
         for t in self.row_iter_mut(bottom).skip(left).take(width) {
-            t.glyph = border_glyphs.bottom;
-            t.fg_color = fg_color;
-            t.bg_color = bg_color;
+            *t = format.tile(border_glyphs.bottom);
         }
         for t in self.column_iter_mut(left).skip(bottom).take(height) {
-            t.glyph = border_glyphs.left;
-            t.fg_color = fg_color;
-            t.bg_color = bg_color;
+            *t = format.tile(border_glyphs.left);
         }
         for t in self.column_iter_mut(right).skip(bottom).take(height) {
-            t.glyph = border_glyphs.right;
-            t.fg_color = fg_color;
-            t.bg_color = bg_color;
+            *t = format.tile(border_glyphs.right);
         }
 
         let left = left as i32;
@@ -356,35 +344,33 @@ impl Terminal {
         let top = top as i32;
         let bottom = bottom as i32;
 
-        self.put_char_color(
+        self.put_char_formatted(
             [left, bottom],
             border_glyphs.bottom_left,
-            fg_color,
-            bg_color,
+            format,
         );
-        self.put_char_color([left, top], border_glyphs.top_left, fg_color, bg_color);
-        self.put_char_color([right, top], border_glyphs.top_right, fg_color, bg_color);
-        self.put_char_color(
+        self.put_char_formatted([left, top], border_glyphs.top_left, format);
+        self.put_char_formatted([right, top], border_glyphs.top_right, format);
+        self.put_char_formatted(
             [right, bottom],
             border_glyphs.bottom_right,
-            fg_color,
-            bg_color,
+            format
         );
     }
 
     /// Draw a box with a single-line border.
     pub fn draw_box_single(&mut self, xy: [i32; 2], size: [u32; 2]) {
-        self.draw_box(xy, size, SINGLE_LINE_GLYPHS);
+        
+        self.draw_box_formatted(xy, size, SINGLE_LINE_GLYPHS, CharFormat::default());
     }
     /// Draw a box with a colored single-line border.
-    pub fn draw_box_single_color(
+    pub fn draw_box_single_formatted(
         &mut self,
         xy: [i32; 2],
         size: [u32; 2],
-        fg_color: TileColor,
-        bg_color: TileColor,
+        format: CharFormat,
     ) {
-        self.draw_box_color(xy, size, fg_color, bg_color, SINGLE_LINE_GLYPHS);
+        self.draw_box_formatted(xy, size, SINGLE_LINE_GLYPHS, format);
     }
 
     /// Draw a box with a double-line border.
@@ -392,14 +378,13 @@ impl Terminal {
         self.draw_box(xy, size, DOUBLE_LINE_GLYPHS);
     }
     /// Draw a box with a colored double-line border.
-    pub fn draw_box_double_color(
+    pub fn draw_box_double_formatted(
         &mut self,
         xy: [i32; 2],
         size: [u32; 2],
-        fg_color: TileColor,
-        bg_color: TileColor,
+        format: CharFormat,
     ) {
-        self.draw_box_color(xy, size, fg_color, bg_color, DOUBLE_LINE_GLYPHS);
+        self.draw_box_formatted(xy, size, DOUBLE_LINE_GLYPHS, format);
     }
 
     pub fn draw_border(&mut self, border_glyphs: BorderGlyphs) {
@@ -412,8 +397,8 @@ impl Terminal {
     }
 
     /// Draw a colored single-line border around the edge of the whole terminal.
-    pub fn draw_border_single_color(&mut self, fg_color: TileColor, bg_color: TileColor) {
-        self.draw_box_single_color([0, 0], self.size.into(), fg_color, bg_color);
+    pub fn draw_border_single_formatted(&mut self, format: CharFormat) {
+        self.draw_box_single_formatted([0, 0], self.size.into(), format);
     }
 
     /// Draw a double-line border around the edge of the whole terminal.
@@ -421,8 +406,8 @@ impl Terminal {
         self.draw_box_double([0, 0], self.size.into());
     }
     /// Draw a colored double-line border around the edge of the whole terminal.
-    pub fn draw_border_double_color(&mut self, fg_color: TileColor, bg_color: TileColor) {
-        self.draw_box_double_color([0, 0], self.size.into(), fg_color, bg_color);
+    pub fn draw_border_double_formatted(&mut self, format: CharFormat) {
+        self.draw_box_double_formatted([0, 0], self.size.into(), format);
     }
 
     pub fn draw_horizontal_bar(&mut self, xy: [i32;2], width: i32, value: i32, max: i32) {
@@ -439,11 +424,13 @@ impl Terminal {
 
         let v = f32::ceil(normalized * width as f32) as i32;
 
+        let filled_format = CharFormat::default().with_fg_color(filled_color);
+        let empty_format = CharFormat::default().with_fg_color(empty_color);
         for i in 0..v{
-            self.put_char_color([x + i, y], '▓', filled_color.into(), BLACK);
+            self.put_char_formatted([x + i, y], '▓', filled_format);
         }
         for i in v..width {
-            self.put_char_color([x + i, y], '░', empty_color.into(), BLACK);
+            self.put_char_formatted([x + i, y], '░', empty_format);
         }
     }
 

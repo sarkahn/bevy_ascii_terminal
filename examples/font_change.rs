@@ -27,21 +27,20 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
 
     draw_title(&mut term_bundle.terminal, fonts[0].0);
 
-    let top = term_bundle.terminal.top_index() as i32;
-
+    let format = Pivot::TopLeft.into();
     term_bundle
         .terminal
-        .put_string([1, top - 2], "Press spacebar to change fonts");
+        .put_string_formatted([1, 2], "Press spacebar to change fonts", format);
     term_bundle.terminal.put_string([1, 4], "!@#$%^&*()_+=-`~");
     term_bundle
         .terminal
-        .put_string([1, top - 6], "The quick brown fox jumps over the lazy dog.");
+        .put_string_formatted([1, 6], "The quick brown fox jumps over the lazy dog.", format);
     term_bundle
         .terminal
-        .put_string([1, top - 8], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
+        .put_string_formatted([1, 8], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼", format);
     term_bundle
         .terminal
-        .put_string([1, top - 10], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
+        .put_string_formatted([1, 10], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞", format);
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(
@@ -54,16 +53,14 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
 fn draw_title(term: &mut Terminal, title: &str) {
     let title = &title[0..title.len() - 4];
 
-    let top = term.top_index() as i32;
-    term.draw_border_single_color(WHITE, BLACK);
-    term.put_string([1, top], "[ ");
-    term.put_string_color(
-        [3, top],
+    term.draw_border_single();
+    term.put_string_formatted([1, 0], "[ ", Pivot::TopLeft.into());
+    term.put_string_formatted(
+        [3, 0],
         title.to_string().to_uppercase().as_str(),
-        BLUE,
-        BLACK,
+        StringFormat::new(Pivot::TopLeft, Color::BLUE, Color::BLACK),
     );
-    term.put_string([4 + title.len() as i32 - 1, top], " ]");
+    term.put_string_formatted([4 + title.len() as i32 - 1, 0], " ]", Pivot::TopLeft.into());
 }
 
 fn change_font(
