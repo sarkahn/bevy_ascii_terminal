@@ -47,6 +47,7 @@
 pub mod renderer;
 
 pub mod formatting;
+pub mod formatting2;
 mod terminal;
 
 pub use terminal::{BorderGlyphs, Terminal, Tile};
