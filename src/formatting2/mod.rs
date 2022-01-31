@@ -1,19 +1,51 @@
 use bevy::{prelude::Color, math::UVec2};
 
 mod formatters;
+mod modifiers;
+mod effects;
+mod animation;
 
 use formatters::*;
+
+use crate::Pivot;
+
+pub use formatters::TileFormatter;
 
 pub struct FormattedContent<T> {
     pub content: T,
     pub formatters: Vec<Box<dyn TileFormatter>>, 
+    pub pivot: Pivot,
 }
 
-impl<T> From<T> for FormattedContent<T> {
-    fn from(t: T) -> Self {
+impl<T> FormattedContent<T> {
+    pub fn pivot(mut self, pivot: Pivot) -> Self {
+        self.pivot = pivot;
+        self
+    }
+}
+
+impl From<char> for FormattedContent<char> {
+    fn from(ch: char) -> Self {
         FormattedContent {
-            content: t,
+            content: ch,
             formatters: Vec::new(),
+            pivot: Pivot::BottomLeft,
+        }
+    }
+}
+
+impl From<FormattedContent<char>> for char {
+    fn from(c: FormattedContent<char>) -> Self {
+        c.content
+    }
+}
+
+impl<'a> From<&'a str> for FormattedContent<&'a str> {
+    fn from(string: &'a str) -> Self {
+        FormattedContent {
+            content: string,
+            formatters: Vec::new(),
+            pivot: Pivot::BottomLeft,
         }
     }
 }
@@ -24,6 +56,7 @@ pub trait Formatter<T>: Sized {
     fn flip_horizontal(self) -> FormattedContent<T>;
     fn jumble(self) -> FormattedContent<T>;
     fn invert(self) -> FormattedContent<T>;
+    fn pivot(self, pivot: Pivot) -> FormattedContent<T>;
 }
 
 
@@ -35,6 +68,7 @@ macro_rules! impl_t_func {
                 formatters: vec![
                     Box::new($fmt_type($($arg_name)?)),
                 ],
+                pivot: Pivot::BottomLeft,
             } 
         }
     }
@@ -52,6 +86,14 @@ macro_rules! impl_formatter_func {
 macro_rules! impl_formatter_for_t {
     ($t:ty) => {
         impl Formatter<$t> for $t {
+            fn pivot(self, pivot: Pivot) -> FormattedContent<$t> {
+                FormattedContent {
+                    content: self,
+                    formatters: Vec::new(),
+                    pivot
+                }
+            }
+
             impl_t_func!(fg_color, FGColorFormatter, color: Color );
             impl_t_func!(bg_color, BGColorFormatter, color: Color );
             impl_t_func!(jumble, Jumble);
@@ -62,6 +104,10 @@ macro_rules! impl_formatter_for_t {
 }
 
 impl<T> Formatter<T> for FormattedContent<T> {
+    fn pivot(mut self, pivot: Pivot) -> FormattedContent<T> {
+        self.pivot = pivot;
+        self
+    }
     impl_formatter_func!(fg_color, FGColorFormatter, T, color: Color);
     impl_formatter_func!(bg_color, BGColorFormatter, T, color: Color);
     impl_formatter_func!(jumble, Jumble, T);
@@ -96,9 +142,8 @@ impl Writer {
         println!("FG {:?}, BG {:?}", self.fg[0], self.bg[0]);
     }
     
-    pub fn write_formatted<'a>(&mut self, xy: [i32;2], 
-        content: FormattedContent<impl Into<&'a str>>,  
-        //content: FormattedContent<&'static str>
+    pub fn write_string<'a>(&mut self, xy: [i32;2], 
+        content: FormattedContent<impl Into<&'a str>>,
     ) {
         let i = (xy[1] * self.size.x as i32 + xy[0]) as usize;
         let str = content.content.into();
@@ -115,8 +160,9 @@ impl Writer {
     }
 
     pub fn write_char(&mut self, xy: [i32;2], content:FormattedContent<impl Into<char>>) {
-        //let c = content.content.into();
+        let xy = content.pivot.pivot_aligned_point(xy, self.size.into());
         let i = (xy[1] * self.size.x as i32 + xy[0]) as usize;
+        let ch = content.content.into();
         for formatter in &content.formatters {
             formatter.apply(
                 &mut self.fg[i..i+1],
@@ -133,8 +179,8 @@ impl Writer {
 fn test() {
     let mut writer = Writer::new(5);
 
-    writer.write_formatted([0,0], "hello".invert().jumble());
-    writer.write_char([0,0], 'a'.flip_horizontal().jumble());
+    writer.write_string([0,0], "hello".pivot(Pivot::BottomRight).jumble());
+    writer.write_char([0,0], 'a'.flip_horizontal().invert().pivot(Pivot::TopLeft));
     assert_eq!(Color::BLUE, writer.fg[0]);
     assert_eq!(Color::GREEN, writer.bg[0]);
     assert_eq!(0.5, writer.verts[0][0]);

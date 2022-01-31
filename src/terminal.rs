@@ -4,9 +4,13 @@ use std::slice::Iter;
 use std::slice::IterMut;
 
 use bevy::prelude::*;
+use bevy::utils::HashMap;
 
 use crate::formatting::CharFormat;
 use crate::formatting::StringFormat;
+use crate::formatting2::FormattedContent;
+use crate::formatting2::Formatter;
+use crate::formatting2::TileFormatter;
 
 use sark_grids::Grid;
 
@@ -44,6 +48,7 @@ pub struct Tile {
 pub struct Terminal {
     pub tiles: Grid<Tile>,
     size: UVec2,
+    formatters: HashMap<usize, Vec<Box<dyn TileFormatter>>>,
 }
 
 impl Default for Tile {
@@ -101,6 +106,7 @@ impl Terminal {
         Terminal {
             tiles: Grid::default(size),
             size: UVec2::from(size),
+            formatters: HashMap::default(),
         }
     }
 
@@ -475,11 +481,31 @@ impl Terminal {
     pub fn right_index(&self) -> usize {
         self.width() as usize - 1
     }
+
+    pub fn char_test(&mut self, xy: [i32;2], fmt_char: impl Into<FormattedContent<char>>) {
+        let fmt: FormattedContent<char> = fmt_char.into();
+        let ch = fmt.content;
+        let xy = fmt.pivot.pivot_aligned_point(xy, self.size.into());
+        self.tiles[xy].glyph = ch;
+
+        if !fmt.formatters.is_empty() {
+            let i = self.to_index(xy.into());
+            self.formatters.insert(i, fmt.formatters);
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fmt_test() {
+        let mut term = Terminal::with_size([10,10]);
+
+        term.char_test([0,0], 'a');
+        assert_eq!(term.get_char([0,0]), 'a');
+    }
 
     #[test]
     fn put_char() {

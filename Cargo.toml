@@ -17,9 +17,10 @@ ron = "0.6.4"
 sark_grids = { path = "../sark_grids", version = "0.1.5" }
 bitflags = "1.2"
 itertools = "0.10.3"
+arrayvec = "0.7.2"
 
 [dev-dependencies]
-bevy = { version = "0.6", features = ["png", "bevy_winit", "bevy_render"] }
+bevy = { version = "0.6", default-features = false, features = ["png", "bevy_winit", "bevy_render"] }
 rand = "0.8.4"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2" 

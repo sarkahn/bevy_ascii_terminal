@@ -1,12 +1,11 @@
 use bevy::prelude::Color;
 
-pub trait TileFormatter {
+pub trait TileFormatter: Send + Sync {
     fn apply(&self, 
         fg_colors: &mut [Color],
         bg_colors: &mut [Color],
         verts: &mut [[f32;3]],
         uvs: &mut [[f32;2]],
-         
     );
 }
 

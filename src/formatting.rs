@@ -45,11 +45,16 @@ impl Pivot {
     /// Transform a point to it's equivalent from the perspective of
     /// a pivot on a 2d rect.
     pub fn pivot_aligned_point(&self, point: [i32; 2], size: [u32; 2]) -> IVec2 {
-        let point = IVec2::from(point);
-        let align_offset = UVec2::from(size).as_vec2() - Vec2::ONE;
-        let align_offset = (align_offset * self.pivot()).as_ivec2();
-        
-        point * self.axis() + align_offset
+        match self {
+            Pivot::BottomLeft => IVec2::from(point),
+            _ => {
+                let point = IVec2::from(point);
+                let align_offset = UVec2::from(size).as_vec2() - Vec2::ONE;
+                let align_offset = (align_offset * self.pivot()).as_ivec2();
+                
+                point * self.axis() + align_offset
+            }
+        }
     }
 }
 
