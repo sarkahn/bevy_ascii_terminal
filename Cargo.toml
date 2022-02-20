@@ -16,6 +16,9 @@ bevy = { version = "0.6", default-features = false, features = ["render"] }
 ron = "0.6.4"
 bitflags = "1.2"
 itertools = "0.10.3"
+ldtk_rust = { version="0.5.2", optional = true }
+anyhow = { version ="1.0.54", optional = true }
+serde_json = {version = "1.0.79", optional = true }
 
 [dev-dependencies]
 bevy = { version = "0.6", features = ["png", "bevy_winit", "bevy_render"] }
@@ -23,3 +26,12 @@ rand = "0.8.4"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2" 
 bevy_tiled_camera = { path = "../bevy_tiled_camera", version = "0.3.0" }
+
+[features]
+default = ["ldtk"]
+ldtk = ["ldtk_rust", "anyhow", "serde_json"]
+
+[[example]]
+name = "ldtk"
+path = "examples/ldtk/ldtk.rs"
+required-features = ["ldtk"]

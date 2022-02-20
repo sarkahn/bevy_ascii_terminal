@@ -50,6 +50,9 @@ mod formatting;
 mod point;
 mod terminal;
 
+#[cfg(feature = "ldtk")]
+pub mod ldtk;
+
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
 pub use formatting::{BGColor, FGColor, TileWriter, TilesWriter};
