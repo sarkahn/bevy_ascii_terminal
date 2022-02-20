@@ -27,17 +27,23 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
 
     draw_title(&mut term_bundle.terminal, fonts[0].0);
 
-    term_bundle
-        .terminal
-        .put_string([1, 2].pivot(Pivot::TopLeft), "Press spacebar to change fonts");
+    term_bundle.terminal.put_string(
+        [1, 2].pivot(Pivot::TopLeft),
+        "Press spacebar to change fonts",
+    );
     term_bundle.terminal.put_string([1, 4], "!@#$%^&*()_+=-`~");
-    term_bundle.terminal.put_string( [1, 6].pivot(Pivot::TopLeft), "The quick brown fox jumped over the lazy dog.");
+    term_bundle.terminal.put_string(
+        [1, 6].pivot(Pivot::TopLeft),
+        "The quick brown fox jumped over the lazy dog.",
+    );
     term_bundle.terminal.put_string(
         [1, 8].pivot(Pivot::TopLeft),
-        "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
+        "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼",
+    );
     term_bundle.terminal.put_string(
         [1, 10].pivot(Pivot::TopLeft),
-        "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞",);
+        "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞",
+    );
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(
@@ -84,7 +90,7 @@ fn change_font(
             let mut mat = materials.get_mut(mat).unwrap();
             mat.texture = Some(new_font.1.clone());
 
-            term.clear_box([0,0].pivot(Pivot::TopLeft), [30,1]);
+            term.clear_box([0, 0].pivot(Pivot::TopLeft), [30, 1]);
             draw_title(&mut term, new_font.0);
         }
     }

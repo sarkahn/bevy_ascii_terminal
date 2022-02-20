@@ -2,12 +2,11 @@ use std::iter::FromIterator;
 
 use bevy::prelude::*;
 
-use crate::TileWriter;
-use crate::TilesWriter;
 use crate::point::Point2d;
 use crate::point::Point2dFormatter;
 use crate::point::Size2d;
-use crate::renderer::TilePivot;
+use crate::TileWriter;
+use crate::TilesWriter;
 
 /// A single tile of the terminal.
 ///
@@ -115,7 +114,7 @@ impl Terminal {
     }
 
     /// Resize the terminal's internal tile data.
-    /// 
+    ///
     /// Erases all existing data.
     pub fn resize(&mut self, size: impl Size2d) {
         self.tiles = vec![Tile::default(); size.len()];
@@ -152,25 +151,23 @@ impl Terminal {
         IVec2::new(x, y)
     }
 
-
-
     /// Write to the terminal.
-    /// 
+    ///
     /// ### Formatting
     /// Formatting can be applied to the position and the content applied to the write. Positions can be pivot aligned:
-    /// 
+    ///
     /// ```rust
-    /// put_char([2,2].pivot(Pivot::TopRight), 'q'); // Write 'q' to the position 2 left and 
+    /// put_char([2,2].pivot(Pivot::TopRight), 'q'); // Write 'q' to the position 2 left and
     ///                                              // 2 down from the top right of the terminal.
     /// ```
-    /// 
+    ///
     /// Any type implementing `TileWriter` can be applied to the terminal. There are various built in
     /// types for different operations:
-    /// 
+    ///
     /// ```rust
     /// put_char([1,1], 'a'.fg(Color::BLUE)); // Write a blue 'a' to position [1,1].
     ///                                       // Existing tile background color is not affected.
-    /// 
+    ///
     /// put_char([2,2], BGColor(Color::RED)); // Set the background color for position [2,2].
     ///                                       // Existing tile glyph and foreground color are
     ///                                       // not affected.
@@ -182,22 +179,22 @@ impl Terminal {
     }
 
     /// Write to the terminal.
-    /// 
+    ///
     /// ### Formatting
     /// Formatting can be applied to the position and the content applied to the write. Positions can be pivot aligned:
-    /// 
+    ///
     /// ```rust
-    /// put_tile([2,2].pivot(Pivot::TopRight), 'q'); // Write 'q' to the position 2 left and 
+    /// put_tile([2,2].pivot(Pivot::TopRight), 'q'); // Write 'q' to the position 2 left and
     ///                                              // 2 down from the top right of the terminal.
     /// ```
-    /// 
+    ///
     /// Any type implementing `TileWriter` can be applied to the terminal. There are various built in
     /// types for different operations:
-    /// 
+    ///
     /// ```rust
     /// put_tile([1,1], 'a'.fg(Color::BLUE)); // Write a blue 'a' to position [1,1].
     ///                                       // Existing tile background color is not affected.
-    /// 
+    ///
     /// put_tile([2,2], BGColor(Color::RED)); // Set the background color for position [2,2].
     ///                                       // Existing tile glyph and foreground color are
     ///                                       // not affected.
@@ -212,11 +209,11 @@ impl Terminal {
     }
 
     /// Write a string to the terminal.
-    /// 
+    ///
     /// ### Formatting
-    /// 
+    ///
     /// The position can be aligned and the string colors can be formatted:
-    /// 
+    ///
     /// ```rust
     /// put_string([1,1].pivot(Pitot::TopLeft), "Hello".fg(Color::RED)); // Write a red "Hello" starting from the
     ///                                                                  // position 1 right and 1 down from the top
@@ -241,7 +238,7 @@ impl Terminal {
     pub fn get_string(&self, xy: impl Point2dFormatter, len: usize) -> String {
         let xy = xy.point(self.size());
         let i = self.to_index(xy);
-        let tiles = self.tiles[i..].iter().take(len).map(|t|t.glyph());
+        let tiles = self.tiles[i..].iter().take(len).map(|t| t.glyph());
         String::from_iter(tiles)
     }
 
@@ -264,7 +261,7 @@ impl Terminal {
 
         for y in 0..size.height() as i32 {
             for x in 0..size.width() as i32 {
-                let p = origin + xy.relative_point([x,y]);
+                let p = origin + xy.relative_point([x, y]);
                 self.put_tile(p, Tile::default());
             }
         }
@@ -272,8 +269,6 @@ impl Terminal {
 
     /// Draw a box on the terminal using [BorderGlyphs].
     pub fn draw_box(&mut self, xy: [i32; 2], size: [u32; 2], border_glyphs: BorderGlyphs) {
-
-        
         let [x, y] = xy;
         let [width, height] = size;
         let width = width as usize;
@@ -343,9 +338,14 @@ impl Terminal {
 
     /// Draw a fill bar with default formatting.
     pub fn draw_horizontal_bar(&mut self, xy: [i32; 2], width: i32, value: i32, max: i32) {
-        self.draw_horizontal_bar_custom(xy, width, value, max, 
-            '▓'.fg(Color::WHITE), 
-            '░'.fg(Color::GRAY));
+        self.draw_horizontal_bar_custom(
+            xy,
+            width,
+            value,
+            max,
+            '▓'.fg(Color::WHITE),
+            '░'.fg(Color::GRAY),
+        );
     }
 
     /// Draw a horizontal fill bar with custom filled and empty formatting.
@@ -386,17 +386,17 @@ impl Terminal {
     }
 
     /// An immutable iterator over the tiles of the terminal.
-    pub fn iter(&self) -> impl Iterator<Item=&Tile> {
+    pub fn iter(&self) -> impl Iterator<Item = &Tile> {
         self.tiles.iter()
     }
 
     /// A mutable iterator over the tiles of the terminal.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut Tile> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Tile> {
         self.tiles.iter_mut()
     }
 
     /// An immutable iterator over an entire row of tiles in the terminal.
-    pub fn row_iter(&self, y: usize) -> impl Iterator<Item=&Tile> {
+    pub fn row_iter(&self, y: usize) -> impl Iterator<Item = &Tile> {
         let w = self.width() as usize;
         let i = y * w;
         self.tiles[i..i + w].iter()
@@ -410,13 +410,13 @@ impl Terminal {
     }
 
     /// An immutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter(&self, x: usize) -> impl Iterator<Item=&Tile> {
+    pub fn column_iter(&self, x: usize) -> impl Iterator<Item = &Tile> {
         let w = self.width() as usize;
         return self.tiles[x..].iter().step_by(w);
     }
 
     /// A mutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item=&mut Tile> {
+    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item = &mut Tile> {
         let w = self.width() as usize;
         return self.tiles[x..].iter_mut().step_by(w);
     }
@@ -504,32 +504,32 @@ mod tests {
 
     #[test]
     fn tile_writers() {
-        let mut term = Terminal::with_size([5,5]);
-        term.put_tile([0,0], 'a'.fg(Color::GREEN).bg(Color::YELLOW));
-        let tile = term.get_tile([0,0]);
+        let mut term = Terminal::with_size([5, 5]);
+        term.put_tile([0, 0], 'a'.fg(Color::GREEN).bg(Color::YELLOW));
+        let tile = term.get_tile([0, 0]);
         assert_eq!(Color::GREEN, tile.fg_color);
         assert_eq!(Color::YELLOW, tile.bg_color);
     }
 
     #[test]
     fn string_writer() {
-        let mut term = Terminal::with_size([10,10]);
-        term.put_string([1,1], "Hello");
+        let mut term = Terminal::with_size([10, 10]);
+        term.put_string([1, 1], "Hello");
 
-        assert_eq!("Hello", term.get_string([1,1], 5));
+        assert_eq!("Hello", term.get_string([1, 1], 5));
     }
 
     #[test]
     fn box_test() {
-        let mut term = Terminal::with_size([10,10]);
+        let mut term = Terminal::with_size([10, 10]);
 
         term.fill('a');
 
-        term.clear_box([1,1].pivot(Pivot::TopRight), [3,3]);
+        term.clear_box([1, 1].pivot(Pivot::TopRight), [3, 3]);
 
-        assert_eq!('a', term.get_char([1,1]));
-        assert_eq!(' ', term.get_char([8,8]));
-        assert_eq!(' ', term.get_char([6,6]));
+        assert_eq!('a', term.get_char([1, 1]));
+        assert_eq!(' ', term.get_char([8, 8]));
+        assert_eq!(' ', term.get_char([6, 6]));
     }
 
     // #[test]

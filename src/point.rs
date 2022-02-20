@@ -1,4 +1,4 @@
-use bevy::math::{IVec2, Vec2, UVec2};
+use bevy::math::{IVec2, UVec2, Vec2};
 
 /// A trait for easier mixing of the different types representing a 2d point.
 pub trait Point2d {
@@ -21,7 +21,7 @@ impl Point2d for IVec2 {
     }
 }
 
-impl Point2d for [i32;2] {
+impl Point2d for [i32; 2] {
     fn x(&self) -> i32 {
         self[0]
     }
@@ -52,7 +52,6 @@ pub struct FormattedPoint {
     pub pivot: Option<Pivot>,
 }
 
-
 impl Point2dFormatter for IVec2 {
     /// Set the pivot for this point.
     fn pivot(self, pivot: Pivot) -> FormattedPoint {
@@ -71,8 +70,7 @@ impl Point2dFormatter for IVec2 {
     }
 }
 
-impl Point2dFormatter for [i32;2] {
-
+impl Point2dFormatter for [i32; 2] {
     fn pivot(self, pivot: Pivot) -> FormattedPoint {
         FormattedPoint {
             point: IVec2::from(self),
@@ -81,7 +79,7 @@ impl Point2dFormatter for [i32;2] {
     }
 
     fn relative_point(&self, xy: impl Point2d) -> IVec2 {
-         xy.xy()
+        xy.xy()
     }
 
     fn point(&self, _size: impl Size2d) -> IVec2 {
@@ -90,7 +88,6 @@ impl Point2dFormatter for [i32;2] {
 }
 
 impl Point2dFormatter for FormattedPoint {
-
     fn pivot(mut self, pivot: Pivot) -> FormattedPoint {
         self.pivot = Some(pivot);
         self
@@ -98,9 +95,7 @@ impl Point2dFormatter for FormattedPoint {
 
     fn relative_point(&self, xy: impl Point2d) -> IVec2 {
         match self.pivot {
-            Some(p) => {
-                p.axis() * xy.xy()
-            },
+            Some(p) => p.axis() * xy.xy(),
             None => xy.xy(),
         }
     }
@@ -113,6 +108,7 @@ impl Point2dFormatter for FormattedPoint {
     }
 }
 
+#[allow(clippy::len_without_is_empty)]
 /// A trait for mixing of the different types representing a 2d size.
 pub trait Size2d {
     fn width(&self) -> usize {
@@ -128,7 +124,7 @@ pub trait Size2d {
     }
 }
 
-impl Size2d for [u32;2] {
+impl Size2d for [u32; 2] {
     fn size(&self) -> UVec2 {
         UVec2::new(self[0] as u32, self[1] as u32)
     }
@@ -147,7 +143,6 @@ impl Size2d for UVec2 {
         self.as_ivec2()
     }
 }
-
 
 /// A pivot point on a 2d rect.
 #[derive(Eq, PartialEq, Clone, Copy)]
@@ -192,9 +187,9 @@ impl Pivot {
     /// a pivot on a 2d rect.
     pub fn pivot_aligned_point(&self, point: impl Point2d, size: impl Size2d) -> IVec2 {
         let point = point.xy();
-        let align_offset = IVec2::from(size.as_point()).as_vec2() - Vec2::ONE;
+        let align_offset = size.as_point().as_vec2() - Vec2::ONE;
         let align_offset = (align_offset * self.pivot()).as_ivec2();
-        
+
         point * self.axis() + align_offset
     }
 }
@@ -205,13 +200,13 @@ mod tests {
 
     #[test]
     fn axis() {
-        let xy = [0,9].pivot(Pivot::TopLeft).point([10,10]).to_array();
+        let xy = [0, 9].pivot(Pivot::TopLeft).point([10, 10]).to_array();
         assert_eq!([0, 0], xy);
 
         let xy = [9, 9].pivot(Pivot::TopRight).point([10, 10]).to_array();
         assert_eq!([0, 0], xy);
 
-        let xy = [0,0].pivot(Pivot::BottomLeft).point([10,10]).to_array();
+        let xy = [0, 0].pivot(Pivot::BottomLeft).point([10, 10]).to_array();
         assert_eq!([0, 0], xy);
 
         let xy = [9, 9].pivot(Pivot::TopRight).point([10, 10]).to_array();
@@ -226,7 +221,10 @@ mod tests {
         let xy = [-1, -1].pivot(Pivot::BottomLeft).point([10, 10]).to_array();
         assert_eq!([-1, -1], xy);
 
-        let xy = [10, -1].pivot(Pivot::BottomRight).point([10, 10]).to_array();
+        let xy = [10, -1]
+            .pivot(Pivot::BottomRight)
+            .point([10, 10])
+            .to_array();
         assert_eq!([-1, -1], xy);
 
         let xy = [0, 0].pivot(Pivot::Center).point([10, 10]).to_array();
@@ -238,5 +236,4 @@ mod tests {
         let xy = [1, 1].pivot(Pivot::Center).point([10, 10]).to_array();
         assert_eq!([5, 5], xy);
     }
-    
 }

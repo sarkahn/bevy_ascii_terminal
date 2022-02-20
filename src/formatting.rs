@@ -1,5 +1,5 @@
-//! Various traits and utility types for formatting of the 
-//! glyphs drawn to the terminal. 
+//! Various traits and utility types for formatting of the
+//! glyphs drawn to the terminal.
 
 use bevy::prelude::*;
 
@@ -86,22 +86,22 @@ impl FormattedTile {
     }
 
     /// Apply the formatting to the given tile.
-    /// 
+    ///
     /// Omitted writer operations should not effect existing tile state.
     pub(crate) fn apply(&self, tile: &mut Tile) {
         match self.key {
             Some(key) => tile.key = key,
-            None => {},
+            None => {}
         }
         match self.fg_color {
             Some(c) => tile.fg_color = c,
-            None => {},
+            None => {}
         }
         match self.bg_color {
             Some(c) => tile.bg_color = c,
-            None => {},
+            None => {}
         }
-    } 
+    }
 }
 
 impl From<Tile> for FormattedTile {
@@ -135,6 +135,7 @@ impl TileWriter for Tile {
     }
 }
 
+#[allow(clippy::len_without_is_empty)]
 /// A trait for writing a string of formatted tiles to the terminal.
 pub trait TilesWriter<'a> {
     /// Returns the formatted tiles from a base type.
@@ -144,13 +145,13 @@ pub trait TilesWriter<'a> {
     /// Set the background color for the tiles.
     fn bg(self, bg_color: Color) -> FormattedTiles<'a>;
     /// Apply the formatting to the given set of tiles.
-    fn write(&self, tiles: impl Iterator<Item=&'a mut Tile>);
+    fn write(&self, tiles: impl Iterator<Item = &'a mut Tile>);
     /// The length of the writer tiles.
     fn len(&self) -> usize;
 }
 
 /// A set of formatted tiles for writing to the terminal.
-#[derive(Debug,Clone,Default)]
+#[derive(Debug, Clone, Default)]
 pub struct FormattedTiles<'a> {
     pub string: &'a str,
     pub fg_color: Option<Color>,
@@ -190,8 +191,8 @@ impl<'a> TilesWriter<'a> for &'a str {
         }
     }
 
-    fn write(&self, tiles: impl Iterator<Item=&'a mut Tile>) {
-        for (tile,ch) in tiles.zip(self.chars()) {
+    fn write(&self, tiles: impl Iterator<Item = &'a mut Tile>) {
+        for (tile, ch) in tiles.zip(self.chars()) {
             tile.set_glyph(ch);
         }
     }
@@ -199,7 +200,6 @@ impl<'a> TilesWriter<'a> for &'a str {
     fn len(&self) -> usize {
         (self as &str).len()
     }
-
 }
 
 impl<'a> TilesWriter<'a> for FormattedTiles<'a> {
@@ -217,17 +217,17 @@ impl<'a> TilesWriter<'a> for FormattedTiles<'a> {
         self
     }
 
-    fn write(&self, tiles: impl Iterator<Item=&'a mut Tile>) {
-        for (tile,ch) in tiles.zip(self.string.chars()) {
+    fn write(&self, tiles: impl Iterator<Item = &'a mut Tile>) {
+        for (tile, ch) in tiles.zip(self.string.chars()) {
             tile.set_glyph(ch);
             match self.fg_color {
                 Some(col) => tile.fg_color = col,
-                None => {},
+                None => {}
             }
-            
+
             match self.bg_color {
                 Some(col) => tile.bg_color = col,
-                None => {},
+                None => {}
             };
         }
     }
@@ -268,7 +268,7 @@ impl TileWriter for FGColor {
     }
 
     /// Apply the foreground color to a tile.
-    /// 
+    ///
     /// Has no effect on the glyph or background color.
     fn write(&self, tile: &mut Tile) {
         tile.fg_color = self.0;
@@ -311,7 +311,6 @@ impl TileWriter for BGColor {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -319,6 +318,6 @@ mod test {
     #[test]
     fn test() {
         let a = 'H'.fg(Color::GREEN).bg(Color::YELLOW);
-        println!("{}", a.key.unwrap());    
+        println!("{}", a.key.unwrap());
     }
 }

@@ -129,7 +129,7 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut query: Query<&mut Termin
         let t = noise.noise.get_noise_type();
         let string = to_string(t);
 
-        term.clear_box([0,0].pivot(Pivot::TopLeft), [string.len() as u32, 1]);
-        term.put_string([0,0].pivot(Pivot::TopLeft), string.as_str());
+        term.clear_box([0, 0].pivot(Pivot::TopLeft), [string.len() as u32, 1]);
+        term.put_string([0, 0].pivot(Pivot::TopLeft), string.as_str());
     }
 }

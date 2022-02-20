@@ -3,7 +3,7 @@
 
 use bevy::{prelude::*, utils::HashMap};
 
-use crate::{code_page_437, point::{Point2dFormatter, Size2d, Point2d}};
+use crate::point::{Point2d, Size2d};
 
 use super::code_page_437::CP_437_CHARS;
 
@@ -16,24 +16,24 @@ impl UvMapping {
     pub fn code_page_437() -> Self {
         let mut uv_map = HashMap::default();
 
-        for (i,ch) in CP_437_CHARS.iter().cloned().enumerate() {
-            
-            uv_map.insert(ch as u16, UvMapping::uvs_from_grid_index(i, [16,16]));
+        for (i, ch) in CP_437_CHARS.iter().cloned().enumerate() {
+            uv_map.insert(ch as u16, UvMapping::uvs_from_grid_index(i, [16, 16]));
         }
 
-        UvMapping {
-            uv_map
-        }
+        UvMapping { uv_map }
     }
 
-    fn uvs_from_grid_index(index: usize, tile_count: impl Size2d) -> [[f32;2];4] {
+    fn uvs_from_grid_index(index: usize, tile_count: impl Size2d) -> [[f32; 2]; 4] {
         let x = index % tile_count.width();
         let y = index / tile_count.width();
-        UvMapping::uvs_from_grid_xy([x as i32,y as i32], tile_count)
+        UvMapping::uvs_from_grid_xy([x as i32, y as i32], tile_count)
     }
 
-    fn uvs_from_grid_xy(xy: impl Point2d, tile_count: impl Size2d) -> [[f32;2];4] {
-        let uv_size = Vec2::new(1.0 / tile_count.width() as f32, 1.0 / tile_count.height() as f32);
+    fn uvs_from_grid_xy(xy: impl Point2d, tile_count: impl Size2d) -> [[f32; 2]; 4] {
+        let uv_size = Vec2::new(
+            1.0 / tile_count.width() as f32,
+            1.0 / tile_count.height() as f32,
+        );
         let right = Vec2::new(uv_size.x, 0.0);
         let up = Vec2::new(0.0, uv_size.y);
         let origin = uv_size * xy.xy().as_vec2();
@@ -75,13 +75,17 @@ impl UvMapping {
     }
 
     pub fn uvs_from_key(&self, key: u16) -> &[[f32; 2]; 4] {
-        debug_assert!(self.uv_map.contains_key(&key), "Error retrieving uvs, key {key}:{} not found", key as u8 as char);
+        debug_assert!(
+            self.uv_map.contains_key(&key),
+            "Error retrieving uvs, key {key}:{} not found",
+            key as u8 as char
+        );
         &self.uv_map[&key]
     }
 }
 
 impl Default for UvMapping {
     fn default() -> Self {
-        Self::code_page_437() 
+        Self::code_page_437()
     }
 }

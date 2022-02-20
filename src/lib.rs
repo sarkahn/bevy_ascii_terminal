@@ -46,14 +46,14 @@
 //! ```
 pub mod renderer;
 
-mod terminal;
 mod formatting;
 mod point;
+mod terminal;
 
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
-pub use formatting::{TileWriter, TilesWriter, FGColor, BGColor};
-pub use point::{Pivot, FormattedPoint, Point2d, Point2dFormatter, Size2d};
+pub use formatting::{BGColor, FGColor, TileWriter, TilesWriter};
+pub use point::{FormattedPoint, Pivot, Point2d, Point2dFormatter, Size2d};
 pub use renderer::code_page_437;
 pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;

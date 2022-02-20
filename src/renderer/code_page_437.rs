@@ -304,7 +304,6 @@ pub fn glyph_to_index(c: char) -> usize {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
