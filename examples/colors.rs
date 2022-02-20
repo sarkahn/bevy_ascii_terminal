@@ -37,10 +37,10 @@ fn draw_colors(time: Res<Time>, mut q: Query<&mut Terminal>) {
     for y in 0..hue_count {
         let hue = y as f32 * hue_step;
         let col = Color::hsl(hue, 1.0, 0.05);
-        term.put_bg_color([0, y], col);
+        term.put_tile([0, y], BGColor(col));
         for x in 1..10 {
             let col = Color::hsl(hue, 1.0, x as f32 / 10.0);
-            term.put_bg_color([x, y], col);
+            term.put_tile([x, y], BGColor(col));
         }
     }
 
@@ -48,20 +48,20 @@ fn draw_colors(time: Res<Time>, mut q: Query<&mut Terminal>) {
     for x in 0..10 {
         let v = x as f32 / 10.0;
         let col = Color::rgb(v, v, v).as_rgba_linear();
-        term.put_bg_color([x, 24], col);
+        term.put_tile([x, 24], BGColor(col));
 
         let mut light_scale = 0.8;
         if x <= 5 {
             light_scale = 0.6;
         };
         let col = Color::hsl(35.0, 0.33, v * light_scale);
-        term.put_bg_color([x, 25], col);
+        term.put_tile([x, 25], BGColor(col));
     }
 
     let a = time.time_since_startup().as_secs_f32().cos() / 2.0 + 0.5;
     let col = Color::rgba(1.0, 1.0, 1.0, a);
 
     let t = term.get_tile_mut([11, 26]);
-    t.glyph = '*';
+    t.set_glyph('*');
     t.fg_color = col;
 }

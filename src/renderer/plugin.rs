@@ -104,7 +104,7 @@ fn terminal_renderer_update_tile_data(
     for (term, mut data, uv_mapping) in q.iter_mut() {
         //info!("Renderer update tile data (colors)!");
         //info!("First tiles: {:?}", &term.tiles[0..4]);
-        data.update_from_tiles(term.tiles.slice(..), uv_mapping);
+        data.update_from_tiles(term.iter(), uv_mapping);
     }
 }
 

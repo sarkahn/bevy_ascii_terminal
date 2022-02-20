@@ -46,12 +46,14 @@
 //! ```
 pub mod renderer;
 
-pub mod formatting;
 mod terminal;
+mod formatting;
+mod point;
 
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
-pub use formatting::{CharFormat, Pivot, StringFormat};
+pub use formatting::{TileWriter, TilesWriter, FGColor, BGColor};
+pub use point::{Pivot, FormattedPoint, Point2d, Point2dFormatter, Size2d};
 pub use renderer::code_page_437;
 pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;
@@ -77,7 +79,7 @@ impl TerminalBundle {
     }
 
     /// Set the initial size of the terminal.
-    pub fn with_size(mut self, size: [u32; 2]) -> Self {
+    pub fn with_size(mut self, size: impl Size2d) -> Self {
         self.terminal.resize(size);
         self
     }

@@ -27,26 +27,17 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
 
     draw_title(&mut term_bundle.terminal, fonts[0].0);
 
-    let format = Pivot::TopLeft.into();
     term_bundle
         .terminal
-        .put_string_formatted([1, 2], "Press spacebar to change fonts", format);
+        .put_string([1, 2].pivot(Pivot::TopLeft), "Press spacebar to change fonts");
     term_bundle.terminal.put_string([1, 4], "!@#$%^&*()_+=-`~");
-    term_bundle.terminal.put_string_formatted(
-        [1, 6],
-        "The quick brown fox jumps over the lazy dog.",
-        format,
-    );
-    term_bundle.terminal.put_string_formatted(
-        [1, 8],
-        "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼",
-        format,
-    );
-    term_bundle.terminal.put_string_formatted(
-        [1, 10],
-        "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞",
-        format,
-    );
+    term_bundle.terminal.put_string( [1, 6].pivot(Pivot::TopLeft), "The quick brown fox jumped over the lazy dog.");
+    term_bundle.terminal.put_string(
+        [1, 8].pivot(Pivot::TopLeft),
+        "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
+    term_bundle.terminal.put_string(
+        [1, 10].pivot(Pivot::TopLeft),
+        "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞",);
     commands.spawn_bundle(term_bundle);
 
     commands.spawn_bundle(
@@ -60,13 +51,11 @@ fn draw_title(term: &mut Terminal, title: &str) {
     let title = &title[0..title.len() - 4];
 
     term.draw_border_single();
-    term.put_string_formatted([1, 0], "[ ", Pivot::TopLeft.into());
-    term.put_string_formatted(
-        [3, 0],
-        title.to_string().to_uppercase().as_str(),
-        StringFormat::new(Pivot::TopLeft, Color::BLUE, Color::BLACK),
-    );
-    term.put_string_formatted([4 + title.len() as i32 - 1, 0], " ]", Pivot::TopLeft.into());
+    term.put_string([1, 0].pivot(Pivot::TopLeft), "[ ");
+    let title_fmt = title.to_string().to_uppercase();
+    let title_fmt = title_fmt.as_str().fg(Color::BLUE);
+    term.put_string([3, 0].pivot(Pivot::TopLeft), title_fmt);
+    term.put_string([4 + title.len() as i32 - 1, 0].pivot(Pivot::TopLeft), " ]");
 }
 
 fn change_font(
@@ -95,6 +84,7 @@ fn change_font(
             let mut mat = materials.get_mut(mat).unwrap();
             mat.texture = Some(new_font.1.clone());
 
+            term.clear_box([0,0].pivot(Pivot::TopLeft), [30,1]);
             draw_title(&mut term, new_font.0);
         }
     }

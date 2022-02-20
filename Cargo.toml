@@ -14,7 +14,6 @@ keywords = ["bevy", "ascii", "terminal", "roguelike", "tilemap"]
 [dependencies]
 bevy = { version = "0.6", default-features = false, features = ["render"] }
 ron = "0.6.4"
-sark_grids = { path = "../sark_grids", version = "0.1.5" }
 bitflags = "1.2"
 itertools = "0.10.3"
 

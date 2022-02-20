@@ -28,7 +28,7 @@ pub fn index_to_glyph(i: u8) -> char {
 }
 
 /// Convert a cp437 glyph to an index (0..=255)
-pub fn glyph_to_index(c: char) -> u8 {
+pub fn glyph_to_index(c: char) -> usize {
     match c {
         '☺' => 1,
         '☻' => 2,
@@ -301,5 +301,18 @@ pub fn glyph_to_index(c: char) -> u8 {
         '■' => 254,
 
         _ => 0,
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test() {
+        println!("{}", glyph_to_index('H'));
+        let to_key = 'H' as u16;
+        println!("Key {}", to_key);
     }
 }

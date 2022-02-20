@@ -116,7 +116,7 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut query: Query<&mut Termin
             let noise = noise.noise.get_noise(x, y);
             let col = (noise + 1.0) * 0.5;
             *t = Tile {
-                glyph: '▒',
+                key: '▒' as u16,
                 fg_color: Color::rgb(col, col, col),
                 bg_color: Color::BLACK,
             };
@@ -128,8 +128,8 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut query: Query<&mut Termin
 
         let t = noise.noise.get_noise_type();
         let string = to_string(t);
-        let h = term.height();
-        term.clear_box([0, h as i32 - 1], [string.len() as u32, 1]);
-        term.put_string([0, h as i32 - 1], &string);
+
+        term.clear_box([0,0].pivot(Pivot::TopLeft), [string.len() as u32, 1]);
+        term.put_string([0,0].pivot(Pivot::TopLeft), string.as_str());
     }
 }

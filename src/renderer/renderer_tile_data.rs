@@ -26,16 +26,16 @@ impl TerminalRendererTileData {
         self.uvs.resize(len * 4, Default::default());
     }
 
-    pub fn update_from_tiles(&mut self, tiles: &[Tile], uv_mapping: &UvMapping) {
-        for (i, tile) in tiles.iter().enumerate() {
-            let glyph = tile.glyph;
+    pub fn update_from_tiles<'a>(&mut self, tiles: impl Iterator<Item=&'a Tile>, uv_mapping: &UvMapping) {
+        for (i, tile) in tiles.enumerate() {
+            let key = tile.key;
 
             let vi = i * 4;
             let uvs = &mut self.uvs;
 
-            let glyph_uvs = uv_mapping.uvs_from_glyph(glyph);
+            let tile_uvs = uv_mapping.uvs_from_key(key as u16);
 
-            for (a, b) in uvs[vi..vi + 4].iter_mut().zip(glyph_uvs) {
+            for (a, b) in uvs[vi..vi + 4].iter_mut().zip(tile_uvs) {
                 *a = *b;
             }
 
@@ -68,7 +68,7 @@ mod tests {
 
         let mut colors: TerminalRendererTileData =
             TerminalRendererTileData::with_size(UVec2::new(25, 25));
-        colors.update_from_tiles(&tiles, &UvMapping::default());
+        colors.update_from_tiles(tiles.iter(), &UvMapping::default());
 
         assert_eq!([0.0, 0.0, 1.0, 1.0], colors.fg_colors[0]);
     }

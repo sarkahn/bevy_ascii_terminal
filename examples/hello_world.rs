@@ -35,13 +35,13 @@ fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
         for mut term in q.iter_mut() {
             term.clear();
             term.draw_border_single();
-            term.put_char_formatted([1, 1], 'H', CharFormat::new(Color::BLUE, Color::GREEN));
-            term.put_char_formatted([2, 1], 'e', CharFormat::new(Color::BLUE, Color::WHITE));
-            term.put_char_formatted([3, 1], 'l', CharFormat::new(Color::GREEN, Color::BLUE));
-            term.put_char_formatted([4, 1], 'l', CharFormat::new(Color::RED, Color::GREEN));
-            term.put_char_formatted([5, 1], 'o', CharFormat::new(Color::GREEN, Color::GRAY));
+            term.put_char([1, 1], 'H'.fg(Color::BLUE).bg(Color::GREEN));
+            term.put_char([2, 1], 'e'.fg(Color::BLUE).bg(Color::WHITE));
+            term.put_char([3, 1], 'l'.fg(Color::GREEN).bg(Color::BLUE));
+            term.put_char([4, 1], 'l'.fg(Color::RED).bg(Color::GREEN));
+            term.put_char([5, 1], 'o'.fg(Color::GREEN).bg(Color::GRAY));
 
-            term.put_string([6, 1], " World!");
+            term.put_string([6, 1], " World!".fg(Color::TEAL));
         }
     }
 }

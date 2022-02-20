@@ -1,4 +1,10 @@
 # Changelog
+## [0.9.0]
+
+### Changed
+* Removed put_x_formatted functions, replaced in favor of traits on the put_char/put_string functions.
+* Points can now be directly specified with a pivot via the point2d trait. Currently only put_char/put_string and clear_box functions will respect the pivot.
+
 ## [0.8.1]
 
 ### Changed

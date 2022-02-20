@@ -57,12 +57,12 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
     for mut term in q.iter_mut() {
         for t in term.iter_mut() {
             let index = rng.gen_range(0..=255) as u8;
-            let glyph = code_page_437::index_to_glyph(index);
+            let glyph = code_page_437::index_to_glyph(index) as u16;
             let fg = rand_color(&mut rng);
             let bg = rand_color(&mut rng);
 
             *t = Tile {
-                glyph,
+                key: glyph,
                 fg_color: fg,
                 bg_color: bg,
             }
