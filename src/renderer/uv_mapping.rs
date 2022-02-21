@@ -29,7 +29,7 @@ impl UvMapping {
 
         for i in 0..tile_count.len() as u32 {
             let x = i % tile_count.width() as u32;
-            let y = i / tile_count.height() as u32;
+            let y = i / tile_count.width() as u32;
 
             uv_map.insert(i as u16, Self::uvs_from_grid_xy([x,y], tile_count));
         }
