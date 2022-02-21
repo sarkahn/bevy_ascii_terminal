@@ -15,6 +15,14 @@ pub trait TileWriter: Clone + Copy {
     fn bg(self, color: Color) -> FormattedTile;
     /// Perform a write on the given tile.
     fn write(&self, tile: &mut Tile);
+    
+    fn transparent(&mut self) -> FormattedTile {
+        FormattedTile {
+            key: self.formatted().key,
+            fg_color: Some(Color::rgba_u8(0,0,0,0)),
+            bg_color: Some(Color::rgba_u8(0,0,0,0))
+        }
+    }
 }
 
 impl TileWriter for char {

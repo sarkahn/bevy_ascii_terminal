@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 
-use bevy_ascii_terminal::{Terminal, ldtk::{LdtkPlugin, LdtkAsset}, TerminalBundle, TerminalPlugin, code_page_437, TerminalMaterial, renderer::uv_mapping::UvMapping};
+use bevy_ascii_terminal::{Terminal, ldtk::{LdtkPlugin, LdtkAsset}, TerminalBundle, TerminalPlugin, code_page_437, TerminalMaterial, renderer::uv_mapping::UvMapping, TileWriter};
 use bevy_tiled_camera::{TiledCameraBundle, TiledCameraPlugin};
 
 fn main () {
@@ -68,7 +68,7 @@ fn build_from_ldtk(
                                 let h = layers.iter().map(|l|l.c_hei).max().unwrap() as u32;
                                 term.resize([w,h]);
                                 println!("Resizing to {},{}", w,h);
-                                term.fill(0);
+                                term.fill(0.transparent());
                                 for layer in layers.iter().rev() {
                                     let height_offset = layer.c_hei as i32 - 1;
                                     for tile in layer.grid_tiles.iter() {
@@ -77,7 +77,7 @@ fn build_from_ldtk(
                                         let xy = IVec2::new(xy.x, height_offset - xy.y);
 
                                         let id = tile.t as u16;
-                                        term.put_tile(xy, id);
+                                        term.put_tile(xy, id.fg(Color::WHITE));
                                     }
                                     for tile in layer.auto_layer_tiles.iter() {
                                         let xy = IVec2::new(tile.px[0] as i32, tile.px[1] as i32);
@@ -85,7 +85,7 @@ fn build_from_ldtk(
                                         let xy = IVec2::new(xy.x, height_offset - xy.y);
                                         
                                         let id = tile.t as u16;
-                                        term.put_tile(xy, id);
+                                        term.put_tile(xy, id.fg(Color::WHITE));
                                     }
                                 }
                             }
