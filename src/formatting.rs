@@ -66,6 +66,35 @@ impl TileWriter for FormattedTile {
     }
 }
 
+impl TileWriter for u16 {
+    fn formatted(self) -> FormattedTile {
+        FormattedTile {
+            key: Some(self),
+            ..Default::default()
+        }
+    }
+
+    fn fg(self, color: Color) -> FormattedTile {
+        FormattedTile {
+            key: Some(self),
+            fg_color: Some(color),
+            ..Default::default()
+        }
+    }
+
+    fn bg(self, color: Color) -> FormattedTile {
+        FormattedTile {
+            key: Some(self),
+            bg_color: Some(color),
+            ..Default::default()
+        }
+    }
+
+    fn write(&self, tile: &mut Tile) {
+        tile.key = *self;
+    }
+}
+
 #[derive(Default, Clone, Copy)]
 pub struct FormattedTile {
     key: Option<u16>,

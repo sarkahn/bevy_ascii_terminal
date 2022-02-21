@@ -133,6 +133,10 @@ impl Terminal {
         self.size
     }
 
+    pub fn len(&self) -> usize {
+        self.tiles.len()
+    }
+
     /// Convert a 2D position to it's corresponding 1D index
     /// in the terminal.
     #[inline]

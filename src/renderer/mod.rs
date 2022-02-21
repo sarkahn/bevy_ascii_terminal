@@ -24,6 +24,8 @@ pub const TERMINAL_UPDATE_SIZE: &str = "terminal_update_size";
 pub const TERMINAL_UPDATE_TILE_DATA: &str = "terminal_update_tile_data";
 /// System label for the terminal mesh update function.
 pub const TERMINAL_UPDATE_MESH: &str = "terminal_update_mesh";
+/// System label for the terminal mesh update function.
+pub const TERMINAL_SIZE_CHECK: &str = "terminal_size_check";
 
 pub use entity::*;
 pub use plugin::TerminalRendererPlugin;

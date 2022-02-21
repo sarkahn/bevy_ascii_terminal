@@ -35,6 +35,20 @@ impl Point2d for [i32; 2] {
     }
 }
 
+impl Point2d for [u32;2] {
+    fn x(&self) -> i32 {
+        self[0] as i32
+    }
+
+    fn y(&self) -> i32 {
+        self[1] as i32
+    }
+
+    fn xy(&self) -> IVec2 {
+        UVec2::from(*self).as_ivec2()
+    }
+}
+
 /// A trait for aligning a 2d point in a terminal.
 pub trait Point2dFormatter {
     /// Return the pivot-adjusted point.
@@ -110,7 +124,7 @@ impl Point2dFormatter for FormattedPoint {
 
 #[allow(clippy::len_without_is_empty)]
 /// A trait for mixing of the different types representing a 2d size.
-pub trait Size2d {
+pub trait Size2d: Clone + Copy {
     fn width(&self) -> usize {
         self.size().x as usize
     }

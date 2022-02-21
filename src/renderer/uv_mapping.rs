@@ -23,6 +23,20 @@ impl UvMapping {
         UvMapping { uv_map }
     }
 
+    pub fn from_grid(tile_count: impl Size2d) -> Self {
+
+        let mut uv_map = HashMap::default();
+
+        for i in 0..tile_count.len() as u32 {
+            let x = i % tile_count.width() as u32;
+            let y = i / tile_count.height() as u32;
+
+            uv_map.insert(i as u16, Self::uvs_from_grid_xy([x,y], tile_count));
+        }
+
+        UvMapping { uv_map }
+    }
+
     fn uvs_from_grid_index(index: usize, tile_count: impl Size2d) -> [[f32; 2]; 4] {
         let x = index % tile_count.width();
         let y = index / tile_count.width();
@@ -75,11 +89,11 @@ impl UvMapping {
     }
 
     pub fn uvs_from_key(&self, key: u16) -> &[[f32; 2]; 4] {
-        debug_assert!(
-            self.uv_map.contains_key(&key),
-            "Error retrieving uvs, key {key}:{} not found",
-            key as u8 as char
-        );
+        // debug_assert!(
+        //     self.uv_map.contains_key(&key),
+        //     "Error retrieving uvs, key {key}:{} not found",
+        //     key as u8 as char
+        // );
         &self.uv_map[&key]
     }
 }

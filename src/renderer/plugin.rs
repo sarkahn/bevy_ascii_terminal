@@ -16,8 +16,13 @@ impl Plugin for TerminalRendererPlugin {
 
         app.add_system(terminal_renderer_init.label(TERMINAL_INIT))
             .add_system(
-                terminal_renderer_update_size
+                terminal_renderer_size_change_check
                     .after(TERMINAL_INIT)
+                    .label(TERMINAL_SIZE_CHECK),
+            )
+            .add_system(
+                terminal_renderer_update_size
+                    .after(TERMINAL_SIZE_CHECK)
                     .label(TERMINAL_UPDATE_SIZE),
             )
             .add_system(
@@ -42,6 +47,20 @@ fn terminal_renderer_init(
         //info!("Initializing ascii terminal mesh");
         let new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         *mesh = Mesh2dHandle(meshes.add(new_mesh));
+    }
+}
+
+fn terminal_renderer_size_change_check(
+    mut q_term: Query<
+        (&Terminal, &TerminalRendererTileData, &TerminalRendererVertexData, &mut TileScaling),
+        Changed<Terminal>
+    >
+) {
+    for (term, tiles, verts, mut scaling) in q_term.iter_mut() {
+        if term.len() != tiles.len() || term.len() != verts.len() {
+            // Force a size update
+            *scaling = *scaling;
+        }
     }
 }
 
@@ -104,6 +123,9 @@ fn terminal_renderer_update_tile_data(
     for (term, mut data, uv_mapping) in q.iter_mut() {
         //info!("Renderer update tile data (colors)!");
         //info!("First tiles: {:?}", &term.tiles[0..4]);
+        if data.len() != term.len() {
+            data.resize(term.size());
+        }
         data.update_from_tiles(term.iter(), uv_mapping);
     }
 }

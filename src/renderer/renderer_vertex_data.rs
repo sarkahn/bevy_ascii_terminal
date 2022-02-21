@@ -73,4 +73,8 @@ impl TerminalRendererVertexData {
             indices[ii + 5] = vi + 1;
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.verts.len() / 4
+    }
 }

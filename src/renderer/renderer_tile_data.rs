@@ -31,13 +31,15 @@ impl TerminalRendererTileData {
         tiles: impl Iterator<Item = &'a Tile>,
         uv_mapping: &UvMapping,
     ) {
+        //println!("Updating from tiles");
         for (i, tile) in tiles.enumerate() {
             let key = tile.key;
+            //println!("Tile key {}", key);
+            let tile_uvs = uv_mapping.uvs_from_key(key);
 
             let vi = i * 4;
             let uvs = &mut self.uvs;
 
-            let tile_uvs = uv_mapping.uvs_from_key(key as u16);
 
             for (a, b) in uvs[vi..vi + 4].iter_mut().zip(tile_uvs) {
                 *a = *b;
@@ -48,6 +50,10 @@ impl TerminalRendererTileData {
                 self.bg_colors[j] = tile.bg_color.as_linear_rgba_f32();
             }
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.uvs.len() / 4
     }
 }
 

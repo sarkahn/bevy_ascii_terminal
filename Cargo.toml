@@ -33,5 +33,5 @@ ldtk = ["ldtk_rust", "anyhow", "serde_json"]
 
 [[example]]
 name = "ldtk"
-path = "examples/ldtk/ldtk.rs"
+path = "examples/ldtk.rs"
 required-features = ["ldtk"]
