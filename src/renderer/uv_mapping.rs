@@ -103,3 +103,16 @@ impl Default for UvMapping {
         Self::code_page_437()
     }
 }
+
+
+#[cfg(test)]
+mod test {
+    use super::UvMapping;
+
+    #[test]
+    fn uvs() {
+        let mapping = UvMapping::default();
+
+        println!("Mapping for blank tile: {:?}", mapping.uvs_from_key(' ' as u16));
+    }
+}

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 
 use bevy_ascii_terminal::{Terminal, ldtk::{LdtkPlugin, LdtkAsset}, TerminalBundle, TerminalPlugin, code_page_437, TerminalMaterial, renderer::uv_mapping::UvMapping, TileWriter};
-use bevy_tiled_camera::{TiledCameraBundle, TiledCameraPlugin};
+use bevy_tiled_camera::{TiledCameraBundle, TiledCameraPlugin, TiledProjection};
 
 fn main () {
     App::new()
@@ -39,6 +39,7 @@ fn build_from_ldtk(
     mut q_term: Query<(&mut Terminal, &Handle<TerminalMaterial>, &mut UvMapping, &Handle<LdtkAsset>)>,
     maps: Res<Assets<LdtkAsset>>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
+    mut q_cam: Query<&mut TiledProjection>,
 ) {
     for ev in ev_ldtk.iter() {
         match ev {
@@ -67,6 +68,8 @@ fn build_from_ldtk(
                                 let w = layers.iter().map(|l|l.c_wid).max().unwrap() as u32;
                                 let h = layers.iter().map(|l|l.c_hei).max().unwrap() as u32;
                                 term.resize([w,h]);
+                                let mut proj = q_cam.single_mut();
+                                proj.set_tile_count([w,h]);
                                 println!("Resizing to {},{}", w,h);
                                 term.fill(0.transparent());
                                 for layer in layers.iter().rev() {
