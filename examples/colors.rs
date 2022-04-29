@@ -8,8 +8,8 @@ fn main() {
         .add_plugin(TerminalPlugin)
         .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
-        .add_startup_system(setup.system())
-        .add_system(draw_colors.system())
+        .add_startup_system(setup)
+        .add_system(draw_colors)
         .run();
 }
 

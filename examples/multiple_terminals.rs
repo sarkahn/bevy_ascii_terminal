@@ -9,7 +9,7 @@ fn main() {
         .add_plugin(TerminalPlugin)
         .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
-        .add_startup_system(setup.system())
+        .add_startup_system(setup)
         .run()
 }
 

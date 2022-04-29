@@ -16,8 +16,8 @@ fn main() {
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_startup_system(setup.system())
-        .add_system(spam_terminal.system())
+        .add_startup_system(setup)
+        .add_system(spam_terminal)
         .run();
 }
 

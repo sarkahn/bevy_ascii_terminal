@@ -37,7 +37,9 @@ use bevy::app::{App, Plugin};
 use bevy::asset::{AssetServer, Assets, Handle, HandleUntyped};
 use bevy::ecs::system::{lifetimeless::SRes, SystemParamItem};
 use bevy::math::Vec4;
+use bevy::prelude::Mesh;
 use bevy::reflect::TypeUuid;
+use bevy::render::mesh::MeshVertexBufferLayout;
 use bevy::render::texture::ImageType;
 use bevy::render::{
     color::Color,
@@ -54,6 +56,8 @@ use bevy::render::{
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, SpecializedMaterial2d};
 use bevy::utils::HashMap;
 
+use super::plugin::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
+
 /// The default shader handle used by the terminal.
 pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 3142086872234592509);
@@ -67,7 +71,13 @@ macro_rules! include_font {
         let bytes = include_bytes!(concat!("builtin/", $font_name));
         (
             $font_name,
-            Image::from_buffer(bytes, ImageType::Extension("png")).unwrap(),
+            Image::from_buffer(
+                bytes,
+                ImageType::Extension("png"),
+                bevy::render::texture::CompressedImageFormats::NONE,
+                false,
+            )
+            .unwrap(),
         )
     }};
 }
@@ -352,49 +362,28 @@ impl SpecializedMaterial2d for TerminalMaterial {
 
     type Key = ();
 
-    fn key(_material: &<Self as RenderAsset>::PreparedAsset) -> Self::Key {}
+    fn key(
+        _render_devicec: &RenderDevice,
+        _material: &<Self as RenderAsset>::PreparedAsset,
+    ) -> Self::Key {
+    }
 
-    fn specialize(_key: Self::Key, descriptor: &mut RenderPipelineDescriptor) {
-        let vertex_attributes = vec![
-            // Until https://github.com/bevyengine/bevy/pull/3120 is merged,
-            // attributes have a bizarre ordering. "Built-in" attributes appear to be packed first
-            // in alphabetical order, then remaining attributes appear to packed in alphabetical order
-            // afterwards?
-
-            // Vertex_Position
-            VertexAttribute {
-                format: VertexFormat::Float32x3,
-                offset: 0,
-                shader_location: 0,
-            },
-            // Vertex_UV
-            VertexAttribute {
-                format: VertexFormat::Float32x2,
-                offset: 12,
-                shader_location: 1,
-            },
-            // bg_color
-            VertexAttribute {
-                format: VertexFormat::Float32x4,
-                offset: 12 + 8,
-                shader_location: 2,
-            },
-            // fg_color
-            VertexAttribute {
-                format: VertexFormat::Float32x4,
-                offset: 12 + 8 + 16,
-                shader_location: 3,
-            },
+    fn specialize(
+        _key: Self::Key,
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayout,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        let formats = vec![
+            Mesh::ATTRIBUTE_POSITION.format,
+            ATTRIBUTE_UV.format,
+            ATTRIBUTE_COLOR_BG.format,
+            ATTRIBUTE_COLOR_FG.format,
         ];
-        // Verts, UVs, FGColors, BGColors
-        let stride = 12 + 8 + 16 + 16;
 
-        let buffers = vec![VertexBufferLayout {
-            array_stride: stride,
-            step_mode: VertexStepMode::Vertex,
-            attributes: vertex_attributes,
-        }];
+        let vertex_layout =
+            VertexBufferLayout::from_vertex_formats(VertexStepMode::Vertex, formats);
+        descriptor.vertex.buffers = vec![vertex_layout];
 
-        descriptor.vertex.buffers = buffers;
+        Ok(())
     }
 }

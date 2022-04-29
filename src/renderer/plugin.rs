@@ -2,11 +2,21 @@
 
 use bevy::{
     prelude::*,
-    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    render::{
+        mesh::{Indices, MeshVertexAttribute},
+        render_resource::{PrimitiveTopology, VertexFormat},
+    },
     sprite::Mesh2dHandle,
 };
 
 use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *};
+
+pub const ATTRIBUTE_UV: MeshVertexAttribute =
+    MeshVertexAttribute::new("Vertex_Uv", 1, VertexFormat::Float32x2);
+pub const ATTRIBUTE_COLOR_BG: MeshVertexAttribute =
+    MeshVertexAttribute::new("Vertex_Color_Bg", 2, VertexFormat::Float32x4);
+pub const ATTRIBUTE_COLOR_FG: MeshVertexAttribute =
+    MeshVertexAttribute::new("Vertex_Color_Fg", 3, VertexFormat::Float32x4);
 
 pub struct TerminalRendererPlugin;
 
@@ -94,7 +104,7 @@ fn terminal_renderer_update_size(
         //info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
         //info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
         mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
-        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
     }
 }
 
@@ -121,10 +131,10 @@ fn terminal_renderer_update_mesh(
         //info!("First bg Colors: {:?}", &tile_data.bg_colors[0..4]);
         //info!("First uvs: {:?}", &tile_data.uvs[0..4]);
 
-        //mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, tile_data.fg_colors.clone());
+        //mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, tile_data.fg_colors.clone());
 
-        mesh.set_attribute("bg_color", tile_data.bg_colors.clone());
-        mesh.set_attribute("fg_color", tile_data.fg_colors.clone());
-        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, tile_data.uvs.clone());
+        mesh.insert_attribute(ATTRIBUTE_COLOR_BG, tile_data.bg_colors.clone());
+        mesh.insert_attribute(ATTRIBUTE_COLOR_FG, tile_data.fg_colors.clone());
+        mesh.insert_attribute(ATTRIBUTE_UV, tile_data.uvs.clone());
     }
 }
