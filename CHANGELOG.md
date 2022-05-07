@@ -1,4 +1,7 @@
 # Changelog
+## [0.8.2]
+* Update to bevy 7.0
+
 ## [0.8.1]
 
 ### Changed

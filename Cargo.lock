@@ -226,7 +226,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "bevy",
  "bevy_tiled_camera",
@@ -689,7 +689,8 @@ dependencies = [
 [[package]]
 name = "bevy_tiled_camera"
 version = "0.3.1"
-source = "git+https://github.com/sarkahn/bevy_tiled_camera.git?branch=main#fbd90c6bb39e3e255f54933f80f159d768b973de"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be5de1d7c1325e10d8cc71767a05c688c18c5eec79f34d2c924faef2c889d9c6"
 dependencies = [
  "bevy",
 ]

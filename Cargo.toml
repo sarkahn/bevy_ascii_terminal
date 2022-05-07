@@ -9,7 +9,7 @@ license = "MIT"
 name = "bevy_ascii_terminal"
 readme = "README.md"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
-version = "0.9.0"
+version = "0.9.1"
 
 [dependencies]
 bevy = {version = "0.7", default-features = false, features = ["render"]}
@@ -20,7 +20,7 @@ sark_grids = "0.2.6"
 
 [dev-dependencies]
 bevy = {version = "0.7", features = ["png", "bevy_winit", "bevy_render"]}
-bevy_tiled_camera = {git = "https://github.com/sarkahn/bevy_tiled_camera.git", branch = "main"}
+bevy_tiled_camera = "0.3.1"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
 rand = "0.8.4"
