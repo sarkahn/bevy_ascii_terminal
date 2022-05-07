@@ -12,9 +12,9 @@ fn main() {
         .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
         .init_resource::<Noise>()
-        .add_startup_system(setup.system())
-        .add_system(noise.system())
-        .add_system(change_noise.system())
+        .add_startup_system(setup)
+        .add_system(noise)
+        .add_system(change_noise)
         .run();
 }
 

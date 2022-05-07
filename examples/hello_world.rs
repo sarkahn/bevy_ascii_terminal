@@ -8,8 +8,8 @@ fn main() {
         .add_plugin(TerminalPlugin)
         .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
-        .add_startup_system(spawn_terminal.system())
-        .add_system(hello_world.system())
+        .add_startup_system(spawn_terminal)
+        .add_system(hello_world)
         .run()
 }
 
