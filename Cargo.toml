@@ -20,7 +20,7 @@ sark_grids = "0.2.6"
 
 [dev-dependencies]
 bevy = {version = "0.7", features = ["png", "bevy_winit", "bevy_render"]}
-bevy_tiled_camera = {git = "https://github.com/vigdail/bevy_tiled_camera.git", branch = "main"}
+bevy_tiled_camera = {git = "https://github.com/sarkahn/bevy_tiled_camera.git", branch = "main"}
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
 rand = "0.8.4"

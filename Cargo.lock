@@ -688,8 +688,8 @@ dependencies = [
 
 [[package]]
 name = "bevy_tiled_camera"
-version = "0.3.0"
-source = "git+https://github.com/vigdail/bevy_tiled_camera.git?branch=main#3bd6c2be0245e7c67c6bd8678628c98dfaac1e26"
+version = "0.3.1"
+source = "git+https://github.com/sarkahn/bevy_tiled_camera.git?branch=main#fbd90c6bb39e3e255f54933f80f159d768b973de"
 dependencies = [
  "bevy",
 ]
