@@ -17,6 +17,9 @@ bitflags = "1.2"
 itertools = "0.10.3"
 ron = "0.6.4"
 sark_grids = "0.2.6"
+anyhow = "1.0.4"
+thiserror = "1.0.31"
+arrayvec = "0.7.2"
 
 [dev-dependencies]
 bevy = {version = "0.7", features = ["png", "bevy_winit", "bevy_render"]}

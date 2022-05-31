@@ -228,6 +228,8 @@ dependencies = [
 name = "bevy_ascii_terminal"
 version = "0.9.1"
 dependencies = [
+ "anyhow",
+ "arrayvec",
  "bevy",
  "bevy_tiled_camera",
  "bitflags",
@@ -237,6 +239,7 @@ dependencies = [
  "rand",
  "ron 0.6.6",
  "sark_grids",
+ "thiserror",
 ]
 
 [[package]]

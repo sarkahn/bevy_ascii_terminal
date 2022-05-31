@@ -51,7 +51,7 @@ mod terminal;
 
 pub use terminal::{BorderGlyphs, Terminal, Tile};
 
-pub use formatting::{CharFormat, Pivot, StringFormat};
+//pub use formatting::{CharFormat, Pivot, StringFormat};
 pub use renderer::code_page_437;
 pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;
