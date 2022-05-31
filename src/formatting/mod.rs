@@ -5,3 +5,6 @@ pub(crate) mod fmt_string;
 //pub use fmt_tile::FormattedTile;
 pub use fmt_tile::TileWriter;
 pub(crate) use fmt_tile::TileWrite;
+
+pub use fmt_string::StringWriter;
+pub(crate) use fmt_string::StringWrite;

@@ -9,11 +9,15 @@ use bevy::prelude::*;
 // use crate::formatting::StringFormat;
 
 use sark_grids::Grid;
+use sark_grids::GridPoint;
+use sark_grids::Size2d;
 use thiserror::Error;
 
+use crate::formatting::StringWrite;
 use crate::formatting::TileWrite;
 //use crate::formatting::FormattedTile;
 use crate::formatting::TileWriter;
+use crate::formatting::fmt_string::StringWriter;
 
 /// A single tile of the terminal.
 ///
@@ -40,7 +44,7 @@ pub struct Tile {
 ///
 /// let mut term = Terminal::with_size([10,10]);
 ///
-/// term.put_char([1,1], 'h');
+/// term.put_char([1,1], 'h'.fg(Color::RED));
 /// term.put_string([2,1], "ello");
 ///
 /// let hello = term.get_string([1,1], 5);
@@ -102,10 +106,10 @@ pub const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
 
 impl Terminal {
     /// Construct a terminal with the given size
-    pub fn with_size(size: [u32; 2]) -> Terminal {
+    pub fn with_size(size: impl Size2d) -> Terminal {
         Terminal {
             tiles: Grid::default(size),
-            size: UVec2::from(size),
+            size: size.as_uvec2(),
         }
     }
 
@@ -131,7 +135,7 @@ impl Terminal {
     ///
     /// Note that in the terminal the y axis goes from top to bottom.
     #[inline]
-    pub fn to_index(&self, xy: [i32; 2]) -> usize {
+    pub fn to_index(&self, xy: impl GridPoint) -> usize {
         self.tiles.pos_to_index(xy)
     }
 
@@ -150,8 +154,15 @@ impl Terminal {
 
     /// Insert a formatted character into the terminal.
     ///
-    /// The existing foreground and background color of the tile will remain.
-    pub fn put_char(&mut self, xy: [i32; 2], writer: impl TileWriter) {
+    /// You can optionally specify the foreground and/or background color for the
+    /// tile as well.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// 
+    /// ```
+    pub fn put_char(&mut self, xy: impl GridPoint, writer: impl TileWriter) {
         let tile = self.get_tile_mut(xy);
 
         for write in writer.iter() {
@@ -163,11 +174,53 @@ impl Terminal {
         }
     }
 
-    // /// Insert a [Tile].
-    // pub fn put_tile(&mut self, xy: [i32; 2], tile: Tile) {
-    //     let t = self.get_tile_mut(xy);
-    //     *t = tile;
-    // }
+    /// Insert a [Tile].
+    pub fn put_tile(&mut self, xy: impl GridPoint, tile: Tile) {
+        let t = self.get_tile_mut(xy);
+        *t = tile;
+    }
+
+    /// Write a formatted string to the terminal.
+    /// 
+    /// You can optionally specify a foreground and/or background color for the
+    /// string as well.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// let mut term = Terminal::with_size([10,10]);
+    /// term.put_string("Hello".fg(Color::BLUE)); // Write a blue "Hello" to the terminal
+    /// ```
+    pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a>) {
+        let i = self.to_index(xy);
+
+        let (string,writes) = writer.formatted().into();
+
+        let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
+        let chars = string.chars().take(tiles.len());
+
+        for (char, mut t) in chars.zip(tiles) {
+            t.glyph = char;
+        }
+
+        for write in writes {
+            match write {
+                StringWrite::FGColor(col) => {   
+                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
+                    for t in tiles {
+                        t.fg_color = col;
+                    }
+                },
+                StringWrite::BGColor(col) => {   
+                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
+                    for t in tiles {
+                        t.bg_color = col;
+                    }
+                },
+            }
+        }
+
+    }
 
     // /// Write a string to the terminal.
     // ///
@@ -183,32 +236,27 @@ impl Terminal {
     //     }
     // }
 
-    // /// Retrieve the char from a tile.
-    // pub fn get_char(&self, xy: [i32; 2]) -> char {
-    //     self.get_tile(xy).glyph
-    // }
+    /// Retrieve the char from a tile.
+    pub fn get_char(&self, xy: impl GridPoint) -> char {
+        self.get_tile(xy).glyph
+    }
 
-    // /// Retrieve a string from the terminal.
-    // pub fn get_string(&self, xy: [i32; 2], len: usize) -> String {
-    //     let i = self.to_index(xy);
-    //     let slice = self.tiles.slice(i..).iter().take(len);
-    //     let mut chars: Vec<char> = vec![' '; slice.len()];
+    /// Retrieve a string from the terminal.
+    pub fn get_string(&self, xy: impl GridPoint, len: usize) -> String {
+        let i = self.to_index(xy);
+        let slice = self.tiles.slice(i..).iter().take(len).map(|t|t.glyph);
+        
+        String::from_iter(slice)
+    }
 
-    //     for (i, t) in slice.enumerate() {
-    //         chars[i] = t.glyph;
-    //     }
-
-    //     String::from_iter(chars)
-    // }
-
-    // /// Retrieve an immutable reference to a tile in the terminal.
-    // pub fn get_tile(&self, xy: [i32; 2]) -> &Tile {
-    //     &self.tiles[self.to_index(xy)]
-    // }
+    /// Retrieve an immutable reference to a tile in the terminal.
+    pub fn get_tile(&self, xy: impl GridPoint) -> &Tile {
+        &self.tiles[self.to_index(xy)]
+    }
 
     #[inline]
     /// Retrieve a mutable reference to a tile in the terminal.
-    pub fn get_tile_mut(&mut self, xy: [i32; 2]) -> &mut Tile {
+    pub fn get_tile_mut(&mut self, xy: impl GridPoint) -> &mut Tile {
         let i = self.to_index(xy);
         &mut self.tiles[i]
     }
@@ -450,24 +498,30 @@ pub enum TerminalWriteError {
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn put_char() {
-    //     let mut term = Terminal::with_size([20, 20]);
+    #[test]
+    fn put_char() {
+        let mut term = Terminal::with_size([20, 20]);
 
-    //     term.put_char([5, 5], 'h');
+        term.put_char([5, 5], 'h');
 
-    //     assert_eq!('h', term.get_char([5, 5]));
-    // }
+        assert_eq!('h', term.get_char([5, 5]));
 
-    // // #[test]
-    // // fn put_string() {
-    // //     let mut term = Terminal::with_size([20, 20]);
-    // //     term.put_string([0, 0], "Hello");
-    // //     assert_eq!("Hello", term.get_string([0, 0], 5));
+        term.put_char([1,2], 'q'.fg(Color::RED));
 
-    // //     term.put_string([18, 19], "Hello");
-    // //     assert_eq!("He", term.get_string([18, 19], 2));
-    // // }
+        let t = term.get_tile([1,2]);
+        assert_eq!('q', t.glyph);
+        assert_eq!(Color::RED, t.fg_color);
+    }
+
+    #[test]
+    fn put_string() {
+        let mut term = Terminal::with_size([20, 20]);
+        term.put_string([0, 0], "Hello");
+        assert_eq!("Hello", term.get_string([0, 0], 5));
+
+        term.put_string([18, 19], "Hello");
+        assert_eq!("He", term.get_string([18, 19], 2));
+    }
 
     // #[test]
     // fn edges() {

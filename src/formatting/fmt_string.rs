@@ -1,68 +1,82 @@
+use arrayvec::{ArrayVec, IntoIter};
+use bevy::prelude::*;
 
+#[derive(Debug, Clone, Copy)]
+pub enum StringWrite {
+    FGColor(Color),
+    BGColor(Color),
+}
 
-// #[allow(clippy::len_without_is_empty)]
-// /// A trait for writing a string of formatted tiles to the terminal.
-// pub trait TilesWriter<'a> {
-//     /// Returns the formatted tiles from a base type.
-//     fn formatted(self) -> FormattedTiles<'a>;
-//     /// Set the foreground color for the tiles.
-//     fn fg(self, fg_color: Color) -> FormattedTiles<'a>;
-//     /// Set the background color for the tiles.
-//     fn bg(self, bg_color: Color) -> FormattedTiles<'a>;
-//     /// Apply the formatting to the given set of tiles.
-//     fn write(&self, tiles: impl Iterator<Item = &'a mut Tile>);
-//     /// The length of the writer tiles.
-//     fn len(&self) -> usize;
-// }
+/// A trait for building a formatted terminal string.
+pub trait StringWriter<'a>: Clone {
+    fn string(self) -> &'a str;
+    /// Change the foreground color.
+    fn fg(self, color: Color) -> FormattedString<'a>;
+    /// Change the background color.
+    fn bg(self, color: Color) -> FormattedString<'a>;
 
-// /// A set of formatted tiles for writing to the terminal.
-// #[derive(Debug, Clone, Default)]
-// pub struct FormattedTiles<'a> {
-//     pub string: &'a str,
-//     pub fg_color: Option<Color>,
-//     pub bg_color: Option<Color>,
-// }
+    fn formatted(self) -> FormattedString<'a>;
+}
 
-// impl<'a> FormattedTiles<'a> {
-//     pub fn new(chars: &'a str) -> Self {
-//         FormattedTiles {
-//             string: chars,
-//             ..Default::default()
-//         }
-//     }
-// }
+#[derive(Default, Clone)]
+pub struct FormattedString<'a> {
+    string: &'a str,
+    writes: ArrayVec<StringWrite, 2>,
+}
 
-// impl<'a> TilesWriter<'a> for &'a str {
-//     fn formatted(self) -> FormattedTiles<'a> {
-//         FormattedTiles {
-//             string: self,
-//             ..Default::default()
-//         }
-//     }
+impl<'a> FormattedString<'a> {
+    fn new(string: &'a str) -> Self {
+        FormattedString {
+            string,
+            ..Default::default()
+        }
+    }
+}
 
-//     fn fg(self, fg_color: Color) -> FormattedTiles<'a> {
-//         FormattedTiles {
-//             string: self,
-//             fg_color: Some(fg_color),
-//             ..Default::default()
-//         }
-//     }
+impl<'a> StringWriter<'a> for FormattedString<'a> {
+    fn string(self) -> &'a str {
+        self.string
+    }
 
-//     fn bg(self, bg_color: Color) -> FormattedTiles<'a> {
-//         FormattedTiles {
-//             string: self,
-//             bg_color: Some(bg_color),
-//             ..Default::default()
-//         }
-//     }
+    fn fg(mut self, color: Color) -> FormattedString<'a> {
+        self.writes.push(StringWrite::FGColor(color));
+        self
+    }
 
-//     fn write(&self, tiles: impl Iterator<Item = &'a mut Tile>) {
-//         for (tile, ch) in tiles.zip(self.chars()) {
-//             tile.set_glyph(ch);
-//         }
-//     }
+    fn bg(mut self, color: Color) -> FormattedString<'a> {
+        self.writes.push(StringWrite::BGColor(color));
+        self
+    }
 
-//     fn len(&self) -> usize {
-//         (self as &str).len()
-//     }
-// }
+    fn formatted(self) -> FormattedString<'a> {
+        self
+    }
+} 
+
+impl<'a> StringWriter<'a> for &'a str {
+    fn string(self) -> &'a str {
+        self
+    }
+
+    fn fg(self, color: Color) -> FormattedString<'a> {
+        let mut fmt = FormattedString::new(self);
+        fmt.writes.push(StringWrite::FGColor(color));
+        fmt
+    }
+
+    fn bg(self, color: Color) -> FormattedString<'a> {
+        let mut fmt = FormattedString::new(self);
+        fmt.writes.push(StringWrite::BGColor(color));
+        fmt
+    }
+
+    fn formatted(self) -> FormattedString<'a> {
+        FormattedString::new(self)
+    }
+} 
+
+impl<'a> From<FormattedString<'a>> for (&'a str, ArrayVec<StringWrite,2>) {
+    fn from(fmt: FormattedString<'a>) -> Self {
+        (fmt.string,fmt.writes)
+    }
+}
