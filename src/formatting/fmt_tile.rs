@@ -1,75 +1,149 @@
-use arrayvec::{ArrayVec, IntoIter};
+use arrayvec::{ArrayVec};
 use bevy::prelude::*;
+use sark_grids::GridPoint;
 
+use crate::{Tile, Terminal};
+
+/// Formatting that can be applied to a terminal tile.
+/// 
+/// Formatting allows you to create an object that specifies certain aspects 
+/// to modify without necessarily replacing an entire tile.
+#[derive(Debug, Default, Clone)]
+pub struct TileFormat {
+    /// Modifications to be applied to a tile.
+    modifications: ArrayVec<TileModification, 3>,
+}
+
+/// Modifications that can be applied to a terminal tile.
 #[derive(Debug, Clone, Copy)]
-pub enum TileWrite {
+pub enum TileModification {
+    /// Change the glyph of a tile.
     Glyph(char),
+    /// Change the foreground color of a tile.
     FGColor(Color),
+    /// Change the background color of a tile.
     BGColor(Color),
 }
 
-/// A trait for building a formatted terminal tile.
-pub trait TileWriter: Clone {
-    fn glyph(self, glyph: char) -> FormattedTile;
-    /// Change the foreground color.
-    fn fg(self, color: Color) -> FormattedTile;
-    /// Change the background color.
-    fn bg(self, color: Color) -> FormattedTile;
+/// A trait for building a [TileFormat].
+pub trait TileModifier: Clone {
+    /// Change the glyph of a tile.
+    fn glyph(self, glyph: char) -> TileFormat;
+    /// Change the foreground color of a tile.
+    fn fg(self, color: Color) -> TileFormat;
+    /// Change the background color of a tile.
+    fn bg(self, color: Color) -> TileFormat;
 
-    fn iter(self) -> IntoIter<TileWrite, 3>;
+    /// Get the [TileFormat] which can be used to apply tile modifications.
+    fn format(self) -> TileFormat;
 }
 
+impl TileFormat {
+    #[inline]
+    /// Apply formatting to an existing tile without necessarily replacing it completely.
+    pub fn apply(&self, tile: &mut Tile) {
+        for write in self.modifications.iter() {
+            match write {
+                TileModification::Glyph(glyph) => tile.glyph = *glyph,
+                TileModification::FGColor(col) => tile.fg_color = *col,
+                TileModification::BGColor(col) => tile.bg_color = *col,
+            }
+        }
+    }
 
-#[derive(Default, Clone)]
-pub struct FormattedTile {
-    writes: ArrayVec<TileWrite, 3>,
+    /// Create a [TileFormat] to clear a tile to default.
+    pub fn clear() -> TileFormat {
+        TileFormat::from(Tile::default())
+    }
+
+    /// Iterate over tile modifications.
+    pub fn iter(&self) -> impl Iterator<Item=&TileModification> {
+        self.modifications.iter()
+    }
+
+    #[inline]
+    pub(crate) fn draw(&self, xy: impl GridPoint, term: &mut Terminal) {
+        let t = term.get_tile_mut(xy);
+        self.apply(t);
+    }
 }
 
-impl TileWriter for FormattedTile {
-    fn fg(mut self, color: Color) -> FormattedTile {
-        self.writes.push(TileWrite::FGColor(color));
+impl TileModifier for TileFormat {
+    /// Change the forergound color of a tile.
+    fn fg(mut self, color: Color) -> TileFormat {
+        self.modifications.push(TileModification::FGColor(color));
         self
     }
 
-    fn bg(mut self, color: Color) -> FormattedTile {
-        self.writes.push(TileWrite::BGColor(color));
+    /// Change the background color of a tile.
+    fn bg(mut self, color: Color) -> TileFormat {
+        self.modifications.push(TileModification::BGColor(color));
         self
     }
 
-    fn glyph(mut self, glyph: char) -> FormattedTile {
-        self.writes.push(TileWrite::Glyph(glyph));
+    /// Change the glyph of a tile.
+    fn glyph(mut self, glyph: char) -> TileFormat {
+        self.modifications.push(TileModification::Glyph(glyph));
         self
     }
-
-    fn iter(self) -> IntoIter<TileWrite, 3> {
-        self.writes.into_iter()
+    /// Get the [TileFormat] which can be used to apply tile modifications.
+    fn format(self) -> TileFormat {
+        self
     }
 }
 
-impl TileWriter for char {
-    fn glyph(self, glyph: char) -> FormattedTile {
-        let mut fmt = FormattedTile::default();
-        fmt.writes.push(TileWrite::Glyph(glyph));
-        fmt
+// impl TileModifier for &TileFormat {
+//     fn glyph(mut self, glyph: char) -> TileFormat {
+//         todo!()
+//     }
+
+//     fn fg(self, color: Color) -> TileFormat {
+//         *self
+//     }
+
+//     fn bg(self, color: Color) -> TileFormat {
+//         todo!()
+//     }
+
+//     fn format(self) -> TileFormat {
+//         todo!()
+//     }
+// }
+
+impl TileModifier for char {
+    /// Replace the original character with a given one.
+    /// 
+    /// This is pointless.
+    fn glyph(self, glyph: char) -> TileFormat {
+        TileFormat::default().glyph(glyph)
     }
 
-    fn fg(self, color: Color) -> FormattedTile {
-        let mut fmt = FormattedTile::default();
-        fmt.writes.push(TileWrite::Glyph(self));
-        fmt.writes.push(TileWrite::FGColor(color));
-        fmt
+    /// Modify the foreground color of the tile.
+    fn fg(self, color: Color) -> TileFormat {
+        TileFormat::default().glyph(self).fg(color)
     }
 
-    fn bg(self, color: Color) -> FormattedTile {
-        let mut fmt = FormattedTile::default();
-        fmt.writes.push(TileWrite::Glyph(self));
-        fmt.writes.push(TileWrite::BGColor(color));
-        fmt
+    /// Modify the background color of the tile.
+    fn bg(self, color: Color) -> TileFormat {
+        TileFormat::default().glyph(self).bg(color)
     }
 
-    fn iter(self) -> IntoIter<TileWrite, 3> {
-        let mut fmt = FormattedTile::default();
-        fmt.writes.push(TileWrite::Glyph(self));
-        fmt.writes.into_iter()
+    /// Get the [TileFormat] for this character.
+    fn format(self) -> TileFormat {
+        TileFormat::default().glyph(self)
+    }
+}
+
+impl From<TileFormat> for Tile {
+    fn from(fmt: TileFormat) -> Self {
+        let mut tile = Tile::default();
+        fmt.apply(&mut tile);
+        tile
+    }
+}
+
+impl From<Tile> for TileFormat {
+    fn from(tile: Tile) -> Self {
+        TileFormat::default().glyph(tile.glyph).fg(tile.fg_color).bg(tile.bg_color)
     }
 }

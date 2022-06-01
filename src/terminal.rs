@@ -13,10 +13,11 @@ use sark_grids::GridPoint;
 use sark_grids::Size2d;
 use thiserror::Error;
 
+use crate::formatting::BoxWriter;
 use crate::formatting::StringWrite;
-use crate::formatting::TileWrite;
+use crate::formatting::TileModification;
 //use crate::formatting::FormattedTile;
-use crate::formatting::TileWriter;
+use crate::formatting::TileModifier;
 use crate::formatting::fmt_string::StringWriter;
 
 /// A single tile of the terminal.
@@ -64,45 +65,6 @@ impl Default for Tile {
         }
     }
 }
-
-/// Border glyphs used in box drawing functions.
-///
-/// Specifies the style of lines to use along the border of the box.
-#[derive(Clone, Copy)]
-pub struct BorderGlyphs {
-    pub top: char,
-    pub left: char,
-    pub right: char,
-    pub bottom: char,
-    pub top_left: char,
-    pub top_right: char,
-    pub bottom_left: char,
-    pub bottom_right: char,
-}
-
-/// Single line border glyphs. Can be used in box drawing functions.
-pub const SINGLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
-    left: '│',
-    right: '│',
-    bottom: '─',
-    top: '─',
-    top_left: '┌',
-    top_right: '┐',
-    bottom_left: '└',
-    bottom_right: '┘',
-};
-
-/// Double line border glyphs. Can be used in box drawing functions.
-pub const DOUBLE_LINE_GLYPHS: BorderGlyphs = BorderGlyphs {
-    left: '║',
-    right: '║',
-    top: '═',
-    bottom: '═',
-    top_left: '╔',
-    top_right: '╗',
-    bottom_left: '╚',
-    bottom_right: '╝',
-};
 
 impl Terminal {
     /// Construct a terminal with the given size
@@ -154,24 +116,26 @@ impl Terminal {
 
     /// Insert a formatted character into the terminal.
     ///
-    /// You can optionally specify the foreground and/or background color for the
-    /// tile as well.
+    /// The [TileWriter] trait allows you to optionally specify a foreground
+    /// and/or background color for the tile as well. If you don't specify a
+    /// color then the existing color in the terminal will be unaffected.
+    /// 
+    /// By default any character written to the terminal will have a white
+    /// foreground and black background.
     /// 
     /// # Example
     /// 
     /// ```rust
-    /// 
+    /// let mut term = Terminal::with_size([10,10]);
+    /// // Insert an 'a' with a blue foreground and a red background.
+    /// term.put_char([2,3], 'a'.fg(Color::BLUE).bg(Color::RED));
+    /// // Replace the 'a' with a 'q'. Foreground and background color will be
+    /// // unaffected
+    /// term.put_char([2,3], 'q');
     /// ```
-    pub fn put_char(&mut self, xy: impl GridPoint, writer: impl TileWriter) {
-        let tile = self.get_tile_mut(xy);
-
-        for write in writer.iter() {
-            match write {
-                TileWrite::Glyph(glyph) => tile.glyph = glyph,
-                TileWrite::FGColor(col) => tile.fg_color = col,
-                TileWrite::BGColor(col) => tile.bg_color = col,
-            }
-        }
+    pub fn put_char(&mut self, xy: impl GridPoint, writer: impl TileModifier) {
+        let fmt = writer.format();
+        fmt.draw(xy, self);
     }
 
     /// Insert a [Tile].
@@ -182,14 +146,21 @@ impl Terminal {
 
     /// Write a formatted string to the terminal.
     /// 
-    /// You can optionally specify a foreground and/or background color for the
-    /// string as well.
+    /// The [StringWriter] trait allows you to optionally specify a foreground
+    /// and/or background color for the string as well. If you don't specify a
+    /// color then the existing color in the terminal will be unaffected.
+    /// 
+    /// By default any string written to the terminal will have a white 
+    /// foreground and a black background.
     /// 
     /// # Example
     /// 
     /// ```rust
     /// let mut term = Terminal::with_size([10,10]);
-    /// term.put_string("Hello".fg(Color::BLUE)); // Write a blue "Hello" to the terminal
+    /// // Write a blue "Hello" to the terminal
+    /// term.put_string([1,2], "Hello".fg(Color::BLUE)); 
+    /// // Write "Hello" with a green background.
+    /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
     pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a>) {
         let i = self.to_index(xy);
@@ -205,13 +176,13 @@ impl Terminal {
 
         for write in writes {
             match write {
-                StringWrite::FGColor(col) => {   
+                StringWrite::FgColor(col) => {   
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
                     for t in tiles {
                         t.fg_color = col;
                     }
                 },
-                StringWrite::BGColor(col) => {   
+                StringWrite::BgColor(col) => {   
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
                     for t in tiles {
                         t.bg_color = col;
@@ -221,20 +192,6 @@ impl Terminal {
         }
 
     }
-
-    // /// Write a string to the terminal.
-    // ///
-    // /// The string will move to the next line if it reaches the edge
-    // /// and will truncate at the end of the terminal.
-    // pub fn put_string(&mut self, xy: [i32; 2], string: &str) {
-    //     let i = self.to_index(xy);
-    //     let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
-    //     let chars = string.chars().take(tiles.len());
-
-    //     for (char, mut t) in chars.zip(tiles) {
-    //         t.glyph = char;
-    //     }
-    // }
 
     /// Retrieve the char from a tile.
     pub fn get_char(&self, xy: impl GridPoint) -> char {
@@ -261,95 +218,22 @@ impl Terminal {
         &mut self.tiles[i]
     }
 
-    // /// Clear an area of the terminal to the default [Tile].
-    // pub fn clear_box(&mut self, xy: [i32; 2], size: [u32; 2]) {
-    //     let [width, height] = size;
-    //     let [x, y] = xy;
-    //     for y in y..y + height as i32 {
-    //         for x in x..x + width as i32 {
-    //             todo!();
-    //             //self.put_tile([x, y], Tile::default());
-    //         }
-    //     }
-    // }
+    /// Clear an area of the terminal to the default [Tile].
+    pub fn clear_box(&mut self, xy: impl GridPoint, size: impl Size2d) {
+        let [width, height] = size.to_array();
+        let [x, y] = xy.to_array();
+        for y in y..y + height as i32 {
+            for x in x..x + width as i32 {
+                self.put_tile([x, y], Tile::default());
+            }
+        }
+    }
 
-    // /// Draw a box on the terminal using [BorderGlyphs].
-    // pub fn draw_box(&mut self, xy: [i32; 2], size: [u32; 2], border_glyphs: BorderGlyphs) {
-    //     let [x, y] = xy;
-    //     let [width, height] = size;
-    //     let width = width as usize;
-    //     let height = height as usize;
-    //     let left = x as usize;
-    //     let right = x as usize + width - 1;
-    //     let bottom = y as usize;
-    //     let top = y as usize + height - 1;
+    /// Draw a box on the terminal.
+    pub fn draw_box(&mut self, xy: impl GridPoint, size: impl Size2d, box_writer: impl BoxWriter) {
+        
+    }
 
-    //     for t in self.row_iter_mut(top).skip(left).take(width) {
-    //         t.glyph = border_glyphs.top;
-    //     }
-    //     for t in self.row_iter_mut(bottom).skip(left).take(width) {
-    //         t.glyph = border_glyphs.bottom;
-    //     }
-    //     for t in self.column_iter_mut(left).skip(bottom).take(height) {
-    //         t.glyph = border_glyphs.left;
-    //     }
-    //     for t in self.column_iter_mut(right).skip(bottom).take(height) {
-    //         t.glyph = border_glyphs.right;
-    //     }
-
-    //     let left = left as i32;
-    //     let right = right as i32;
-    //     let top = top as i32;
-    //     let bottom = bottom as i32;
-
-    //     self.put_char([left, bottom], border_glyphs.bottom_left);
-    //     self.put_char([left, top], border_glyphs.top_left);
-    //     self.put_char([right, top], border_glyphs.top_right);
-    //     self.put_char([right, bottom], border_glyphs.bottom_right);
-    // }
-
-    // /// Draw a box with box with the specified colors and [BorderGlyphs].
-    // pub fn draw_box_formatted(
-    //     &mut self,
-    //     xy: [i32; 2],
-    //     size: [u32; 2],
-    //     border_glyphs: BorderGlyphs,
-    //     format: CharFormat,
-    // ) {
-    //     let [x, y] = xy;
-    //     let [width, height] = size;
-    //     let width = width as usize;
-    //     let height = height as usize;
-    //     let x = x as usize;
-    //     let y = y as usize;
-    //     let left = x;
-    //     let right = x + width - 1;
-    //     let bottom = y;
-    //     let top = y + height - 1;
-
-    //     for t in self.row_iter_mut(top).skip(left).take(width) {
-    //         *t = format.tile(border_glyphs.top);
-    //     }
-    //     for t in self.row_iter_mut(bottom).skip(left).take(width) {
-    //         *t = format.tile(border_glyphs.bottom);
-    //     }
-    //     for t in self.column_iter_mut(left).skip(bottom).take(height) {
-    //         *t = format.tile(border_glyphs.left);
-    //     }
-    //     for t in self.column_iter_mut(right).skip(bottom).take(height) {
-    //         *t = format.tile(border_glyphs.right);
-    //     }
-
-    //     let left = left as i32;
-    //     let right = right as i32;
-    //     let top = top as i32;
-    //     let bottom = bottom as i32;
-
-    //     self.put_char_formatted([left, bottom], border_glyphs.bottom_left, format);
-    //     self.put_char_formatted([left, top], border_glyphs.top_left, format);
-    //     self.put_char_formatted([right, top], border_glyphs.top_right, format);
-    //     self.put_char_formatted([right, bottom], border_glyphs.bottom_right, format);
-    // }
 
     // /// Draw a box with a single-line border.
     // pub fn draw_box_single(&mut self, xy: [i32; 2], size: [u32; 2]) {

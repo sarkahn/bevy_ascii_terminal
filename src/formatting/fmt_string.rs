@@ -1,10 +1,10 @@
-use arrayvec::{ArrayVec, IntoIter};
+use arrayvec::{ArrayVec};
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum StringWrite {
-    FGColor(Color),
-    BGColor(Color),
+    FgColor(Color),
+    BgColor(Color),
 }
 
 /// A trait for building a formatted terminal string.
@@ -39,12 +39,12 @@ impl<'a> StringWriter<'a> for FormattedString<'a> {
     }
 
     fn fg(mut self, color: Color) -> FormattedString<'a> {
-        self.writes.push(StringWrite::FGColor(color));
+        self.writes.push(StringWrite::FgColor(color));
         self
     }
 
     fn bg(mut self, color: Color) -> FormattedString<'a> {
-        self.writes.push(StringWrite::BGColor(color));
+        self.writes.push(StringWrite::BgColor(color));
         self
     }
 
@@ -60,13 +60,13 @@ impl<'a> StringWriter<'a> for &'a str {
 
     fn fg(self, color: Color) -> FormattedString<'a> {
         let mut fmt = FormattedString::new(self);
-        fmt.writes.push(StringWrite::FGColor(color));
+        fmt.writes.push(StringWrite::FgColor(color));
         fmt
     }
 
     fn bg(self, color: Color) -> FormattedString<'a> {
         let mut fmt = FormattedString::new(self);
-        fmt.writes.push(StringWrite::BGColor(color));
+        fmt.writes.push(StringWrite::BgColor(color));
         fmt
     }
 
