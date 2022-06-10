@@ -46,7 +46,8 @@ fn spawn_terminal(mut commands: Commands) {
         pos: IVec2::from([0, 10]),
         size: 15,
         value: initial_value,
-        ui: UiProgressBar::transition_bar(initial_value, max).color_fill(ColorFill::EmptyOrFilled(Color::GRAY, Color::BLUE)),
+        ui: UiProgressBar::transition_bar(initial_value, max)
+            .color_fill(ColorFill::EmptyOrFilled(Color::GRAY, Color::BLUE)),
         name: "Transition".to_string(),
     });
 
@@ -80,7 +81,11 @@ fn draw_bars(time: Res<Time>, mut term_q: Query<&mut Terminal>, mut q: Query<&mu
 
         term.put_string(
             bar.pos + IVec2::new(bar.size as i32 + 2, 0),
-            format!("{} {}", bar.ui.value().to_string(), bar.ui.value_normalized().to_string())
+            format!(
+                "{} {}",
+                bar.ui.value().to_string(),
+                bar.ui.value_normalized().to_string()
+            ),
         );
         term.put_string(bar.pos + IVec2::new(0, 1), &bar.name);
     }

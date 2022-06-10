@@ -51,7 +51,7 @@ impl Default for ColorFill {
 impl UiProgressBar {
     pub fn new(value: i32, max: i32) -> Self {
         UiProgressBar {
-            max: max,
+            max,
             value,
             ..UiProgressBar::default()
         }
@@ -98,26 +98,19 @@ impl UiProgressBar {
 
         let empty_color = match self.color_fill {
             ColorFill::Static(col) => col,
-            ColorFill::EmptyOrFilled(empty, _) => {
-                empty
-            },
+            ColorFill::EmptyOrFilled(empty, _) => empty,
             //_ => Color::GRAY,
         };
 
         let value_color = match self.color_fill {
             ColorFill::Static(col) => col,
-            ColorFill::EmptyOrFilled(_, filled) => {
-                filled
-            },
+            ColorFill::EmptyOrFilled(_, filled) => filled,
             //_ => Color::WHITE,
         };
 
-        
         let filled_color = match self.color_fill {
             ColorFill::Static(col) => col,
-            ColorFill::EmptyOrFilled(_, filled) => {
-                filled
-            },
+            ColorFill::EmptyOrFilled(_, filled) => filled,
             //_ => Color::WHITE,
         };
 
@@ -202,8 +195,9 @@ impl UiProgressBar {
             term.put_char(pos, filled_glyph.fg(filled_color).bg(bg_color));
         }
 
-        term.put_char(pos + IVec2::new(seg_value_index as i32, 0), 
-            value_glyph.fg(value_color).bg(bg_color)
+        term.put_char(
+            pos + IVec2::new(seg_value_index as i32, 0),
+            value_glyph.fg(value_color).bg(bg_color),
         );
 
         for i in seg_value_index + 1..size as usize {
