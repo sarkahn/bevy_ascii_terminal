@@ -3,9 +3,11 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 
 use bevy_ascii_terminal::*;
+use bevy_ascii_terminal::ui::BorderGlyphs;
 use bevy_tiled_camera::*;
 use rand::prelude::ThreadRng;
 use rand::Rng;
+use sark_grids::grid::Side;
 
 fn main() {
     App::new()
@@ -67,9 +69,9 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
                 bg_color: bg,
             }
         }
-        let top = term.top_index() as i32;
-        //term.clear_box([0, top - 1], [25, 1]);
-        //term.draw_border_single();
-        //term.put_string([1, top - 1], "Press space to pause");
+        let top = term.side_index(Side::Top) as i32;
+        term.clear_box([0, top - 1], [25, 1]);
+        term.draw_border(BorderGlyphs::single_line());
+        term.put_string([1, top - 1], "Press space to pause");
     }
 }

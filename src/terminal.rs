@@ -5,20 +5,17 @@ use std::slice::IterMut;
 
 use bevy::prelude::*;
 
-// use crate::formatting::CharFormat;
-// use crate::formatting::StringFormat;
-
 use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
-use thiserror::Error;
+use sark_grids::grid::Side;
 
-use crate::formatting::BoxWriter;
 use crate::formatting::StringWrite;
-use crate::formatting::TileModification;
-//use crate::formatting::FormattedTile;
 use crate::formatting::TileModifier;
 use crate::formatting::fmt_string::StringWriter;
+use crate::ui::UiProgressBar;
+use crate::ui::ui_box::BorderGlyphs;
+use crate::ui::ui_box::UiBox;
 
 /// A single tile of the terminal.
 ///
@@ -41,12 +38,13 @@ pub struct Tile {
 ///
 /// # Example
 /// ```
-/// use bevy_ascii_terminal::Terminal;
+/// use bevy_ascii_terminal::*;
+/// use bevy::prelude::Color;
 ///
 /// let mut term = Terminal::with_size([10,10]);
 ///
 /// term.put_char([1,1], 'h'.fg(Color::RED));
-/// term.put_string([2,1], "ello");
+/// term.put_string([2,1], "ello".bg(Color::BLUE));
 ///
 /// let hello = term.get_string([1,1], 5);
 /// ```
@@ -76,6 +74,8 @@ impl Terminal {
     }
 
     /// Resize the terminal's internal tile data.
+    /// 
+    /// This will clear all tiles to default.
     pub fn resize(&mut self, size: [u32; 2]) {
         self.tiles = Grid::default(size);
         self.size = UVec2::from(size);
@@ -94,8 +94,6 @@ impl Terminal {
 
     /// Convert a 2D position to it's corresponding 1D index
     /// in the terminal.
-    ///
-    /// Note that in the terminal the y axis goes from top to bottom.
     #[inline]
     pub fn to_index(&self, xy: impl GridPoint) -> usize {
         self.tiles.pos_to_index(xy)
@@ -103,8 +101,6 @@ impl Terminal {
 
     /// Convert 1D index to it's 2D position given the dimensions
     /// of the terminal.
-    ///
-    /// Note that in the terminal the y axis goes from top to bottom.
     #[inline]
     pub fn to_xy(&self, i: usize) -> IVec2 {
         let i = i as i32;
@@ -120,12 +116,14 @@ impl Terminal {
     /// and/or background color for the tile as well. If you don't specify a
     /// color then the existing color in the terminal will be unaffected.
     /// 
-    /// By default any character written to the terminal will have a white
-    /// foreground and black background.
+    /// All tiles in the terminal begin with a white foreground and black background.
     /// 
     /// # Example
     /// 
     /// ```rust
+    /// use bevy_ascii_terminal::*;
+    /// use bevy::prelude::Color;
+    /// 
     /// let mut term = Terminal::with_size([10,10]);
     /// // Insert an 'a' with a blue foreground and a red background.
     /// term.put_char([2,3], 'a'.fg(Color::BLUE).bg(Color::RED));
@@ -150,15 +148,17 @@ impl Terminal {
     /// and/or background color for the string as well. If you don't specify a
     /// color then the existing color in the terminal will be unaffected.
     /// 
-    /// By default any string written to the terminal will have a white 
-    /// foreground and a black background.
+    /// All tiles in the terminal begin with a white foreground and black background.
     /// 
     /// # Example
     /// 
     /// ```rust
+    /// use bevy_ascii_terminal::*;
+    /// use bevy::prelude::Color;
+    /// 
     /// let mut term = Terminal::with_size([10,10]);
     /// // Write a blue "Hello" to the terminal
-    /// term.put_string([1,2], "Hello".fg(Color::BLUE)); 
+    /// term.put_string([1,2], "Hello".fg(Color::BLUE));
     /// // Write "Hello" with a green background.
     /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
@@ -167,8 +167,10 @@ impl Terminal {
 
         let (string,writes) = writer.formatted().into();
 
-        let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
-        let chars = string.chars().take(tiles.len());
+        let count = string.chars().count();
+        let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
+        let count = tiles.len();
+        let chars = string.chars().take(count);
 
         for (char, mut t) in chars.zip(tiles) {
             t.glyph = char;
@@ -177,13 +179,13 @@ impl Terminal {
         for write in writes {
             match write {
                 StringWrite::FgColor(col) => {   
-                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
+                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.fg_color = col;
                     }
                 },
                 StringWrite::BgColor(col) => {   
-                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(string.len());
+                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.bg_color = col;
                     }
@@ -229,86 +231,37 @@ impl Terminal {
         }
     }
 
-    /// Draw a box on the terminal.
-    pub fn draw_box(&mut self, xy: impl GridPoint, size: impl Size2d, box_writer: impl BoxWriter) {
-        
+    /// Draw a formatted box to the terminal.
+    /// 
+    /// The [BoxBuilder] trait allows you to specify the properties of the box.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use bevy_ascii_terminal::*;
+    /// use bevy_ascii_terminal::ui::*;
+    /// 
+    /// let mut term = Terminal::with_size([10,10]);
+    /// term.draw_box([0,0], [3,3], &UiBox::single_line());
+    /// ```
+    pub fn draw_box(&mut self, xy: impl GridPoint, size: impl Size2d, ui_box: &UiBox) {
+        // TODO: Make boxes work with alignment.
+        ui_box.draw(xy, size, self);
     }
 
+    /// Draw a border around the entire terminal.
+    pub fn draw_border(&mut self, glyphs: BorderGlyphs) {
+        let bx = UiBox::new().border_glyphs(glyphs);
+        bx.draw([0,0], self.size, self);
+    }
 
-    // /// Draw a box with a single-line border.
-    // pub fn draw_box_single(&mut self, xy: [i32; 2], size: [u32; 2]) {
-    //     self.draw_box_formatted(xy, size, SINGLE_LINE_GLYPHS, CharFormat::default());
-    // }
-    // /// Draw a box with a colored single-line border.
-    // pub fn draw_box_single_formatted(&mut self, xy: [i32; 2], size: [u32; 2], format: CharFormat) {
-    //     self.draw_box_formatted(xy, size, SINGLE_LINE_GLYPHS, format);
-    // }
-
-    // /// Draw a box with a double-line border.
-    // pub fn draw_box_double(&mut self, xy: [i32; 2], size: [u32; 2]) {
-    //     self.draw_box(xy, size, DOUBLE_LINE_GLYPHS);
-    // }
-    // /// Draw a box with a colored double-line border.
-    // pub fn draw_box_double_formatted(&mut self, xy: [i32; 2], size: [u32; 2], format: CharFormat) {
-    //     self.draw_box_formatted(xy, size, DOUBLE_LINE_GLYPHS, format);
-    // }
-
-    // pub fn draw_border(&mut self, border_glyphs: BorderGlyphs) {
-    //     self.draw_box([0, 0], self.size().into(), border_glyphs);
-    // }
-
-    // /// Draw a single-line border around the edge of the whole terminal.
-    // pub fn draw_border_single(&mut self) {
-    //     self.draw_box_single([0, 0], self.size.into());
-    // }
-
-    // /// Draw a colored single-line border around the edge of the whole terminal.
-    // pub fn draw_border_single_formatted(&mut self, format: CharFormat) {
-    //     self.draw_box_single_formatted([0, 0], self.size.into(), format);
-    // }
-
-    // /// Draw a double-line border around the edge of the whole terminal.
-    // pub fn draw_border_double(&mut self) {
-    //     self.draw_box_double([0, 0], self.size.into());
-    // }
-    // /// Draw a colored double-line border around the edge of the whole terminal.
-    // pub fn draw_border_double_formatted(&mut self, format: CharFormat) {
-    //     self.draw_box_double_formatted([0, 0], self.size.into(), format);
-    // }
-
-    // pub fn draw_horizontal_bar(&mut self, xy: [i32; 2], width: i32, value: i32, max: i32) {
-    //     self.draw_horizontal_bar_color(xy, width, value, max, Color::WHITE, Color::GRAY);
-    // }
-
-    // pub fn draw_horizontal_bar_color(
-    //     &mut self,
-    //     xy: [i32; 2],
-    //     width: i32,
-    //     value: i32,
-    //     max: i32,
-    //     filled_color: Color,
-    //     empty_color: Color,
-    // ) {
-    //     let [x, y] = xy;
-    //     let normalized = match max {
-    //         0 => 0.0,
-    //         _ => value as f32 / max as f32,
-    //     };
-
-    //     let v = f32::ceil(normalized * width as f32) as i32;
-
-    //     let filled_format = CharFormat::default().with_fg_color(filled_color);
-    //     let empty_format = CharFormat::default().with_fg_color(empty_color);
-    //     for i in 0..v {
-    //         self.put_char_formatted([x + i, y], '▓', filled_format);
-    //     }
-    //     for i in v..width {
-    //         self.put_char_formatted([x + i, y], '░', empty_format);
-    //     }
-    // }
+    pub fn draw_progress_bar(&mut self, xy: impl GridPoint, size: usize, bar: &UiProgressBar) {
+        // TODO: Make bars work with alignment.
+        bar.draw(xy, size, self);
+    }
 
     /// Clear the terminal tiles to default - empty tiles with
-    /// a black background
+    /// a black background and white foreground.
     pub fn clear(&mut self) {
         for t in self.tiles.iter_mut() {
             *t = Tile::default()
@@ -316,9 +269,9 @@ impl Terminal {
     }
 
     /// Returns true if the given position is inside the bounds of the terminal.
-    pub fn is_in_bounds(&self, xy: [i32; 2]) -> bool {
-        let [x, y] = xy;
-        (x as usize) < self.width() && (y as usize) < self.height()
+    pub fn is_in_bounds(&self, xy: impl GridPoint) -> bool {
+        let xy = xy.as_uvec2();
+        xy.cmpge(UVec2::ZERO).all() && xy.cmplt(self.size).all()
     }
 
     /// An immutable iterator over the tiles of the terminal.
@@ -351,35 +304,17 @@ impl Terminal {
         self.tiles.column_iter_mut(x)
     }
 
-    /// The index of the bottom row of the terminal (0).
-    pub fn bottom_index(&self) -> usize {
-        0
-    }
-
-    /// The index of the top row of the terminal.
-    pub fn top_index(&self) -> usize {
-        self.height() as usize - 1
-    }
-
-    /// The index of the left-most column of the terminal (0).
-    pub fn left_index(&self) -> usize {
-        0
-    }
-
-    /// THe index of the right-most column of the terminal.
-    pub fn right_index(&self) -> usize {
-        self.width() as usize - 1
+    /// Get the index for a given side on the terminal.
+    pub fn side_index(&self, side: Side) -> usize {
+        self.tiles.side_index(side)
     }
 }
 
-#[derive(Error, Debug)]
-pub enum TerminalWriteError {
-    #[error("{xy} is out of bounds {size}")]
-    OutOfBounds{ xy: IVec2, size: IVec2 },
-}
 
 #[cfg(test)]
 mod tests {
+    use crate::ui::ui_box::BorderGlyphs;
+
     use super::*;
 
     #[test]
@@ -399,57 +334,40 @@ mod tests {
 
     #[test]
     fn put_string() {
-        let mut term = Terminal::with_size([20, 20]);
-        term.put_string([0, 0], "Hello");
-        assert_eq!("Hello", term.get_string([0, 0], 5));
+        // let mut term = Terminal::with_size([20, 20]);
+        // term.put_string([0, 0], "Hello");
+        // assert_eq!("Hello", term.get_string([0, 0], 5));
 
-        term.put_string([18, 19], "Hello");
-        assert_eq!("He", term.get_string([18, 19], 2));
+        // term.put_string([18, 19], "Hello");
+        // assert_eq!("He", term.get_string([18, 19], 2));
     }
 
-    // #[test]
-    // fn edges() {
-    //     let mut term = Terminal::with_size([25, 20]);
-    //     term.put_char([0, 0], 'a');
-    //     term.put_char([24, 19], 'a');
-    // }
+    #[test]
+    fn column_get() {
+        let mut term = Terminal::with_size([15, 10]);
+        term.put_char([3, 0], 'H');
+        term.put_char([3, 1], 'e');
+        term.put_char([3, 2], 'l');
+        term.put_char([3, 3], 'l');
+        term.put_char([3, 4], 'o');
 
-    // #[test]
-    // fn column_get() {
-    //     let mut term = Terminal::with_size([15, 10]);
-    //     term.put_char([3, 0], 'H');
-    //     term.put_char([3, 1], 'e');
-    //     term.put_char([3, 2], 'l');
-    //     term.put_char([3, 3], 'l');
-    //     term.put_char([3, 4], 'o');
+        let chars: Vec<_> = term.column_iter(3).take(5).map(|t| t.glyph).collect();
+        assert_eq!("Hello", String::from_iter(chars));
+    }
 
-    //     let chars: Vec<_> = term.column_iter(3).take(5).map(|t| t.glyph).collect();
-    //     assert_eq!("Hello", String::from_iter(chars));
-    // }
+    #[test]
+    fn column_put() {
+        let mut term = Terminal::with_size([15, 10]);
+        let text = "Hello".chars();
+        for (mut t, c) in term.column_iter_mut(5).take(5).zip(text) {
+            t.glyph = c;
+        }
 
-    // #[test]
-    // fn column_put() {
-    //     let mut term = Terminal::with_size([15, 10]);
-    //     let text = "Hello".chars();
-    //     for (mut t, c) in term.column_iter_mut(5).take(5).zip(text) {
-    //         t.glyph = c;
-    //     }
+        assert_eq!('H', term.get_char([5, 0]));
+        assert_eq!('e', term.get_char([5, 1]));
+        assert_eq!('l', term.get_char([5, 2]));
+        assert_eq!('l', term.get_char([5, 3]));
+        assert_eq!('o', term.get_char([5, 4]));
+    }
 
-    //     assert_eq!('H', term.get_char([5, 0]));
-    //     assert_eq!('e', term.get_char([5, 1]));
-    //     assert_eq!('l', term.get_char([5, 2]));
-    //     assert_eq!('l', term.get_char([5, 3]));
-    //     assert_eq!('o', term.get_char([5, 4]));
-    // }
-
-    // // #[test]
-    // // fn border_test() {
-    // //     let mut term = Terminal::with_size([10, 10]);
-    // //     term.draw_box_single([0, 0], [5, 5]);
-
-    // //     assert_eq!(term.get_char([0, 4]), SINGLE_LINE_GLYPHS.top_left);
-    // //     assert_eq!(term.get_char([0, 0]), SINGLE_LINE_GLYPHS.bottom_left);
-    // //     assert_eq!(term.get_char([4, 4]), SINGLE_LINE_GLYPHS.top_right);
-    // //     assert_eq!(term.get_char([4, 0]), SINGLE_LINE_GLYPHS.bottom_right);
-    // // }
 }

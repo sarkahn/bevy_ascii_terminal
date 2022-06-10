@@ -239,7 +239,6 @@ dependencies = [
  "rand",
  "ron 0.6.6",
  "sark_grids",
- "thiserror",
 ]
 
 [[package]]
@@ -2625,9 +2624,9 @@ dependencies = [
 
 [[package]]
 name = "sark_grids"
-version = "0.2.6"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1444adf4a992f5775456786af419d73a013b625a58f491b32dab57f0c1ad0a62"
+checksum = "922fe17f0763d2a026534f1865f8dcc0a175f540cfa67d6609af53e9bffbff7c"
 dependencies = [
  "cast",
  "glam",

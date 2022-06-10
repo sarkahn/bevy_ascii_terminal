@@ -16,9 +16,8 @@ bevy = {version = "0.7", default-features = false, features = ["render"]}
 bitflags = "1.2"
 itertools = "0.10.3"
 ron = "0.6.4"
-sark_grids = "0.2.6"
+sark_grids = "0.3.1"
 anyhow = "1.0.4"
-thiserror = "1.0.31"
 arrayvec = "0.7.2"
 
 [dev-dependencies]

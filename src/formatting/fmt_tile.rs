@@ -42,8 +42,8 @@ impl TileFormat {
     #[inline]
     /// Apply formatting to an existing tile without necessarily replacing it completely.
     pub fn apply(&self, tile: &mut Tile) {
-        for write in self.modifications.iter() {
-            match write {
+        for modification in self.modifications.iter() {
+            match modification {
                 TileModification::Glyph(glyph) => tile.glyph = *glyph,
                 TileModification::FGColor(col) => tile.fg_color = *col,
                 TileModification::BGColor(col) => tile.bg_color = *col,
@@ -61,6 +61,7 @@ impl TileFormat {
         self.modifications.iter()
     }
 
+    /// Apply the tile modifications to the terminal at the given position.
     #[inline]
     pub(crate) fn draw(&self, xy: impl GridPoint, term: &mut Terminal) {
         let t = term.get_tile_mut(xy);
@@ -91,24 +92,6 @@ impl TileModifier for TileFormat {
         self
     }
 }
-
-// impl TileModifier for &TileFormat {
-//     fn glyph(mut self, glyph: char) -> TileFormat {
-//         todo!()
-//     }
-
-//     fn fg(self, color: Color) -> TileFormat {
-//         *self
-//     }
-
-//     fn bg(self, color: Color) -> TileFormat {
-//         todo!()
-//     }
-
-//     fn format(self) -> TileFormat {
-//         todo!()
-//     }
-// }
 
 impl TileModifier for char {
     /// Replace the original character with a given one.

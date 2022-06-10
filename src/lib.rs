@@ -18,6 +18,7 @@
 //! ```no_run
 //! use bevy::prelude::*;
 //! use bevy_ascii_terminal::*;
+//! use bevy_ascii_terminal::ui::BorderGlyphs;
 //! use bevy_tiled_camera::*;
 //!
 //! fn setup(mut commands: Commands) {
@@ -26,7 +27,7 @@
 //!     let mut term_bundle = TerminalBundle::new().with_size(size);
 //!     let terminal = &mut term_bundle.terminal;
 //!
-//!     terminal.draw_border_single();
+//!     terminal.draw_border(BorderGlyphs::single_line());
 //!     terminal.put_string([1, 1], "Hello world!");
 //!
 //!     commands.spawn_bundle(term_bundle);
@@ -47,6 +48,7 @@
 pub mod renderer;
 
 pub mod formatting;
+pub mod ui;
 mod terminal;
 
 pub use terminal::{Terminal, Tile};
@@ -57,6 +59,13 @@ pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;
 
 use bevy::prelude::*;
+
+pub use sark_grids::Grid;
+pub use sark_grids::GridPoint;
+pub use sark_grids::Size2d;
+pub use sark_grids::grid::Side;
+
+pub use formatting::*;
 
 /// A bundle with all the required components for a terminal.
 ///
