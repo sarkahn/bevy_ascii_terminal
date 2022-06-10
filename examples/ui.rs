@@ -40,19 +40,21 @@ fn spawn_terminal(mut commands: Commands) {
             .with_tile_count(size),
     );
 
+    let initial_value = 0;
+    let max = 100;
     commands.spawn().insert(ProgressBar {
         pos: IVec2::from([0, 10]),
         size: 15,
-        value: 0,
-        ui: UiProgressBar::transition_bar(0, 100),
+        value: initial_value,
+        ui: UiProgressBar::transition_bar(initial_value, max).color_fill(ColorFill::EmptyOrFilled(Color::GRAY, Color::BLUE)),
         name: "Transition".to_string(),
     });
 
     commands.spawn().insert(ProgressBar {
         pos: IVec2::from([0, 14]),
         size: 15,
-        value: 0,
-        ui: UiProgressBar::new(0, 100),
+        value: initial_value,
+        ui: UiProgressBar::new(initial_value, max),
         name: "Default".to_string(),
     });
 }
@@ -69,15 +71,16 @@ fn draw_bars(time: Res<Time>, mut term_q: Query<&mut Terminal>, mut q: Query<&mu
     let mut term = term_q.single_mut();
 
     for mut bar in q.iter_mut() {
-        let t = time.time_since_startup().as_secs_f32() * 10.0;
-        let t = clamp_reverse_repeat(t, 100.0);
-        let val = t.floor() as i32;
+        let t = time.time_since_startup().as_secs_f32() * 15.0;
+        let t = clamp_reverse_repeat(t, 101.0);
+        let val = t.round() as i32;
         bar.value = val;
         bar.ui.set_value(val);
         term.draw_progress_bar(bar.pos, bar.size, &bar.ui);
+
         term.put_string(
             bar.pos + IVec2::new(bar.size as i32 + 2, 0),
-            bar.value.to_string(),
+            format!("{} {}", bar.ui.value().to_string(), bar.ui.value_normalized().to_string())
         );
         term.put_string(bar.pos + IVec2::new(0, 1), &bar.name);
     }

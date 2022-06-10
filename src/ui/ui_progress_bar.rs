@@ -1,13 +1,14 @@
 use bevy::{math::IVec2, prelude::Color};
 use sark_grids::GridPoint;
 
-use crate::Terminal;
+use crate::{Terminal, TileModifier};
 
 #[derive(Debug, Clone)]
 pub struct UiProgressBar {
     max: i32,
     value: i32,
     glyph_fill: GlyphFill,
+    background_color: Color,
     color_fill: ColorFill,
 }
 
@@ -29,28 +30,28 @@ impl Default for GlyphFill {
 
 #[derive(Debug, Clone)]
 pub enum ColorFill {
-    /// The entire bar is always a single color, reglardless of value.
+    /// Segments are always a single color, reglardless of value.
     Static(Color),
     /// Each segment will be either the empty color or the filled color.
     EmptyOrFilled(Color, Color),
-    /// The right-most segment will transition from filled color to empty color.
-    /// All other segments will be filled or empty.
-    EmptyToFilledSegmentedTransition(Color, Color),
-    /// The entire bar will transition from filled color to empty color based on value.
-    EmptyToFilledFullTransition(Color, Color),
-    /// Each segment will be colored based on it's normalized position. Value is ignored.
-    EmptyToFilledStaticTransition(Color, Color),
+    // /// The right-most segment will transition from filled color to empty color.
+    // /// All other segments will be filled or empty.
+    // EmptyToFilledSegmentedTransition(Color, Color),
+    // /// The entire bar will transition from filled color to empty color based on value.
+    // EmptyToFilledFullTransition(Color, Color),
+    // /// Each segment will be colored based on it's normalized position. Value is ignored.
+    // EmptyToFilledStaticTransition(Color, Color),
 }
 impl Default for ColorFill {
     fn default() -> Self {
-        ColorFill::EmptyOrFilled(Color::WHITE, Color::BLUE)
+        ColorFill::EmptyOrFilled(Color::GRAY, Color::WHITE)
     }
 }
 
 impl UiProgressBar {
     pub fn new(value: i32, max: i32) -> Self {
         UiProgressBar {
-            max,
+            max: max,
             value,
             ..UiProgressBar::default()
         }
@@ -92,6 +93,34 @@ impl UiProgressBar {
             0 => 0.0,
             _ => self.value_normalized(),
         };
+
+        let bg_color = self.background_color;
+
+        let empty_color = match self.color_fill {
+            ColorFill::Static(col) => col,
+            ColorFill::EmptyOrFilled(empty, _) => {
+                empty
+            },
+            //_ => Color::GRAY,
+        };
+
+        let value_color = match self.color_fill {
+            ColorFill::Static(col) => col,
+            ColorFill::EmptyOrFilled(_, filled) => {
+                filled
+            },
+            //_ => Color::WHITE,
+        };
+
+        
+        let filled_color = match self.color_fill {
+            ColorFill::Static(col) => col,
+            ColorFill::EmptyOrFilled(_, filled) => {
+                filled
+            },
+            //_ => Color::WHITE,
+        };
+
         // Bar segment index with fraction representing progress between segments.
         let seg_value_float = match self.glyph_fill {
             GlyphFill::Static(_) => todo!(),
@@ -135,6 +164,7 @@ impl UiProgressBar {
                 }
             }
             GlyphFill::EmptyOrFilledWithTransition(string) => {
+                // Distance between segments
                 let seg_t = seg_value_float.fract();
 
                 let seg_t = if seg_t == 0.0 {
@@ -169,14 +199,16 @@ impl UiProgressBar {
 
         for i in 0..seg_value_index {
             let pos = pos + IVec2::new(i as i32, 0);
-            term.put_char(pos, filled_glyph);
+            term.put_char(pos, filled_glyph.fg(filled_color).bg(bg_color));
         }
 
-        term.put_char(pos + IVec2::new(seg_value_index as i32, 0), value_glyph);
+        term.put_char(pos + IVec2::new(seg_value_index as i32, 0), 
+            value_glyph.fg(value_color).bg(bg_color)
+        );
 
         for i in seg_value_index + 1..size as usize {
             let pos = pos + IVec2::new(i as i32, 0);
-            term.put_char(pos, empty_glyph);
+            term.put_char(pos, empty_glyph.fg(empty_color).bg(bg_color));
         }
     }
 }
@@ -188,6 +220,7 @@ impl Default for UiProgressBar {
             value: 0,
             color_fill: Default::default(),
             glyph_fill: Default::default(),
+            background_color: Color::BLACK,
         }
     }
 }
