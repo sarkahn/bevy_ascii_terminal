@@ -7,6 +7,7 @@ use crate::Terminal;
 use crate::Tile;
 use crate::formatting::TileFormat;
 use crate::formatting::TileModifier;
+use crate::terminal::ColorModifier;
 
 #[derive(Debug, Clone)]
 /// Specifies the glyphs and colors to use when drawing a box on the terminal.
@@ -111,13 +112,6 @@ impl UiBox {
             term.put_char([right, bottom], glyphs.edge_tile(BoxEdge::BottomRight));
         }
     }
-}
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ColorModifier {
-    FgColor(Color),
-    BgColor(Color),
 }
 
 #[derive(Debug, Clone, Copy)]

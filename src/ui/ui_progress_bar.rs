@@ -1,4 +1,4 @@
-use bevy::{prelude::{Color, Component}, math::IVec2};
+use bevy::{prelude::Color, math::IVec2};
 use sark_grids::GridPoint;
 
 use crate::{ Terminal};

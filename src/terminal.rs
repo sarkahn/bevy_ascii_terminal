@@ -17,19 +17,7 @@ use crate::ui::UiProgressBar;
 use crate::ui::ui_box::BorderGlyphs;
 use crate::ui::ui_box::UiBox;
 
-/// A single tile of the terminal.
-///
-/// Defaults to a blank glyph with a black background and a white foreground.
-#[derive(Clone, Copy, Debug)]
-pub struct Tile {
-    /// The glyph for the tile. Glyphs are mapped to sprites via the
-    /// terminal's [UvMapping](super::renderer::uv_mapping::UvMapping)
-    pub glyph: char,
-    /// The forergound color for the tile.
-    pub fg_color: Color,
-    /// The background color for the tile.
-    pub bg_color: Color,
-}
+
 
 /// A simple terminal for writing text in a readable grid.
 ///
@@ -52,6 +40,26 @@ pub struct Tile {
 pub struct Terminal {
     pub tiles: Grid<Tile>,
     size: UVec2,
+}
+
+/// A single tile of the terminal.
+///
+/// Defaults to a blank glyph with a black background and a white foreground.
+#[derive(Clone, Copy, Debug)]
+pub struct Tile {
+    /// The glyph for the tile. Glyphs are mapped to sprites via the
+    /// terminal's [UvMapping](super::renderer::uv_mapping::UvMapping)
+    pub glyph: char,
+    /// The forergound color for the tile.
+    pub fg_color: Color,
+    /// The background color for the tile.
+    pub bg_color: Color,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ColorModifier {
+    FgColor(Color),
+    BgColor(Color),
 }
 
 impl Default for Tile {
@@ -134,6 +142,15 @@ impl Terminal {
     pub fn put_char(&mut self, xy: impl GridPoint, writer: impl TileModifier) {
         let fmt = writer.format();
         fmt.draw(xy, self);
+    }
+
+    /// Change the foreground or background color for a single tile in the terminal.
+    pub fn put_color(&mut self, xy: impl GridPoint, color: ColorModifier) {
+        let tile = self.get_tile_mut(xy);
+        match color {
+            ColorModifier::FgColor(col) => tile.fg_color = col,
+            ColorModifier::BgColor(col) => tile.bg_color = col,
+        }
     }
 
     /// Insert a [Tile].

@@ -51,7 +51,7 @@ pub mod formatting;
 pub mod ui;
 mod terminal;
 
-pub use terminal::{Terminal, Tile};
+pub use terminal::{Terminal, Tile, ColorModifier};
 
 //pub use formatting::{CharFormat, Pivot, StringFormat};
 pub use renderer::code_page_437;
