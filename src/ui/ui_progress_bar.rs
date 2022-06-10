@@ -1,9 +1,9 @@
-use bevy::{prelude::Color, math::IVec2};
+use bevy::{math::IVec2, prelude::Color};
 use sark_grids::GridPoint;
 
-use crate::{ Terminal};
+use crate::Terminal;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct UiProgressBar {
     max: i32,
     value: i32,
@@ -15,42 +15,37 @@ pub struct UiProgressBar {
 pub enum GlyphFill {
     /// The entire progress bar is always a single glyph, regardless of value.
     Static(char),
-    /// Each segment will be filled or empty based on value. 
-    EmptyOrFilled(char,char),
-    /// The right-most segment will transition through the glyph string based on value. 
-    /// All other segments will be filled or empty. 
+    /// Each segment will be filled or empty based on value.
+    EmptyOrFilled(char, char),
+    /// The right-most segment will transition through the glyph string based on value.
+    /// All other segments will be filled or empty.
     EmptyOrFilledWithTransition(String),
 }
 impl Default for GlyphFill {
     fn default() -> Self {
-        GlyphFill::EmptyOrFilled('░','▓')
+        GlyphFill::EmptyOrFilled('░', '▓')
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum ColorFill {
     /// The entire bar is always a single color, reglardless of value.
     Static(Color),
-    /// Each segment will be either the empty color or the filled color. 
+    /// Each segment will be either the empty color or the filled color.
     EmptyOrFilled(Color, Color),
     /// The right-most segment will transition from filled color to empty color.
     /// All other segments will be filled or empty.
-    EmptyToFilledSegmentedTransition(Color,Color),
-    /// The entire bar will transition from filled color to empty color based on value. 
-    EmptyToFilledFullTransition(Color,Color),
+    EmptyToFilledSegmentedTransition(Color, Color),
+    /// The entire bar will transition from filled color to empty color based on value.
+    EmptyToFilledFullTransition(Color, Color),
     /// Each segment will be colored based on it's normalized position. Value is ignored.
     EmptyToFilledStaticTransition(Color, Color),
 }
 impl Default for ColorFill {
     fn default() -> Self {
-        ColorFill::EmptyOrFilled(
-            Color::WHITE,
-
-            Color::BLUE,
-        )
+        ColorFill::EmptyOrFilled(Color::WHITE, Color::BLUE)
     }
 }
-
 
 impl UiProgressBar {
     pub fn new(value: i32, max: i32) -> Self {
@@ -62,15 +57,13 @@ impl UiProgressBar {
     }
 
     pub fn transition_bar(value: i32, max: i32) -> UiProgressBar {
-        UiProgressBar::new(value, max).glyph_fill(
-            GlyphFill::EmptyOrFilledWithTransition(" ░▒▓█".to_string())
-        )
+        UiProgressBar::new(value, max)
+            .glyph_fill(GlyphFill::EmptyOrFilledWithTransition(" ░▒▓█".to_string()))
     }
 
     pub fn value_normalized(&self) -> f32 {
         self.value as f32 / self.max as f32
     }
-
 
     pub fn set_value_normalized(&mut self, value: f32) {
         self.value = (value * self.max as f32).round() as i32
@@ -83,7 +76,7 @@ impl UiProgressBar {
     pub fn set_value(&mut self, value: i32) {
         self.value = i32::min(value, self.max);
     }
-    
+
     pub fn glyph_fill(mut self, glyph_fill: GlyphFill) -> UiProgressBar {
         self.glyph_fill = glyph_fill;
         self
@@ -97,7 +90,7 @@ impl UiProgressBar {
     pub fn draw(&self, xy: impl GridPoint, size: usize, term: &mut Terminal) {
         let val_normalized = match self.max {
             0 => 0.0,
-            _ => self.value_normalized()
+            _ => self.value_normalized(),
         };
         // Bar segment index with fraction representing progress between segments.
         let seg_value_float = match self.glyph_fill {
@@ -109,23 +102,27 @@ impl UiProgressBar {
         let seg_value_index = match self.glyph_fill {
             GlyphFill::Static(_) => todo!(),
             GlyphFill::EmptyOrFilled(_, _) => seg_value_float.floor() as usize,
-            GlyphFill::EmptyOrFilledWithTransition(_) => (seg_value_float - 1.0).ceil().max(0.0) as usize,
+            GlyphFill::EmptyOrFilledWithTransition(_) => {
+                (seg_value_float - 1.0).ceil().max(0.0) as usize
+            }
         };
 
         let empty_glyph = match &self.glyph_fill {
             GlyphFill::Static(glyph) => *glyph,
-            GlyphFill::EmptyOrFilled(empty,_) => *empty,
-            GlyphFill::EmptyOrFilledWithTransition(string) => {
-                string.chars().next().expect("Error parsing progress bar empty glyph from transition string.")
-            },
+            GlyphFill::EmptyOrFilled(empty, _) => *empty,
+            GlyphFill::EmptyOrFilledWithTransition(string) => string
+                .chars()
+                .next()
+                .expect("Error parsing progress bar empty glyph from transition string."),
         };
 
         let filled_glyph = match &self.glyph_fill {
             GlyphFill::Static(glyph) => *glyph,
             GlyphFill::EmptyOrFilled(_, filled) => *filled,
-            GlyphFill::EmptyOrFilledWithTransition(string) => {
-                string.chars().last().expect("Error parsing progress bar filled glyph from transition string.")
-            },
+            GlyphFill::EmptyOrFilledWithTransition(string) => string
+                .chars()
+                .last()
+                .expect("Error parsing progress bar filled glyph from transition string."),
         };
 
         let value_glyph = match &self.glyph_fill {
@@ -136,11 +133,11 @@ impl UiProgressBar {
                 } else {
                     *filled
                 }
-            },
+            }
             GlyphFill::EmptyOrFilledWithTransition(string) => {
                 let seg_t = seg_value_float.fract();
 
-                let seg_t = if seg_t == 0.0  {
+                let seg_t = if seg_t == 0.0 {
                     if seg_value_float != 0.0 {
                         1.0
                     } else {
@@ -149,19 +146,25 @@ impl UiProgressBar {
                 } else {
                     seg_t
                 };
-                
+
                 //println!("Seg normalized: {}. Seg T {}. Seg_value_index {}", seg_normalized, seg_t, seg_value_index);
 
                 let count = string.chars().count();
                 let max_char_index = count - 1;
                 let transition_index = (max_char_index as f32 * seg_t).ceil() as usize;
-                string.chars().nth(transition_index).unwrap_or_else(||
-                panic!("Error parsing value glyph from progress bar glyph string. 
+                string.chars().nth(transition_index).unwrap_or_else(|| {
+                    panic!(
+                        "Error parsing value glyph from progress bar glyph string. 
                 Couldn't get index {} from {}. Seg_T: {}. Stringlen {}",
-                 transition_index, string, seg_t, max_char_index + 1))                
-            },
+                        transition_index,
+                        string,
+                        seg_t,
+                        max_char_index + 1
+                    )
+                })
+            }
         };
-        
+
         let pos = xy.as_ivec2();
 
         for i in 0..seg_value_index {
@@ -180,8 +183,8 @@ impl UiProgressBar {
 
 impl Default for UiProgressBar {
     fn default() -> Self {
-        Self { 
-            max: 100, 
+        Self {
+            max: 100,
             value: 0,
             color_fill: Default::default(),
             glyph_fill: Default::default(),
@@ -199,13 +202,13 @@ mod test {
         for i in (0..=max).rev() {
             bar.set_value(i);
             bar.draw([0, 0], 10, term);
-            println!("{}", term.get_string([0,0], 10));
+            println!("{}", term.get_string([0, 0], 10));
         }
     }
 
     #[test]
     fn transition() {
-        let mut term = Terminal::with_size([10,1]);
+        let mut term = Terminal::with_size([10, 1]);
         let glyph_fill = GlyphFill::EmptyOrFilledWithTransition(" ░▒▓█".to_string());
         let max = 30;
 
@@ -216,7 +219,7 @@ mod test {
 
     #[test]
     fn empty_or_filled() {
-        let mut term = Terminal::with_size([10,1]);
+        let mut term = Terminal::with_size([10, 1]);
         let glyph_fill = GlyphFill::EmptyOrFilled(' ', '█');
         let max = 30;
 

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use bevy_ascii_terminal::{TerminalBundle, TerminalPlugin, ui::BorderGlyphs};
+use bevy_ascii_terminal::{ui::BorderGlyphs, TerminalBundle, TerminalPlugin};
 use bevy_tiled_camera::*;
 
 fn main() {
@@ -23,7 +23,9 @@ fn make_terminal(
     let mut term_bundle = TerminalBundle::new().with_size(size);
     term_bundle.renderer.terminal_pivot.0 = Vec2::from(pivot);
 
-    term_bundle.terminal.draw_border(BorderGlyphs::single_line());
+    term_bundle
+        .terminal
+        .draw_border(BorderGlyphs::single_line());
     term_bundle.terminal.put_string([1, 1], string);
 
     term_bundle.transform.translation = pos;

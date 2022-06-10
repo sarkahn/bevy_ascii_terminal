@@ -5,19 +5,17 @@ use std::slice::IterMut;
 
 use bevy::prelude::*;
 
+use sark_grids::grid::Side;
 use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
-use sark_grids::grid::Side;
 
+use crate::formatting::fmt_string::StringWriter;
 use crate::formatting::StringWrite;
 use crate::formatting::TileModifier;
-use crate::formatting::fmt_string::StringWriter;
-use crate::ui::UiProgressBar;
 use crate::ui::ui_box::BorderGlyphs;
 use crate::ui::ui_box::UiBox;
-
-
+use crate::ui::UiProgressBar;
 
 /// A simple terminal for writing text in a readable grid.
 ///
@@ -82,7 +80,7 @@ impl Terminal {
     }
 
     /// Resize the terminal's internal tile data.
-    /// 
+    ///
     /// This will clear all tiles to default.
     pub fn resize(&mut self, size: [u32; 2]) {
         self.tiles = Grid::default(size);
@@ -123,15 +121,15 @@ impl Terminal {
     /// The [TileWriter] trait allows you to optionally specify a foreground
     /// and/or background color for the tile as well. If you don't specify a
     /// color then the existing color in the terminal will be unaffected.
-    /// 
+    ///
     /// All tiles in the terminal begin with a white foreground and black background.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bevy_ascii_terminal::*;
     /// use bevy::prelude::Color;
-    /// 
+    ///
     /// let mut term = Terminal::with_size([10,10]);
     /// // Insert an 'a' with a blue foreground and a red background.
     /// term.put_char([2,3], 'a'.fg(Color::BLUE).bg(Color::RED));
@@ -160,19 +158,19 @@ impl Terminal {
     }
 
     /// Write a formatted string to the terminal.
-    /// 
+    ///
     /// The [StringWriter] trait allows you to optionally specify a foreground
     /// and/or background color for the string as well. If you don't specify a
     /// color then the existing color in the terminal will be unaffected.
-    /// 
+    ///
     /// All tiles in the terminal begin with a white foreground and black background.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bevy_ascii_terminal::*;
     /// use bevy::prelude::Color;
-    /// 
+    ///
     /// let mut term = Terminal::with_size([10,10]);
     /// // Write a blue "Hello" to the terminal
     /// term.put_string([1,2], "Hello".fg(Color::BLUE));
@@ -182,7 +180,7 @@ impl Terminal {
     pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a>) {
         let i = self.to_index(xy);
 
-        let (string,writes) = writer.formatted().into();
+        let (string, writes) = writer.formatted().into();
 
         let count = string.chars().count();
         let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
@@ -195,21 +193,20 @@ impl Terminal {
 
         for write in writes {
             match write {
-                StringWrite::FgColor(col) => {   
+                StringWrite::FgColor(col) => {
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.fg_color = col;
                     }
-                },
-                StringWrite::BgColor(col) => {   
+                }
+                StringWrite::BgColor(col) => {
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.bg_color = col;
                     }
-                },
+                }
             }
         }
-
     }
 
     /// Retrieve the char from a tile.
@@ -220,8 +217,8 @@ impl Terminal {
     /// Retrieve a string from the terminal.
     pub fn get_string(&self, xy: impl GridPoint, len: usize) -> String {
         let i = self.to_index(xy);
-        let slice = self.tiles.slice(i..).iter().take(len).map(|t|t.glyph);
-        
+        let slice = self.tiles.slice(i..).iter().take(len).map(|t| t.glyph);
+
         String::from_iter(slice)
     }
 
@@ -249,15 +246,15 @@ impl Terminal {
     }
 
     /// Draw a formatted box to the terminal.
-    /// 
+    ///
     /// The [BoxBuilder] trait allows you to specify the properties of the box.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bevy_ascii_terminal::*;
     /// use bevy_ascii_terminal::ui::*;
-    /// 
+    ///
     /// let mut term = Terminal::with_size([10,10]);
     /// term.draw_box([0,0], [3,3], &UiBox::single_line());
     /// ```
@@ -269,7 +266,7 @@ impl Terminal {
     /// Draw a border around the entire terminal.
     pub fn draw_border(&mut self, glyphs: BorderGlyphs) {
         let bx = UiBox::new().border_glyphs(glyphs);
-        bx.draw([0,0], self.size, self);
+        bx.draw([0, 0], self.size, self);
     }
 
     pub fn draw_progress_bar(&mut self, xy: impl GridPoint, size: usize, bar: &UiProgressBar) {
@@ -327,10 +324,8 @@ impl Terminal {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::ui::ui_box::BorderGlyphs;
 
     use super::*;
 
@@ -342,9 +337,9 @@ mod tests {
 
         assert_eq!('h', term.get_char([5, 5]));
 
-        term.put_char([1,2], 'q'.fg(Color::RED));
+        term.put_char([1, 2], 'q'.fg(Color::RED));
 
-        let t = term.get_tile([1,2]);
+        let t = term.get_tile([1, 2]);
         assert_eq!('q', t.glyph);
         assert_eq!(Color::RED, t.fg_color);
     }
@@ -386,5 +381,4 @@ mod tests {
         assert_eq!('l', term.get_char([5, 3]));
         assert_eq!('o', term.get_char([5, 4]));
     }
-
 }

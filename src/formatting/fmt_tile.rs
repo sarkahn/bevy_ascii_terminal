@@ -1,12 +1,12 @@
-use arrayvec::{ArrayVec};
+use arrayvec::ArrayVec;
 use bevy::prelude::*;
 use sark_grids::GridPoint;
 
-use crate::{Tile, Terminal};
+use crate::{Terminal, Tile};
 
 /// Formatting that can be applied to a terminal tile.
-/// 
-/// Formatting allows you to create an object that specifies certain aspects 
+///
+/// Formatting allows you to create an object that specifies certain aspects
 /// to modify without necessarily replacing an entire tile.
 #[derive(Debug, Default, Clone)]
 pub struct TileFormat {
@@ -57,7 +57,7 @@ impl TileFormat {
     }
 
     /// Iterate over tile modifications.
-    pub fn iter(&self) -> impl Iterator<Item=&TileModification> {
+    pub fn iter(&self) -> impl Iterator<Item = &TileModification> {
         self.modifications.iter()
     }
 
@@ -95,7 +95,7 @@ impl TileModifier for TileFormat {
 
 impl TileModifier for char {
     /// Replace the original character with a given one.
-    /// 
+    ///
     /// This is pointless.
     fn glyph(self, glyph: char) -> TileFormat {
         TileFormat::default().glyph(glyph)
@@ -127,6 +127,9 @@ impl From<TileFormat> for Tile {
 
 impl From<Tile> for TileFormat {
     fn from(tile: Tile) -> Self {
-        TileFormat::default().glyph(tile.glyph).fg(tile.fg_color).bg(tile.bg_color)
+        TileFormat::default()
+            .glyph(tile.glyph)
+            .fg(tile.fg_color)
+            .bg(tile.bg_color)
     }
 }

@@ -1,5 +1,9 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{*, ui::BorderGlyphs, formatting::{TileModifier, StringWriter}};
+use bevy_ascii_terminal::{
+    formatting::{StringWriter, TileModifier},
+    ui::BorderGlyphs,
+    *,
+};
 use bevy_tiled_camera::*;
 
 fn main() {
@@ -17,8 +21,12 @@ fn spawn_terminal(mut commands: Commands) {
     let size = [20, 3];
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
-    term_bundle.terminal.draw_border(BorderGlyphs::single_line());
-    term_bundle.terminal.put_string([1, 1], "Press spacebar".bg(Color::LIME_GREEN));
+    term_bundle
+        .terminal
+        .draw_border(BorderGlyphs::single_line());
+    term_bundle
+        .terminal
+        .put_string([1, 1], "Press spacebar".bg(Color::LIME_GREEN));
 
     commands.spawn_bundle(term_bundle);
 

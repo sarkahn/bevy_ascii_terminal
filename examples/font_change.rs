@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{*, ui::BorderGlyphs, formatting::StringWriter};
+use bevy_ascii_terminal::{formatting::StringWriter, ui::BorderGlyphs, *};
 use bevy_tiled_camera::*;
 use sark_grids::Pivot;
 
@@ -22,19 +22,22 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
     let size = [47, 13];
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
-    term_bundle.terminal.draw_border(BorderGlyphs::single_line());
+    term_bundle
+        .terminal
+        .draw_border(BorderGlyphs::single_line());
 
     let fonts: Vec<_> = fonts.iter().collect();
 
     draw_title(&mut term_bundle.terminal, fonts[0].0);
 
-    term_bundle
-        .terminal
-        .put_string([1, 2].pivot(Pivot::TopLeft), "Press spacebar to change fonts");
+    term_bundle.terminal.put_string(
+        [1, 2].pivot(Pivot::TopLeft),
+        "Press spacebar to change fonts",
+    );
     term_bundle.terminal.put_string([1, 4], "!@#$%^&*()_+=-`~");
     term_bundle.terminal.put_string(
         [1, 6].pivot(Pivot::TopLeft),
-        "The quick brown fox jumps over the lazy dog."
+        "The quick brown fox jumps over the lazy dog.",
     );
     term_bundle.terminal.put_string(
         [1, 8].pivot(Pivot::TopLeft),
@@ -58,8 +61,13 @@ fn draw_title(term: &mut Terminal, title: &str) {
 
     term.draw_border(BorderGlyphs::single_line());
     term.put_string([1, 0].pivot(Pivot::TopLeft), "[ ");
-    term.put_string([3, 0].pivot(Pivot::TopLeft),
-        title.to_string().to_uppercase().fg(Color::BLUE).bg(Color::BLACK)
+    term.put_string(
+        [3, 0].pivot(Pivot::TopLeft),
+        title
+            .to_string()
+            .to_uppercase()
+            .fg(Color::BLUE)
+            .bg(Color::BLACK),
     );
 }
 

@@ -3,7 +3,9 @@ use bevy::{
     render::camera::{OrthographicProjection, ScalingMode},
 };
 
-use bevy_ascii_terminal::{renderer::TileScaling, TerminalBundle, TerminalPlugin, ui::BorderGlyphs};
+use bevy_ascii_terminal::{
+    renderer::TileScaling, ui::BorderGlyphs, TerminalBundle, TerminalPlugin,
+};
 use bevy_tiled_camera::*;
 
 fn main() {
@@ -25,7 +27,9 @@ fn setup(mut commands: Commands) {
     let size = [20, 3];
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
-    term_bundle.terminal.draw_border(BorderGlyphs::single_line());
+    term_bundle
+        .terminal
+        .draw_border(BorderGlyphs::single_line());
     term_bundle.terminal.put_string([1, 1], "Press spacebar");
     commands.spawn_bundle(term_bundle);
 

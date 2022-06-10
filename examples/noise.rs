@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{*, ui::UiBox};
+use bevy_ascii_terminal::{ui::UiBox, *};
 use bevy_tiled_camera::*;
 
 use bracket_noise::prelude::{FastNoise, NoiseType};

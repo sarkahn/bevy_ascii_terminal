@@ -48,10 +48,10 @@
 pub mod renderer;
 
 pub mod formatting;
-pub mod ui;
 mod terminal;
+pub mod ui;
 
-pub use terminal::{Terminal, Tile, ColorModifier};
+pub use terminal::{ColorModifier, Terminal, Tile};
 
 //pub use formatting::{CharFormat, Pivot, StringFormat};
 pub use renderer::code_page_437;
@@ -60,10 +60,10 @@ pub use renderer::material::TerminalMaterial;
 
 use bevy::prelude::*;
 
+pub use sark_grids::grid::Side;
 pub use sark_grids::Grid;
 pub use sark_grids::GridPoint;
 pub use sark_grids::Size2d;
-pub use sark_grids::grid::Side;
 
 pub use formatting::*;
 
