@@ -21,7 +21,7 @@ anyhow = "1.0.4"
 arrayvec = "0.7.2"
 
 [dev-dependencies]
-bevy = {version = "0.7", features = ["png", "bevy_winit", "bevy_render"]}
+bevy = {version = "0.7", default-features=false, features = ["png", "bevy_winit", "bevy_render"]}
 bevy_tiled_camera = "0.3.1"
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
