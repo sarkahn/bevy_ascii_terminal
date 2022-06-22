@@ -51,7 +51,8 @@ impl TileFormat {
         }
     }
 
-    /// Create a [TileFormat] to clear a tile to default.
+    /// Create a [TileFormat] which will clear a tile to default
+    /// when applied.
     pub fn clear() -> TileFormat {
         TileFormat::from(Tile::default())
     }

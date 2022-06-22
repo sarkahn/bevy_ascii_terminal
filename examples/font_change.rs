@@ -5,11 +5,12 @@ use sark_grids::Pivot;
 
 fn main() {
     App::new()
+        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
+        .add_plugin(TiledCameraPlugin)
         .init_resource::<FontIndex>()
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
-        .add_plugin(TiledCameraPlugin)
         .add_startup_system(spawn_terminal)
         .add_system(change_font)
         .run()
@@ -66,6 +67,7 @@ fn draw_title(term: &mut Terminal, title: &str) {
         title
             .to_string()
             .to_uppercase()
+            .as_str()
             .fg(Color::BLUE)
             .bg(Color::BLACK),
     );
@@ -78,10 +80,10 @@ fn change_font(
     mut materials: ResMut<Assets<TerminalMaterial>>,
     mut font_index: ResMut<FontIndex>,
     mut q: Query<(&mut Terminal, &Handle<TerminalMaterial>)>,
-    mut q_cam_projection: Query<&mut TiledProjection>,
+    mut q_cam_projection: Query<&mut TiledCamera>,
 ) {
     if keys.just_pressed(KeyCode::Space) {
-        let mut projection = q_cam_projection.single_mut();
+        let mut cam = q_cam_projection.single_mut();
         for (mut term, mat) in q.iter_mut() {
             let fonts: Vec<_> = built_in_fonts.iter().collect();
 
@@ -92,7 +94,7 @@ fn change_font(
             let tex = images.get(new_font.1);
             let ppu = tex.unwrap().texture_descriptor.size.height / 16;
 
-            projection.pixels_per_tile = ppu;
+            cam.pixels_per_tile = ppu;
 
             let mut mat = materials.get_mut(mat).unwrap();
             mat.texture = Some(new_font.1.clone());

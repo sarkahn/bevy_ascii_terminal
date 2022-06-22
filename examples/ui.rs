@@ -14,9 +14,10 @@ pub struct ProgressBar {
 
 fn main() {
     App::new()
+        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
+        .add_plugin(TiledCameraPlugin)
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
-        .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
         .add_startup_system(spawn_terminal)
         .add_system(draw_bars)
@@ -35,7 +36,6 @@ fn spawn_terminal(mut commands: Commands) {
 
     commands.spawn_bundle(
         TiledCameraBundle::new()
-            .with_centered(true)
             .with_pixels_per_tile(8)
             .with_tile_count(size),
     );
@@ -78,10 +78,10 @@ fn draw_bars(time: Res<Time>, mut term_q: Query<&mut Terminal>, mut q: Query<&mu
         bar.value = val;
         bar.ui.set_value(val);
         term.draw_progress_bar(bar.pos, bar.size, &bar.ui);
-
+        
         term.put_string(
             bar.pos + IVec2::new(bar.size as i32 + 2, 0),
-            format!(
+            &format!(
                 "{} {}",
                 bar.ui.value().to_string(),
                 bar.ui.value_normalized().to_string()

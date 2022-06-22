@@ -11,10 +11,11 @@ use sark_grids::grid::Side;
 
 fn main() {
     App::new()
+        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
+        .add_plugin(TiledCameraPlugin)
         .init_resource::<Pause>()
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
-        .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())

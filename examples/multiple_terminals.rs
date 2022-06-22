@@ -5,9 +5,10 @@ use bevy_tiled_camera::*;
 
 fn main() {
     App::new()
+        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
+        .add_plugin(TiledCameraPlugin)
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
-        .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
         .add_startup_system(setup)
         .run()
@@ -83,6 +84,6 @@ fn setup(mut commands: Commands) {
         TiledCameraBundle::new()
             .with_pixels_per_tile(8)
             .with_tile_count(view_size)
-            .with_camera_position(view_pos.as_vec2().into()),
+            .with_camera_position(view_pos.as_vec2()),
     );
 }

@@ -38,10 +38,10 @@
 //!
 //! fn main () {
 //!     App::new()
+//!     .add_plugin(TiledCameraPlugin)
 //!     .add_plugins(DefaultPlugins)
 //!     .add_plugin(TerminalPlugin)
-//!     .add_plugin(TiledCameraPlugin)
-//!     .add_startup_system(setup.system())
+//!     .add_startup_system(setup)
 //!     .run();
 //! }
 //! ```
@@ -53,7 +53,6 @@ pub mod ui;
 
 pub use terminal::{ColorModifier, Terminal, Tile};
 
-//pub use formatting::{CharFormat, Pivot, StringFormat};
 pub use renderer::code_page_437;
 pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;

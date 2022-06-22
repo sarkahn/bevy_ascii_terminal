@@ -1,8 +1,3 @@
-use std::iter::FromIterator;
-use std::iter::StepBy;
-use std::slice::Iter;
-use std::slice::IterMut;
-
 use bevy::prelude::*;
 
 use sark_grids::grid::Side;
@@ -10,8 +5,8 @@ use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
-use crate::formatting::fmt_string::StringWriter;
-use crate::formatting::StringWrite;
+use crate::formatting::StringWriter;
+use crate::formatting::StringColor;
 use crate::formatting::TileModifier;
 use crate::ui::ui_box::BorderGlyphs;
 use crate::ui::ui_box::UiBox;
@@ -54,6 +49,8 @@ pub struct Tile {
     pub bg_color: Color,
 }
 
+/// Used in `put_color` for setting the foreground or background color of a tile 
+/// without affecting the glyph.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColorModifier {
     FgColor(Color),
@@ -109,18 +106,15 @@ impl Terminal {
     /// of the terminal.
     #[inline]
     pub fn to_xy(&self, i: usize) -> IVec2 {
-        let i = i as i32;
-        let w = self.width() as i32;
-        let x = i % w;
-        let y = i / w;
-        IVec2::new(x, y)
+        self.tiles.index_to_pos(i)
     }
 
     /// Insert a formatted character into the terminal.
     ///
-    /// The [TileWriter] trait allows you to optionally specify a foreground
-    /// and/or background color for the tile as well. If you don't specify a
-    /// color then the existing color in the terminal will be unaffected.
+    /// The [`TileModifier`] trait allows you to optionally specify a foreground
+    /// and/or background color for the tile as well using the `fg` and `bg` functions. 
+    /// If you don't specify a color then the existing color in the terminal tile will
+    /// be unaffected.
     ///
     /// All tiles in the terminal begin with a white foreground and black background.
     ///
@@ -159,9 +153,10 @@ impl Terminal {
 
     /// Write a formatted string to the terminal.
     ///
-    /// The [StringWriter] trait allows you to optionally specify a foreground
-    /// and/or background color for the string as well. If you don't specify a
-    /// color then the existing color in the terminal will be unaffected.
+    /// The [`StringWriter`] trait allows you to optionally specify a foreground
+    /// and/or background color for the string using the `fg` and `bg` functions. 
+    /// If you don't specify a color then the existing colors in the terminal 
+    /// will be unaffected.
     ///
     /// All tiles in the terminal begin with a white foreground and black background.
     ///
@@ -174,10 +169,10 @@ impl Terminal {
     /// let mut term = Terminal::with_size([10,10]);
     /// // Write a blue "Hello" to the terminal
     /// term.put_string([1,2], "Hello".fg(Color::BLUE));
-    /// // Write "Hello" with a green background.
+    /// // Write "Hello" with a green background
     /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
-    pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a>) {
+    pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a> + 'a) {
         let i = self.to_index(xy);
 
         let (string, writes) = writer.formatted().into();
@@ -193,13 +188,13 @@ impl Terminal {
 
         for write in writes {
             match write {
-                StringWrite::FgColor(col) => {
+                StringColor::FgColor(col) => {
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.fg_color = col;
                     }
                 }
-                StringWrite::BgColor(col) => {
+                StringColor::BgColor(col) => {
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.bg_color = col;
@@ -222,6 +217,7 @@ impl Terminal {
         String::from_iter(slice)
     }
 
+    #[inline]
     /// Retrieve an immutable reference to a tile in the terminal.
     pub fn get_tile(&self, xy: impl GridPoint) -> &Tile {
         &self.tiles[self.to_index(xy)]
@@ -283,9 +279,9 @@ impl Terminal {
     }
 
     /// Returns true if the given position is inside the bounds of the terminal.
+    #[inline]
     pub fn is_in_bounds(&self, xy: impl GridPoint) -> bool {
-        let xy = xy.as_uvec2();
-        xy.cmpge(UVec2::ZERO).all() && xy.cmplt(self.size).all()
+        self.tiles.in_bounds(xy)
     }
 
     /// An immutable iterator over the tiles of the terminal.
@@ -346,12 +342,12 @@ mod tests {
 
     #[test]
     fn put_string() {
-        // let mut term = Terminal::with_size([20, 20]);
-        // term.put_string([0, 0], "Hello");
-        // assert_eq!("Hello", term.get_string([0, 0], 5));
+        let mut term = Terminal::with_size([20, 20]);
+        term.put_string([0, 0], "Hello");
+        assert_eq!("Hello", term.get_string([0, 0], 5));
 
-        // term.put_string([18, 19], "Hello");
-        // assert_eq!("He", term.get_string([18, 19], 2));
+        term.put_string([18, 19], "Hello");
+        assert_eq!("He", term.get_string([18, 19], 2));
     }
 
     #[test]
