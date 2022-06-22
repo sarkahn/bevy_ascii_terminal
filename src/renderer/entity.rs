@@ -1,4 +1,3 @@
-// Clippy complaining about this lint from the bevy `Bundle` type
 //! Terminal components
 
 use bevy::{prelude::*, sprite::Mesh2dHandle};
@@ -31,9 +30,6 @@ pub struct TilePivot(pub Vec2);
 #[derive(Component, Clone, Copy)]
 pub enum TileScaling {
     /// Each tile will take up 1 unit of world space.
-    ///
-    /// This matches how [TiledCamera](https://crates.io/crates/bevy_tiled_camera) is set up. This setting
-    /// will only work with square fonts.
     World,
     /// Scale terminal tiles based on the size of their texture.
     ///

@@ -85,8 +85,8 @@ impl TerminalBundle {
     }
 
     /// Set the initial size of the terminal.
-    pub fn with_size(mut self, size: [u32; 2]) -> Self {
-        self.terminal.resize(size);
+    pub fn with_size(mut self, size: impl Size2d) -> Self {
+        self.terminal.resize(size.as_array());
         self
     }
 }

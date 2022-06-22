@@ -79,9 +79,9 @@ impl Terminal {
     /// Resize the terminal's internal tile data.
     ///
     /// This will clear all tiles to default.
-    pub fn resize(&mut self, size: [u32; 2]) {
+    pub fn resize(&mut self, size: impl Size2d) {
         self.tiles = Grid::default(size);
-        self.size = UVec2::from(size);
+        self.size = size.as_uvec2();
     }
 
     pub fn width(&self) -> usize {
