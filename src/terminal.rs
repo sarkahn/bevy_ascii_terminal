@@ -236,8 +236,8 @@ impl Terminal {
 
     /// Clear an area of the terminal to the default [Tile].
     pub fn clear_box(&mut self, xy: impl GridPoint, size: impl Size2d) {
-        let [width, height] = size.to_array();
-        let [x, y] = xy.to_array();
+        let [width, height] = size.as_array();
+        let [x, y] = xy.as_array();
         for y in y..y + height as i32 {
             for x in x..x + width as i32 {
                 self.put_tile([x, y], Tile::default());
@@ -289,17 +289,17 @@ impl Terminal {
     }
 
     /// An immutable iterator over the tiles of the terminal.
-    pub fn iter(&self) -> Iter<Tile> {
+    pub fn iter(&self) -> impl Iterator<Item=&Tile> {
         self.tiles.iter()
     }
 
     /// A mutable iterator over the tiles of the terminal.
-    pub fn iter_mut(&mut self) -> IterMut<Tile> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut Tile> {
         self.tiles.iter_mut()
     }
 
     /// An immutable iterator over an entire row of tiles in the terminal.
-    pub fn row_iter(&self, y: usize) -> Iter<Tile> {
+    pub fn row_iter(&self, y: usize) -> impl Iterator<Item=&Tile> {
         self.tiles.row_iter(y)
     }
 
@@ -309,12 +309,12 @@ impl Terminal {
     }
 
     /// An immutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter(&self, x: usize) -> StepBy<Iter<Tile>> {
+    pub fn column_iter(&self, x: usize) -> impl Iterator<Item=&Tile> {
         self.tiles.column_iter(x)
     }
 
     /// A mutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter_mut(&mut self, x: usize) -> StepBy<IterMut<Tile>> {
+    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item=&mut Tile> {
         self.tiles.column_iter_mut(x)
     }
 

@@ -46,12 +46,13 @@ use bevy::render::{
     prelude::Shader,
     render_asset::{PrepareAssetError, RenderAsset, RenderAssets},
     render_resource::{
-        std140::{AsStd140, Std140},
         *,
     },
     renderer::RenderDevice,
     texture::Image,
 };
+
+use encase;
 
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, SpecializedMaterial2d};
 use bevy::utils::HashMap;
@@ -221,7 +222,7 @@ bitflags::bitflags! {
 }
 
 /// The GPU representation of the uniform data of a [`TerminalMaterial`].
-#[derive(Clone, Default, AsStd140)]
+#[derive(Clone, Default, ShaderType)]
 struct TerminalMaterialUniformData {
     pub color: Vec4,
     pub flags: u32,
@@ -273,12 +274,13 @@ impl RenderAsset for TerminalMaterial {
             color: material.clip_color.as_linear_rgba_f32().into(),
             flags: flags.bits(),
         };
-        let value_std140 = value.as_std140();
+        let mut buffer = encase::UniformBuffer::new(Vec::new());
+        buffer.write(&value).unwrap();
 
         let buffer = render_device.create_buffer_with_data(&BufferInitDescriptor {
-            label: Some("terminal_material_uniform_buffer"),
+            contents: buffer.as_ref(),
+            label: None,
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-            contents: value_std140.as_bytes(),
         });
         let bind_group = render_device.create_bind_group(&BindGroupDescriptor {
             entries: &[
@@ -305,6 +307,14 @@ impl RenderAsset for TerminalMaterial {
             flags,
             texture: material.texture,
         })
+        // let buffer = [0u8; TerminalMaterialUniformData::SIZE.get() as usize];
+
+        // let buffer = render_device.create_buffer_with_data(&BufferInitDescriptor {
+        //     label: Some("terminal_material_uniform_buffer"),
+        //     usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+        //     contents: value_std140.as_bytes(),
+        // });
+
     }
 }
 
@@ -331,9 +341,10 @@ impl SpecializedMaterial2d for TerminalMaterial {
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: BufferSize::new(
-                            TerminalMaterialUniformData::std140_size_static() as u64,
-                        ),
+                        min_binding_size: Some(TerminalMaterialUniformData::min_size()),
+                        // min_binding_size: BufferSize::new(
+                        //     TerminalMaterialUniformData::std140_size_static() as u64,
+                        // ),
                     },
                     count: None,
                 },

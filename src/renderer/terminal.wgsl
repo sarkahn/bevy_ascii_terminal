@@ -1,5 +1,5 @@
-#import bevy_sprite::mesh2d_view_bind_group
-#import bevy_sprite::mesh2d_struct
+#import bevy_sprite::mesh2d_view_types
+#import bevy_sprite::mesh2d_types
 
 struct TerminalMaterial {
     clip_color: vec4<f32>;

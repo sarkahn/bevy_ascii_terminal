@@ -8,9 +8,9 @@ use bevy_tiled_camera::*;
 
 fn main() {
     App::new()
+        .add_plugin(TiledCameraPlugin)
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
-        .add_plugin(TiledCameraPlugin)
         .insert_resource(ClearColor(Color::BLACK))
         .add_startup_system(spawn_terminal)
         .add_system(hello_world)
@@ -32,7 +32,6 @@ fn spawn_terminal(mut commands: Commands) {
 
     commands.spawn_bundle(
         TiledCameraBundle::new()
-            .with_centered(true)
             .with_pixels_per_tile(8)
             .with_tile_count(size),
     );

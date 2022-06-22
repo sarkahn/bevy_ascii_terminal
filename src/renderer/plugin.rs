@@ -84,7 +84,7 @@ fn terminal_renderer_update_size(
         let mut tile_size = UVec2::ONE;
         if let TileScaling::Pixels = scaling {
             let material = materials.get(material).unwrap();
-            let image = images.get(material.texture.clone().unwrap()).unwrap();
+            let image = images.get(&material.texture.as_ref().unwrap()).unwrap();
             let size = image.texture_descriptor.size;
             // TODO: This will need to assignable for graphical terminals, can't necessarily
             // be derived from the texture for a non-uniform-grid tilesheet.
@@ -97,7 +97,7 @@ fn terminal_renderer_update_size(
         tile_data.resize(size);
 
         let mesh = meshes
-            .get_mut(mesh.0.clone())
+            .get_mut(&mesh.0)
             .expect("Error retrieving mesh from terminal renderer");
 
         //info!("Changing mesh size size: {}, Length: {}", size, vert_data.indices.len());

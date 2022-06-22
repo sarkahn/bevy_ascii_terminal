@@ -59,7 +59,7 @@ impl UiBox {
 
     /// Draw the box to a terminal.
     pub(crate) fn draw(&self, xy: impl GridPoint, size: impl Size2d, term: &mut Terminal) {
-        let [x, y] = xy.to_array();
+        let [x, y] = xy.as_array();
         let [width, height] = size.as_ivec2().to_array();
         let width = width as usize;
         let height = height as usize;
@@ -69,8 +69,8 @@ impl UiBox {
         let top = y as usize + height - 1;
 
         if let Some(fill) = &self.fill_tile {
-            let [width, height] = size.to_array();
-            let [x, y] = xy.to_array();
+            let [width, height] = size.as_array();
+            let [x, y] = xy.as_array();
             for y in y..y + height as i32 {
                 for x in x..x + width as i32 {
                     fill.draw([x, y], term);
