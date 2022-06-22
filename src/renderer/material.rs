@@ -45,9 +45,7 @@ use bevy::render::{
     color::Color,
     prelude::Shader,
     render_asset::{PrepareAssetError, RenderAsset, RenderAssets},
-    render_resource::{
-        *,
-    },
+    render_resource::*,
     renderer::RenderDevice,
     texture::Image,
 };
@@ -314,7 +312,6 @@ impl RenderAsset for TerminalMaterial {
         //     usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         //     contents: value_std140.as_bytes(),
         // });
-
     }
 }
 

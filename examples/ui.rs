@@ -78,7 +78,7 @@ fn draw_bars(time: Res<Time>, mut term_q: Query<&mut Terminal>, mut q: Query<&mu
         bar.value = val;
         bar.ui.set_value(val);
         term.draw_progress_bar(bar.pos, bar.size, &bar.ui);
-        
+
         term.put_string(
             bar.pos + IVec2::new(bar.size as i32 + 2, 0),
             &format!(

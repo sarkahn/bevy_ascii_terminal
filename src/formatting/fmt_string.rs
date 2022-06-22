@@ -17,18 +17,24 @@ pub struct FormattedString<'a> {
 
 impl<'a> FormattedString<'a> {
     pub fn new(str: &'a str) -> Self {
-        Self { str, colors: ArrayVec::new() }
+        Self {
+            str,
+            colors: ArrayVec::new(),
+        }
     }
 
     pub fn from_ref_string(string: &'a mut String) -> Self {
-        Self { str: string, colors: default() }
+        Self {
+            str: string,
+            colors: default(),
+        }
     }
 
     pub fn with_fg_color(mut self, color: Color) -> Self {
         self.colors.push(StringColor::FgColor(color));
         self
     }
-    
+
     pub fn with_bg_color(mut self, color: Color) -> Self {
         self.colors.push(StringColor::BgColor(color));
         self
@@ -53,7 +59,6 @@ pub trait StringWriter<'a> {
     fn formatted(self) -> FormattedString<'a>;
 }
 
-
 impl<'a> StringWriter<'a> for &'a String {
     fn string(&self) -> &str {
         self
@@ -70,7 +75,7 @@ impl<'a> StringWriter<'a> for &'a String {
     fn formatted(self) -> FormattedString<'a> {
         FormattedString::new(self)
     }
-} 
+}
 
 impl<'a> StringWriter<'a> for &'a str {
     fn string(&self) -> &str {
@@ -90,9 +95,9 @@ impl<'a> StringWriter<'a> for &'a str {
     }
 }
 
-impl <'a> StringWriter<'a> for FormattedString<'a> {
+impl<'a> StringWriter<'a> for FormattedString<'a> {
     fn string(&self) -> &str {
-        &self.str
+        self.str
     }
 
     fn fg(&'a mut self, color: Color) -> FormattedString<'a> {
@@ -116,7 +121,6 @@ impl <'a> StringWriter<'a> for FormattedString<'a> {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use bevy::prelude::Color;
@@ -128,13 +132,12 @@ mod test {
     #[test]
     fn write() {
         let mut term = Terminal::with_size([15, 15]);
-        term.put_string([1,1], "hi");
+        term.put_string([1, 1], "hi");
         term.put_string([5, 5], "Hello".fg(Color::GREEN).bg(Color::BLUE));
-        let tile = term.get_tile([5,5]);
+        let tile = term.get_tile([5, 5]);
         assert_eq!(Color::BLUE, tile.bg_color);
         assert_eq!('H', tile.glyph);
         let string = "Hello".to_string();
         term.put_string([5, 5], &string);
-
     }
 }

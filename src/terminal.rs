@@ -5,8 +5,8 @@ use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
-use crate::formatting::StringWriter;
 use crate::formatting::StringColor;
+use crate::formatting::StringWriter;
 use crate::formatting::TileModifier;
 use crate::ui::ui_box::BorderGlyphs;
 use crate::ui::ui_box::UiBox;
@@ -49,7 +49,7 @@ pub struct Tile {
     pub bg_color: Color,
 }
 
-/// Used in `put_color` for setting the foreground or background color of a tile 
+/// Used in `put_color` for setting the foreground or background color of a tile
 /// without affecting the glyph.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColorModifier {
@@ -112,7 +112,7 @@ impl Terminal {
     /// Insert a formatted character into the terminal.
     ///
     /// The [`TileModifier`] trait allows you to optionally specify a foreground
-    /// and/or background color for the tile as well using the `fg` and `bg` functions. 
+    /// and/or background color for the tile as well using the `fg` and `bg` functions.
     /// If you don't specify a color then the existing color in the terminal tile will
     /// be unaffected.
     ///
@@ -154,8 +154,8 @@ impl Terminal {
     /// Write a formatted string to the terminal.
     ///
     /// The [`StringWriter`] trait allows you to optionally specify a foreground
-    /// and/or background color for the string using the `fg` and `bg` functions. 
-    /// If you don't specify a color then the existing colors in the terminal 
+    /// and/or background color for the string using the `fg` and `bg` functions.
+    /// If you don't specify a color then the existing colors in the terminal
     /// will be unaffected.
     ///
     /// All tiles in the terminal begin with a white foreground and black background.
@@ -285,17 +285,17 @@ impl Terminal {
     }
 
     /// An immutable iterator over the tiles of the terminal.
-    pub fn iter(&self) -> impl Iterator<Item=&Tile> {
+    pub fn iter(&self) -> impl Iterator<Item = &Tile> {
         self.tiles.iter()
     }
 
     /// A mutable iterator over the tiles of the terminal.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut Tile> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Tile> {
         self.tiles.iter_mut()
     }
 
     /// An immutable iterator over an entire row of tiles in the terminal.
-    pub fn row_iter(&self, y: usize) -> impl Iterator<Item=&Tile> {
+    pub fn row_iter(&self, y: usize) -> impl Iterator<Item = &Tile> {
         self.tiles.row_iter(y)
     }
 
@@ -305,12 +305,12 @@ impl Terminal {
     }
 
     /// An immutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter(&self, x: usize) -> impl Iterator<Item=&Tile> {
+    pub fn column_iter(&self, x: usize) -> impl Iterator<Item = &Tile> {
         self.tiles.column_iter(x)
     }
 
     /// A mutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item=&mut Tile> {
+    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item = &mut Tile> {
         self.tiles.column_iter_mut(x)
     }
 

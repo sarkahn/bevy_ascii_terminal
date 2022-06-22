@@ -1,5 +1,4 @@
 // Clippy complaining about this lint from the bevy `Bundle` type
-#![allow(clippy::forget_non_drop)]
 //! Terminal components
 
 use bevy::{prelude::*, sprite::Mesh2dHandle};
