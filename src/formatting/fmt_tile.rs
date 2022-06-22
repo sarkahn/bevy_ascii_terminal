@@ -4,6 +4,34 @@ use sark_grids::GridPoint;
 
 use crate::{Terminal, Tile};
 
+/// A trait for building a formatted terminal tile.
+///
+/// You can use the `fg` or `bg` functions to specify
+/// a foreground or background color for the tile. If no
+/// color is specified then the color in the terminal will
+/// be unaffected.
+///
+/// # Example
+///
+/// ```rust
+/// use bevy_ascii_terminal::*;
+/// let mut term = Terminal::with_size([10,10]);
+///
+/// // Insert a an 'a' character with a blue foreground and green background.
+/// term.put_char([1,1], 'a'.fg(Color::BLUE).bg(Color::GREEN);
+/// ```
+pub trait TileModifier: Clone {
+    /// Change the glyph of a tile.
+    fn glyph(self, glyph: char) -> TileFormat;
+    /// Change the foreground color of a tile.
+    fn fg(self, color: Color) -> TileFormat;
+    /// Change the background color of a tile.
+    fn bg(self, color: Color) -> TileFormat;
+
+    /// Get the [TileFormat] which can be used to apply tile modifications.
+    fn format(self) -> TileFormat;
+}
+
 /// Formatting that can be applied to a terminal tile.
 ///
 /// Formatting allows you to create an object that specifies certain aspects
@@ -23,19 +51,6 @@ pub enum TileModification {
     FGColor(Color),
     /// Change the background color of a tile.
     BGColor(Color),
-}
-
-/// A trait for building a [TileFormat].
-pub trait TileModifier: Clone {
-    /// Change the glyph of a tile.
-    fn glyph(self, glyph: char) -> TileFormat;
-    /// Change the foreground color of a tile.
-    fn fg(self, color: Color) -> TileFormat;
-    /// Change the background color of a tile.
-    fn bg(self, color: Color) -> TileFormat;
-
-    /// Get the [TileFormat] which can be used to apply tile modifications.
-    fn format(self) -> TileFormat;
 }
 
 impl TileFormat {

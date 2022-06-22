@@ -48,6 +48,21 @@ impl<'a> From<FormattedString<'a>> for (&'a str, ArrayVec<StringColor, 2>) {
 }
 
 /// A trait for building a formatted terminal string.
+///
+/// You can use the `fg` and `bg` functions to add a foreground
+/// and/or background color to the string when it gets written
+/// to the terminal.  If no color is specified then the colors
+/// in the terminal will be unaffected.
+///
+/// # Example
+///
+/// ```rust
+/// use bevy_ascii_terminal::*;
+/// let mut term = Terminal::with_size([10,10]);
+///
+/// // Insert a string with a blue foreground and green background.
+/// term.put_string([1,1], "hello".fg(Color::BLUE).bg(Color::GREEN);
+/// ```
 pub trait StringWriter<'a> {
     fn string(&self) -> &str;
     /// Change the foreground color.
@@ -129,6 +144,7 @@ mod test {
 
     use super::StringWriter;
 
+    const STRING: &'static str = "Hi";
     #[test]
     fn write() {
         let mut term = Terminal::with_size([15, 15]);
@@ -139,5 +155,6 @@ mod test {
         assert_eq!('H', tile.glyph);
         let string = "Hello".to_string();
         term.put_string([5, 5], &string);
+        term.put_string([1, 1], STRING);
     }
 }
