@@ -158,6 +158,7 @@ impl Plugin for TerminalMaterialPlugin {
         let font = include_font!("zx_evolution_8x8.png");
         add_font_resource(font, &mut images, font_map);
 
+        // Set up default material handle
         app.world
             .get_resource_mut::<Assets<TerminalMaterial>>()
             .unwrap()

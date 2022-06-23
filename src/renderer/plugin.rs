@@ -8,6 +8,8 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
+use crate::{ChangeTerminalFont, BuiltInFontHandles};
+
 use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *};
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
@@ -25,8 +27,13 @@ impl Plugin for TerminalRendererPlugin {
 
         app.add_system(terminal_renderer_init.label(TERMINAL_INIT))
             .add_system(
-                terminal_renderer_update_size
+                terminal_renderer_change_font
                     .after(TERMINAL_INIT)
+                    .label(TERMINAL_CHANGE_FONT)
+            )
+            .add_system(
+                terminal_renderer_update_size
+                    .after(TERMINAL_CHANGE_FONT)
                     .label(TERMINAL_UPDATE_SIZE),
             )
             .add_system(
@@ -135,5 +142,28 @@ fn terminal_renderer_update_mesh(
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, tile_data.bg_colors.clone());
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, tile_data.fg_colors.clone());
         mesh.insert_attribute(ATTRIBUTE_UV, tile_data.uvs.clone());
+    }
+}
+
+fn terminal_renderer_change_font(
+    built_in_fonts: Res<BuiltInFontHandles>,
+    q_change: Query<(Entity, &Handle<TerminalMaterial>, &ChangeTerminalFont)>,
+    mut materials: ResMut<Assets<TerminalMaterial>>,
+    mut commands: Commands,
+) {
+    for (e, mat, change) in q_change.iter() {
+        let handle = match change {
+            ChangeTerminalFont::BuiltIn(name) => {
+                let handle = built_in_fonts.get(name).unwrap_or_else(|| 
+                    panic!("Error changing terminal font, built in font {} not found", name));
+                Some(handle)
+            },
+            ChangeTerminalFont::Asset(handle) => Some(handle),
+        };
+        if let Some(handle) = handle {
+            let mat = materials.get_mut(mat).expect("Error changing terminal font, invalid material handle");
+            mat.texture = Some(handle.clone());
+        }
+        commands.entity(e).remove::<ChangeTerminalFont>();
     }
 }

@@ -89,6 +89,11 @@ impl TerminalBundle {
         self.terminal.resize(size.as_array());
         self
     }
+
+    pub fn with_font(mut self, font: ChangeTerminalFont) -> Self {
+        self.renderer.change_font = font;
+        self
+    }
 }
 
 /// Plugin for terminal rendering and related components and systems.
@@ -96,5 +101,25 @@ pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(renderer::TerminalRendererPlugin);
+    }
+}
+
+/// Helper component for changing the terminal's font
+#[derive(Debug, Clone, Component)]
+pub enum ChangeTerminalFont {
+    /// Change to one of the terminal's built in fonts:
+    /// - jt_curses_12x12.png
+    /// - pastiche_8x8.png
+    /// - px437_8x8.png
+    /// - taffer_10x10.png
+    /// - zx_evolution_8x8.png
+    BuiltIn(String),
+    /// Change to a custom font texture
+    Asset(Handle<Image>),
+}
+
+impl Default for ChangeTerminalFont {
+    fn default() -> Self {
+        ChangeTerminalFont::BuiltIn("px437_8x8.png".to_string())
     }
 }

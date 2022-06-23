@@ -5,7 +5,7 @@ use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
-use crate::formatting::StringColor;
+use crate::fmt_string::StringColor;
 use crate::formatting::StringWriter;
 use crate::formatting::TileModifier;
 use crate::ui::ui_box::BorderGlyphs;
@@ -173,7 +173,7 @@ impl Terminal {
     /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
     pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a> + 'a) {
-        let i = self.to_index(xy);
+        let i = self.to_index(xy.aligned(self.size));
 
         let (string, writes) = writer.formatted().into();
 
@@ -201,6 +201,14 @@ impl Terminal {
                     }
                 }
             }
+        }
+    }
+
+    /// Clear a range of characters to default.
+    pub fn clear_string(&mut self, xy: impl GridPoint, len: usize) {
+        let i = self.to_index(xy);
+        for t in self.tiles.slice_mut(i..).iter_mut().take(len) {
+            *t = Tile::default()
         }
     }
 
@@ -261,7 +269,7 @@ impl Terminal {
 
     /// Draw a border around the entire terminal.
     pub fn draw_border(&mut self, glyphs: BorderGlyphs) {
-        let bx = UiBox::new().border_glyphs(glyphs);
+        let bx = UiBox::new().with_border(glyphs);
         bx.draw([0, 0], self.size, self);
     }
 

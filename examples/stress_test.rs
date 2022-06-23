@@ -72,7 +72,7 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
         }
         let top = term.side_index(Side::Top) as i32;
         term.clear_box([0, top - 1], [25, 1]);
-        term.draw_border(BorderGlyphs::single_line());
+        term.draw_border(BorderGlyphs::single_line().with_default_colors());
         term.put_string([1, top - 1], "Press space to pause");
     }
 }

@@ -54,6 +54,10 @@ pub enum TileModification {
 }
 
 impl TileFormat {
+    pub fn new() -> TileFormat {
+        TileFormat::default()
+    }
+
     #[inline]
     /// Apply formatting to an existing tile without necessarily replacing it completely.
     pub fn apply(&self, tile: &mut Tile) {
@@ -88,18 +92,45 @@ impl TileFormat {
 impl TileModifier for TileFormat {
     /// Change the forergound color of a tile.
     fn fg(mut self, color: Color) -> TileFormat {
+        for modifier in self.modifications.iter_mut() {
+            match modifier {
+                TileModification::FGColor(col) => {
+                    *col = color;
+                    return self;
+                },
+                _ => {}
+            }
+        };
         self.modifications.push(TileModification::FGColor(color));
         self
     }
 
     /// Change the background color of a tile.
     fn bg(mut self, color: Color) -> TileFormat {
+        for modifier in self.modifications.iter_mut() {
+            match modifier {
+                TileModification::BGColor(col) => {
+                    *col = color;
+                    return self;
+                },
+                _ => {}
+            }
+        };
         self.modifications.push(TileModification::BGColor(color));
         self
     }
 
     /// Change the glyph of a tile.
     fn glyph(mut self, glyph: char) -> TileFormat {
+        for modifier in self.modifications.iter_mut() {
+            match modifier {
+                TileModification::Glyph(g) => {
+                    *g = glyph;
+                    return self;
+                },
+                _ => {}
+            }
+        };
         self.modifications.push(TileModification::Glyph(glyph));
         self
     }

@@ -16,7 +16,7 @@ pub struct UiBox {
     ///
     /// Foreground and/or background color can optionally be provided with the `fg(Color)` and
     /// `bg(Color)` functions.
-    pub glyphs: Option<BorderGlyphs>,
+    pub border_glyphs: Option<BorderGlyphs>,
 
     /// Optional tile to fill the box with.
     pub fill_tile: Option<TileFormat>,
@@ -27,38 +27,47 @@ impl UiBox {
         UiBox::default()
     }
 
-    /// A box with a single-line border.
+    /// Create a hollow UiBox with a single line border.
     pub fn single_line() -> Self {
-        UiBox::default().border_glyphs(BorderGlyphs::single_line())
+        let border = BorderGlyphs::single_line();
+        UiBox::new().with_border(border)
     }
 
-    /// A box with a double line border.
+    /// Create a hollow UiBox with a double line border.
     pub fn double_line() -> Self {
-        UiBox::new().border_glyphs(BorderGlyphs::double_line())
+        let border = BorderGlyphs::double_line();
+        UiBox::new().with_border(border)
     }
 
     /// Specify the [BorderGlyphs] for the box.
-    pub fn border_glyphs(mut self, glyphs: BorderGlyphs) -> UiBox {
-        self.glyphs = Some(glyphs);
+    pub fn with_border(mut self, glyphs: BorderGlyphs) -> Self {
+        self.border_glyphs = Some(glyphs);
         self
     }
 
     /// Specify the optional fill tile for the box.
     ///
-    /// If specified the fill tile will be drawn to the whole area of the box before
-    /// the border is drawn.
-    pub fn fill_tile(mut self, fill_tile: TileFormat) -> UiBox {
-        self.fill_tile = Some(fill_tile);
+    /// If specified, the fill tile will be drawn to the whole area of the box before
+    /// the border is drawn. If no border is specified the entire box will be filled.
+    pub fn filled(mut self, fill_tile: impl TileModifier) -> UiBox {
+        self.fill_tile = Some(fill_tile.format());
         self
     }
 
+    /// A box which will apply the given foreground and background colors, without affecting
+    /// existing glyphs.
+    pub fn color_fill(self, fg: Color, bg: Color) -> UiBox {
+        self.filled(TileFormat::new().fg(fg).bg(bg))
+    }
+
     /// Clear the entire area of the box to default tiles before drawing the border.
-    pub fn cleared(self) -> UiBox {
-        self.fill_tile(TileFormat::clear())
+    pub fn cleared(self) -> Self {
+        self.filled(TileFormat::clear())
     }
 
     /// Draw the box to a terminal.
     pub(crate) fn draw(&self, xy: impl GridPoint, size: impl Size2d, term: &mut Terminal) {
+        // TODO: Make this account for pivot (xy.aligned())
         let [x, y] = xy.as_array();
         let [width, height] = size.as_ivec2().to_array();
         let width = width as usize;
@@ -78,7 +87,7 @@ impl UiBox {
             }
         }
 
-        if let Some(glyphs) = &self.glyphs {
+        if let Some(glyphs) = &self.border_glyphs {
             for t in term.row_iter_mut(top).skip(left).take(width) {
                 glyphs.edge_tile(BoxEdge::Top).apply(t);
             }
@@ -178,7 +187,6 @@ impl BorderGlyphs {
             bottom_right: chars.next().unwrap(),
             color_modifiers: ArrayVec::new(),
         }
-        .default_clear_colors()
     }
 
     /// Single line border glyphs. Can be used in box drawing functions.
@@ -194,7 +202,6 @@ impl BorderGlyphs {
             bottom_right: '┘',
             color_modifiers: ArrayVec::new(),
         }
-        .default_clear_colors()
     }
 
     /// Double line border glyphs. Can be used in box drawing functions.
@@ -210,32 +217,32 @@ impl BorderGlyphs {
             bottom_right: '╝',
             color_modifiers: ArrayVec::new(),
         }
-        .default_clear_colors()
+    }
+    
+    /// Border glyphs will be colored with the default [`Tile`] foreground
+    /// and background colors.
+    pub fn with_default_colors(self) -> Self {
+        let t = Tile::default();
+        self.fg(t.fg_color).bg(t.bg_color)
     }
 
-    /// Add a foreground color to the box formatting.
-    ///
-    /// This will only be applied to border glyphs. To apply color to the
-    /// entire box use `BoxWriter::fill_tile` instead.
-    pub fn fg_color(mut self, color: Color) -> Self {
+    /// Add a foreground color to the border glyphs.
+    pub fn fg(mut self, color: Color) -> Self {
         for modifier in self.color_modifiers.iter_mut() {
             match modifier {
                 ColorModifier::FgColor(col) => {
                     *col = color;
                     return self;
                 }
-                ColorModifier::BgColor(_) => {}
+                _ => {}
             }
         }
         self.color_modifiers.push(ColorModifier::FgColor(color));
         self
     }
 
-    /// Add a background color to the box formatting.
-    ///
-    /// This will only be applied to border glyphs. To apply color to the
-    /// entire box use `BoxWriter::fill_tile` instead.
-    pub fn bg_color(mut self, color: Color) -> Self {
+    /// Add a background color to the border glyphs.
+    pub fn bg(mut self, color: Color) -> Self {
         for modifier in self.color_modifiers.iter_mut() {
             match modifier {
                 ColorModifier::FgColor(_) => {}
@@ -247,17 +254,6 @@ impl BorderGlyphs {
         }
         self.color_modifiers.push(ColorModifier::BgColor(color));
         self
-    }
-
-    /// When specified the border glyphs will not affect existing tile colors.
-    pub fn dont_clear_colors(mut self) -> Self {
-        self.color_modifiers.clear();
-        self
-    }
-
-    /// Iterator over the color modifiers to be applied to border glyphs.
-    pub fn color_mod_iter(&self) -> impl Iterator<Item = &ColorModifier> {
-        self.color_modifiers.iter()
     }
 
     /// Retrieve the [TileFormat] for a given glyph, with color modifiers
@@ -276,7 +272,7 @@ impl BorderGlyphs {
     }
 
     /// Returns the glyph for a given border edge.
-    pub fn edge_glyph(&self, edge: BoxEdge) -> char {
+    fn edge_glyph(&self, edge: BoxEdge) -> char {
         match edge {
             BoxEdge::Top => self.top,
             BoxEdge::Left => self.left,
@@ -289,32 +285,9 @@ impl BorderGlyphs {
         }
     }
 
-    /// Returns the mutable glyph for a given border edge.
-    pub fn edge_glyph_mut(&mut self, edge: BoxEdge) -> &mut char {
-        match edge {
-            BoxEdge::Top => &mut self.top,
-            BoxEdge::Left => &mut self.left,
-            BoxEdge::Right => &mut self.right,
-            BoxEdge::Bottom => &mut self.bottom,
-            BoxEdge::TopLeft => &mut self.top_left,
-            BoxEdge::TopRight => &mut self.top_right,
-            BoxEdge::BottomLeft => &mut self.bottom_left,
-            BoxEdge::BottomRight => &mut self.bottom_right,
-        }
-    }
-
     /// Returns the [TileFormat] for a given box edge.
-    pub fn edge_tile(&self, edge: BoxEdge) -> TileFormat {
+    fn edge_tile(&self, edge: BoxEdge) -> TileFormat {
         self.get_formatted_tile(self.edge_glyph(edge))
-    }
-
-    fn default_clear_colors(mut self) -> Self {
-        let t = Tile::default();
-        self.color_modifiers
-            .push(ColorModifier::FgColor(t.fg_color));
-        self.color_modifiers
-            .push(ColorModifier::BgColor(t.bg_color));
-        self
     }
 }
 
@@ -327,7 +300,7 @@ mod test {
 
     #[test]
     fn format_test() {
-        let fmt = BorderGlyphs::single_line().fg_color(Color::RED);
+        let fmt = BorderGlyphs::single_line().fg(Color::RED);
 
         let tile: Tile = fmt.edge_tile(BoxEdge::Top).into();
         assert_eq!('─', tile.glyph);

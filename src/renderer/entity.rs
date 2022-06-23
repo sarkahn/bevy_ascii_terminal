@@ -2,7 +2,7 @@
 
 use bevy::{prelude::*, sprite::Mesh2dHandle};
 
-use crate::TerminalMaterial;
+use crate::{TerminalMaterial, ChangeTerminalFont};
 
 use super::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
@@ -59,6 +59,7 @@ pub struct TerminalRendererBundle {
     pub tile_pivot: TilePivot,
     pub visibility: Visibility,
     pub computed_visibility: ComputedVisibility,
+    pub change_font: ChangeTerminalFont,
 }
 
 impl TerminalRendererBundle {
