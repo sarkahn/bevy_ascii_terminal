@@ -63,6 +63,7 @@ pub use sark_grids::grid::Side;
 pub use sark_grids::Grid;
 pub use sark_grids::GridPoint;
 pub use sark_grids::Size2d;
+pub use sark_grids::Pivot;
 
 pub use formatting::*;
 

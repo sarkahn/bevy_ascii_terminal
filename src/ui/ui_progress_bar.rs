@@ -1,4 +1,4 @@
-use bevy::{math::IVec2, prelude::Color};
+use bevy::{math::{IVec2, Vec2}, prelude::Color};
 use sark_grids::GridPoint;
 
 use crate::{Terminal, TileModifier};
@@ -170,8 +170,6 @@ impl UiProgressBar {
                     seg_t
                 };
 
-                //println!("Seg normalized: {}. Seg T {}. Seg_value_index {}", seg_normalized, seg_t, seg_value_index);
-
                 let count = string.chars().count();
                 let max_char_index = count - 1;
                 let transition_index = (max_char_index as f32 * seg_t).ceil() as usize;
@@ -188,20 +186,23 @@ impl UiProgressBar {
             }
         };
 
-        let pos = xy.as_ivec2();
+        let pivot = Vec2::from(xy.get_pivot().pivot);
+        let align = (size as f32 - 1.0) * pivot.x as f32;
+        let mut xy = xy.get_aligned_point(term.size());
+        xy.x -= align as i32;
 
         for i in 0..seg_value_index {
-            let pos = pos + IVec2::new(i as i32, 0);
+            let pos = xy + IVec2::new(i as i32, 0);
             term.put_char(pos, filled_glyph.fg(filled_color).bg(bg_color));
         }
 
         term.put_char(
-            pos + IVec2::new(seg_value_index as i32, 0),
+            xy + IVec2::new(seg_value_index as i32, 0),
             value_glyph.fg(value_color).bg(bg_color),
         );
 
         for i in seg_value_index + 1..size as usize {
-            let pos = pos + IVec2::new(i as i32, 0);
+            let pos = xy + IVec2::new(i as i32, 0);
             term.put_char(pos, empty_glyph.fg(empty_color).bg(bg_color));
         }
     }

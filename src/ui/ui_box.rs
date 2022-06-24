@@ -1,4 +1,5 @@
 use arrayvec::ArrayVec;
+use bevy::math::Vec2;
 use bevy::prelude::Color;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
@@ -67,19 +68,24 @@ impl UiBox {
 
     /// Draw the box to a terminal.
     pub(crate) fn draw(&self, xy: impl GridPoint, size: impl Size2d, term: &mut Terminal) {
-        // TODO: Make this account for pivot (xy.aligned())
-        let [x, y] = xy.as_array();
-        let [width, height] = size.as_ivec2().to_array();
-        let width = width as usize;
-        let height = height as usize;
-        let left = x as usize;
-        let right = x as usize + width - 1;
-        let bottom = y as usize;
-        let top = y as usize + height - 1;
+        let pivoted_point = xy.get_pivot();
+        let xy = xy.get_aligned_point(term.size());
+        let pivot = pivoted_point.pivot;
+
+        let pivot = Vec2::from(pivot);
+        let align_offset = ((size.as_vec2() - Vec2::ONE) * pivot).as_ivec2();   
+        let xy = xy - align_offset;
+
+        let [x, y] = xy.as_usize_array();
+        let [width, height] = size.as_usize_array();
+        let left = x;
+        let right = x + width - 1;
+        let bottom = y;
+        let top = y + height - 1;
 
         if let Some(fill) = &self.fill_tile {
             let [width, height] = size.as_array();
-            let [x, y] = xy.as_array();
+            let [x, y] = xy.to_array();
             for y in y..y + height as i32 {
                 for x in x..x + width as i32 {
                     fill.draw([x, y], term);

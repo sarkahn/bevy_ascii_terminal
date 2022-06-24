@@ -128,7 +128,9 @@ pub struct TerminalMaterialPlugin;
 
 impl Plugin for TerminalMaterialPlugin {
     fn build(&self, app: &mut App) {
-        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
+        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>()
+            .expect("Error initializing TerminalPlugin. Ensure TerminalPlugin is added AFTER
+            DefaultPlugins during app initialization.");
 
         shaders.set_untracked(
             TERMINAL_MATERIAL_SHADER_HANDLE,

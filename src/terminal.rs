@@ -173,7 +173,7 @@ impl Terminal {
     /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
     pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a> + 'a) {
-        let i = self.to_index(xy.aligned(self.size));
+        let i = self.to_index(xy.get_aligned_point(self.size));
 
         let (string, writes) = writer.formatted().into();
 
@@ -263,7 +263,6 @@ impl Terminal {
     /// term.draw_box([0,0], [3,3], &UiBox::single_line());
     /// ```
     pub fn draw_box(&mut self, xy: impl GridPoint, size: impl Size2d, ui_box: &UiBox) {
-        // TODO: Make boxes work with alignment.
         ui_box.draw(xy, size, self);
     }
 
@@ -274,7 +273,6 @@ impl Terminal {
     }
 
     pub fn draw_progress_bar(&mut self, xy: impl GridPoint, size: usize, bar: &UiProgressBar) {
-        // TODO: Make bars work with alignment.
         bar.draw(xy, size, self);
     }
 
