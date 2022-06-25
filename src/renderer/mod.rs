@@ -6,6 +6,7 @@ pub mod plugin;
 
 pub mod code_page_437;
 pub mod uv_mapping;
+pub mod font;
 
 pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
@@ -28,3 +29,5 @@ pub const TERMINAL_CHANGE_FONT: &str = "terminal_change_font";
 
 pub use entity::*;
 pub use plugin::TerminalRendererPlugin;
+pub use font::TerminalFont;
+pub use font::BuiltInFontHandles;

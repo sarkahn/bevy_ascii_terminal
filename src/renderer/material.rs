@@ -40,7 +40,6 @@ use bevy::math::Vec4;
 use bevy::prelude::Mesh;
 use bevy::reflect::TypeUuid;
 use bevy::render::mesh::MeshVertexBufferLayout;
-use bevy::render::texture::ImageType;
 use bevy::render::{
     color::Color,
     prelude::Shader,
@@ -53,8 +52,11 @@ use bevy::render::{
 use encase;
 
 use bevy::sprite::{Material2dPipeline, Material2dPlugin, SpecializedMaterial2d};
-use bevy::utils::HashMap;
 
+use crate::TerminalFont;
+
+use super::BuiltInFontHandles;
+use super::font::TerminalFontPlugin;
 use super::plugin::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
 
 /// The default shader handle used by the terminal.
@@ -65,119 +67,33 @@ pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
 pub const TERMINAL_DEFAULT_MATERIAL_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 2121056571224552501);
 
-macro_rules! include_font {
-    ($font_name:expr) => {{
-        let bytes = include_bytes!(concat!("builtin/", $font_name));
-        (
-            $font_name,
-            Image::from_buffer(
-                bytes,
-                ImageType::Extension("png"),
-                bevy::render::texture::CompressedImageFormats::NONE,
-                false,
-            )
-            .unwrap(),
-        )
-    }};
-}
-
-/// A resource which can be used to retrieve the image handles
-/// for the terminal's built-in fonts.
-///
-/// # Example
-///
-/// ```
-/// use bevy::prelude::*;
-/// use bevy_ascii_terminal::*;
-/// fn change_font_built_in(
-/// fonts: Res<BuiltInFontHandles>,
-/// mut materials: ResMut<Assets<TerminalMaterial>>,
-/// q_mat: Query<&Handle<TerminalMaterial>>,
-/// ) {
-///     for mat in q_mat.iter() {
-///         let mut mat = materials.get_mut(mat).unwrap();
-///         let built_in = fonts.get("zx_evolution_8x8.png").unwrap();
-///
-///         mat.texture = Some(built_in.clone());
-///     }
-/// }
-/// ```
-pub struct BuiltInFontHandles {
-    map: HashMap<String, Handle<Image>>,
-}
-
-impl BuiltInFontHandles {
-    /// Retrieve a built-in font handle by it's name. Must include ".png" the extension.
-    pub fn get(&self, font_name: &str) -> Option<&Handle<Image>> {
-        self.map.get(font_name)
-    }
-
-    /// An iterator over the name-value-pairs of the built in font handles
-    /// for the terminal.
-    ///
-    /// Yields (&String, &Handle<Image>), where `String` is the file name of the
-    /// font texture.
-    pub fn iter(&self) -> impl Iterator<Item = (&String, &Handle<Image>)> {
-        self.map.iter()
-    }
-}
-
 /// Plugin for the terminal renderer. Initializes resources and systems related to rendering.
 #[derive(Default)]
 pub struct TerminalMaterialPlugin;
 
 impl Plugin for TerminalMaterialPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugin(TerminalFontPlugin);
+        app.add_plugin(Material2dPlugin::<TerminalMaterial>::default());
+
         let mut shaders = app.world.get_resource_mut::<Assets<Shader>>()
             .expect("Error initializing TerminalPlugin. Ensure TerminalPlugin is added AFTER
-            DefaultPlugins during app initialization.");
+            DefaultPlugins during app initialization. (issue #1255)");
 
         shaders.set_untracked(
             TERMINAL_MATERIAL_SHADER_HANDLE,
             Shader::from_wgsl(include_str!("terminal.wgsl")),
         );
-        app.add_plugin(Material2dPlugin::<TerminalMaterial>::default());
+        
+        let fonts = app.world.get_resource::<BuiltInFontHandles>()
+            .expect("Couldn't get font handles");
+        let font = fonts.get(&TerminalFont::default());
+        let material = TerminalMaterial::from(font.clone());
 
-        let mut fonts = BuiltInFontHandles {
-            map: HashMap::default(),
-        };
-        let font_map = &mut fonts.map;
+        let mut materials = app.world.get_resource_mut::<Assets<TerminalMaterial>>().unwrap();
+        materials.set_untracked(Handle::<TerminalMaterial>::default(), material);        
 
-        let mut images = app.world.get_resource_mut::<Assets<Image>>().unwrap();
-
-        let font = include_font!("jt_curses_12x12.png");
-        add_font_resource(font, &mut images, font_map);
-
-        let font = include_font!("pastiche_8x8.png");
-        add_font_resource(font, &mut images, font_map);
-
-        let font = include_font!("px437_8x8.png");
-        let default_font = add_font_resource(font, &mut images, font_map);
-
-        let font = include_font!("taffer_10x10.png");
-        add_font_resource(font, &mut images, font_map);
-
-        let font = include_font!("zx_evolution_8x8.png");
-        add_font_resource(font, &mut images, font_map);
-
-        // Set up default material handle
-        app.world
-            .get_resource_mut::<Assets<TerminalMaterial>>()
-            .unwrap()
-            .set_untracked(Handle::<TerminalMaterial>::default(), default_font.into());
-
-        app.insert_resource(fonts);
     }
-}
-
-fn add_font_resource(
-    font: (&str, Image),
-    images: &mut Assets<Image>,
-    font_map: &mut HashMap<String, Handle<Image>>,
-) -> Handle<Image> {
-    let handle = images.set(font.0, font.1);
-    font_map.insert(font.0.to_string(), handle.clone());
-    handle
 }
 
 /// The material for rendering a terminal.
@@ -308,13 +224,6 @@ impl RenderAsset for TerminalMaterial {
             flags,
             texture: material.texture,
         })
-        // let buffer = [0u8; TerminalMaterialUniformData::SIZE.get() as usize];
-
-        // let buffer = render_device.create_buffer_with_data(&BufferInitDescriptor {
-        //     label: Some("terminal_material_uniform_buffer"),
-        //     usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-        //     contents: value_std140.as_bytes(),
-        // });
     }
 }
 
@@ -342,9 +251,6 @@ impl SpecializedMaterial2d for TerminalMaterial {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: Some(TerminalMaterialUniformData::min_size()),
-                        // min_binding_size: BufferSize::new(
-                        //     TerminalMaterialUniformData::std140_size_static() as u64,
-                        // ),
                     },
                     count: None,
                 },

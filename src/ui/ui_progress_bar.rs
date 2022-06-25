@@ -15,11 +15,14 @@ pub struct UiProgressBar {
 #[derive(Debug, Clone)]
 pub enum GlyphFill {
     /// The entire progress bar is always a single glyph, regardless of value.
+    /// ▓▓▓▓▓▓▓▓▓▓
     Static(char),
     /// Each segment will be filled or empty based on value.
+    /// ▓▓▓▓▓▓░░░░
     EmptyOrFilled(char, char),
     /// The right-most segment will transition through the glyph string based on value.
     /// All other segments will be filled or empty.
+    /// ▓▓▓▓▓▓▒░░░
     EmptyOrFilledWithTransition(String),
 }
 impl Default for GlyphFill {
@@ -30,7 +33,7 @@ impl Default for GlyphFill {
 
 #[derive(Debug, Clone)]
 pub enum ColorFill {
-    /// Segments are always a single color, reglardless of value.
+    /// Segments are always a single color, regardless of value.
     Static(Color),
     /// Each segment will be either the empty color or the filled color.
     EmptyOrFilled(Color, Color),

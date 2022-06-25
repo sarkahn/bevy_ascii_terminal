@@ -1,7 +1,8 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{formatting::StringWriter, ui::{BorderGlyphs, UiBox}, *};
+use bevy_ascii_terminal::{formatting::StringWriter, ui::{BorderGlyphs, UiBox}, *, renderer::BuiltInFontHandles};
 use bevy_tiled_camera::*;
 use sark_grids::Pivot;
+use strum::IntoEnumIterator;
 
 fn main() {
     App::new()
@@ -19,7 +20,7 @@ fn main() {
 #[derive(Default)]
 struct FontIndex(pub usize);
 
-fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
+fn spawn_terminal(mut commands: Commands) {
     let size = [47, 13];
     let mut term_bundle = TerminalBundle::new().with_size(size);
 
@@ -27,10 +28,12 @@ fn spawn_terminal(mut commands: Commands, fonts: Res<BuiltInFontHandles>) {
         .terminal
         .draw_border(BorderGlyphs::single_line());
 
-    let fonts: Vec<_> = fonts.iter().collect();
     let term = &mut term_bundle.terminal;
 
-    draw_title(&mut term_bundle.terminal, fonts[0].0);
+    //let current = TerminalFont[0];
+
+    let font = TerminalFont::default();
+    draw_title(&mut term_bundle.terminal, font.as_ref());
 
     let bg_color = Color::MIDNIGHT_BLUE;
     term_bundle.terminal.put_string(
@@ -95,21 +98,23 @@ fn change_font(
     if keys.just_pressed(KeyCode::Space) {
         let mut cam = q_cam_projection.single_mut();
         for (mut term, mat) in q.iter_mut() {
-            let fonts: Vec<_> = built_in_fonts.iter().collect();
 
-            font_index.0 = (font_index.0 + 1) % fonts.len();
+            font_index.0 = (font_index.0 + 1) % built_in_fonts.len();
+            //let font = TerminalFont::from_index(font_index.0);
+            let font = TerminalFont::iter().nth(font_index.0).unwrap();
+            let name = font.as_ref();
+            //let name = String::from_iter(name);
+            let font_handle = built_in_fonts.get(&font);
+            let font = images.get(font_handle).unwrap();
 
-            let new_font = fonts[font_index.0];
-
-            let tex = images.get(new_font.1);
-            let ppu = tex.unwrap().texture_descriptor.size.height / 16;
+            let ppu = font.size().y as u32 / 16;
 
             cam.pixels_per_tile = ppu;
 
             let mut mat = materials.get_mut(mat).unwrap();
-            mat.texture = Some(new_font.1.clone());
+            mat.texture = Some(font_handle.clone());
 
-            draw_title(&mut term, new_font.0);
+            draw_title(&mut term, name);
         }
     }
 }

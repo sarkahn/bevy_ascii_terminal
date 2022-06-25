@@ -19,6 +19,8 @@ itertools = "0.10.3"
 ron = "0.6.4"
 anyhow = "1.0.4"
 arrayvec = "0.7.2"
+strum = "0.24.1"
+strum_macros = "0.24.0"
 
 [dev-dependencies]
 bevy = {path="../bevy", version = "0.8.0-dev", default-features = false, features = ["png", "bevy_winit", "bevy_render"]}

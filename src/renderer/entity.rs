@@ -2,11 +2,11 @@
 
 use bevy::{prelude::*, sprite::Mesh2dHandle};
 
-use crate::{TerminalMaterial, ChangeTerminalFont};
+use crate::{TerminalMaterial};
 
 use super::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
-    uv_mapping::UvMapping,
+    uv_mapping::UvMapping, TerminalFont,
 };
 
 /// Terminal component specifying the origin of the terminal mesh.
@@ -59,7 +59,7 @@ pub struct TerminalRendererBundle {
     pub tile_pivot: TilePivot,
     pub visibility: Visibility,
     pub computed_visibility: ComputedVisibility,
-    pub change_font: ChangeTerminalFont,
+    pub font: TerminalFont,
 }
 
 impl TerminalRendererBundle {

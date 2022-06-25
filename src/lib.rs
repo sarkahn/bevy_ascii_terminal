@@ -54,8 +54,8 @@ pub mod ui;
 pub use terminal::{ColorModifier, Terminal, Tile};
 
 pub use renderer::code_page_437;
-pub use renderer::material::BuiltInFontHandles;
 pub use renderer::material::TerminalMaterial;
+pub use renderer::TerminalFont;
 
 use bevy::prelude::*;
 
@@ -64,6 +64,9 @@ pub use sark_grids::Grid;
 pub use sark_grids::GridPoint;
 pub use sark_grids::Size2d;
 pub use sark_grids::Pivot;
+
+pub use ui::UiBox;
+pub use ui::BorderGlyphs;
 
 pub use formatting::*;
 
@@ -91,9 +94,18 @@ impl TerminalBundle {
         self
     }
 
-    pub fn with_font(mut self, font: ChangeTerminalFont) -> Self {
-        self.renderer.change_font = font;
+    pub fn with_font(mut self, font: TerminalFont) -> Self {
+        self.renderer.font = font;
         self
+    }
+}
+
+impl From<Terminal> for TerminalBundle {
+    fn from(terminal: Terminal) -> Self {
+        TerminalBundle {
+            terminal,
+            ..default()
+        }
     }
 }
 
@@ -102,25 +114,5 @@ pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(renderer::TerminalRendererPlugin);
-    }
-}
-
-/// Helper component for changing the terminal's font
-#[derive(Debug, Clone, Component)]
-pub enum ChangeTerminalFont {
-    /// Change to one of the terminal's built in fonts:
-    /// - jt_curses_12x12.png
-    /// - pastiche_8x8.png
-    /// - px437_8x8.png
-    /// - taffer_10x10.png
-    /// - zx_evolution_8x8.png
-    BuiltIn(String),
-    /// Change to a custom font texture
-    Asset(Handle<Image>),
-}
-
-impl Default for ChangeTerminalFont {
-    fn default() -> Self {
-        ChangeTerminalFont::BuiltIn("px437_8x8.png".to_string())
     }
 }

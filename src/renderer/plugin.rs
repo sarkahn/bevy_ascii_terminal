@@ -8,7 +8,7 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::{ChangeTerminalFont, BuiltInFontHandles};
+use crate::renderer::font::{TerminalFont, BuiltInFontHandles};
 
 use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *};
 
@@ -147,23 +147,20 @@ fn terminal_renderer_update_mesh(
 
 fn terminal_renderer_change_font(
     built_in_fonts: Res<BuiltInFontHandles>,
-    q_change: Query<(Entity, &Handle<TerminalMaterial>, &ChangeTerminalFont)>,
+    q_change: Query<(Entity, &Handle<TerminalMaterial>, &TerminalFont)>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
     mut commands: Commands,
 ) {
-    for (e, mat, change) in q_change.iter() {
-        let handle = match change {
-            ChangeTerminalFont::BuiltIn(name) => {
-                let handle = built_in_fonts.get(name).unwrap_or_else(|| 
-                    panic!("Error changing terminal font, built in font {} not found", name));
-                Some(handle)
-            },
-            ChangeTerminalFont::Asset(handle) => Some(handle),
+    for (e, mat, font) in q_change.iter() {
+        let handle = match font {
+            TerminalFont::Custom(handle) => handle,
+            _ => {
+                built_in_fonts.get(font)
+            }
         };
-        if let Some(handle) = handle {
-            let mat = materials.get_mut(mat).expect("Error changing terminal font, invalid material handle");
-            mat.texture = Some(handle.clone());
-        }
-        commands.entity(e).remove::<ChangeTerminalFont>();
+        let mat = materials.get_mut(mat).unwrap_or_else(||
+            panic!("Error changing terminal font, invalid material handle: {:#?}", font));
+        mat.texture = Some(handle.clone());
+        commands.entity(e).remove::<TerminalFont>();
     }
 }
