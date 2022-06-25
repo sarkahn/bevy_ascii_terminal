@@ -87,16 +87,32 @@ fn terminal_renderer_update_size(
     for (terminal, material, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in
         q.iter_mut()
     {
-        let mut tile_size = UVec2::ONE;
-        if let TileScaling::Pixels = scaling {
-            let material = materials.get(material).unwrap();
-            let image = images.get(material.texture.as_ref().unwrap()).unwrap();
-            let size = image.texture_descriptor.size;
-            // TODO: This will need to assignable for graphical terminals, can't necessarily
-            // be derived from the texture for a non-uniform-grid tilesheet.
-            let font_size = UVec2::new(size.width, size.height) / UVec2::new(16, 16);
-            tile_size *= font_size;
-        }
+        
+        let material = materials.get(material).unwrap();
+        let image = images.get(material.texture.as_ref().unwrap()).unwrap();
+        let font_size = image.size() / 16.0;
+
+        let tile_size = match scaling {
+            TileScaling::World => {
+                let aspect = font_size.x / font_size.y;
+                let w = 1.0 * aspect;
+                let h = 1.0;
+                Vec2::new(w, h)
+            },
+            TileScaling::Pixels => {
+                font_size
+            },
+        };
+
+        // if let TileScaling::Pixels = scaling {
+        //     let material = materials.get(material).unwrap();
+        //     let image = images.get(material.texture.as_ref().unwrap()).unwrap();
+        //     let size = image.size().as_uvec2();
+        //     // TODO: This will need to assignable for graphical terminals, can't necessarily
+        //     // be derived from the texture for a non-uniform-grid tilesheet.
+        //     let font_size = size / 16;
+        //     tile_size *= font_size;
+        // }
 
         let size = terminal.size();
         vert_data.resize(size, term_pivot.0, tile_pivot.0, tile_size);

@@ -29,7 +29,7 @@ pub struct TilePivot(pub Vec2);
 /// Terminal component specifying how terminal mesh tiles will be scaled.
 #[derive(Component, Clone, Copy)]
 pub enum TileScaling {
-    /// Each tile will take up 1 unit of world space.
+    /// Each tile will take up 1 unit of world space. This is the default setting.
     World,
     /// Scale terminal tiles based on the size of their texture.
     ///

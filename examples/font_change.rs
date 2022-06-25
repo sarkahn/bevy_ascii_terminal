@@ -92,12 +92,12 @@ fn change_font(
     images: Res<Assets<Image>>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
     mut font_index: ResMut<FontIndex>,
-    mut q: Query<(&mut Terminal, &Handle<TerminalMaterial>)>,
+    mut q: Query<(&mut Terminal, &mut Handle<TerminalMaterial>)>,
     mut q_cam_projection: Query<&mut TiledCamera>,
 ) {
     if keys.just_pressed(KeyCode::Space) {
         let mut cam = q_cam_projection.single_mut();
-        for (mut term, mat) in q.iter_mut() {
+        for (mut term, mut mat_handle) in q.iter_mut() {
 
             font_index.0 = (font_index.0 + 1) % built_in_fonts.len();
             //let font = TerminalFont::from_index(font_index.0);
@@ -111,8 +111,14 @@ fn change_font(
 
             cam.pixels_per_tile = ppu;
 
-            let mut mat = materials.get_mut(mat).unwrap();
+            let mut mat = materials.get_mut(&mat_handle).unwrap();
             mat.texture = Some(font_handle.clone());
+
+            // We can't rely on Change Detection for a handle, since
+            // we don't change the handle directly, just use it to retreive
+            // the contents from Assets.
+            // Force change detection...what's a better way to do this?
+            *mat_handle = mat_handle.clone();
 
             draw_title(&mut term, name);
         }

@@ -16,7 +16,7 @@ impl TerminalRendererVertexData {
         let mut v = Self::default();
         let term_pivot = TerminalPivot::default();
         let tile_pivot = TilePivot::default();
-        v.resize(size, term_pivot.0, tile_pivot.0, UVec2::ONE);
+        v.resize(size, term_pivot.0, tile_pivot.0, Vec2::ONE);
         v
     }
 
@@ -25,12 +25,11 @@ impl TerminalRendererVertexData {
         term_size: UVec2,
         term_pivot: Vec2,
         tile_pivot: Vec2,
-        tile_size: UVec2,
+        tile_size: Vec2,
     ) {
         let len = (term_size.x * term_size.y) as usize;
 
         let size = term_size.as_vec2();
-        let tile_size = tile_size.as_vec2();
 
         let world_size = size * tile_size;
 
@@ -65,6 +64,7 @@ impl TerminalRendererVertexData {
             let ii = i * 6;
             let vi = vi as u32;
             let indices = &mut self.indices;
+
             indices[ii] = vi;
             indices[ii + 1] = vi + 1;
             indices[ii + 2] = vi + 2;
