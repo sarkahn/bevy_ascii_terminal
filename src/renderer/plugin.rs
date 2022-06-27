@@ -95,9 +95,7 @@ fn terminal_renderer_update_size(
         let tile_size = match scaling {
             TileScaling::World => {
                 let aspect = font_size.x / font_size.y;
-                let w = 1.0 * aspect;
-                let h = 1.0;
-                Vec2::new(w, h)
+                Vec2::new(aspect, 1.0)
             },
             TileScaling::Pixels => {
                 font_size

@@ -29,12 +29,12 @@ pub struct TilePivot(pub Vec2);
 /// Terminal component specifying how terminal mesh tiles will be scaled.
 #[derive(Component, Clone, Copy)]
 pub enum TileScaling {
-    /// Each tile will take up 1 unit of world space. This is the default setting.
+    /// Each tile will take up 1 unit of world space vertically. This is the default setting.
     World,
     /// Scale terminal tiles based on the size of their texture.
     ///
     /// With this setting, 1 pixel == 1 world unit. This matches the expected
-    /// defaults for bevy's orthographic camera. This setting supports non-square fonts.
+    /// defaults for bevy's orthographic camera.
     Pixels,
 }
 
