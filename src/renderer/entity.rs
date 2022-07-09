@@ -2,7 +2,7 @@
 
 use bevy::{prelude::*, sprite::Mesh2dHandle};
 
-use crate::{TerminalMaterial};
+use crate::TerminalMaterial;
 
 use super::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,

@@ -8,7 +8,7 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::renderer::font::{TerminalFont, BuiltInFontHandles};
+use crate::renderer::font::{BuiltInFontHandles, TerminalFont};
 
 use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *};
 
@@ -29,7 +29,7 @@ impl Plugin for TerminalRendererPlugin {
             .add_system(
                 terminal_renderer_change_font
                     .after(TERMINAL_INIT)
-                    .label(TERMINAL_CHANGE_FONT)
+                    .label(TERMINAL_CHANGE_FONT),
             )
             .add_system(
                 terminal_renderer_update_size
@@ -87,7 +87,6 @@ fn terminal_renderer_update_size(
     for (terminal, material, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data) in
         q.iter_mut()
     {
-        
         let material = materials.get(material).unwrap();
         let image = images.get(material.texture.as_ref().unwrap()).unwrap();
         let font_size = image.size() / 16.0;
@@ -96,10 +95,8 @@ fn terminal_renderer_update_size(
             TileScaling::World => {
                 let aspect = font_size.x / font_size.y;
                 Vec2::new(aspect, 1.0)
-            },
-            TileScaling::Pixels => {
-                font_size
-            },
+            }
+            TileScaling::Pixels => font_size,
         };
 
         // if let TileScaling::Pixels = scaling {
@@ -168,12 +165,14 @@ fn terminal_renderer_change_font(
     for (e, mat, font) in q_change.iter() {
         let handle = match font {
             TerminalFont::Custom(handle) => handle,
-            _ => {
-                built_in_fonts.get(font)
-            }
+            _ => built_in_fonts.get(font),
         };
-        let mat = materials.get_mut(mat).unwrap_or_else(||
-            panic!("Error changing terminal font, invalid material handle: {:#?}", font));
+        let mat = materials.get_mut(mat).unwrap_or_else(|| {
+            panic!(
+                "Error changing terminal font, invalid material handle: {:#?}",
+                font
+            )
+        });
         mat.texture = Some(handle.clone());
         commands.entity(e).remove::<TerminalFont>();
     }

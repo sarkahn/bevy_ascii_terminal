@@ -1,32 +1,30 @@
-use bevy::{
-    prelude::*, 
-    utils::HashMap,
-    render::texture::ImageType, asset::HandleId,
-};
+use bevy::{asset::HandleId, prelude::*, render::texture::ImageType, utils::HashMap};
 
 use std::str::FromStr;
-use strum::IntoEnumIterator;
-use strum_macros::{AsRefStr, EnumString, EnumCount, EnumIter};
+
+use strum_macros::{AsRefStr, EnumCount, EnumIter, EnumString};
 
 /// Helper component for changing the terminal's font
 
 /// You can add this to a terminal entity to change fonts.
-/// 
+///
 /// You can also change fonts by assigning a new image
 /// handle directly to the `TerminalMaterial`.
-#[derive(Debug, Clone, Component, Eq, PartialEq, Hash, AsRefStr, EnumString, EnumCount, EnumIter)]
+#[derive(
+    Debug, Clone, Component, Eq, PartialEq, Hash, AsRefStr, EnumString, EnumCount, EnumIter,
+)]
 pub enum TerminalFont {
-    #[strum(serialize="jt_curses_12x12.png")]
+    #[strum(serialize = "jt_curses_12x12.png")]
     JtCurses12x12,
-    #[strum(serialize="pastiche_8x8.png")]
+    #[strum(serialize = "pastiche_8x8.png")]
     Pastiche8x8,
-    #[strum(serialize="px437_8x8.png")]
+    #[strum(serialize = "px437_8x8.png")]
     Px4378x8,
-    #[strum(serialize="taffer_10x10.png")]
+    #[strum(serialize = "taffer_10x10.png")]
     Taffer10x12,
-    #[strum(serialize="taritus_curses_8x12.png")]
+    #[strum(serialize = "taritus_curses_8x12.png")]
     ZxEvolution8x8,
-    #[strum(serialize="zx_evolution_8x8.png")]
+    #[strum(serialize = "zx_evolution_8x8.png")]
     TaritusCurses8x12,
     /// Change to a custom font texture
     Custom(Handle<Image>),
@@ -80,7 +78,7 @@ impl Plugin for TerminalFontPlugin {
 
         let font = include_font!("zx_evolution_8x8.png");
         add_font_resource(font, &mut images, font_map);
-        
+
         let font = include_font!("taritus_curses_8x12.png");
         add_font_resource(font, &mut images, font_map);
 
@@ -126,11 +124,12 @@ pub struct BuiltInFontHandles {
 impl BuiltInFontHandles {
     /// Retrieve a built-in font handle by it's name. Must include ".png" the extension.
     pub fn get(&self, font: &TerminalFont) -> &Handle<Image> {
-        self.map.get(font).unwrap_or_else(||
-            panic!("Error retrieving built in font: {:#?} not found", font)
-        )
+        self.map
+            .get(font)
+            .unwrap_or_else(|| panic!("Error retrieving built in font: {:#?} not found", font))
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.map.len()
     }

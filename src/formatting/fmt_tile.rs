@@ -14,11 +14,12 @@ use crate::{Terminal, Tile};
 /// # Example
 ///
 /// ```rust
+/// use bevy::prelude::Color;
 /// use bevy_ascii_terminal::*;
 /// let mut term = Terminal::with_size([10,10]);
 ///
 /// // Insert a an 'a' character with a blue foreground and green background.
-/// term.put_char([1,1], 'a'.fg(Color::BLUE).bg(Color::GREEN);
+/// term.put_char([1,1], 'a'.fg(Color::BLUE).bg(Color::GREEN));
 /// ```
 pub trait TileModifier: Clone {
     /// Change the glyph of a tile.
@@ -48,9 +49,9 @@ pub enum TileModification {
     /// Change the glyph of a tile.
     Glyph(char),
     /// Change the foreground color of a tile.
-    FGColor(Color),
+    FgColor(Color),
     /// Change the background color of a tile.
-    BGColor(Color),
+    BgColor(Color),
 }
 
 impl TileFormat {
@@ -64,8 +65,8 @@ impl TileFormat {
         for modification in self.modifications.iter() {
             match modification {
                 TileModification::Glyph(glyph) => tile.glyph = *glyph,
-                TileModification::FGColor(col) => tile.fg_color = *col,
-                TileModification::BGColor(col) => tile.bg_color = *col,
+                TileModification::FgColor(col) => tile.fg_color = *col,
+                TileModification::BgColor(col) => tile.bg_color = *col,
             }
         }
     }
@@ -93,45 +94,36 @@ impl TileModifier for TileFormat {
     /// Change the forergound color of a tile.
     fn fg(mut self, color: Color) -> TileFormat {
         for modifier in self.modifications.iter_mut() {
-            match modifier {
-                TileModification::FGColor(col) => {
-                    *col = color;
-                    return self;
-                },
-                _ => {}
+            if let TileModification::FgColor(col) = modifier {
+                *col = color;
+                return self;
             }
-        };
-        self.modifications.push(TileModification::FGColor(color));
+        }
+        self.modifications.push(TileModification::FgColor(color));
         self
     }
 
     /// Change the background color of a tile.
     fn bg(mut self, color: Color) -> TileFormat {
         for modifier in self.modifications.iter_mut() {
-            match modifier {
-                TileModification::BGColor(col) => {
-                    *col = color;
-                    return self;
-                },
-                _ => {}
+            if let TileModification::BgColor(col) = modifier {
+                *col = color;
+                return self;
             }
-        };
-        self.modifications.push(TileModification::BGColor(color));
+        }
+        self.modifications.push(TileModification::BgColor(color));
         self
     }
 
     /// Change the glyph of a tile.
-    fn glyph(mut self, glyph: char) -> TileFormat {
+    fn glyph(mut self, ch: char) -> TileFormat {
         for modifier in self.modifications.iter_mut() {
-            match modifier {
-                TileModification::Glyph(g) => {
-                    *g = glyph;
-                    return self;
-                },
-                _ => {}
+            if let TileModification::Glyph(glyph) = modifier {
+                *glyph = ch;
+                return self;
             }
-        };
-        self.modifications.push(TileModification::Glyph(glyph));
+        }
+        self.modifications.push(TileModification::Glyph(ch));
         self
     }
     /// Get the [TileFormat] which can be used to apply tile modifications.

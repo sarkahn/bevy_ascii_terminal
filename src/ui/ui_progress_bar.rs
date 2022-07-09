@@ -1,4 +1,7 @@
-use bevy::{math::{IVec2, Vec2}, prelude::Color};
+use bevy::{
+    math::{IVec2, Vec2},
+    prelude::Color,
+};
 use sark_grids::GridPoint;
 
 use crate::{Terminal, TileModifier};

@@ -1,5 +1,10 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{formatting::StringWriter, ui::{BorderGlyphs, UiBox}, *, renderer::BuiltInFontHandles};
+use bevy_ascii_terminal::{
+    formatting::StringWriter,
+    renderer::BuiltInFontHandles,
+    ui::{BorderGlyphs, UiBox},
+    *,
+};
 use bevy_tiled_camera::*;
 use sark_grids::Pivot;
 use strum::IntoEnumIterator;
@@ -28,7 +33,7 @@ fn spawn_terminal(mut commands: Commands) {
         .terminal
         .draw_border(BorderGlyphs::single_line());
 
-    let term = &mut term_bundle.terminal;
+    let _term = &mut term_bundle.terminal;
 
     //let current = TerminalFont[0];
 
@@ -41,8 +46,8 @@ fn spawn_terminal(mut commands: Commands) {
         "Press spacebar to change fonts".bg(bg_color),
     );
     term_bundle.terminal.put_string(
-        [1, 4].pivot(Pivot::TopLeft), 
-        "!@#$%^&*()_+=-`~".bg(bg_color)
+        [1, 4].pivot(Pivot::TopLeft),
+        "!@#$%^&*()_+=-`~".bg(bg_color),
     );
     term_bundle.terminal.put_string(
         [1, 6].pivot(Pivot::TopLeft),
@@ -60,30 +65,24 @@ fn spawn_terminal(mut commands: Commands) {
 
     commands.spawn_bundle(
         TiledCameraBundle::new()
-            .with_pixels_per_tile(8)
+            .with_pixels_per_tile([8, 8])
             .with_tile_count(size),
     );
 }
 
 fn draw_title(term: &mut Terminal, title: &str) {
-    let ui_box = UiBox::single_line().filled(
-        TileFormat::new().fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE)
-    );
-    term.draw_box([0,0], term.size(), &ui_box);
+    let ui_box =
+        UiBox::single_line().filled(TileFormat::new().fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE));
+    term.draw_box([0, 0], term.size(), &ui_box);
 
     let title = &title[0..title.len() - 4];
     term.draw_border(BorderGlyphs::single_line());
     term.put_string([1, 0].pivot(Pivot::TopLeft), "[ ");
     term.put_string(
         [3, 0].pivot(Pivot::TopLeft),
-        title
-        .to_uppercase()
-        .fg(Color::RED)
+        title.to_uppercase().fg(Color::RED),
     );
-    term.put_string(
-        [3 + title.len(), 0].pivot(Pivot::TopLeft),
-        " ]"
-    );
+    term.put_string([3 + title.len(), 0].pivot(Pivot::TopLeft), " ]");
 }
 
 fn change_font(
@@ -98,7 +97,6 @@ fn change_font(
     if keys.just_pressed(KeyCode::Space) {
         let mut cam = q_cam_projection.single_mut();
         for (mut term, mut mat_handle) in q.iter_mut() {
-
             font_index.0 = (font_index.0 + 1) % built_in_fonts.len();
             //let font = TerminalFont::from_index(font_index.0);
             let font = TerminalFont::iter().nth(font_index.0).unwrap();
@@ -109,7 +107,7 @@ fn change_font(
 
             let ppu = font.size().y as u32 / 16;
 
-            cam.pixels_per_tile = ppu;
+            cam.pixels_per_tile = UVec2::splat(ppu);
 
             let mut mat = materials.get_mut(&mat_handle).unwrap();
             mat.texture = Some(font_handle.clone());

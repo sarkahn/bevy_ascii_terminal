@@ -73,7 +73,7 @@ impl UiBox {
         let pivot = pivoted_point.pivot;
 
         let pivot = Vec2::from(pivot);
-        let align_offset = ((size.as_vec2() - Vec2::ONE) * pivot).as_ivec2();   
+        let align_offset = ((size.as_vec2() - Vec2::ONE) * pivot).as_ivec2();
         let xy = xy - align_offset;
 
         let [x, y] = xy.as_usize_array();
@@ -224,7 +224,7 @@ impl BorderGlyphs {
             color_modifiers: ArrayVec::new(),
         }
     }
-    
+
     /// Border glyphs will be colored with the default [`Tile`] foreground
     /// and background colors.
     pub fn with_default_colors(self) -> Self {
@@ -235,12 +235,9 @@ impl BorderGlyphs {
     /// Add a foreground color to the border glyphs.
     pub fn fg(mut self, color: Color) -> Self {
         for modifier in self.color_modifiers.iter_mut() {
-            match modifier {
-                ColorModifier::FgColor(col) => {
-                    *col = color;
-                    return self;
-                }
-                _ => {}
+            if let ColorModifier::FgColor(col) = modifier {
+                *col = color;
+                return self;
             }
         }
         self.color_modifiers.push(ColorModifier::FgColor(color));

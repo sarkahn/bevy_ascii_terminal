@@ -55,9 +55,9 @@ use bevy::sprite::{Material2dPipeline, Material2dPlugin, SpecializedMaterial2d};
 
 use crate::TerminalFont;
 
-use super::BuiltInFontHandles;
 use super::font::TerminalFontPlugin;
 use super::plugin::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
+use super::BuiltInFontHandles;
 
 /// The default shader handle used by the terminal.
 pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
@@ -76,23 +76,28 @@ impl Plugin for TerminalMaterialPlugin {
         app.add_plugin(TerminalFontPlugin);
         app.add_plugin(Material2dPlugin::<TerminalMaterial>::default());
 
-        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>()
-            .expect("Error initializing TerminalPlugin. Ensure TerminalPlugin is added AFTER
-            DefaultPlugins during app initialization. (issue #1255)");
+        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().expect(
+            "Error initializing TerminalPlugin. Ensure TerminalPlugin is added AFTER
+            DefaultPlugins during app initialization. (issue #1255)",
+        );
 
         shaders.set_untracked(
             TERMINAL_MATERIAL_SHADER_HANDLE,
             Shader::from_wgsl(include_str!("terminal.wgsl")),
         );
-        
-        let fonts = app.world.get_resource::<BuiltInFontHandles>()
+
+        let fonts = app
+            .world
+            .get_resource::<BuiltInFontHandles>()
             .expect("Couldn't get font handles");
         let font = fonts.get(&TerminalFont::default());
         let material = TerminalMaterial::from(font.clone());
 
-        let mut materials = app.world.get_resource_mut::<Assets<TerminalMaterial>>().unwrap();
-        materials.set_untracked(Handle::<TerminalMaterial>::default(), material);        
-
+        let mut materials = app
+            .world
+            .get_resource_mut::<Assets<TerminalMaterial>>()
+            .unwrap();
+        materials.set_untracked(Handle::<TerminalMaterial>::default(), material);
     }
 }
 

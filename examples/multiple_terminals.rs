@@ -82,7 +82,7 @@ fn setup(mut commands: Commands) {
 
     commands.spawn_bundle(
         TiledCameraBundle::new()
-            .with_pixels_per_tile(8)
+            .with_pixels_per_tile([8, 8])
             .with_tile_count(view_size)
             .with_camera_position(view_pos.as_vec2()),
     );

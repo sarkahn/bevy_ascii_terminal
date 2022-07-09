@@ -250,9 +250,6 @@ impl Terminal {
     }
 
     /// Draw a formatted box to the terminal.
-    ///
-    /// The [BoxBuilder] trait allows you to specify the properties of the box.
-    ///
     /// # Example
     ///
     /// ```rust

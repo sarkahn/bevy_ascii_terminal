@@ -36,7 +36,7 @@ fn spawn_terminal(mut commands: Commands) {
 
     commands.spawn_bundle(
         TiledCameraBundle::new()
-            .with_pixels_per_tile(8)
+            .with_pixels_per_tile([8, 8])
             .with_tile_count(size),
     );
 
