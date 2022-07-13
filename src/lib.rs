@@ -45,10 +45,10 @@
 //!     .run();
 //! }
 //! ```
-pub mod renderer;
-
-pub mod formatting;
 mod terminal;
+
+pub mod renderer;
+pub mod formatting;
 pub mod ui;
 
 pub use terminal::{ColorModifier, Terminal, Tile};
@@ -56,8 +56,6 @@ pub use terminal::{ColorModifier, Terminal, Tile};
 pub use renderer::code_page_437;
 pub use renderer::material::TerminalMaterial;
 pub use renderer::TerminalFont;
-
-use bevy::prelude::*;
 
 pub use sark_grids::grid::Side;
 pub use sark_grids::Grid;
@@ -69,6 +67,10 @@ pub use ui::BorderGlyphs;
 pub use ui::UiBox;
 
 pub use formatting::*;
+
+
+use bevy::prelude::*;
+
 
 /// A bundle with all the required components for a terminal.
 ///

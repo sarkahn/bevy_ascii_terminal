@@ -8,6 +8,9 @@ pub mod code_page_437;
 pub mod font;
 pub mod uv_mapping;
 
+#[cfg(feature="camera")]
+pub mod camera;
+
 pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
 

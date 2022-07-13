@@ -8,6 +8,8 @@ use super::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
     uv_mapping::UvMapping, TerminalFont,
 };
+#[cfg(feature="camera")]
+use super::camera::TerminalCamera;
 
 /// Terminal component specifying the origin of the terminal mesh.
 ///
@@ -44,6 +46,17 @@ impl Default for TileScaling {
     }
 }
 
+#[derive(Component, Default)]
+pub struct PixelsPerTile(pub(crate) UVec2);
+
+impl std::ops::Deref for PixelsPerTile {
+    type Target = UVec2;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 /// A bundle of all the components required to render a terminal.
 ///
 /// Has various functions to help with the construction of a terminal.
@@ -59,6 +72,9 @@ pub struct TerminalRendererBundle {
     pub tile_pivot: TilePivot,
     pub visibility: Visibility,
     pub computed_visibility: ComputedVisibility,
+    pub pixels_per_tile: PixelsPerTile,
+    #[cfg(feature="camera")]
+    pub cam: TerminalCamera,
     pub font: TerminalFont,
 }
 
