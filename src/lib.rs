@@ -47,8 +47,8 @@
 //! ```
 mod terminal;
 
-pub mod renderer;
 pub mod formatting;
+pub mod renderer;
 pub mod ui;
 
 pub use terminal::{ColorModifier, Terminal, Tile};
@@ -57,7 +57,7 @@ pub use renderer::code_page_437;
 pub use renderer::material::TerminalMaterial;
 pub use renderer::TerminalFont;
 
-#[cfg(feature="camera")]
+#[cfg(feature = "camera")]
 pub use renderer::camera::AutoCamera;
 
 pub use sark_grids::grid::Side;
@@ -71,9 +71,7 @@ pub use ui::UiBox;
 
 pub use formatting::*;
 
-
 use bevy::prelude::*;
-
 
 /// A bundle with all the required components for a terminal.
 ///

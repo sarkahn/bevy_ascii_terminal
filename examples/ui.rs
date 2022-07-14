@@ -22,12 +22,13 @@ fn main() {
 }
 
 fn spawn_terminal(mut commands: Commands) {
-    let mut term = Terminal::with_size([50,20]);
+    let mut term = Terminal::with_size([50, 20]);
 
     draw_boxes(&mut term);
 
-    commands.spawn_bundle(TerminalBundle::from(term))
-    .insert(AutoCamera);
+    commands
+        .spawn_bundle(TerminalBundle::from(term))
+        .insert(AutoCamera);
 
     let initial_value = 0;
     let max = 100;

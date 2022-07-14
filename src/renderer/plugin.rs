@@ -10,7 +10,9 @@ use bevy::{
 
 use crate::renderer::font::{BuiltInFontHandles, TerminalFont};
 
-use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *, camera::TerminalCameraPlugin};
+use super::{
+    camera::TerminalCameraPlugin, material::TerminalMaterialPlugin, uv_mapping::UvMapping, *,
+};
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Uv", 1, VertexFormat::Float32x2);
@@ -86,8 +88,17 @@ fn terminal_renderer_update_size(
         )>,
     >,
 ) {
-    for (terminal, material, scaling, term_pivot, tile_pivot, mesh, mut vert_data, mut tile_data, mut ppt) in
-        q.iter_mut()
+    for (
+        terminal,
+        material,
+        scaling,
+        term_pivot,
+        tile_pivot,
+        mesh,
+        mut vert_data,
+        mut tile_data,
+        mut ppt,
+    ) in q.iter_mut()
     {
         let material = materials.get(material).unwrap();
         let image = images.get(material.texture.as_ref().unwrap()).unwrap();

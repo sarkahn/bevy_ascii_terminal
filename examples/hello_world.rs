@@ -16,13 +16,14 @@ fn main() {
 }
 
 fn spawn_terminal(mut commands: Commands) {
-    let mut term = Terminal::with_size([20,3]);
+    let mut term = Terminal::with_size([20, 3]);
 
     term.draw_border(BorderGlyphs::single_line());
     term.put_string([1, 1], "Press spacebar".bg(Color::LIME_GREEN));
 
-    commands.spawn_bundle(TerminalBundle::from(term))
-    .insert(AutoCamera);
+    commands
+        .spawn_bundle(TerminalBundle::from(term))
+        .insert(AutoCamera);
 }
 
 fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {

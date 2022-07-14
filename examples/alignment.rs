@@ -27,5 +27,7 @@ fn setup(mut commands: Commands) {
 
     term.draw_progress_bar([0, 0].pivot(Pivot::TopRight), 10, &bar);
 
-    commands.spawn_bundle(TerminalBundle::from(term)).insert(AutoCamera);
+    commands
+        .spawn_bundle(TerminalBundle::from(term))
+        .insert(AutoCamera);
 }

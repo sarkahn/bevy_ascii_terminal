@@ -28,7 +28,6 @@ fn spawn_terminal(mut commands: Commands) {
 
     term.draw_border(BorderGlyphs::single_line());
 
-
     let font = TerminalFont::default();
     draw_title(&mut term, font.as_ref());
 
@@ -53,8 +52,9 @@ fn spawn_terminal(mut commands: Commands) {
         [1, 10].pivot(Pivot::TopLeft),
         "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞".bg(bg_color),
     );
-    commands.spawn_bundle(TerminalBundle::from(term)).insert(AutoCamera);
-
+    commands
+        .spawn_bundle(TerminalBundle::from(term))
+        .insert(AutoCamera);
 }
 
 fn draw_title(term: &mut Terminal, title: &str) {

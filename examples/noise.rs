@@ -82,8 +82,9 @@ fn get_noise(t: NoiseType) -> FastNoise {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn_bundle(TerminalBundle::new().with_size([40,40]))
-    .insert(AutoCamera);
+    commands
+        .spawn_bundle(TerminalBundle::new().with_size([40, 40]))
+        .insert(AutoCamera);
 }
 
 fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {

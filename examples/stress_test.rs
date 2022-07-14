@@ -25,11 +25,11 @@ fn main() {
 struct Pause(bool);
 
 fn setup(mut commands: Commands) {
-    commands.spawn_bundle(TerminalBundle::new().with_size([80,50]))
-    .insert(Pause::default())
-    .insert(AutoCamera);
+    commands
+        .spawn_bundle(TerminalBundle::new().with_size([80, 50]))
+        .insert(Pause::default())
+        .insert(AutoCamera);
 }
-
 
 fn rand_color(rng: &mut ThreadRng) -> Color {
     let r: f32 = rng.gen_range(0.0..=1.0);
