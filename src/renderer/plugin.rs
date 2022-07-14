@@ -10,7 +10,7 @@ use bevy::{
 
 use crate::renderer::font::{BuiltInFontHandles, TerminalFont};
 
-use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *};
+use super::{material::TerminalMaterialPlugin, uv_mapping::UvMapping, *, camera::TerminalCameraPlugin};
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Uv", 1, VertexFormat::Float32x2);
@@ -24,6 +24,7 @@ pub struct TerminalRendererPlugin;
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TerminalMaterialPlugin);
+        app.add_plugin(TerminalCameraPlugin);
 
         app.add_system(terminal_renderer_init.label(TERMINAL_INIT))
             .add_system(

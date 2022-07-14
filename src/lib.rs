@@ -57,6 +57,9 @@ pub use renderer::code_page_437;
 pub use renderer::material::TerminalMaterial;
 pub use renderer::TerminalFont;
 
+#[cfg(feature="camera")]
+pub use renderer::camera::AutoCamera;
+
 pub use sark_grids::grid::Side;
 pub use sark_grids::Grid;
 pub use sark_grids::GridPoint;

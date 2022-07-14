@@ -1,4 +1,4 @@
-use bevy::{asset::HandleId, prelude::*, render::texture::ImageType, utils::HashMap};
+use bevy::{asset::HandleId, prelude::*, render::{texture::{ImageType, ImageSampler}}, utils::HashMap};
 
 use std::str::FromStr;
 
@@ -40,15 +40,17 @@ impl Default for TerminalFont {
 macro_rules! include_font {
     ($font:expr) => {{
         let bytes = include_bytes!(concat!("builtin/", $font));
+        let mut image = Image::from_buffer(
+            bytes,
+            ImageType::Extension("png"),
+            bevy::render::texture::CompressedImageFormats::NONE,
+            false,
+        )
+        .unwrap();
+        image.sampler_descriptor = ImageSampler::Descriptor(ImageSampler::nearest_descriptor()); 
         (
             TerminalFont::from_str($font).unwrap(),
-            Image::from_buffer(
-                bytes,
-                ImageType::Extension("png"),
-                bevy::render::texture::CompressedImageFormats::NONE,
-                false,
-            )
-            .unwrap(),
+            image
         )
     }};
 }
@@ -62,7 +64,9 @@ impl Plugin for TerminalFontPlugin {
         };
         let font_map = &mut fonts.map;
 
-        let mut images = app.world.get_resource_mut::<Assets<Image>>().unwrap();
+        let mut images = app.world.get_resource_mut::<Assets<Image>>()
+            .unwrap_or_else(|| panic!("Error retrieving image resource - ensure
+            DefaultPlugins are initialized before TerminalPlugin"));
 
         let font = include_font!("jt_curses_12x12.png");
         add_font_resource(font, &mut images, font_map);
@@ -81,7 +85,6 @@ impl Plugin for TerminalFontPlugin {
 
         let font = include_font!("taritus_curses_8x12.png");
         add_font_resource(font, &mut images, font_map);
-
         app.insert_resource(fonts);
     }
 }

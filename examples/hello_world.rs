@@ -4,12 +4,9 @@ use bevy_ascii_terminal::{
     ui::BorderGlyphs,
     *,
 };
-use bevy_tiled_camera::*;
 
 fn main() {
     App::new()
-        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
-        .add_plugin(TiledCameraPlugin)
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
@@ -19,23 +16,13 @@ fn main() {
 }
 
 fn spawn_terminal(mut commands: Commands) {
-    let size = [20, 3];
-    let mut term_bundle = TerminalBundle::new().with_size(size);
+    let mut term = Terminal::with_size([20,3]);
 
-    term_bundle
-        .terminal
-        .draw_border(BorderGlyphs::single_line());
-    term_bundle
-        .terminal
-        .put_string([1, 1], "Press spacebar".bg(Color::LIME_GREEN));
+    term.draw_border(BorderGlyphs::single_line());
+    term.put_string([1, 1], "Press spacebar".bg(Color::LIME_GREEN));
 
-    commands.spawn_bundle(term_bundle);
-
-    commands.spawn_bundle(
-        TiledCameraBundle::new()
-            .with_pixels_per_tile([8, 8])
-            .with_tile_count(size),
-    );
+    commands.spawn_bundle(TerminalBundle::from(term))
+    .insert(AutoCamera);
 }
 
 fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {

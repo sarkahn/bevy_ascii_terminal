@@ -1,11 +1,8 @@
 use bevy::prelude::*;
 use bevy_ascii_terminal::*;
-use bevy_tiled_camera::*;
 
 fn main() {
     App::new()
-        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
-        .add_plugin(TiledCameraPlugin)
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
@@ -17,13 +14,7 @@ fn main() {
 fn setup(mut commands: Commands) {
     let size = [12, 27];
     let bundle = TerminalBundle::new().with_size(size);
-    commands.spawn_bundle(bundle);
-
-    commands.spawn_bundle(
-        TiledCameraBundle::new()
-            .with_pixels_per_tile([8, 8])
-            .with_tile_count(size),
-    );
+    commands.spawn_bundle(bundle).insert(AutoCamera);
 }
 
 fn draw_colors(time: Res<Time>, mut q: Query<&mut Terminal>) {

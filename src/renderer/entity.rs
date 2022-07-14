@@ -8,8 +8,6 @@ use super::{
     renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
     uv_mapping::UvMapping, TerminalFont,
 };
-#[cfg(feature="camera")]
-use super::camera::TerminalCamera;
 
 /// Terminal component specifying the origin of the terminal mesh.
 ///
@@ -73,8 +71,6 @@ pub struct TerminalRendererBundle {
     pub visibility: Visibility,
     pub computed_visibility: ComputedVisibility,
     pub pixels_per_tile: PixelsPerTile,
-    #[cfg(feature="camera")]
-    pub cam: TerminalCamera,
     pub font: TerminalFont,
 }
 

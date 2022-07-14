@@ -4,15 +4,12 @@ use bevy::prelude::*;
 
 use bevy_ascii_terminal::ui::BorderGlyphs;
 use bevy_ascii_terminal::*;
-use bevy_tiled_camera::*;
 use rand::prelude::ThreadRng;
 use rand::Rng;
 use sark_grids::grid::Side;
 
 fn main() {
     App::new()
-        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
-        .add_plugin(TiledCameraPlugin)
         .init_resource::<Pause>()
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
@@ -28,17 +25,11 @@ fn main() {
 struct Pause(bool);
 
 fn setup(mut commands: Commands) {
-    let size = [80, 50];
-
-    let term = TerminalBundle::new().with_size(size);
-    commands.spawn_bundle(term).insert(Pause::default());
-
-    commands.spawn_bundle(
-        TiledCameraBundle::new()
-            .with_pixels_per_tile([8, 8])
-            .with_tile_count(size),
-    );
+    commands.spawn_bundle(TerminalBundle::new().with_size([80,50]))
+    .insert(Pause::default())
+    .insert(AutoCamera);
 }
+
 
 fn rand_color(rng: &mut ThreadRng) -> Color {
     let r: f32 = rng.gen_range(0.0..=1.0);

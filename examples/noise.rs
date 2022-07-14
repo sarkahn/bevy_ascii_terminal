@@ -1,14 +1,11 @@
 use bevy::prelude::*;
 use bevy_ascii_terminal::{ui::UiBox, *};
-use bevy_tiled_camera::*;
 
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;
 
 fn main() {
     App::new()
-        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
-        .add_plugin(TiledCameraPlugin)
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
@@ -85,10 +82,8 @@ fn get_noise(t: NoiseType) -> FastNoise {
 }
 
 fn setup(mut commands: Commands) {
-    let size = [40, 40];
-
-    commands.spawn_bundle(TerminalBundle::new().with_size(size));
-    commands.spawn_bundle(TiledCameraBundle::new().with_tile_count(size));
+    commands.spawn_bundle(TerminalBundle::new().with_size([40,40]))
+    .insert(AutoCamera);
 }
 
 fn change_noise(keys: Res<Input<KeyCode>>, mut noise: ResMut<Noise>) {

@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevy_ascii_terminal::ui::*;
 use bevy_ascii_terminal::*;
-use bevy_tiled_camera::*;
 
 #[derive(Component)]
 pub struct ProgressBar {
@@ -14,8 +13,6 @@ pub struct ProgressBar {
 
 fn main() {
     App::new()
-        // Must add TiledCameraPlugin first: https://github.com/bevyengine/bevy/issues/1255
-        .add_plugin(TiledCameraPlugin)
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
@@ -25,20 +22,12 @@ fn main() {
 }
 
 fn spawn_terminal(mut commands: Commands) {
-    let size = [50, 20];
-    let mut term_bundle = TerminalBundle::new().with_size(size);
+    let mut term = Terminal::with_size([50,20]);
 
-    let term = &mut term_bundle.terminal;
+    draw_boxes(&mut term);
 
-    draw_boxes(term);
-
-    commands.spawn_bundle(term_bundle);
-
-    commands.spawn_bundle(
-        TiledCameraBundle::new()
-            .with_pixels_per_tile([8, 8])
-            .with_tile_count(size),
-    );
+    commands.spawn_bundle(TerminalBundle::from(term))
+    .insert(AutoCamera);
 
     let initial_value = 0;
     let max = 100;

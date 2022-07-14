@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+//! An optional utility for automatically adjusting the camera to properly
+//! view a terminal.
+//! 
+use bevy::{prelude::* };
 use bevy_tiled_camera::{*};
 
 use crate::Terminal;
@@ -9,12 +12,41 @@ pub struct TerminalCameraPlugin;
 
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugin(TiledCameraPlugin);
         app
         .add_system(init_camera.before(TERMINAL_INIT))
         .add_system(update_from_new.after(TERMINAL_UPDATE_SIZE))
         .add_system(update_from_terminal_change.after(TERMINAL_UPDATE_SIZE));
     }
 }
+
+/// This component can be added to a terminal entity to have that terminal be 
+/// the primary focus for the camera. 
+/// 
+/// If no camera exists, one will be automatically created. If a camera exists, 
+/// the first one found will be made to focus on the terminal.
+/// 
+/// When a terminal is focused by a camera the viewport will automatically 
+/// be adjusted to display the entire terminal, scaled up as much as it can be 
+/// while avoiding pixel artifacts.  
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use bevy::prelude::*;
+/// use bevy_ascii_terminal::*;
+/// 
+/// fn setup(mut commands: Commands) {
+///     let mut term = Terminal::with_size([10,3]);
+///     term.put_string([0,1], "Hello");
+/// 
+///     commands.spawn_bundle(TerminalBundle::from(term))
+///     .insert(AutoCamera);
+/// }
+
+/// ```
+#[derive(Component)]
+pub struct AutoCamera;
 
 /// Will track changes to the target terminal and update the viewport so the 
 /// entire terminal can be visible.
@@ -42,7 +74,7 @@ fn init_camera(
         Query<Entity, 
         (
             With<Terminal>,
-            With<TerminalCamera>,
+            With<AutoCamera>,
         )>,
     mut q_cam_with: Query<&mut TerminalCamera, With<TiledCamera>>,
     q_cam_without: Query<Entity,
@@ -52,7 +84,7 @@ fn init_camera(
         )>,
 ) {
     for term_entity in q_term.iter() {
-        commands.entity(term_entity).remove::<TerminalCamera>();
+        commands.entity(term_entity).remove::<AutoCamera>();
         
         // Try to find any camera
         if let Some(mut tcam) = q_cam_with.iter_mut().next() {
@@ -63,6 +95,7 @@ fn init_camera(
             });
         // Couldn't find any cameras - so let's make one
         } else {
+            println!("Adding new terminal camera!");
             commands.spawn_bundle(TiledCameraBundle::new())
             .insert(TerminalCamera {
                 terminal: Some(term_entity)
