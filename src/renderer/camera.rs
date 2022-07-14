@@ -85,7 +85,6 @@ fn init_camera(
             });
         // Couldn't find any cameras - so let's make one
         } else {
-            println!("Adding new terminal camera!");
             commands
                 .spawn_bundle(TiledCameraBundle::new())
                 .insert(TerminalCamera {
