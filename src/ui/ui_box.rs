@@ -5,7 +5,7 @@ use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
 use crate::fmt_tile::ColorFormat;
-use crate::formatting::TileFormat;
+use crate::fmt_tile::TileFormat;
 use crate::formatting::TileModifier;
 use crate::Terminal;
 use crate::Tile;

@@ -1,3 +1,6 @@
+use std::borrow::Borrow;
+use std::borrow::Cow;
+
 use bevy::prelude::*;
 
 use sark_grids::grid::Side;
@@ -150,6 +153,17 @@ impl Terminal {
     }
 
     /// Change the foreground or background color for a single tile in the terminal.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use bevy::prelude::*;
+    /// use bevy_ascii_terminal::*;
+    /// let mut term = Terminal::with_size([10,10]);
+    /// 
+    /// // Set the background color for the given tile to blue.
+    /// term.put_color([3,3], Color::BLUE.bg());
+    /// ```
     pub fn put_color(&mut self, xy: impl GridPoint, color: ColorFormat) {
         let tile = self.get_tile_mut(xy);
         match color {
@@ -170,8 +184,6 @@ impl Terminal {
     /// and/or background color for the string using the `fg` and `bg` functions.
     /// If you don't specify a color then the existing colors in the terminal
     /// will be unaffected.
-    ///
-    /// All tiles in the terminal begin with a white foreground and black background.
     ///
     /// # Example
     ///
@@ -270,10 +282,10 @@ impl Terminal {
     /// use bevy_ascii_terminal::ui::*;
     ///
     /// let mut term = Terminal::with_size([10,10]);
-    /// term.draw_box([0,0], [3,3], &UiBox::single_line());
+    /// term.draw_box([0,0], [3,3], UiBox::single_line());
     /// ```
-    pub fn draw_box(&mut self, xy: impl GridPoint, size: impl Size2d, ui_box: &UiBox) {
-        ui_box.draw(xy, size, self);
+    pub fn draw_box(&mut self, xy: impl GridPoint, size: impl Size2d, ui_box: impl Borrow<UiBox>) {
+        ui_box.borrow().draw(xy, size, self);
     }
 
     /// Draw a border around the entire terminal.
@@ -282,8 +294,12 @@ impl Terminal {
         bx.draw([0, 0], self.size, self);
     }
 
-    pub fn draw_progress_bar(&mut self, xy: impl GridPoint, size: usize, bar: &UiProgressBar) {
-        bar.draw(xy, size, self);
+    pub fn draw_progress_bar(&mut self, 
+        xy: impl GridPoint, 
+        size: usize, 
+        bar: impl Borrow<UiProgressBar>
+    ) {
+        bar.borrow().draw(xy, size, self);
     }
 
     /// Clear the terminal tiles to default - empty tiles with

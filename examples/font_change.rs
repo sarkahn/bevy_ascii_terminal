@@ -1,11 +1,8 @@
 use bevy::prelude::*;
 use bevy_ascii_terminal::{
-    formatting::StringWriter,
-    renderer::BuiltInFontHandles,
-    ui::{BorderGlyphs, UiBox},
     *,
+    renderer::BuiltInFontHandles,
 };
-use sark_grids::Pivot;
 use strum::IntoEnumIterator;
 
 fn main() {

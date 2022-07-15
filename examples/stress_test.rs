@@ -1,12 +1,8 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
-
 use bevy::prelude::*;
-
-use bevy_ascii_terminal::ui::BorderGlyphs;
 use bevy_ascii_terminal::*;
 use rand::prelude::ThreadRng;
 use rand::Rng;
-use sark_grids::grid::Side;
 
 fn main() {
     App::new()

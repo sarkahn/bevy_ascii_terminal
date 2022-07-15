@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{ui::UiBox, *};
+use bevy_ascii_terminal::*;
 
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;
@@ -120,7 +120,7 @@ fn noise(time: Res<Time>, mut noise: ResMut<Noise>, mut query: Query<&mut Termin
         }
 
         term.clear_box([0, 0], [30, 3]);
-        term.draw_box([0, 0], [30, 3], &UiBox::single_line());
+        term.draw_box([0, 0], [30, 3], UiBox::single_line());
         term.put_string([1, 1], "Press space to change noise");
 
         let t = noise.noise.get_noise_type();

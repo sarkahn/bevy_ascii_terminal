@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_ascii_terminal::{
-    ui::{UiBox, UiProgressBar},
+    ui::UiProgressBar,
     *,
 };
 use sark_grids::Pivot;

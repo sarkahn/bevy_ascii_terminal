@@ -1,9 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{
-    formatting::{StringWriter, TileModifier},
-    ui::BorderGlyphs,
-    *,
-};
+use bevy_ascii_terminal::*;
 
 fn main() {
     App::new()
