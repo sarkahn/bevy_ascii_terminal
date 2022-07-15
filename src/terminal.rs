@@ -33,6 +33,10 @@ use crate::ui::UiProgressBar;
 pub struct Terminal {
     tiles: Grid<Tile>,
     size: UVec2,
+    /// Tile to insert when a position is "cleared".
+    /// 
+    /// The terminal will be filled with this tile when created.
+    clear_tile: Tile,
 }
 
 /// A single tile of the terminal.
@@ -47,6 +51,17 @@ pub struct Tile {
     pub fg_color: Color,
     /// The background color for the tile.
     pub bg_color: Color,
+}
+
+impl Tile {
+    /// Create an invisible tile.
+    pub fn transparent() -> Tile {
+        Tile { 
+            glyph: ' ', 
+            fg_color: Color::rgba_u8(0,0,0,0), 
+            bg_color: Color::rgba_u8(0,0,0,0), 
+        }
+    }
 }
 
 /// Used in `put_color` for setting the foreground or background color of a tile
@@ -68,19 +83,24 @@ impl Default for Tile {
 }
 
 impl Terminal {
+    pub fn new(size: impl Size2d, clear_tile: Tile) -> Self {
+        Terminal { 
+            tiles: Grid::new(clear_tile, size),
+            size: size.as_uvec2(),
+            clear_tile
+        }
+    }
+
     /// Construct a terminal with the given size
     pub fn with_size(size: impl Size2d) -> Terminal {
-        Terminal {
-            tiles: Grid::default(size),
-            size: size.as_uvec2(),
-        }
+        Terminal::new(size, Tile::default())
     }
 
     /// Resize the terminal's internal tile data.
     ///
     /// This will clear all tiles to default.
     pub fn resize(&mut self, size: impl Size2d) {
-        self.tiles = Grid::default(size);
+        self.tiles = Grid::new(self.clear_tile, size);
         self.size = size.as_uvec2();
     }
 
@@ -208,7 +228,7 @@ impl Terminal {
     pub fn clear_string(&mut self, xy: impl GridPoint, len: usize) {
         let i = self.to_index(xy);
         for t in self.tiles.slice_mut(i..).iter_mut().take(len) {
-            *t = Tile::default()
+            *t = self.clear_tile;
         }
     }
 
@@ -244,7 +264,7 @@ impl Terminal {
         let [x, y] = xy.as_array();
         for y in y..y + height as i32 {
             for x in x..x + width as i32 {
-                self.put_tile([x, y], Tile::default());
+                self.put_tile([x, y], self.clear_tile);
             }
         }
     }
@@ -277,7 +297,7 @@ impl Terminal {
     /// a black background and white foreground.
     pub fn clear(&mut self) {
         for t in self.tiles.iter_mut() {
-            *t = Tile::default()
+            *t = self.clear_tile
         }
     }
 

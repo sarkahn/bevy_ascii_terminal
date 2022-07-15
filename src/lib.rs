@@ -101,6 +101,18 @@ impl TerminalBundle {
         self.renderer.font = font;
         self
     }
+
+    pub fn with_position(mut self, pos: impl GridPoint) -> Self {
+        let p = self.transform.translation;
+        self.transform.translation = pos.as_vec2().extend(p.z);
+        self
+    }
+
+    /// Sets the intial z position for the terminal.
+    pub fn with_depth(mut self, depth: i32) -> Self {
+        self.transform.translation.z = depth as f32;
+        self
+    }
 }
 
 impl From<Terminal> for TerminalBundle {
