@@ -85,6 +85,7 @@ fn terminal_renderer_update_size(
             Changed<Handle<Mesh>>,
             Changed<TileScaling>,
             Changed<Handle<TerminalMaterial>>,
+            Added<TerminalFont>,
         )>,
     >,
 ) {

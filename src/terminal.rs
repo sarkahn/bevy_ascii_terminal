@@ -1,5 +1,4 @@
 use std::borrow::Borrow;
-use std::borrow::Cow;
 
 use bevy::prelude::*;
 
@@ -38,7 +37,7 @@ pub struct Terminal {
     tiles: Grid<Tile>,
     size: UVec2,
     /// Tile to insert when a position is "cleared".
-    /// 
+    ///
     /// The terminal will be filled with this tile when created.
     clear_tile: Tile,
 }
@@ -60,10 +59,10 @@ pub struct Tile {
 impl Tile {
     /// Create an invisible tile.
     pub fn transparent() -> Tile {
-        Tile { 
-            glyph: ' ', 
-            fg_color: Color::rgba_u8(0,0,0,0), 
-            bg_color: Color::rgba_u8(0,0,0,0), 
+        Tile {
+            glyph: ' ',
+            fg_color: Color::rgba_u8(0, 0, 0, 0),
+            bg_color: Color::rgba_u8(0, 0, 0, 0),
         }
     }
 }
@@ -80,10 +79,10 @@ impl Default for Tile {
 
 impl Terminal {
     pub fn new(size: impl Size2d, clear_tile: Tile) -> Self {
-        Terminal { 
+        Terminal {
             tiles: Grid::new(clear_tile, size),
             size: size.as_uvec2(),
-            clear_tile
+            clear_tile,
         }
     }
 
@@ -153,14 +152,14 @@ impl Terminal {
     }
 
     /// Change the foreground or background color for a single tile in the terminal.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use bevy::prelude::*;
     /// use bevy_ascii_terminal::*;
     /// let mut term = Terminal::with_size([10,10]);
-    /// 
+    ///
     /// // Set the background color for the given tile to blue.
     /// term.put_color([3,3], Color::BLUE.bg());
     /// ```
@@ -294,10 +293,11 @@ impl Terminal {
         bx.draw([0, 0], self.size, self);
     }
 
-    pub fn draw_progress_bar(&mut self, 
-        xy: impl GridPoint, 
-        size: usize, 
-        bar: impl Borrow<UiProgressBar>
+    pub fn draw_progress_bar(
+        &mut self,
+        xy: impl GridPoint,
+        size: usize,
+        bar: impl Borrow<UiProgressBar>,
     ) {
         bar.borrow().draw(xy, size, self);
     }

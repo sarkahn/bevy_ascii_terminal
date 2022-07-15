@@ -52,9 +52,7 @@ macro_rules! include_font {
             false,
         )
         .unwrap();
-        image.sampler_descriptor = ImageSampler::Descriptor(
-            ImageSampler::nearest_descriptor()
-        );
+        image.sampler_descriptor = ImageSampler::Descriptor(ImageSampler::nearest_descriptor());
         (TerminalFont::from_str($font).unwrap(), image)
     }};
 }

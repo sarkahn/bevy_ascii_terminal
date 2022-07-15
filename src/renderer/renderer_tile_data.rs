@@ -26,7 +26,11 @@ impl TerminalRendererTileData {
         self.uvs.resize(len * 4, Default::default());
     }
 
-    pub fn update_from_tiles<'a>(&mut self, tiles: impl Iterator<Item=&'a Tile>, uv_mapping: &UvMapping) {
+    pub fn update_from_tiles<'a>(
+        &mut self,
+        tiles: impl Iterator<Item = &'a Tile>,
+        uv_mapping: &UvMapping,
+    ) {
         for (i, tile) in tiles.enumerate() {
             let glyph = tile.glyph;
 

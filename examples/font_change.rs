@@ -1,8 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{
-    *,
-    renderer::BuiltInFontHandles,
-};
+use bevy_ascii_terminal::{renderer::BuiltInFontHandles, *};
 use strum::IntoEnumIterator;
 
 fn main() {
@@ -72,25 +69,18 @@ fn draw_title(term: &mut Terminal, title: &str) {
 fn change_font(
     keys: Res<Input<KeyCode>>,
     built_in_fonts: Res<BuiltInFontHandles>,
-    mut materials: ResMut<Assets<TerminalMaterial>>,
     mut font_index: ResMut<FontIndex>,
-    mut q: Query<(&mut Terminal, &mut Handle<TerminalMaterial>)>,
+    mut q: Query<(Entity, &mut Terminal)>,
+    mut commands: Commands,
 ) {
     if keys.just_pressed(KeyCode::Space) {
-        for (mut term, mut mat_handle) in q.iter_mut() {
+        for (entity, mut term) in q.iter_mut() {
             font_index.0 = (font_index.0 + 1) % built_in_fonts.len();
+
             let font = TerminalFont::iter().nth(font_index.0).unwrap();
+            commands.entity(entity).insert(font.clone());
+
             let name = font.as_ref();
-            let font_handle = built_in_fonts.get(&font);
-
-            let mut mat = materials.get_mut(&mat_handle).unwrap();
-            mat.texture = Some(font_handle.clone());
-
-            // We can't rely on Change Detection for a handle, since
-            // we don't change the handle directly, just use it to retreive
-            // the contents from Assets.
-            // Force change detection...what's a better way to do this?
-            *mat_handle = mat_handle.clone();
 
             draw_title(&mut term, name);
         }

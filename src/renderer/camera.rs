@@ -18,7 +18,7 @@ impl Plugin for TerminalCameraPlugin {
     }
 }
 
-/// This component can be added to a terminal entity as a simple way to have 
+/// This component can be added to a terminal entity as a simple way to have
 /// that terminal be the primary focus for the camera.
 ///
 /// If no camera exists, one will be automatically created. If a camera exists,
