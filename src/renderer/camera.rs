@@ -1,6 +1,5 @@
 //! An optional utility for automatically adjusting the camera to properly
 //! view a terminal.
-//!
 use bevy::prelude::*;
 use bevy_tiled_camera::*;
 
@@ -19,8 +18,8 @@ impl Plugin for TerminalCameraPlugin {
     }
 }
 
-/// This component can be added to a terminal entity to have that terminal be
-/// the primary focus for the camera.
+/// This component can be added to a terminal entity as a simple way to have 
+/// that terminal be the primary focus for the camera.
 ///
 /// If no camera exists, one will be automatically created. If a camera exists,
 /// the first one found will be made to focus on the terminal.
@@ -37,7 +36,7 @@ impl Plugin for TerminalCameraPlugin {
 ///
 /// fn setup(mut commands: Commands) {
 ///     let mut term = Terminal::with_size([10,3]);
-///     term.put_string([0,1], "Hello");
+///     term.put_string([1,1], "Hello");
 ///
 ///     commands.spawn_bundle(TerminalBundle::from(term))
 ///     .insert(AutoCamera);

@@ -31,7 +31,7 @@ use crate::ui::UiProgressBar;
 /// ```
 #[derive(Component, Default)]
 pub struct Terminal {
-    pub tiles: Grid<Tile>,
+    tiles: Grid<Tile>,
     size: UVec2,
 }
 
