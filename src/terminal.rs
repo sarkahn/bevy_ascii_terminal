@@ -6,6 +6,7 @@ use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
 use crate::fmt_string::StringColor;
+use crate::fmt_tile::ColorFormat;
 use crate::formatting::StringWriter;
 use crate::formatting::TileModifier;
 use crate::ui::ui_box::BorderGlyphs;
@@ -62,14 +63,6 @@ impl Tile {
             bg_color: Color::rgba_u8(0,0,0,0), 
         }
     }
-}
-
-/// Used in `put_color` for setting the foreground or background color of a tile
-/// without affecting the glyph.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ColorModifier {
-    FgColor(Color),
-    BgColor(Color),
 }
 
 impl Default for Tile {
@@ -157,11 +150,11 @@ impl Terminal {
     }
 
     /// Change the foreground or background color for a single tile in the terminal.
-    pub fn put_color(&mut self, xy: impl GridPoint, color: ColorModifier) {
+    pub fn put_color(&mut self, xy: impl GridPoint, color: ColorFormat) {
         let tile = self.get_tile_mut(xy);
         match color {
-            ColorModifier::FgColor(col) => tile.fg_color = col,
-            ColorModifier::BgColor(col) => tile.bg_color = col,
+            ColorFormat::FgColor(col) => tile.fg_color = col,
+            ColorFormat::BgColor(col) => tile.bg_color = col,
         }
     }
 

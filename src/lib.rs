@@ -51,7 +51,7 @@ pub mod formatting;
 pub mod renderer;
 pub mod ui;
 
-pub use terminal::{ColorModifier, Terminal, Tile};
+pub use terminal::{Terminal, Tile};
 
 pub use renderer::code_page_437;
 pub use renderer::material::TerminalMaterial;

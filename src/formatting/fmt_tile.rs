@@ -172,3 +172,39 @@ impl From<Tile> for TileFormat {
             .bg(tile.bg_color)
     }
 }
+
+/// A trait for setting the foreground or background color of a tile in 
+/// `put_color` functions.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use bevy::prelude::*;
+/// use bevy_ascii_terminal::*;
+/// let mut term = Terminal::with_size([10,10]);
+/// 
+/// // Set the background color for the given tile to blue.
+/// term.put_color([3,3], Color::BLUE.bg());
+/// ```
+pub trait ColorModifier {
+    fn fg(&self) -> ColorFormat;
+    fn bg(&self) -> ColorFormat;
+}
+
+impl ColorModifier for Color {
+    fn fg(&self) -> ColorFormat {
+        ColorFormat::FgColor(*self)
+    }
+
+    fn bg(&self) -> ColorFormat {
+        ColorFormat::BgColor(*self)
+    }
+}
+
+/// Used in `put_color` functions for setting the foreground or background color 
+/// of a tile without affecting the glyph.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ColorFormat {
+    FgColor(Color),
+    BgColor(Color),
+}

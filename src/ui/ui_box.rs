@@ -4,9 +4,9 @@ use bevy::prelude::Color;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
+use crate::fmt_tile::ColorFormat;
 use crate::formatting::TileFormat;
 use crate::formatting::TileModifier;
-use crate::terminal::ColorModifier;
 use crate::Terminal;
 use crate::Tile;
 
@@ -147,7 +147,7 @@ pub struct BorderGlyphs {
     bottom_left: char,
     bottom_right: char,
 
-    color_modifiers: ArrayVec<ColorModifier, 2>,
+    color_modifiers: ArrayVec<ColorFormat, 2>,
 }
 
 impl Default for BorderGlyphs {
@@ -235,12 +235,12 @@ impl BorderGlyphs {
     /// Add a foreground color to the border glyphs.
     pub fn fg(mut self, color: Color) -> Self {
         for modifier in self.color_modifiers.iter_mut() {
-            if let ColorModifier::FgColor(col) = modifier {
+            if let ColorFormat::FgColor(col) = modifier {
                 *col = color;
                 return self;
             }
         }
-        self.color_modifiers.push(ColorModifier::FgColor(color));
+        self.color_modifiers.push(ColorFormat::FgColor(color));
         self
     }
 
@@ -248,14 +248,14 @@ impl BorderGlyphs {
     pub fn bg(mut self, color: Color) -> Self {
         for modifier in self.color_modifiers.iter_mut() {
             match modifier {
-                ColorModifier::FgColor(_) => {}
-                ColorModifier::BgColor(col) => {
+                ColorFormat::FgColor(_) => {}
+                ColorFormat::BgColor(col) => {
                     *col = color;
                     return self;
                 }
             }
         }
-        self.color_modifiers.push(ColorModifier::BgColor(color));
+        self.color_modifiers.push(ColorFormat::BgColor(color));
         self
     }
 
@@ -266,8 +266,8 @@ impl BorderGlyphs {
 
         for write in self.color_modifiers.iter() {
             match write {
-                ColorModifier::FgColor(col) => fmt = fmt.fg(*col),
-                ColorModifier::BgColor(col) => fmt = fmt.bg(*col),
+                ColorFormat::FgColor(col) => fmt = fmt.fg(*col),
+                ColorFormat::BgColor(col) => fmt = fmt.bg(*col),
             };
         }
 

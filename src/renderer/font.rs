@@ -52,7 +52,9 @@ macro_rules! include_font {
             false,
         )
         .unwrap();
-        image.sampler_descriptor = ImageSampler::Descriptor(ImageSampler::nearest_descriptor());
+        image.sampler_descriptor = ImageSampler::Descriptor(
+            ImageSampler::nearest_descriptor()
+        );
         (TerminalFont::from_str($font).unwrap(), image)
     }};
 }
@@ -72,7 +74,8 @@ impl Plugin for TerminalFontPlugin {
             .unwrap_or_else(|| {
                 panic!(
                     "Error retrieving image resource - ensure
-            DefaultPlugins are initialized before TerminalPlugin"
+            DefaultPlugins are added before TerminalPlugin
+            during app initialization"
                 )
             });
 
