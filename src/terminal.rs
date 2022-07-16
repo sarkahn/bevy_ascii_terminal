@@ -309,7 +309,7 @@ impl Terminal {
             *t = self.clear_tile
         }
     }
-
+    
     /// Returns true if the given position is inside the bounds of the terminal.
     #[inline]
     pub fn is_in_bounds(&self, xy: impl GridPoint) -> bool {
