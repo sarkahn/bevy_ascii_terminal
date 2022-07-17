@@ -1,7 +1,7 @@
 //! An optional component for converting positions between "terminal space"
 //! and world space.
 
-use bevy::{prelude::*, render::camera::{Viewport, RenderTarget}};
+use bevy::{prelude::*, render::camera::{RenderTarget}};
 use sark_grids::GridPoint;
 
 use crate::{renderer::{TileScaling, TerminalPivot, TilePivot, PixelsPerTile}, Terminal};
@@ -20,7 +20,7 @@ impl Plugin for ToWorldPlugin {
 /// "Terminal Space".
 /// 
 /// When you add this to a terminal it will track the various properties of the
-/// terminal and provide functions for converting positions.
+/// terminal and camera, provide functions for converting positions.
 #[derive(Default, Component)]
 pub struct ToWorld {
     term_size: UVec2,
@@ -53,7 +53,15 @@ impl ToWorld {
         self.tile_to_world(tile) + center_offset
     }
 
-    /// The size of a single world unit, accounting for `TileScaling`
+    pub fn world_to_tile(&self, world: Vec2) -> IVec2 {
+        let term_pos = self.term_pos.truncate();
+        let term_offset = self.term_size.as_vec2() * self.term_pivot;
+        let tile_offset = self.world_unit() * self.tile_pivot;
+        let xy = world - term_pos + term_offset + tile_offset;
+        xy.floor().as_ivec2()
+    }
+
+    /// The size of a single world unit, accounting for `TileScaling`.
     pub fn world_unit(&self) -> Vec2 {
         match self.tile_scaling {
             TileScaling::World => Vec2::ONE,
@@ -159,31 +167,5 @@ fn update_from_camera(
                 tw.viewport_size = res;
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-        let tw = ToWorld {
-            term_size: UVec2::new(5,5),
-            term_pos: Vec3::new(0.0,0.0,0.0),
-            term_pivot: Vec2::new(0.0,0.0),
-            tile_pivot: Vec2::new(0.0, 0.0),
-            tile_scaling: TileScaling::World,
-            pixels_per_unit: UVec2::new(8,8),
-            camera_entity: None,
-            camera_pos: Vec3::new(10.0,10.0, 0.0),
-            viewport_pos: Vec2::new(0.15,0.15),
-            viewport_size: Some(Vec2::new(800.0,600.0)),
-            ndc_to_world: Mat4::IDENTITY,
-        };
-
-        let p = tw.tile_to_world([0,0]);
-
-        println!("{}", p);
     }
 }

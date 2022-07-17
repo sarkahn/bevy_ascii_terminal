@@ -114,7 +114,7 @@ impl Terminal {
     /// in the terminal.
     #[inline]
     pub fn to_index(&self, xy: impl GridPoint) -> usize {
-        self.tiles.pos_to_index(xy)
+        self.tiles.pos_to_index(xy.get_aligned_point(self.size))
     }
 
     /// Convert 1D index to it's 2D position given the dimensions
@@ -197,7 +197,7 @@ impl Terminal {
     /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
     pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a> + 'a) {
-        let i = self.to_index(xy.get_aligned_point(self.size));
+        let i = self.to_index(xy);
 
         let (string, writes) = writer.formatted().into();
 
@@ -309,7 +309,7 @@ impl Terminal {
             *t = self.clear_tile
         }
     }
-    
+
     /// Returns true if the given position is inside the bounds of the terminal.
     #[inline]
     pub fn is_in_bounds(&self, xy: impl GridPoint) -> bool {

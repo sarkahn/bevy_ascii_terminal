@@ -13,7 +13,7 @@ fn main() {
 fn setup( 
     mut commands: Commands 
 ) {
-    let size = [80,35];
+    let size = [40,15];
     let mut term = Terminal::new(size, Tile {
         glyph: '█',
         fg_color: Color::rgba(0.0,0.0,1.0,0.45),
@@ -50,12 +50,15 @@ fn update(
             if let Some(cursor_pos) = window.cursor_position() {
                 if let Some(world_pos) = tw.screen_to_world(cursor_pos) {
                     let [x,y] = world_pos.to_array();
-                    let string = format!("Cursor pos [{:.2},{:.2}]", x,y);
+                    let string = format!("Cursor world pos [{:.2},{:.2}]", x,y);
                     term.put_string([2,0], string);
-                    term.put_string([2,1], tw.tile_to_world([0,0]).to_string());
+
+                    let tile_pos = tw.world_to_tile(world_pos);
+                    let [x,y] = tile_pos.to_array();
+                    let string = format!("Cursor tile pos [{},{}]", x,y);
+                    term.put_string([2,1], string);
                 }
             }
-
         }
     }
 
