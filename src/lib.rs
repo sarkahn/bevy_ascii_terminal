@@ -132,9 +132,7 @@ impl From<Terminal> for TerminalBundle {
 pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
-        app
-        .add_plugin(renderer::TerminalRendererPlugin)
-        .add_plugin(ToWorldPlugin)
-        ;
+        app.add_plugin(renderer::TerminalRendererPlugin)
+            .add_plugin(ToWorldPlugin);
     }
 }

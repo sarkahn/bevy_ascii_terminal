@@ -94,16 +94,16 @@ impl UiBox {
         }
 
         if let Some(glyphs) = &self.border_glyphs {
-            for t in term.row_iter_mut(top).skip(left).take(width) {
+            for t in term.iter_row_mut(top).skip(left).take(width) {
                 glyphs.edge_tile(BoxEdge::Top).apply(t);
             }
-            for t in term.row_iter_mut(bottom).skip(left).take(width) {
+            for t in term.iter_row_mut(bottom).skip(left).take(width) {
                 glyphs.edge_tile(BoxEdge::Bottom).apply(t);
             }
-            for t in term.column_iter_mut(left).skip(bottom).take(height) {
+            for t in term.iter_column_mut(left).skip(bottom).take(height) {
                 glyphs.edge_tile(BoxEdge::Left).apply(t);
             }
-            for t in term.column_iter_mut(right).skip(bottom).take(height) {
+            for t in term.iter_column_mut(right).skip(bottom).take(height) {
                 glyphs.edge_tile(BoxEdge::Right).apply(t);
             }
 

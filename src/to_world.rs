@@ -1,24 +1,26 @@
 //! An optional component for converting positions between "terminal space"
 //! and world space.
 
-use bevy::{prelude::*, render::camera::{RenderTarget}};
+use bevy::{prelude::*, render::camera::RenderTarget};
 use sark_grids::GridPoint;
 
-use crate::{renderer::{TileScaling, TerminalPivot, TilePivot, PixelsPerTile}, Terminal};
+use crate::{
+    renderer::{PixelsPerTile, TerminalPivot, TilePivot, TileScaling},
+    Terminal,
+};
 
 pub struct ToWorldPlugin;
 
 impl Plugin for ToWorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(update_from_terminal)
-            .add_system(update_from_camera)
-        ;
+            .add_system(update_from_camera);
     }
 }
 
-/// A component for converting positions between World Space and 
+/// A component for converting positions between World Space and
 /// "Terminal Space".
-/// 
+///
 /// When you add this to a terminal it will track the various properties of the
 /// terminal and camera, provide functions for converting positions.
 #[derive(Default, Component)]
@@ -43,8 +45,7 @@ impl ToWorld {
         let term_pos = self.term_pos.truncate();
         let term_offset = self.term_size.as_vec2() * self.term_pivot;
         let tile_offset = self.world_unit() * self.tile_pivot;
-        (tile.as_vec2() + term_pos - term_offset - tile_offset)
-        .extend(self.term_pos.z)
+        (tile.as_vec2() + term_pos - term_offset - tile_offset).extend(self.term_pos.z)
     }
 
     /// Convert a tile center to it's corresponding world position.
@@ -87,24 +88,29 @@ impl ToWorld {
     }
 }
 
-#[allow(clippy::complex_type)]
+#[allow(clippy::type_complexity)]
 fn update_from_terminal(
-    mut q_term: Query<(
-        &mut ToWorld,
-        &Terminal, 
-        &GlobalTransform,
-        &TerminalPivot, 
-        &TilePivot, 
-        &TileScaling,
-        &PixelsPerTile
-    ), Or<(
-        Changed<Terminal>,
-        Changed<TerminalPivot>,
-        Changed<TilePivot>,
-        Changed<TileScaling>
-    )>> 
+    mut q_term: Query<
+        (
+            &mut ToWorld,
+            &Terminal,
+            &GlobalTransform,
+            &TerminalPivot,
+            &TilePivot,
+            &TileScaling,
+            &PixelsPerTile,
+        ),
+        Or<(
+            Changed<Terminal>,
+            Changed<TerminalPivot>,
+            Changed<TilePivot>,
+            Changed<TileScaling>,
+        )>,
+    >,
 ) {
-    for (mut to_world, term, transform, term_pivot, tile_pivot, tile_scaling, ppu) in q_term.iter_mut() {
+    for (mut to_world, term, transform, term_pivot, tile_pivot, tile_scaling, ppu) in
+        q_term.iter_mut()
+    {
         to_world.term_size = term.size();
         to_world.term_pivot = term_pivot.0;
         to_world.tile_pivot = tile_pivot.0;
@@ -114,13 +120,12 @@ fn update_from_terminal(
     }
 }
 
-#[allow(clippy::complex_type)]
+#[allow(clippy::type_complexity)]
 fn update_from_camera(
-    q_cam: Query<(Entity, &Camera,&GlobalTransform), 
-        Or<(
-        Changed<Camera>,
-        Changed<GlobalTransform>,
-    )>>,
+    q_cam: Query<
+        (Entity, &Camera, &GlobalTransform),
+        Or<(Changed<Camera>, Changed<GlobalTransform>)>,
+    >,
     mut q_to_world: Query<&mut ToWorld>,
     windows: Res<Windows>,
     images: Res<Assets<Image>>,
@@ -149,20 +154,24 @@ fn update_from_camera(
             } else {
                 tw.viewport_pos = Vec2::ZERO;
                 let res = match &cam.target {
-                    RenderTarget::Window(win_id) =>  {
-                        if let Some(window) = windows.get(*win_id) {
-                            Some(Vec2::new(window.width(), window.height()))
-                        } else {
-                            None
-                        }
+                    RenderTarget::Window(win_id) => {
+                        windows.get(*win_id).map(|window| 
+                            Vec2::new(window.width(), window.height())
+                        )
+                        // if let Some(window) = windows.get(*win_id) {
+                        //     Some(Vec2::new(window.width(), window.height()))
+                        // } else {
+                        //     None
+                        // }
                     },
-                    bevy::render::camera::RenderTarget::Image(image) => {
-                        if let Some(image) = images.get(image) {
-                            Some(image.size())
-                        } else {
-                            None
-                        }
-                    },
+                    RenderTarget::Image(image) => {
+                        images.get(image).map(|image| image.size())
+                        // if let Some(image) = images.get(image) {
+                        //     Some(image.size())
+                        // } else {
+                        //     None
+                        // }
+                    }
                 };
                 tw.viewport_size = res;
             }

@@ -1,4 +1,5 @@
 use std::borrow::Borrow;
+use std::ops::RangeBounds;
 
 use bevy::prelude::*;
 
@@ -317,33 +318,51 @@ impl Terminal {
     }
 
     /// An immutable iterator over the tiles of the terminal.
-    pub fn iter(&self) -> impl Iterator<Item = &Tile> {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &Tile> {
         self.tiles.iter()
     }
 
     /// A mutable iterator over the tiles of the terminal.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Tile> {
+    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut Tile> {
         self.tiles.iter_mut()
     }
 
     /// An immutable iterator over an entire row of tiles in the terminal.
-    pub fn row_iter(&self, y: usize) -> impl Iterator<Item = &Tile> {
-        self.tiles.row_iter(y)
+    pub fn iter_row(&self, y: usize) -> impl DoubleEndedIterator<Item = &Tile> {
+        self.tiles.iter_row(y)
     }
 
-    /// A mutable iterator over an entire row of tiles in the terminal.
-    pub fn row_iter_mut(&mut self, y: usize) -> impl Iterator<Item = &mut Tile> {
-        self.tiles.row_iter_mut(y)
+    /// An immutable iterator over an entire row of tiles in the terminal.
+    pub fn iter_row_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut Tile> {
+        self.tiles.iter_row_mut(y)
+    }
+
+    /// An immutable iterator over a range of rows in the terminal.
+    ///
+    /// The iterator moves along each row from left to right, where 0 is the
+    /// bottom row and `height - 1` is the top row.
+    pub fn iter_rows(
+        &self,
+        range: impl RangeBounds<usize>,
+    ) -> impl DoubleEndedIterator<Item = &[Tile]> {
+        self.tiles.iter_rows(range)
+    }
+
+    pub fn iter_rows_mut(
+        &mut self,
+        range: impl RangeBounds<usize>,
+    ) -> impl DoubleEndedIterator<Item = &mut [Tile]> {
+        self.tiles.iter_rows_mut(range)
     }
 
     /// An immutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter(&self, x: usize) -> impl Iterator<Item = &Tile> {
-        self.tiles.column_iter(x)
+    pub fn iter_column(&self, x: usize) -> impl DoubleEndedIterator<Item = &Tile> {
+        self.tiles.iter_column(x)
     }
 
     /// A mutable iterator over an entire column of tiles in the terminal.
-    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item = &mut Tile> {
-        self.tiles.column_iter_mut(x)
+    pub fn iter_column_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut Tile> {
+        self.tiles.iter_column_mut(x)
     }
 
     /// Get the index for a given side on the terminal.
@@ -391,7 +410,7 @@ mod tests {
         term.put_char([3, 3], 'l');
         term.put_char([3, 4], 'o');
 
-        let chars: Vec<_> = term.column_iter(3).take(5).map(|t| t.glyph).collect();
+        let chars: Vec<_> = term.iter_column(3).take(5).map(|t| t.glyph).collect();
         assert_eq!("Hello", String::from_iter(chars));
     }
 
@@ -399,7 +418,7 @@ mod tests {
     fn column_put() {
         let mut term = Terminal::with_size([15, 10]);
         let text = "Hello".chars();
-        for (mut t, c) in term.column_iter_mut(5).take(5).zip(text) {
+        for (mut t, c) in term.iter_column_mut(5).take(5).zip(text) {
             t.glyph = c;
         }
 
