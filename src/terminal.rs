@@ -348,6 +348,10 @@ impl Terminal {
         self.tiles.iter_rows(range)
     }
 
+    /// An mutable iterator over a range of rows in the terminal.
+    ///
+    /// The iterator moves along each row from left to right, where 0 is the
+    /// bottom row and `height - 1` is the top row.
     pub fn iter_rows_mut(
         &mut self,
         range: impl RangeBounds<usize>,
@@ -356,11 +360,15 @@ impl Terminal {
     }
 
     /// An immutable iterator over an entire column of tiles in the terminal.
+    /// 
+    /// The iterator moves from bottom to top.
     pub fn iter_column(&self, x: usize) -> impl DoubleEndedIterator<Item = &Tile> {
         self.tiles.iter_column(x)
     }
 
     /// A mutable iterator over an entire column of tiles in the terminal.
+    /// 
+    /// The iterator moves from bottom to top.
     pub fn iter_column_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut Tile> {
         self.tiles.iter_column_mut(x)
     }
