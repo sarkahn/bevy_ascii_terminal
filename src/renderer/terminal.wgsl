@@ -2,42 +2,42 @@
 #import bevy_sprite::mesh2d_types
 
 struct TerminalMaterial {
-    clip_color: vec4<f32>;
+    clip_color: vec4<f32>,
     // 'flags' is a bit field indicating various options. u32 is 32 bits so we have up to 32 options.
-    flags: u32;
+    flags: u32,
 };
 let TERMINAL_MATERIAL_FLAGS_TEXTURE_BIT: u32 = 1u;
 
-[[group(0), binding(0)]]
+@group(0) @binding(0)
 var<uniform> view: View;
 
-[[group(1), binding(0)]]
+@group(1) @binding(0)
 var<uniform> material: TerminalMaterial;
-[[group(1), binding(1)]]
+@group(1) @binding(1)
 var texture: texture_2d<f32>;
-[[group(1), binding(2)]]
+@group(1) @binding(2)
 var texture_sampler: sampler;
 
-[[group(2), binding(0)]]
+@group(2) @binding(0)
 var<uniform> mesh: Mesh2d;
 
 struct Vertex {
-    [[location(0)]] position: vec3<f32>;
-    [[location(1)]] uv: vec2<f32>;
-    [[location(2)]] bg_color: vec4<f32>;
-    [[location(3)]] fg_color: vec4<f32>;
+    @location(0) position: vec3<f32>,
+    @location(1) uv: vec2<f32>,
+    @location(2) bg_color: vec4<f32>,
+    @location(3) fg_color: vec4<f32>,
 };
 
 struct VertexOutput {
-    [[builtin(position)]] clip_position: vec4<f32>;
-    [[location(0)]] world_position: vec4<f32>;
-    [[location(1)]] uv: vec2<f32>;
-    [[location(2)]] bg_color: vec4<f32>;
-    [[location(3)]] fg_color: vec4<f32>;
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) world_position: vec4<f32>,
+    @location(1) uv: vec2<f32>,
+    @location(2) bg_color: vec4<f32>,
+    @location(3) fg_color: vec4<f32>,
 };
 
 /// Entry point for the vertex shader
-[[stage(vertex)]]
+@vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
     var world_position = mesh.model * vec4<f32>(vertex.position, 1.0);
@@ -51,15 +51,15 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 }
 
 struct FragmentInput {
-    [[builtin(front_facing)]] is_front: bool;
-    [[location(0)]] world_position: vec4<f32>;
-    [[location(1)]] uv: vec2<f32>;
-    [[location(2)]] bg_color: vec4<f32>;
-    [[location(3)]] fg_color: vec4<f32>;
+    @builtin(front_facing) is_front: bool,
+    @location(0) world_position: vec4<f32>,
+    @location(1) uv: vec2<f32>,
+    @location(2) bg_color: vec4<f32>,
+    @location(3) fg_color: vec4<f32>,
 };
 
-[[stage(fragment)]]
-fn fragment(in: FragmentInput) -> [[location(0)]] vec4<f32> {
+@fragment
+fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     
     var clip_color: vec4<f32> = material.clip_color;
     var fg_color = in.fg_color;

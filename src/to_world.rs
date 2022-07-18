@@ -155,15 +155,15 @@ fn update_from_camera(
                 tw.viewport_pos = Vec2::ZERO;
                 let res = match &cam.target {
                     RenderTarget::Window(win_id) => {
-                        windows.get(*win_id).map(|window| 
-                            Vec2::new(window.width(), window.height())
-                        )
+                        windows
+                            .get(*win_id)
+                            .map(|window| Vec2::new(window.width(), window.height()))
                         // if let Some(window) = windows.get(*win_id) {
                         //     Some(Vec2::new(window.width(), window.height()))
                         // } else {
                         //     None
                         // }
-                    },
+                    }
                     RenderTarget::Image(image) => {
                         images.get(image).map(|image| image.size())
                         // if let Some(image) = images.get(image) {

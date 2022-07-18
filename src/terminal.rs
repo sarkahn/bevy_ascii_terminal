@@ -360,14 +360,14 @@ impl Terminal {
     }
 
     /// An immutable iterator over an entire column of tiles in the terminal.
-    /// 
+    ///
     /// The iterator moves from bottom to top.
     pub fn iter_column(&self, x: usize) -> impl DoubleEndedIterator<Item = &Tile> {
         self.tiles.iter_column(x)
     }
 
     /// A mutable iterator over an entire column of tiles in the terminal.
-    /// 
+    ///
     /// The iterator moves from bottom to top.
     pub fn iter_column_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut Tile> {
         self.tiles.iter_column_mut(x)
