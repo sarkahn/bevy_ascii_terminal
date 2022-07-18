@@ -115,7 +115,7 @@ fn update_from_terminal(
         to_world.term_pivot = term_pivot.0;
         to_world.tile_pivot = tile_pivot.0;
         to_world.tile_scaling = *tile_scaling;
-        to_world.term_pos = transform.translation;
+        to_world.term_pos = transform.translation();
         to_world.pixels_per_unit = ppu.0;
     }
 }
@@ -145,7 +145,7 @@ fn update_from_camera(
                 continue;
             }
 
-            tw.camera_pos = t.translation;
+            tw.camera_pos = t.translation();
             tw.ndc_to_world = t.compute_matrix() * cam.projection_matrix().inverse();
 
             if let Some(vp) = &cam.viewport {

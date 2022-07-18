@@ -7,6 +7,9 @@ use crate::Terminal;
 
 use super::{PixelsPerTile, TileScaling, TERMINAL_INIT, TERMINAL_UPDATE_SIZE};
 
+pub use bevy_tiled_camera::TiledCamera;
+pub use bevy_tiled_camera::TiledCameraBundle;
+
 pub struct TerminalCameraPlugin;
 
 impl Plugin for TerminalCameraPlugin {

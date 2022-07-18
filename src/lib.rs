@@ -62,6 +62,10 @@ pub use to_world::ToWorld;
 
 #[cfg(feature = "camera")]
 pub use renderer::camera::AutoCamera;
+#[cfg(feature = "camera")]
+pub use renderer::camera::TiledCamera;
+#[cfg(feature = "camera")]
+pub use renderer::camera::TiledCameraBundle;
 
 pub use sark_grids::grid::Side;
 pub use sark_grids::Grid;

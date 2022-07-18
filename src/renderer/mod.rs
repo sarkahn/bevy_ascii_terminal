@@ -1,5 +1,6 @@
 //! Handles mesh construction and rendering for the terminal.
 
+mod pipeline;
 pub mod entity;
 pub mod material;
 pub mod plugin;
