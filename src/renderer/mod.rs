@@ -1,24 +1,36 @@
 //! Handles mesh construction and rendering for the terminal.
 
-pub mod entity;
-pub mod material;
-pub mod plugin;
+mod entity;
+mod material;
+mod plugin;
 
-pub mod code_page_437;
-pub mod font;
-pub mod uv_mapping;
+mod font;
+mod uv_mapping;
 
 #[cfg(feature = "camera")]
-pub mod camera;
+mod camera;
 
 pub(crate) mod renderer_tile_data;
 pub(crate) mod renderer_vertex_data;
 
-use self::{
-    material::TerminalMaterial, renderer_tile_data::TerminalRendererTileData,
-    renderer_vertex_data::TerminalRendererVertexData,
-};
+pub mod code_page_437;
+
 use crate::terminal::Terminal;
+use {
+    renderer_tile_data::TerminalRendererTileData, renderer_vertex_data::TerminalRendererVertexData,
+};
+
+pub(crate) use font::BuiltInFontHandles;
+pub(crate) use plugin::TerminalRendererPlugin;
+
+pub use entity::*;
+
+pub use font::TerminalFont;
+
+pub use material::TerminalMaterial;
+
+#[cfg(feature = "camera")]
+pub use camera::{AutoCamera, TiledCamera, TiledCameraBundle};
 
 /// System label for the terminal mesh initialization function.
 pub const TERMINAL_INIT: &str = "terminal_init_mesh";
@@ -28,9 +40,5 @@ pub const TERMINAL_UPDATE_SIZE: &str = "terminal_update_size";
 pub const TERMINAL_UPDATE_TILE_DATA: &str = "terminal_update_tile_data";
 /// System label for the terminal mesh update function.
 pub const TERMINAL_UPDATE_MESH: &str = "terminal_update_mesh";
+/// System label for the terminal font changing function.
 pub const TERMINAL_CHANGE_FONT: &str = "terminal_change_font";
-
-pub use entity::*;
-pub use font::BuiltInFontHandles;
-pub use font::TerminalFont;
-pub use plugin::TerminalRendererPlugin;

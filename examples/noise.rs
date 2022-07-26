@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::*;
+use bevy_ascii_terminal::prelude::*;
 
 use bracket_noise::prelude::{FastNoise, NoiseType};
 use bracket_random::prelude::*;

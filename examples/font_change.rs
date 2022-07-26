@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{renderer::BuiltInFontHandles, *};
-use strum::IntoEnumIterator;
+use bevy_ascii_terminal::{prelude::*, TerminalFont};
+use strum::{EnumCount, IntoEnumIterator};
 
 fn main() {
     App::new()
@@ -68,14 +68,14 @@ fn draw_title(term: &mut Terminal, title: &str) {
 
 fn change_font(
     keys: Res<Input<KeyCode>>,
-    built_in_fonts: Res<BuiltInFontHandles>,
     mut font_index: ResMut<FontIndex>,
     mut q: Query<(Entity, &mut Terminal)>,
     mut commands: Commands,
 ) {
     if keys.just_pressed(KeyCode::Space) {
+        let count = TerminalFont::COUNT - 1;
         for (entity, mut term) in q.iter_mut() {
-            font_index.0 = (font_index.0 + 1) % built_in_fonts.len();
+            font_index.0 = (font_index.0 + 1) % count;
 
             let font = TerminalFont::iter().nth(font_index.0).unwrap();
             commands.entity(entity).insert(font.clone());

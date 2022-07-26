@@ -1,7 +1,6 @@
-use std::borrow::Cow;
-
 use arrayvec::ArrayVec;
-use bevy::prelude::*;
+use bevy::prelude::Color;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy)]
 pub enum StringColor {

@@ -1,5 +1,5 @@
 use arrayvec::ArrayVec;
-use bevy::prelude::*;
+use bevy::prelude::Color;
 use sark_grids::GridPoint;
 
 use crate::{Terminal, Tile};
@@ -179,7 +179,7 @@ impl From<Tile> for TileFormat {
 /// # Example
 ///
 /// ```rust
-/// use bevy::prelude::*;
+/// use bevy::prelude::Color;
 /// use bevy_ascii_terminal::*;
 /// let mut term = Terminal::with_size([10,10]);
 ///

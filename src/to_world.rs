@@ -1,7 +1,15 @@
 //! An optional component for converting positions between "terminal space"
 //! and world space.
 
-use bevy::{prelude::*, render::camera::RenderTarget};
+use bevy::{
+    math::{IVec2, Mat4, UVec2, Vec2, Vec3},
+    prelude::{
+        App, Assets, Camera, Changed, Component, Entity, GlobalTransform, Image, Or, Plugin, Query,
+        Res,
+    },
+    render::camera::RenderTarget,
+    window::Windows,
+};
 use sark_grids::GridPoint;
 
 use crate::{
@@ -9,7 +17,7 @@ use crate::{
     Terminal,
 };
 
-pub struct ToWorldPlugin;
+pub(crate) struct ToWorldPlugin;
 
 impl Plugin for ToWorldPlugin {
     fn build(&self, app: &mut App) {
@@ -22,7 +30,7 @@ impl Plugin for ToWorldPlugin {
 /// "Terminal Space".
 ///
 /// When you add this to a terminal it will track the various properties of the
-/// terminal and camera, provide functions for converting positions.
+/// terminal and camera, and provide functions for converting positions.
 #[derive(Default, Component)]
 pub struct ToWorld {
     term_size: UVec2,

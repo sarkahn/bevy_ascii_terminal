@@ -1,20 +1,43 @@
 use bevy::{
     asset::HandleId,
-    prelude::*,
+    prelude::{Assets, Component, Handle, Image, Plugin},
     render::texture::{ImageSampler, ImageType},
     utils::HashMap,
 };
 
-use std::str::FromStr;
+use std::{str::FromStr, borrow::Borrow};
 
 use strum_macros::{AsRefStr, EnumCount, EnumIter, EnumString};
 
 /// Helper component for changing the terminal's font
-
+///
 /// You can add this to a terminal entity to change fonts.
 ///
 /// You can also change fonts by assigning a new image
 /// handle directly to the `TerminalMaterial`.
+///
+/// # Example
+///
+/// ```
+/// use bevy_ascii_terminal::*;
+/// use bevy::prelude::*;
+///
+/// fn change_font(
+///     mut commands: Commands,
+///     q_term: Query<Entity, With<Terminal>>,
+///     server: Res<AssetServer>,
+/// ) {
+///     for e in q_term.iter() {
+///         // Change to a built in font
+///         commands.entity(e).insert(TerminalFont::Pastiche8x8);
+///
+///         // Change to a custom font
+///         let my_font = server.load("myfont.png");
+///         commands.entity(e).insert(TerminalFont::Custom(my_font));
+///     }
+/// }
+///
+/// ```
 #[derive(
     Debug, Clone, Component, Eq, PartialEq, Hash, AsRefStr, EnumString, EnumCount, EnumIter,
 )]
@@ -57,7 +80,7 @@ macro_rules! include_font {
     }};
 }
 
-pub struct TerminalFontPlugin;
+pub(crate) struct TerminalFontPlugin;
 
 impl Plugin for TerminalFontPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
@@ -108,42 +131,18 @@ fn add_font_resource(
     handle
 }
 
-/// A resource which can be used to retrieve the image handles
-/// for the terminal's built-in fonts.
-///
-/// # Example
-///
-/// ```
-/// use bevy::prelude::*;
-/// use bevy_ascii_terminal::*;
-/// fn change_font_built_in(
-/// fonts: Res<BuiltInFontHandles>,
-/// mut materials: ResMut<Assets<TerminalMaterial>>,
-/// q_mat: Query<&Handle<TerminalMaterial>>,
-/// ) {
-///     for mat in q_mat.iter() {
-///         let mut mat = materials.get_mut(mat).unwrap();
-///         let built_in = fonts.get("zx_evolution_8x8.png").unwrap();
-///
-///         mat.texture = Some(built_in.clone());
-///     }
-/// }
-/// ```
-pub struct BuiltInFontHandles {
-    pub(crate) map: HashMap<TerminalFont, Handle<Image>>,
+/// An internal resource for tracking built in font handles.
+pub(crate) struct BuiltInFontHandles {
+    map: HashMap<TerminalFont, Handle<Image>>,
 }
 
 impl BuiltInFontHandles {
     /// Retrieve a built-in font handle by it's name. Must include ".png" the extension.
-    pub fn get(&self, font: &TerminalFont) -> &Handle<Image> {
+    pub(crate) fn get(&self, font: impl Borrow<TerminalFont>) -> &Handle<Image> {
+        let font = font.borrow();
         self.map
             .get(font)
             .unwrap_or_else(|| panic!("Error retrieving built in font: {:#?} not found", font))
-    }
-
-    #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> usize {
-        self.map.len()
     }
 }
 

@@ -3,22 +3,6 @@
 version = 3
 
 [[package]]
-name = "ab_glyph"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24606928a235e73cdef55a0c909719cadd72fce573e5713d58cb2952d8f5794c"
-dependencies = [
- "ab_glyph_rasterizer",
- "owned_ttf_parser",
-]
-
-[[package]]
-name = "ab_glyph_rasterizer"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a13739d7177fbd22bb0ed28badfff9f372f8bef46c863db4e1c6248f6b223b6e"
-
-[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -305,32 +289,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_gltf"
-version = "0.8.0-dev"
-dependencies = [
- "anyhow",
- "base64",
- "bevy_app",
- "bevy_asset",
- "bevy_core",
- "bevy_core_pipeline",
- "bevy_ecs",
- "bevy_hierarchy",
- "bevy_log",
- "bevy_math",
- "bevy_pbr",
- "bevy_reflect",
- "bevy_render",
- "bevy_scene",
- "bevy_tasks",
- "bevy_transform",
- "bevy_utils",
- "gltf",
- "percent-encoding",
- "thiserror",
-]
-
-[[package]]
 name = "bevy_hierarchy"
 version = "0.8.0-dev"
 dependencies = [
@@ -362,7 +320,6 @@ dependencies = [
  "bevy_derive",
  "bevy_diagnostic",
  "bevy_ecs",
- "bevy_gltf",
  "bevy_hierarchy",
  "bevy_input",
  "bevy_log",
@@ -374,10 +331,8 @@ dependencies = [
  "bevy_scene",
  "bevy_sprite",
  "bevy_tasks",
- "bevy_text",
  "bevy_time",
  "bevy_transform",
- "bevy_ui",
  "bevy_utils",
  "bevy_window",
  "bevy_winit",
@@ -579,27 +534,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_text"
-version = "0.8.0-dev"
-dependencies = [
- "ab_glyph",
- "anyhow",
- "bevy_app",
- "bevy_asset",
- "bevy_ecs",
- "bevy_math",
- "bevy_reflect",
- "bevy_render",
- "bevy_sprite",
- "bevy_transform",
- "bevy_utils",
- "bevy_window",
- "glyph_brush_layout",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "bevy_tiled_camera"
 version = "0.4.0"
 dependencies = [
@@ -627,32 +561,6 @@ dependencies = [
  "bevy_hierarchy",
  "bevy_math",
  "bevy_reflect",
-]
-
-[[package]]
-name = "bevy_ui"
-version = "0.8.0-dev"
-dependencies = [
- "bevy_app",
- "bevy_asset",
- "bevy_core_pipeline",
- "bevy_derive",
- "bevy_ecs",
- "bevy_hierarchy",
- "bevy_input",
- "bevy_log",
- "bevy_math",
- "bevy_reflect",
- "bevy_render",
- "bevy_sprite",
- "bevy_text",
- "bevy_transform",
- "bevy_utils",
- "bevy_window",
- "bytemuck",
- "serde",
- "smallvec",
- "taffy",
 ]
 
 [[package]]
@@ -1261,52 +1169,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gltf"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00e0a0eace786193fc83644907097285396360e9e82e30f81a21e9b1ba836a3e"
-dependencies = [
- "byteorder",
- "gltf-json",
- "lazy_static",
-]
-
-[[package]]
-name = "gltf-derive"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdd53d6e284bb2bf02a6926e4cc4984978c1990914d6cd9deae4e31cf37cd113"
-dependencies = [
- "inflections",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "gltf-json"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9949836a9ec5e7f83f76fb9bbcbc77f254a577ebbdb0820867bc11979ef97cad"
-dependencies = [
- "gltf-derive",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
-name = "glyph_brush_layout"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc32c2334f00ca5ac3695c5009ae35da21da8c62d255b5b96d56e2597a637a38"
-dependencies = [
- "ab_glyph",
- "approx",
- "xi-unicode",
-]
-
-[[package]]
 name = "gpu-alloc"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1353,26 +1215,6 @@ checksum = "b62d5865c036cb1393e23c50693df631d3f5d7bcca4c04fe4cc0fd592e74a782"
 dependencies = [
  "euclid",
  "svg_fmt",
-]
-
-[[package]]
-name = "hash32"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0c35f58762feb77d74ebe43bdbc3210f09be9fe6742234d573bacc26ed92b67"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
-name = "hash32-derive"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59d2aba832b60be25c1b169146b27c64115470981b128ed84c8db18c1b03c6ff"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1463,12 +1305,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "inflections"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a257582fdcde896fd96463bf2d40eefea0580021c0712a0e2b028b60b47a837a"
-
-[[package]]
 name = "inplace_it"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1494,12 +1330,6 @@ checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
 dependencies = [
  "either",
 ]
-
-[[package]]
-name = "itoa"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "112c678d4050afce233f4f2852bb2eb519230b3cf12f33585275537d7e41578d"
 
 [[package]]
 name = "jni-sys"
@@ -1789,15 +1619,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
-name = "owned_ttf_parser"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fb1e509cfe7a12db2a90bfa057dfcdbc55a347f5da677c506b53dd099cfec9d"
-dependencies = [
- "ttf-parser",
-]
-
-[[package]]
 name = "parking"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1850,12 +1671,6 @@ dependencies = [
  "smallvec",
  "windows-sys",
 ]
-
-[[package]]
-name = "percent-encoding"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4fd5641d01c8f18a23da7b6fe29298ff4b55afcccdf78973b24cf3175fee32e"
 
 [[package]]
 name = "petgraph"
@@ -2071,12 +1886,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24c8ad4f0c00e1eb5bc7614d236a7f1300e3dbd76b68cac8e06fb00b015ad8d8"
 
 [[package]]
-name = "ryu"
-version = "1.0.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
-
-[[package]]
 name = "sark_grids"
 version = "0.5.0"
 dependencies = [
@@ -2108,17 +1917,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "serde_json"
-version = "1.0.82"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82c2c1fdcd807d1098552c5b9a36e425e42e9fbd7c6a37a8425f390f781f7fa7"
-dependencies = [
- "itoa",
- "ryu",
- "serde",
 ]
 
 [[package]]
@@ -2204,19 +2002,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "taffy"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec27dea659b100d489dffa57cf0efc6d7bfefb119af817b92cc14006c0b214e3"
-dependencies = [
- "arrayvec",
- "hash32",
- "hash32-derive",
- "num-traits",
- "typenum",
 ]
 
 [[package]]
@@ -2338,18 +2123,6 @@ dependencies = [
  "tracing-subscriber",
  "wasm-bindgen",
 ]
-
-[[package]]
-name = "ttf-parser"
-version = "0.15.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b3e06c9b9d80ed6b745c7159c40b311ad2916abb34a49e9be2653b90db0d8dd"
-
-[[package]]
-name = "typenum"
-version = "1.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
 name = "unicode-ident"
@@ -2673,9 +2446,3 @@ dependencies = [
  "web-sys",
  "winapi",
 ]
-
-[[package]]
-name = "xi-unicode"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a67300977d3dc3f8034dae89778f502b6ba20b269527b3223ba59c0cf393bb8a"

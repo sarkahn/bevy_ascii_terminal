@@ -1,6 +1,8 @@
 //! Plugin for rendering related resources and systems.
 use bevy::{
-    prelude::*,
+    ecs::prelude::*,
+    math::Vec2,
+    prelude::{App, Assets, Handle, Image, Mesh, Plugin},
     render::{
         mesh::{Indices, MeshVertexAttribute},
         render_resource::{PrimitiveTopology, VertexFormat},
@@ -14,14 +16,14 @@ use super::{
     camera::TerminalCameraPlugin, material::TerminalMaterialPlugin, uv_mapping::UvMapping, *,
 };
 
+pub(crate) struct TerminalRendererPlugin;
+
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Uv", 1, VertexFormat::Float32x2);
 pub const ATTRIBUTE_COLOR_BG: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Color_Bg", 2, VertexFormat::Float32x4);
 pub const ATTRIBUTE_COLOR_FG: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Color_Fg", 3, VertexFormat::Float32x4);
-
-pub struct TerminalRendererPlugin;
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {

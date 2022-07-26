@@ -1,8 +1,10 @@
 use std::borrow::Borrow;
 use std::ops::RangeBounds;
 
-use bevy::prelude::*;
-
+use bevy::math::IVec2;
+use bevy::math::UVec2;
+use bevy::prelude::Color;
+use bevy::prelude::Component;
 use sark_grids::grid::Side;
 use sark_grids::Grid;
 use sark_grids::GridPoint;
@@ -22,7 +24,7 @@ use crate::ui::UiProgressBar;
 /// terminal.
 ///
 /// # Example
-/// ```
+/// ```rust
 /// use bevy_ascii_terminal::*;
 /// use bevy::prelude::Color;
 ///

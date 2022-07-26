@@ -1,6 +1,6 @@
 use bevy::prelude::*;
+use bevy_ascii_terminal::prelude::*;
 use bevy_ascii_terminal::ui::*;
-use bevy_ascii_terminal::*;
 
 #[derive(Component)]
 pub struct ProgressBar {

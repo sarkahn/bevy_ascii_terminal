@@ -1,6 +1,9 @@
 //! Terminal components
-
-use bevy::{prelude::*, sprite::Mesh2dHandle};
+use bevy::{
+    math::{UVec2, Vec2},
+    prelude::{Bundle, Component, ComputedVisibility, Handle, Visibility},
+    sprite::Mesh2dHandle,
+};
 
 use crate::TerminalMaterial;
 

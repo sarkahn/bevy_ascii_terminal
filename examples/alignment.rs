@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{ui::UiProgressBar, *};
+use bevy_ascii_terminal::{prelude::*, ui::UiProgressBar};
 use sark_grids::Pivot;
 
 fn main() {

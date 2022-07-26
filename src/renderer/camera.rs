@@ -1,25 +1,24 @@
 //! An optional utility for automatically adjusting the camera to properly
 //! view a terminal.
-use bevy::prelude::*;
-use bevy_tiled_camera::*;
-
 use crate::Terminal;
 
 use super::{PixelsPerTile, TileScaling, TERMINAL_INIT, TERMINAL_UPDATE_SIZE};
 
+use bevy::prelude::App;
+use bevy::prelude::Changed;
+use bevy::prelude::Commands;
+use bevy::prelude::Component;
+use bevy::prelude::Entity;
+use bevy::prelude::Or;
+use bevy::prelude::ParallelSystemDescriptorCoercion;
+use bevy::prelude::Plugin;
+use bevy::prelude::Query;
+use bevy::prelude::With;
+use bevy::prelude::Without;
 pub use bevy_tiled_camera::TiledCamera;
 pub use bevy_tiled_camera::TiledCameraBundle;
-
-pub struct TerminalCameraPlugin;
-
-impl Plugin for TerminalCameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugin(TiledCameraPlugin);
-        app.add_system(init_camera.before(TERMINAL_INIT))
-            .add_system(update_from_new.after(TERMINAL_UPDATE_SIZE))
-            .add_system(update_from_terminal_change.after(TERMINAL_UPDATE_SIZE));
-    }
-}
+use bevy_tiled_camera::TiledCameraPlugin;
+use bevy_tiled_camera::WorldSpace;
 
 /// This component can be added to a terminal entity as a simple way to have
 /// that terminal be the primary focus for the camera.
@@ -44,29 +43,26 @@ impl Plugin for TerminalCameraPlugin {
 ///     commands.spawn_bundle(TerminalBundle::from(term))
 ///     .insert(AutoCamera);
 /// }
-
 /// ```
 #[derive(Component)]
 pub struct AutoCamera;
 
+pub(crate) struct TerminalCameraPlugin;
+
+impl Plugin for TerminalCameraPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(TiledCameraPlugin);
+        app.add_system(init_camera.before(TERMINAL_INIT))
+            .add_system(update_from_new.after(TERMINAL_UPDATE_SIZE))
+            .add_system(update_from_terminal_change.after(TERMINAL_UPDATE_SIZE));
+    }
+}
+
 /// Will track changes to the target terminal and update the viewport so the
 /// entire terminal can be visible.
 #[derive(Default, Debug, Component)]
-pub struct TerminalCamera {
+struct TerminalCamera {
     terminal: Option<Entity>,
-}
-
-impl TerminalCamera {
-    pub fn with_terminal_entity(terminal: Entity) -> Self {
-        Self {
-            terminal: Some(terminal),
-        }
-    }
-
-    /// The terminal that this camera is tracking.
-    pub fn terminal(&self) -> Option<Entity> {
-        self.terminal
-    }
 }
 
 fn init_camera(

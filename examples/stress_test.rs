@@ -1,6 +1,6 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy_ascii_terminal::*;
+use bevy_ascii_terminal::{code_page_437, prelude::*};
 use rand::prelude::ThreadRng;
 use rand::Rng;
 
