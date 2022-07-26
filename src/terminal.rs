@@ -35,7 +35,7 @@ use crate::ui::UiProgressBar;
 ///
 /// let hello = term.get_string([1,1], 5);
 /// ```
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, Debug)]
 pub struct Terminal {
     tiles: Grid<Tile>,
     size: UVec2,

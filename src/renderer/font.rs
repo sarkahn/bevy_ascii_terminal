@@ -5,7 +5,7 @@ use bevy::{
     utils::HashMap,
 };
 
-use std::{str::FromStr, borrow::Borrow};
+use std::{borrow::Borrow, str::FromStr};
 
 use strum_macros::{AsRefStr, EnumCount, EnumIter, EnumString};
 
@@ -50,9 +50,9 @@ pub enum TerminalFont {
     Px4378x8,
     #[strum(serialize = "taffer_10x10.png")]
     Taffer10x12,
-    #[strum(serialize = "taritus_curses_8x12.png")]
-    ZxEvolution8x8,
     #[strum(serialize = "zx_evolution_8x8.png")]
+    ZxEvolution8x8,
+    #[strum(serialize = "taritus_curses_8x12.png")]
     TaritusCurses8x12,
     /// Change to a custom font texture
     Custom(Handle<Image>),
@@ -117,6 +117,7 @@ impl Plugin for TerminalFontPlugin {
 
         let font = include_font!("taritus_curses_8x12.png");
         add_font_resource(font, &mut images, font_map);
+
         app.insert_resource(fonts);
     }
 }

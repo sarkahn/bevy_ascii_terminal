@@ -167,22 +167,22 @@ fn terminal_renderer_update_mesh(
 
 fn terminal_renderer_change_font(
     built_in_fonts: Res<BuiltInFontHandles>,
-    q_change: Query<(Entity, &Handle<TerminalMaterial>, &TerminalFont)>,
+    mut q_change: Query<
+        (Entity, &mut Handle<TerminalMaterial>, &TerminalFont),
+        Changed<TerminalFont>,
+    >,
     mut materials: ResMut<Assets<TerminalMaterial>>,
     mut commands: Commands,
 ) {
-    for (e, mat, font) in q_change.iter() {
+    for (e, mut mat, font) in q_change.iter_mut() {
         let handle = match font {
             TerminalFont::Custom(handle) => handle,
             _ => built_in_fonts.get(font),
         };
-        let mat = materials.get_mut(mat).unwrap_or_else(|| {
-            panic!(
-                "Error changing terminal font, invalid material handle: {:#?}",
-                font
-            )
-        });
-        mat.texture = Some(handle.clone());
+
+        println!("Changing font to {}", font.as_ref());
+        *mat = materials.add(handle.clone().into());
+        //mat.texture = Some(handle.clone());
         commands.entity(e).remove::<TerminalFont>();
     }
 }
