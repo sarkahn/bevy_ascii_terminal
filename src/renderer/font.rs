@@ -55,6 +55,7 @@ pub enum TerminalFont {
     #[strum(serialize = "taritus_curses_8x12.png")]
     TaritusCurses8x12,
     /// Change to a custom font texture
+    #[strum(serialize = "custom")]
     Custom(Handle<Image>),
 }
 

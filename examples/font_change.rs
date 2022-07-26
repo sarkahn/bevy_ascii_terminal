@@ -1,10 +1,14 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::texture::ImageSettings};
 use bevy_ascii_terminal::{prelude::*, TerminalFont};
 use strum::{EnumCount, IntoEnumIterator};
 
 fn main() {
     App::new()
         .init_resource::<FontIndex>()
+        // This ensures our font loaded at runtime is set to
+        // nearest sampling by default. Failing to do this
+        // will result in visual artifacts!
+        .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
@@ -68,21 +72,32 @@ fn draw_title(term: &mut Terminal, title: &str) {
 
 fn change_font(
     keys: Res<Input<KeyCode>>,
+    server: Res<AssetServer>,
     mut font_index: ResMut<FontIndex>,
     mut q: Query<(Entity, &mut Terminal)>,
     mut commands: Commands,
 ) {
     if keys.just_pressed(KeyCode::Space) {
-        let count = TerminalFont::COUNT - 1;
+        let count = TerminalFont::COUNT;
         for (entity, mut term) in q.iter_mut() {
             font_index.0 = (font_index.0 + 1) % count;
 
-            let font = TerminalFont::iter().nth(font_index.0).unwrap();
+            // Load custom font - note above during app initialization we
+            // set the default sampling to nearest to ensure proper
+            // rendering with the terminal camera
+            let (font, name) = if font_index.0 == TerminalFont::COUNT - 1 {
+                let name = "VGA9x16.png";
+                let image = server.load(name);
+                (TerminalFont::Custom(image), name.to_string())
+            // Load a built in font
+            } else {
+                let font = TerminalFont::iter().nth(font_index.0).unwrap();
+                let name = font.as_ref().to_string();
+                (font, name)
+            };
             commands.entity(entity).insert(font.clone());
 
-            let name = font.as_ref();
-
-            draw_title(&mut term, name);
+            draw_title(&mut term, name.as_str());
         }
     }
 }

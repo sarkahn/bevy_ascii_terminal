@@ -87,7 +87,7 @@ fn terminal_renderer_update_size(
             Changed<Handle<Mesh>>,
             Changed<TileScaling>,
             Changed<Handle<TerminalMaterial>>,
-            Added<TerminalFont>,
+            With<TerminalFont>,
         )>,
     >,
 ) {
@@ -103,12 +103,18 @@ fn terminal_renderer_update_size(
         mut ppt,
     ) in q.iter_mut()
     {
-        let material = materials.get(material).unwrap();
-        let image = images.get(material.texture.as_ref().unwrap()).unwrap();
-        // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
-        // graphical terminals
-        let font_size = image.size() / 16.0;
-        ppt.0 = font_size.as_uvec2();
+        if let Some(material) = materials.get(material) {
+            if let Some(image) = material.texture.clone() {
+                if let Some(image) = images.get(&image) {
+                    // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
+                    // graphical terminals
+                    let font_size = image.size() / 16.0;
+                    ppt.0 = font_size.as_uvec2();
+                }
+            }
+        }
+
+        let font_size = ppt.0.as_vec2();
 
         let tile_size = match scaling {
             TileScaling::World => {
@@ -129,6 +135,7 @@ fn terminal_renderer_update_size(
         //info!("Changing mesh size size: {}, Length: {}", size, vert_data.indices.len());
         //info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
         //info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
+        println!("Setting indices");
         mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
     }
@@ -167,18 +174,20 @@ fn terminal_renderer_update_mesh(
 
 fn terminal_renderer_change_font(
     built_in_fonts: Res<BuiltInFontHandles>,
-    mut q_change: Query<
-        (Entity, &mut Handle<TerminalMaterial>, &TerminalFont),
-        Changed<TerminalFont>,
-    >,
+    mut q_change: Query<(Entity, &mut Handle<TerminalMaterial>, &TerminalFont)>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
     mut commands: Commands,
+    images: ResMut<Assets<Image>>,
 ) {
     for (e, mut mat, font) in q_change.iter_mut() {
         let handle = match font {
             TerminalFont::Custom(handle) => handle,
             _ => built_in_fonts.get(font),
         };
+
+        if images.get(handle).is_none() {
+            return;
+        }
 
         println!("Changing font to {}", font.as_ref());
         *mat = materials.add(handle.clone().into());
