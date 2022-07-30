@@ -12,7 +12,7 @@ repository = "https://github.com/sarkahn/bevy_ascii_terminal"
 version = "0.11.0"
 
 [dependencies]
-bevy = {path="../bevy", version = "0.8.0-dev", default-features = false, features = ["bevy_render", "bevy_sprite"]}
+bevy = {path="../bevy", version = "0.8", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_sprite"]}
 bevy_tiled_camera = {path="../bevy_tiled_camera", version="0.4", optional=true}
 sark_grids = {path="../sark_grids_rs", version="0.5"}
 bitflags = "1.2"
@@ -21,7 +21,7 @@ strum = "0.24.1"
 strum_macros = "0.24"
 
 [dev-dependencies]
-bevy = {path="../bevy", version = "0.8.0-dev", default-features = false, features = ["png", "bevy_winit", "bevy_render"]}
+bevy = {path="../bevy", version = "0.8", default-features = false, features = ["png", "bevy_winit", "bevy_render"]}
 bevy_tiled_camera = {path="../bevy_tiled_camera", version="0.4"}
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
