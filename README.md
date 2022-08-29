@@ -51,7 +51,11 @@ fn main () {
 | 0.8 | 0.11 |
 | 0.7 | 0.9-0.10 |
 
-# Project Examples
+## Bevy Ascii Terminal Projects
 
-[![Roguelike](images/bevy_roguelike.gif)](https://sarkahn.github.io/bevy_ascii_snake/)
-[![Snake](images/bevy_snake.gif)](https://sarkahn.github.io/bevy_ascii_snake/)
+**Bevy Roguelike** - [Source](https://github.com/sarkahn/bevy_roguelike/) - [WASM](https://sarkahn.github.io/bevy_rust_roguelike_tut_web/)
+
+**Ascii Snake** - [Source](https://github.com/sarkahn/bevy_ascii_snake) - [WASM](https://sarkahn.github.io/bevy_ascii_snake/)
+
+[![Roguelike](images/bevy_roguelike.gif)](https://github.com/sarkahn/bevy_roguelike/)
+[![Snake](images/bevy_snake.gif)](https://github.com/sarkahn/bevy_ascii_snake)
