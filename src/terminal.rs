@@ -380,7 +380,8 @@ impl Terminal {
         self.tiles.side_index(side)
     }
 
-    /// Convert a position from terminal space to world space.
+    /// Convert a position from terminal space (bottom left origin) to world
+    /// space (centered origin).
     ///
     /// Note this assumes a centered terminal and ignores pivots and world
     /// positions, which are rendering specific propertes of the terminal
@@ -390,7 +391,8 @@ impl Terminal {
         pos.as_ivec2() - self.size.as_ivec2() / 2
     }
 
-    /// Convert a position from world space to terminal space.
+    /// Convert a position from world space (centered origin) to terminal space
+    /// (bottom left origin).
     ///
     /// Note this assumes a centered terminal and ignores pivots and world
     /// positions, which are rendering specific propertes of the terminal
@@ -457,5 +459,19 @@ mod tests {
         assert_eq!('l', term.get_char([5, 2]));
         assert_eq!('l', term.get_char([5, 3]));
         assert_eq!('o', term.get_char([5, 4]));
+    }
+
+    #[test]
+    fn from_world() {
+        let term = Terminal::with_size([20, 20]);
+
+        assert_eq!([10, 10], term.from_world([0, 0]).to_array());
+    }
+
+    #[test]
+    fn to_world() {
+        let term = Terminal::with_size([20, 20]);
+
+        assert_eq!([0, 0], term.to_world([10, 10]).to_array());
     }
 }
