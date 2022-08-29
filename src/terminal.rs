@@ -387,7 +387,7 @@ impl Terminal {
     /// entity. The `ToWorld` component can be used if these properties must be
     /// accounted for.
     pub fn to_world(&self, pos: impl GridPoint) -> IVec2 {
-        pos.as_ivec2() + self.size.as_ivec2() / 2
+        pos.as_ivec2() - self.size.as_ivec2() / 2
     }
 
     /// Convert a position from world space to terminal space.
@@ -397,7 +397,7 @@ impl Terminal {
     /// entity. The `ToWorld` component can be used if these properties must be
     /// accounted for.
     pub fn from_world(&self, pos: impl GridPoint) -> IVec2 {
-        pos.as_ivec2() - self.size.as_ivec2() / 2
+        pos.as_ivec2() + self.size.as_ivec2() / 2
     }
 }
 
