@@ -51,7 +51,7 @@ pub struct Terminal {
 #[derive(Clone, Copy, Debug)]
 pub struct Tile {
     /// The glyph for the tile. Glyphs are mapped to sprites via the
-    /// terminal's [UvMapping](super::renderer::uv_mapping::UvMapping)
+    /// terminal's `UvMapping`
     pub glyph: char,
     /// The forergound color for the tile.
     pub fg_color: Color,

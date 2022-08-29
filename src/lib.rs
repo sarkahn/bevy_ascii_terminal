@@ -46,8 +46,9 @@
 //! ## Versions
 //! | bevy | bevy_ascii_terminal |
 //! | --- | --- |
+//! | 0.8.1 | 0.11.1 |
 //! | 0.8 | 0.11 |
-//! | 0.7 | 0.10 |
+//! | 0.7 | 0.9-0.10 |
 mod entity;
 mod formatting;
 mod plugin;
