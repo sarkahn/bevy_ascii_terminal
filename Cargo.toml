@@ -9,11 +9,11 @@ license = "MIT"
 name = "bevy_ascii_terminal"
 readme = "README.md"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
-version = "0.11.0"
+version = "0.11.1"
 
 [dependencies]
-bevy = {path="../bevy", version = "0.8", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_sprite"]}
-bevy_tiled_camera = {path="../bevy_tiled_camera", version="0.4", optional=true}
+bevy = {path="../bevy", version = "0.8.1", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_sprite"]}
+bevy_tiled_camera = {path="../bevy_tiled_camera", version="0.4.1", optional=true}
 sark_grids = {path="../sark_grids_rs", version="0.5"}
 bitflags = "1.2"
 arrayvec = "0.7.2"
@@ -21,8 +21,8 @@ strum = "0.24.1"
 strum_macros = "0.24"
 
 [dev-dependencies]
-bevy = {path="../bevy", version = "0.8", default-features = false, features = ["png", "bevy_winit", "bevy_render"]}
-bevy_tiled_camera = {path="../bevy_tiled_camera", version="0.4"}
+bevy = {path="../bevy", version = "0.8.1", default-features = false, features = ["png", "bevy_winit", "bevy_render"]}
+bevy_tiled_camera = {path="../bevy_tiled_camera", version="0.4.1"}
 bracket-noise = "0.8.2"
 bracket-random = "0.8.2"
 rand = "0.8.4"
@@ -30,3 +30,6 @@ rand = "0.8.4"
 [features]
 default = ["camera"]
 camera = ["dep:bevy_tiled_camera"]
+dev = [
+    "bevy/dynamic",
+]

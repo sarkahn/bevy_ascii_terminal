@@ -379,6 +379,26 @@ impl Terminal {
     pub fn side_index(&self, side: Side) -> usize {
         self.tiles.side_index(side)
     }
+
+    /// Convert a position from terminal space to world space.
+    ///
+    /// Note this assumes a centered terminal and ignores pivots and world
+    /// positions, which are rendering specific propertes of the terminal
+    /// entity. The `ToWorld` component can be used if these properties must be
+    /// accounted for.
+    pub fn to_world(&self, pos: impl GridPoint) -> IVec2 {
+        pos.as_ivec2() + self.size.as_ivec2() / 2
+    }
+
+    /// Convert a position from world space to terminal space.
+    ///
+    /// Note this assumes a centered terminal and ignores pivots and world
+    /// positions, which are rendering specific propertes of the terminal
+    /// entity. The `ToWorld` component can be used if these properties must be
+    /// accounted for.
+    pub fn from_world(&self, pos: impl GridPoint) -> IVec2 {
+        pos.as_ivec2() - self.size.as_ivec2() / 2
+    }
 }
 
 #[cfg(test)]

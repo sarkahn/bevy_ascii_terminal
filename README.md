@@ -15,7 +15,7 @@ The goal of this crate is to provide a simple, straightforward, and hopefully
 fast method for rendering colorful ascii in bevy. It was made with "traditional
 roguelikes" in mind, but should serve as a simple UI tool if needed.
 
-# Example
+# Code Example
 
 ```rust
 use bevy::prelude::*;
@@ -43,8 +43,15 @@ fn main () {
 }
 ```
 
+
 ## Versions
 | bevy | bevy_ascii_terminal |
 | --- | --- |
+| 0.8.1 | 0.11.1 |
 | 0.8 | 0.11 |
 | 0.7 | 0.9-0.10 |
+
+# Project Examples
+
+[![Roguelike](images/bevy_roguelike.gif)](https://sarkahn.github.io/bevy_ascii_snake/)
+[![Snake](images/bevy_snake.gif)](https://sarkahn.github.io/bevy_ascii_snake/)

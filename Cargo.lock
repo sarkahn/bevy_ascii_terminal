@@ -139,14 +139,15 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "bevy"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
+ "bevy_dylib",
  "bevy_internal",
 ]
 
 [[package]]
 name = "bevy_app"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_derive",
  "bevy_ecs",
@@ -159,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "arrayvec",
  "bevy",
@@ -175,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_asset"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -200,7 +201,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_core"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -213,7 +214,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_core_pipeline"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -229,7 +230,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_derive"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_macro_utils",
  "quote",
@@ -238,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_diagnostic"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -248,8 +249,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_dylib"
+version = "0.8.1"
+dependencies = [
+ "bevy_internal",
+]
+
+[[package]]
 name = "bevy_ecs"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "async-channel",
  "bevy_ecs_macros",
@@ -266,7 +274,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ecs_macros"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -276,7 +284,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_encase_derive"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_macro_utils",
  "encase_derive_impl",
@@ -284,7 +292,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_hierarchy"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -295,7 +303,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_input"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -305,7 +313,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_internal"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -334,7 +342,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_log"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "android_log-sys",
  "bevy_app",
@@ -347,7 +355,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_macro_utils"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "quote",
  "syn",
@@ -356,21 +364,21 @@ dependencies = [
 
 [[package]]
 name = "bevy_math"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "glam",
 ]
 
 [[package]]
 name = "bevy_mikktspace"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "glam",
 ]
 
 [[package]]
 name = "bevy_pbr"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -389,11 +397,11 @@ dependencies = [
 
 [[package]]
 name = "bevy_ptr"
-version = "0.8.0"
+version = "0.8.1"
 
 [[package]]
 name = "bevy_reflect"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_ptr",
  "bevy_reflect_derive",
@@ -410,7 +418,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_reflect_derive"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -421,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_render"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -462,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_render_macros"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -472,7 +480,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_sprite"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -496,7 +504,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_tasks"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "async-channel",
  "async-executor",
@@ -509,7 +517,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_tiled_camera"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bevy",
  "sark_grids",
@@ -517,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_time"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -528,7 +536,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_transform"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -539,7 +547,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_utils"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "ahash",
  "getrandom",
@@ -551,7 +559,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_window"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -564,7 +572,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_winit"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "approx",
  "bevy_app",
