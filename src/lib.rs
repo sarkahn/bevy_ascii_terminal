@@ -7,9 +7,6 @@
 //! A simple ascii terminal integrated into bevy's ecs framework.
 //!
 //! ---
-//! ![](images/title.png)
-//!
-//! ---
 //!
 //! The goal of this crate is to provide a simple, straightforward, and hopefully
 //! fast method for rendering colorful ascii in bevy. It was made with "traditional
@@ -46,8 +43,9 @@
 //! ## Versions
 //! | bevy | bevy_ascii_terminal |
 //! | --- | --- |
+//! | 0.8.1 | 0.11.1 |
 //! | 0.8 | 0.11 |
-//! | 0.7 | 0.10 |
+//! | 0.7 | 0.9-0.10 |
 mod entity;
 mod formatting;
 mod plugin;
