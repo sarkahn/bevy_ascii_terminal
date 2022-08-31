@@ -55,7 +55,10 @@ fn main () {
 
 **Bevy Roguelike** - [Source](https://github.com/sarkahn/bevy_roguelike/) - [WASM](https://sarkahn.github.io/bevy_rust_roguelike_tut_web/)
 
-**Ascii Snake** - [Source](https://github.com/sarkahn/bevy_ascii_snake) - [WASM](https://sarkahn.github.io/bevy_ascii_snake/)
+**Ascii Snake** - [Source](https://github.com/sarkahn/bevy_ascii_snake/) - [WASM](https://sarkahn.github.io/bevy_ascii_snake/)
+
+**Ascii Tetris** - [Source](https://github.com/sarkahn/bevy_ascii_tetris/) - [WASM](https://sarkahn.github.io/bevy_ascii_tetris/)
 
 [![Roguelike](images/bevy_roguelike.gif)](https://github.com/sarkahn/bevy_roguelike/)
 [![Snake](images/bevy_snake.gif)](https://github.com/sarkahn/bevy_ascii_snake)
+[![Tetris](images/tetris.gif)](https://github.com/sarkahn/bevy_ascii_tetris/)
