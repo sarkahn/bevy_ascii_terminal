@@ -172,6 +172,7 @@ dependencies = [
  "sark_grids",
  "strum",
  "strum_macros",
+ "unicode-width",
 ]
 
 [[package]]

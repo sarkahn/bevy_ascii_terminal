@@ -10,7 +10,7 @@ use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
-use crate::fmt_string::StringColor;
+use crate::fmt_string::StringModifier;
 use crate::fmt_tile::ColorFormat;
 use crate::formatting::StringWriter;
 use crate::formatting::TileModifier;
@@ -215,18 +215,19 @@ impl Terminal {
 
         for write in writes {
             match write {
-                StringColor::FgColor(col) => {
+                StringModifier::FgColor(col) => {
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.fg_color = col;
                     }
                 }
-                StringColor::BgColor(col) => {
+                StringModifier::BgColor(col) => {
                     let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
                     for t in tiles {
                         t.bg_color = col;
                     }
                 }
+                StringModifier::Aligned(_, _) => todo!(),
             }
         }
     }

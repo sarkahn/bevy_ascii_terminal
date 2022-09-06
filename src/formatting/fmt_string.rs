@@ -1,11 +1,26 @@
 use arrayvec::ArrayVec;
-use bevy::prelude::Color;
+use bevy::prelude::{Color, IVec2, Vec2};
+use sark_grids::{Size2d, GridPoint};
 use std::borrow::Cow;
+use bitflags::bitflags;
+
+bitflags! {
+    pub struct Align: u8 {
+        const Left =    1 << 1;
+        const CenterX = 1 << 2;
+        const Right =   1 << 3;
+        const Top =     1 << 4;
+        const CenterY = 1 << 5;
+        const Bottom =  1 << 6;
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
-pub enum StringColor {
+pub enum StringModifier {
     FgColor(Color),
     BgColor(Color),
+    /// usize == width to align to
+    Aligned(Align, usize),
 }
 
 /// A trait for building a formatted terminal string.
@@ -23,7 +38,7 @@ pub trait StringWriter<'a>: Clone {
 #[derive(Default, Clone)]
 pub struct FormattedString<'a> {
     pub string: Cow<'a, str>,
-    pub writes: ArrayVec<StringColor, 2>,
+    pub writes: ArrayVec<StringModifier, 3>,
 }
 
 impl<'a> FormattedString<'a> {
@@ -41,7 +56,7 @@ impl<'a> StringWriter<'a> for FormattedString<'a> {
     }
 
     fn fg(mut self, color: Color) -> FormattedString<'a> {
-        self.writes.push(StringColor::FgColor(color));
+        self.writes.push(StringModifier::FgColor(color));
         self
     }
 
@@ -50,7 +65,7 @@ impl<'a> StringWriter<'a> for FormattedString<'a> {
     }
 
     fn bg(mut self, color: Color) -> FormattedString<'a> {
-        self.writes.push(StringColor::BgColor(color));
+        self.writes.push(StringModifier::BgColor(color));
         self
     }
 }
@@ -80,7 +95,7 @@ impl<'a> StringWriter<'a> for String {
 
     fn fg(self, color: Color) -> FormattedString<'a> {
         let mut fmt = FormattedString::new(self);
-        fmt.writes.push(StringColor::FgColor(color));
+        fmt.writes.push(StringModifier::FgColor(color));
         fmt
     }
 
@@ -111,10 +126,14 @@ impl<'a> StringWriter<'a> for &'a String {
     }
 }
 
-impl<'a> From<FormattedString<'a>> for (Cow<'a, str>, ArrayVec<StringColor, 2>) {
+impl<'a> From<FormattedString<'a>> for (Cow<'a, str>, ArrayVec<StringModifier, 3>) {
     fn from(fmt: FormattedString<'a>) -> Self {
         (fmt.string, fmt.writes)
     }
+}
+
+fn get_aligned_point(p: impl GridPoint, size: impl Size2d, align: Vec2) -> IVec2 {
+    (p.as_vec2() + size.as_vec2() * align).as_ivec2()
 }
 
 #[cfg(test)]
