@@ -5,12 +5,12 @@ use bevy::math::IVec2;
 use bevy::math::UVec2;
 use bevy::prelude::Color;
 use bevy::prelude::Component;
+use bevy::prelude::Vec2;
 use sark_grids::grid::Side;
 use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
-use crate::fmt_string::StringModifier;
 use crate::fmt_tile::ColorFormat;
 use crate::formatting::StringWriter;
 use crate::formatting::TileModifier;
@@ -199,35 +199,46 @@ impl Terminal {
     /// // Write "Hello" with a green background
     /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
+    ///
+    /// You can also specify a `Pivot` for the string via the [GridPoint] trait.
+    /// This will align the string to the given pivot point. If the string
+    /// is multiple lines, it will be adjusted appropriately to fit the given
+    /// alignment.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use bevy_ascii_terminal::*;
+    /// use bevy::prelude::Color;
+    ///
+    /// let mut term = Terminal::with_size([10,10]);
+    /// // Write a mutli-line string to the center of the terminal
+    /// term.put_string([0,0].pivot(Pivot::Center), "Hello\nHow are you?");
+    /// ```
     pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a> + 'a) {
-        let i = self.to_index(xy);
+        let pivot = xy.get_pivot().pivot;
+        let axis = Vec2::from(pivot);
+        let origin = xy.get_aligned_point(self.size);
+        let fmt = writer.formatted();
+        let string = &fmt.string;
 
-        let (string, writes) = writer.formatted().into();
+        let h = string.lines().count() as i32;
+        let y = (origin.y as f32 + (h - 1) as f32 * (1.0 - axis.y)) as i32;
 
-        let count = string.chars().count();
-        let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
-        let count = tiles.len();
-        let chars = string.chars().take(count);
+        for (i, line) in string.lines().enumerate() {
+            let y = y - i as i32;
+            if y < 0 || y >= self.height() as i32 {
+                break;
+            }
 
-        for (char, mut t) in chars.zip(tiles) {
-            t.glyph = char;
-        }
+            let len = line.chars().count().min(self.width());
+            let x = origin.x - ((len - 1) as f32 * axis.x) as i32;
+            let i = self.to_index([x, y]);
+            let tiles = self.tiles.slice_mut(i..).iter_mut().take(len);
 
-        for write in writes {
-            match write {
-                StringModifier::FgColor(col) => {
-                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
-                    for t in tiles {
-                        t.fg_color = col;
-                    }
-                }
-                StringModifier::BgColor(col) => {
-                    let tiles = self.tiles.slice_mut(i..).iter_mut().take(count);
-                    for t in tiles {
-                        t.bg_color = col;
-                    }
-                }
-                StringModifier::Aligned(_, _) => todo!(),
+            for (char, mut t) in line.chars().zip(tiles) {
+                t.glyph = char;
+                fmt.apply(t);
             }
         }
     }
@@ -385,7 +396,7 @@ impl Terminal {
     /// space (centered origin).
     ///
     /// Note this assumes a centered terminal and ignores pivots and world
-    /// positions, which are rendering specific propertes of the terminal
+    /// positions, which are rendering specific properties of the terminal
     /// entity. The `ToWorld` component can be used if these properties must be
     /// accounted for.
     pub fn to_world(&self, pos: impl GridPoint) -> IVec2 {

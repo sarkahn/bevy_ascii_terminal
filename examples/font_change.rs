@@ -7,7 +7,7 @@ fn main() {
         .init_resource::<FontIndex>()
         // This ensures our font loaded at runtime is set to
         // nearest sampling by default. Failing to do this
-        // will result in visual artifacts!
+        // will result in visual artifacts for the loaded font!
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(TerminalPlugin)
