@@ -133,7 +133,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "bevy"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_dylib",
  "bevy_internal",
@@ -141,12 +141,11 @@ dependencies = [
 
 [[package]]
 name = "bevy_app"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_derive",
  "bevy_ecs",
  "bevy_reflect",
- "bevy_tasks",
  "bevy_utils",
  "wasm-bindgen",
  "web-sys",
@@ -154,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.11.4"
+version = "0.12.0"
 dependencies = [
  "arrayvec",
  "bevy",
@@ -164,13 +163,11 @@ dependencies = [
  "bracket-random",
  "rand",
  "sark_grids",
- "strum",
- "strum_macros",
 ]
 
 [[package]]
 name = "bevy_asset"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -195,7 +192,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_core"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -208,10 +205,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_core_pipeline"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
- "bevy_asset",
  "bevy_derive",
  "bevy_ecs",
  "bevy_reflect",
@@ -224,7 +220,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_derive"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_macro_utils",
  "quote",
@@ -233,7 +229,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_diagnostic"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -244,14 +240,14 @@ dependencies = [
 
 [[package]]
 name = "bevy_dylib"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_internal",
 ]
 
 [[package]]
 name = "bevy_ecs"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "async-channel",
  "bevy_ecs_macros",
@@ -260,6 +256,7 @@ dependencies = [
  "bevy_tasks",
  "bevy_utils",
  "downcast-rs",
+ "event-listener",
  "fixedbitset",
  "fxhash",
  "serde",
@@ -268,7 +265,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ecs_macros"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -278,7 +275,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_encase_derive"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_macro_utils",
  "encase_derive_impl",
@@ -286,10 +283,12 @@ dependencies = [
 
 [[package]]
 name = "bevy_hierarchy"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
+ "bevy_core",
  "bevy_ecs",
+ "bevy_log",
  "bevy_reflect",
  "bevy_utils",
  "smallvec",
@@ -297,17 +296,18 @@ dependencies = [
 
 [[package]]
 name = "bevy_input"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
  "bevy_math",
+ "bevy_reflect",
  "bevy_utils",
 ]
 
 [[package]]
 name = "bevy_internal"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_asset",
@@ -336,10 +336,11 @@ dependencies = [
 
 [[package]]
 name = "bevy_log"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "android_log-sys",
  "bevy_app",
+ "bevy_ecs",
  "bevy_utils",
  "console_error_panic_hook",
  "tracing-log",
@@ -349,7 +350,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_macro_utils"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "quote",
  "syn",
@@ -358,25 +359,27 @@ dependencies = [
 
 [[package]]
 name = "bevy_math"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "glam",
+ "serde",
 ]
 
 [[package]]
 name = "bevy_mikktspace"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "glam",
 ]
 
 [[package]]
 name = "bevy_pbr"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_asset",
  "bevy_core_pipeline",
+ "bevy_derive",
  "bevy_ecs",
  "bevy_math",
  "bevy_reflect",
@@ -391,12 +394,13 @@ dependencies = [
 
 [[package]]
 name = "bevy_ptr"
-version = "0.8.1"
+version = "0.9.0-dev"
 
 [[package]]
 name = "bevy_reflect"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
+ "bevy_math",
  "bevy_ptr",
  "bevy_reflect_derive",
  "bevy_utils",
@@ -412,9 +416,10 @@ dependencies = [
 
 [[package]]
 name = "bevy_reflect_derive"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_macro_utils",
+ "bit-set",
  "proc-macro2",
  "quote",
  "syn",
@@ -423,7 +428,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_render"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "anyhow",
  "bevy_app",
@@ -464,7 +469,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_render_macros"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_macro_utils",
  "proc-macro2",
@@ -474,11 +479,12 @@ dependencies = [
 
 [[package]]
 name = "bevy_sprite"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_asset",
  "bevy_core_pipeline",
+ "bevy_derive",
  "bevy_ecs",
  "bevy_log",
  "bevy_math",
@@ -492,26 +498,23 @@ dependencies = [
  "fixedbitset",
  "guillotiere",
  "rectangle-pack",
- "serde",
  "thiserror",
 ]
 
 [[package]]
 name = "bevy_tasks"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "async-channel",
  "async-executor",
- "event-listener",
  "futures-lite",
- "num_cpus",
  "once_cell",
  "wasm-bindgen-futures",
 ]
 
 [[package]]
 name = "bevy_tiled_camera"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "bevy",
  "sark_grids",
@@ -519,7 +522,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_time"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -530,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_transform"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -541,7 +544,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_utils"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "ahash",
  "getrandom",
@@ -553,12 +556,13 @@ dependencies = [
 
 [[package]]
 name = "bevy_window"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
  "bevy_input",
  "bevy_math",
+ "bevy_reflect",
  "bevy_utils",
  "raw-window-handle",
  "web-sys",
@@ -566,7 +570,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_winit"
-version = "0.8.1"
+version = "0.9.0-dev"
 dependencies = [
  "approx",
  "bevy_app",
@@ -1194,21 +1198,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "heck"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
-
-[[package]]
-name = "hermit-abi"
-version = "0.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1505,16 +1494,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "578ede34cf02f8924ab9447f50c28075b4d3e5b269972345e7e0372b38c6cdcd"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "num_cpus"
-version = "1.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19e64526ebdee182341572e50e9ad03965aa510cd94427a4549448f285e957a1"
-dependencies = [
- "hermit-abi",
- "libc",
 ]
 
 [[package]]
@@ -1815,12 +1794,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
-name = "rustversion"
-version = "1.0.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97477e48b4cf8603ad5f7aaf897467cf42ab4218a38ef76fb14c2d6773a6d6a8"
-
-[[package]]
 name = "sark_grids"
 version = "0.5.0"
 dependencies = [
@@ -1905,25 +1878,6 @@ name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
-
-[[package]]
-name = "strum"
-version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "063e6045c0e62079840579a7e47a355ae92f60eb74daaf156fb1e84ba164e63f"
-
-[[package]]
-name = "strum_macros"
-version = "0.24.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e385be0d24f186b4ce2f9982191e7101bb737312ad61c1f2f984f34bcf85d59"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn",
-]
 
 [[package]]
 name = "svg_fmt"

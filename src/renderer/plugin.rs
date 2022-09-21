@@ -189,7 +189,7 @@ fn terminal_renderer_change_font(
             return;
         }
 
-        println!("Changing font to {}", font.as_ref());
+        //println!("Changing font to {}", font.as_ref());
         *mat = materials.add(handle.clone().into());
         //mat.texture = Some(handle.clone());
         commands.entity(e).remove::<TerminalFont>();

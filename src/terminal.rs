@@ -139,7 +139,7 @@ impl Terminal {
     /// # Example
     ///
     /// ```rust
-    /// use bevy_ascii_terminal::*;
+    /// use bevy_ascii_terminal::prelude::*;
     /// use bevy::prelude::Color;
     ///
     /// let mut term = Terminal::with_size([10,10]);
@@ -160,7 +160,7 @@ impl Terminal {
     ///
     /// ```rust
     /// use bevy::prelude::*;
-    /// use bevy_ascii_terminal::*;
+    /// use bevy_ascii_terminal::prelude::*;
     /// let mut term = Terminal::with_size([10,10]);
     ///
     /// // Set the background color for the given tile to blue.
@@ -190,7 +190,7 @@ impl Terminal {
     /// # Example
     ///
     /// ```rust
-    /// use bevy_ascii_terminal::*;
+    /// use bevy_ascii_terminal::prelude::*;
     /// use bevy::prelude::Color;
     ///
     /// let mut term = Terminal::with_size([10,10]);

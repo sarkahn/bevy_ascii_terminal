@@ -1,6 +1,9 @@
-use bevy::{prelude::*, render::texture::ImageSettings};
+use bevy::{
+    prelude::*,
+    reflect::{DynamicEnum, DynamicVariant, Enum},
+    render::texture::ImageSettings,
+};
 use bevy_ascii_terminal::{prelude::*, TerminalFont};
-use strum::{EnumCount, IntoEnumIterator};
 
 fn main() {
     App::new()
@@ -17,7 +20,7 @@ fn main() {
         .run()
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 struct FontIndex(pub usize);
 
 fn spawn_terminal(mut commands: Commands) {
@@ -27,7 +30,7 @@ fn spawn_terminal(mut commands: Commands) {
     term.draw_border(BorderGlyphs::single_line());
 
     let font = TerminalFont::default();
-    draw_title(&mut term, font.as_ref());
+    draw_title(&mut term, font.variant_name());
 
     let bg_color = Color::MIDNIGHT_BLUE;
     term.put_string(
@@ -78,22 +81,38 @@ fn change_font(
     mut commands: Commands,
 ) {
     if keys.just_pressed(KeyCode::Space) {
-        let count = TerminalFont::COUNT;
         for (entity, mut term) in q.iter_mut() {
+            let info = match TerminalFont::default().get_type_info() {
+                bevy::reflect::TypeInfo::Enum(info) => info,
+                _ => unreachable!(),
+            };
+
+            let count = info.variant_len();
+
             font_index.0 = (font_index.0 + 1) % count;
 
             // Load custom font - note above during app initialization we
             // set the default sampling to nearest to ensure proper
             // rendering with the terminal camera
-            let (font, name) = if font_index.0 == TerminalFont::COUNT - 1 {
+            let (font, name) = if font_index.0 == count - 1 {
                 let name = "VGA9x16.png";
                 let image = server.load(name);
                 (TerminalFont::Custom(image), name.to_string())
             // Load a built in font
             } else {
-                let font = TerminalFont::iter().nth(font_index.0).unwrap();
-                let name = font.as_ref().to_string();
-                (font, name)
+                let variant = match info.variant_at(font_index.0).unwrap() {
+                    bevy::reflect::VariantInfo::Unit(var) => var,
+                    _ => unreachable!(),
+                };
+                let mut a = TerminalFont::default();
+                let b = DynamicEnum::new_with_index(
+                    info.type_name(),
+                    font_index.0,
+                    variant.name(),
+                    DynamicVariant::Unit,
+                );
+                a.apply(&b);
+                (a.clone(), variant.name().to_owned())
             };
             commands.entity(entity).insert(font.clone());
 

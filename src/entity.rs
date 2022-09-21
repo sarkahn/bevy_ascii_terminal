@@ -12,7 +12,6 @@ pub struct TerminalBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
 
-    #[bundle]
     pub renderer: renderer::TerminalRendererBundle,
 }
 

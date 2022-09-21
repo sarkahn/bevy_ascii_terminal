@@ -1,13 +1,12 @@
 use bevy::{
     asset::HandleId,
-    prelude::{Assets, Component, Handle, Image, Plugin},
+    prelude::{Assets, Component, Handle, Image, Plugin, Resource},
+    reflect::Reflect,
     render::texture::{ImageSampler, ImageType},
     utils::HashMap,
 };
 
-use std::{borrow::Borrow, str::FromStr};
-
-use strum_macros::{AsRefStr, EnumCount, EnumIter, EnumString};
+use std::borrow::Borrow;
 
 /// Helper component for changing the terminal's font
 ///
@@ -18,8 +17,8 @@ use strum_macros::{AsRefStr, EnumCount, EnumIter, EnumString};
 ///
 /// # Example
 ///
-/// ```
-/// use bevy_ascii_terminal::*;
+/// ```no_run
+/// use bevy_ascii_terminal::{prelude::*, TerminalFont};
 /// use bevy::prelude::*;
 ///
 /// fn change_font(
@@ -38,24 +37,15 @@ use strum_macros::{AsRefStr, EnumCount, EnumIter, EnumString};
 /// }
 ///
 /// ```
-#[derive(
-    Debug, Clone, Component, Eq, PartialEq, Hash, AsRefStr, EnumString, EnumCount, EnumIter,
-)]
+#[derive(Debug, Clone, Component, Eq, PartialEq, Hash, Reflect)]
 pub enum TerminalFont {
-    #[strum(serialize = "jt_curses_12x12.png")]
     JtCurses12x12,
-    #[strum(serialize = "pastiche_8x8.png")]
     Pastiche8x8,
-    #[strum(serialize = "px437_8x8.png")]
     Px4378x8,
-    #[strum(serialize = "taffer_10x10.png")]
-    Taffer10x12,
-    #[strum(serialize = "zx_evolution_8x8.png")]
+    Taffer10x10,
     ZxEvolution8x8,
-    #[strum(serialize = "taritus_curses_8x12.png")]
     TaritusCurses8x12,
     /// Change to a custom font texture
-    #[strum(serialize = "custom")]
     Custom(Handle<Image>),
 }
 
@@ -65,10 +55,24 @@ impl Default for TerminalFont {
     }
 }
 
+impl TerminalFont {
+    pub const fn file_name(&self) -> &'static str {
+        match self {
+            TerminalFont::JtCurses12x12 => "jt_curses_12x12.png",
+            TerminalFont::Pastiche8x8 => "pastiche_8x8.png",
+            TerminalFont::Px4378x8 => "px437_8x8.png",
+            TerminalFont::Taffer10x10 => "taffer_10x10.png",
+            TerminalFont::ZxEvolution8x8 => "zx_evolution_8x8.png",
+            TerminalFont::TaritusCurses8x12 => "taritus_curses_8x12.png",
+            TerminalFont::Custom(_) => "custom",
+        }
+    }
+}
+
 /// Load a built in font [`Image`] from it's name
 macro_rules! include_font {
-    ($font:expr) => {{
-        let bytes = include_bytes!(concat!("builtin/", $font));
+    ($font:expr, $path:literal) => {{
+        let bytes = include_bytes!(concat!("builtin/", $path));
         let mut image = Image::from_buffer(
             bytes,
             ImageType::Extension("png"),
@@ -77,7 +81,7 @@ macro_rules! include_font {
         )
         .unwrap();
         image.sampler_descriptor = ImageSampler::Descriptor(ImageSampler::nearest_descriptor());
-        (TerminalFont::from_str($font).unwrap(), image)
+        ($font, image)
     }};
 }
 
@@ -101,22 +105,22 @@ impl Plugin for TerminalFontPlugin {
                 )
             });
 
-        let font = include_font!("jt_curses_12x12.png");
+        let font = include_font!(TerminalFont::JtCurses12x12, "jt_curses_12x12.png");
         add_font_resource(font, &mut images, font_map);
 
-        let font = include_font!("pastiche_8x8.png");
+        let font = include_font!(TerminalFont::Pastiche8x8, "pastiche_8x8.png");
         add_font_resource(font, &mut images, font_map);
 
-        let font = include_font!("px437_8x8.png");
+        let font = include_font!(TerminalFont::Px4378x8, "px437_8x8.png");
         add_font_resource(font, &mut images, font_map);
 
-        let font = include_font!("taffer_10x10.png");
+        let font = include_font!(TerminalFont::Taffer10x10, "taffer_10x10.png");
         add_font_resource(font, &mut images, font_map);
 
-        let font = include_font!("zx_evolution_8x8.png");
+        let font = include_font!(TerminalFont::ZxEvolution8x8, "zx_evolution_8x8.png");
         add_font_resource(font, &mut images, font_map);
 
-        let font = include_font!("taritus_curses_8x12.png");
+        let font = include_font!(TerminalFont::TaritusCurses8x12, "taritus_curses_8x12.png");
         add_font_resource(font, &mut images, font_map);
 
         app.insert_resource(fonts);
@@ -133,13 +137,14 @@ fn add_font_resource(
     handle
 }
 
+#[derive(Resource)]
 /// An internal resource for tracking built in font handles.
 pub(crate) struct BuiltInFontHandles {
     map: HashMap<TerminalFont, Handle<Image>>,
 }
 
 impl BuiltInFontHandles {
-    /// Retrieve a built-in font handle by it's name. Must include ".png" the extension.
+    /// Retrieve a built-in font handle via it's enum variant.
     pub(crate) fn get(&self, font: impl Borrow<TerminalFont>) -> &Handle<Image> {
         let font = font.borrow();
         self.map
@@ -150,6 +155,6 @@ impl BuiltInFontHandles {
 
 impl From<TerminalFont> for HandleId {
     fn from(font: TerminalFont) -> Self {
-        font.as_ref().into()
+        font.file_name().into()
     }
 }

@@ -17,13 +17,12 @@ fn main() {
         .run();
 }
 
-#[derive(Component, Default)]
+#[derive(Resource, Default)]
 struct Pause(bool);
 
 fn setup(mut commands: Commands) {
     commands
         .spawn_bundle(TerminalBundle::new().with_size([80, 50]))
-        .insert(Pause::default())
         .insert(AutoCamera);
 }
 
