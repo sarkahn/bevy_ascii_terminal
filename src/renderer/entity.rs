@@ -1,8 +1,8 @@
 //! Terminal components
 use bevy::{
-    math::{UVec2, Vec2},
-    prelude::{Bundle, Component, ComputedVisibility, Handle, Visibility},
-    sprite::Mesh2dHandle,
+    math::{vec2},
+    prelude::{Bundle, Component, Vec2, UVec2},
+    sprite::MaterialMesh2dBundle,
 };
 
 use crate::TerminalMaterial;
@@ -19,7 +19,7 @@ use super::{
 pub struct TerminalPivot(pub Vec2);
 impl Default for TerminalPivot {
     fn default() -> Self {
-        Self(Vec2::new(0.5, 0.5))
+        Self(vec2(0.5, 0.5))
     }
 }
 
@@ -66,15 +66,12 @@ pub struct TerminalRendererBundle {
     pub vert_data: TerminalRendererVertexData,
     pub tile_data: TerminalRendererTileData,
     pub scaling: TileScaling,
-    pub mesh: Mesh2dHandle,
-    pub material: Handle<TerminalMaterial>,
     pub uv_mapping: UvMapping,
     pub terminal_pivot: TerminalPivot,
     pub tile_pivot: TilePivot,
-    pub visibility: Visibility,
-    pub computed_visibility: ComputedVisibility,
     pub pixels_per_tile: PixelsPerTile,
     pub font: TerminalFont,
+    pub bundle: MaterialMesh2dBundle<TerminalMaterial>,
 }
 
 impl TerminalRendererBundle {

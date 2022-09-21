@@ -1,5 +1,5 @@
 use bevy::{
-    math::{UVec2, Vec2, Vec3},
+    math::{UVec2, Vec2, Vec3, vec3},
     prelude::Component,
 };
 
@@ -47,7 +47,7 @@ impl TerminalRendererVertexData {
         for i in 0..len {
             let x = (i % term_size.x as usize) as f32 * tile_width;
             let y = (i / term_size.x as usize) as f32 * tile_height;
-            let origin = Vec3::new(x, y, 0.0) + term_pivot + tile_pivot;
+            let origin = vec3(x, y, 0.0) + term_pivot + tile_pivot;
             let right = Vec3::X * tile_width;
             let up = Vec3::Y * tile_height;
 
