@@ -3,6 +3,8 @@
 mod entity;
 mod material;
 mod plugin;
+mod border;
+mod util;
 
 mod font;
 mod uv_mapping;
@@ -31,6 +33,8 @@ pub use material::TerminalMaterial;
 
 #[cfg(feature = "camera")]
 pub use camera::{AutoCamera, TiledCamera, TiledCameraBundle};
+
+pub use border::TerminalBorderBundle;
 
 /// System label for the terminal mesh initialization function.
 pub const TERMINAL_INIT: &str = "terminal_init_mesh";

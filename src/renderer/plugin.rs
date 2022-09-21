@@ -2,7 +2,7 @@
 use bevy::{
     ecs::prelude::*,
     math::Vec2,
-    prelude::{App, Assets, Handle, Image, Mesh, Plugin},
+    prelude::{App, Assets, Handle, Image, Mesh, Plugin, Vec3, info},
     render::{
         mesh::{Indices, MeshVertexAttribute},
         render_resource::{PrimitiveTopology, VertexFormat},
@@ -29,6 +29,7 @@ impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TerminalMaterialPlugin);
         app.add_plugin(TerminalCameraPlugin);
+        app.add_plugin(border::BorderPlugin);
 
         app.add_system(terminal_renderer_init.label(TERMINAL_INIT))
             .add_system(
@@ -60,7 +61,7 @@ fn terminal_renderer_init(
     mut q: Query<&mut Mesh2dHandle, (Added<Mesh2dHandle>, With<TerminalRendererVertexData>)>,
 ) {
     for mut mesh in q.iter_mut() {
-        //info!("Initializing ascii terminal mesh");
+        info!("Initializing terminal mesh");
         let new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         *mesh = Mesh2dHandle(meshes.add(new_mesh));
     }
@@ -124,9 +125,27 @@ fn terminal_renderer_update_size(
             TileScaling::Pixels => font_size,
         };
 
-        let size = terminal.size();
-        vert_data.resize(size, term_pivot.0, tile_pivot.0, tile_size);
-        tile_data.resize(size);
+        let origin = util::terminal_mesh_origin(
+            terminal.size(), term_pivot.0, 
+            tile_size, tile_pivot.0);
+
+        vert_data.terminal_resize(
+            origin,
+            terminal.size(),
+            tile_size);
+        
+
+        // for verts in vert_data.verts.chunks_mut(4) {
+        //     let origin = (Vec3::from(verts[0]) * tile_size) 
+        //         + term_offset + tile_offset;
+
+        //     verts[0] = (origin + up).into();
+        //     verts[1] = origin.into();
+        //     verts[2] = (origin + right + up).into();
+        //     verts[3] = (origin + right).into();
+        // }
+
+        tile_data.terminal_resize(terminal.size());
 
         let mesh = meshes
             .get_mut(&mesh.0)
@@ -135,7 +154,7 @@ fn terminal_renderer_update_size(
         //info!("Changing mesh size size: {}, Length: {}", size, vert_data.indices.len());
         //info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
         //info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
-        println!("Setting indices");
+        //println!("Setting indices");
         mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
     }
@@ -159,12 +178,10 @@ fn terminal_renderer_update_mesh(
         let mesh = meshes
             .get_mut(&mesh.0)
             .expect("Error accessing terminal mesh");
-        //info!("writing colors and uvs to mesh");
+        info!("writing colors and uvs to mesh. Count {}", tile_data.uvs.len());
         //info!("First fg Colors: {:?}", &tile_data.fg_colors[0..4]);
         //info!("First bg Colors: {:?}", &tile_data.bg_colors[0..4]);
         //info!("First uvs: {:?}", &tile_data.uvs[0..4]);
-
-        //mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, tile_data.fg_colors.clone());
 
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, tile_data.bg_colors.clone());
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, tile_data.fg_colors.clone());

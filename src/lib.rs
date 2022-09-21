@@ -66,6 +66,8 @@ pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};
 
 pub use ui::{BorderGlyphs, UiBox};
 
+pub use renderer::TerminalBorderBundle;
+
 /// The primary terminal rendering function labels
 pub mod term_func_labels {
     /// System label for the terminal me.

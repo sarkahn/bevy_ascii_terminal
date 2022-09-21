@@ -1,7 +1,7 @@
 //! Terminal components
 use bevy::{
     math::{vec2},
-    prelude::{Bundle, Component, Vec2, UVec2},
+    prelude::{Bundle, Component, Vec2, UVec2, Deref},
     sprite::MaterialMesh2dBundle,
 };
 
@@ -47,16 +47,8 @@ impl Default for TileScaling {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Deref)]
 pub struct PixelsPerTile(pub(crate) UVec2);
-
-impl std::ops::Deref for PixelsPerTile {
-    type Target = UVec2;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 /// A bundle of all the components required to render a terminal.
 ///
