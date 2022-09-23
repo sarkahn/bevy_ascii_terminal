@@ -23,7 +23,7 @@ use crate::TerminalFont;
 
 use super::{
     font::TerminalFontPlugin,
-    plugin::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
+    mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
     BuiltInFontHandles,
 };
 

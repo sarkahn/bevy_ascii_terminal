@@ -13,7 +13,7 @@ use bevy::{
 use sark_grids::GridPoint;
 
 use crate::{
-    renderer::{PixelsPerTile, TerminalPivot, TilePivot, TileScaling},
+    renderer::{TerminalLayout, TileScaling},
     Terminal,
 };
 
@@ -35,10 +35,7 @@ impl Plugin for ToWorldPlugin {
 pub struct ToWorld {
     term_size: UVec2,
     term_pos: Vec3,
-    term_pivot: Vec2,
-    tile_pivot: Vec2,
-    tile_scaling: TileScaling,
-    pixels_per_unit: UVec2,
+    layout: TerminalLayout,
     camera_entity: Option<Entity>,
     ndc_to_world: Mat4,
     camera_pos: Vec3,
@@ -51,8 +48,8 @@ impl ToWorld {
     /// world position.
     pub fn tile_to_world(&self, tile: impl GridPoint) -> Vec3 {
         let term_pos = self.term_pos.truncate();
-        let term_offset = self.term_size.as_vec2() * self.term_pivot;
-        let tile_offset = self.world_unit() * self.tile_pivot;
+        let term_offset = self.term_size.as_vec2() * self.layout.term_pivot;
+        let tile_offset = self.world_unit() * self.layout.tile_pivot;
         (tile.as_vec2() + term_pos - term_offset - tile_offset).extend(self.term_pos.z)
     }
 
@@ -64,17 +61,17 @@ impl ToWorld {
 
     pub fn world_to_tile(&self, world: Vec2) -> IVec2 {
         let term_pos = self.term_pos.truncate();
-        let term_offset = self.term_size.as_vec2() * self.term_pivot;
-        let tile_offset = self.world_unit() * self.tile_pivot;
+        let term_offset = self.term_size.as_vec2() * self.layout.term_pivot;
+        let tile_offset = self.world_unit() * self.layout.tile_pivot;
         let xy = world - term_pos + term_offset + tile_offset;
         xy.floor().as_ivec2()
     }
 
     /// The size of a single world unit, accounting for `TileScaling`.
     pub fn world_unit(&self) -> Vec2 {
-        match self.tile_scaling {
+        match self.layout.scaling {
             TileScaling::World => Vec2::ONE,
-            TileScaling::Pixels => self.pixels_per_unit.as_vec2(),
+            TileScaling::Pixels => self.layout.pixels_per_tile.as_vec2(),
         }
     }
 
@@ -103,28 +100,19 @@ fn update_from_terminal(
             &mut ToWorld,
             &Terminal,
             &GlobalTransform,
-            &TerminalPivot,
-            &TilePivot,
-            &TileScaling,
-            &PixelsPerTile,
+            &TerminalLayout,
         ),
         Or<(
             Changed<Terminal>,
-            Changed<TerminalPivot>,
-            Changed<TilePivot>,
-            Changed<TileScaling>,
+            Changed<TerminalLayout>,
         )>,
     >,
 ) {
-    for (mut to_world, term, transform, term_pivot, tile_pivot, tile_scaling, ppu) in
-        q_term.iter_mut()
+    for (mut to_world, term, transform, layout) in q_term.iter_mut()
     {
         to_world.term_size = term.size();
-        to_world.term_pivot = term_pivot.0;
-        to_world.tile_pivot = tile_pivot.0;
-        to_world.tile_scaling = *tile_scaling;
+        to_world.layout = *layout;
         to_world.term_pos = transform.translation();
-        to_world.pixels_per_unit = ppu.0;
     }
 }
 

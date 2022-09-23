@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle};
+use bevy::prelude::{Bundle, default};
 use sark_grids::{GridPoint, Size2d};
 
 use crate::{renderer, Terminal, TerminalFont};
@@ -10,6 +10,15 @@ use crate::{renderer, Terminal, TerminalFont};
 pub struct TerminalBundle {
     pub terminal: Terminal,
     pub renderer: renderer::TerminalRendererBundle,
+}
+
+impl From<Terminal> for TerminalBundle {
+    fn from(terminal: Terminal) -> Self {
+        TerminalBundle {
+            terminal,
+            ..default()
+        }
+    }
 }
 
 impl TerminalBundle {
@@ -29,14 +38,14 @@ impl TerminalBundle {
     }
 
     pub fn with_position(mut self, pos: impl GridPoint) -> Self {
-        let p = self.renderer.bundle.transform.translation;
-        self.renderer.bundle.transform.translation = pos.as_vec2().extend(p.z);
+        let p = self.renderer.mesh_bundle.transform.translation;
+        self.renderer.mesh_bundle.transform.translation = pos.as_vec2().extend(p.z);
         self
     }
 
     /// Sets the intial z position for the terminal.
     pub fn with_depth(mut self, depth: i32) -> Self {
-        self.renderer.bundle.transform.translation.z = depth as f32;
+        self.renderer.mesh_bundle.transform.translation.z = depth as f32;
         self
     }
 }

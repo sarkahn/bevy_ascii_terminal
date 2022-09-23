@@ -2,14 +2,14 @@
 //! view a terminal.
 use crate::Terminal;
 
-use super::{PixelsPerTile, TileScaling, TERMINAL_INIT, TERMINAL_UPDATE_SIZE};
+use super::TerminalLayout;
+use super::{TileScaling, TERMINAL_INIT, TERMINAL_UPDATE_SIZE};
 
 use bevy::prelude::App;
 use bevy::prelude::Changed;
 use bevy::prelude::Commands;
 use bevy::prelude::Component;
 use bevy::prelude::Entity;
-use bevy::prelude::Or;
 use bevy::prelude::ParallelSystemDescriptorCoercion;
 use bevy::prelude::Plugin;
 use bevy::prelude::Query;
@@ -98,7 +98,7 @@ fn update_from_new(
         (&mut TiledCamera, &TerminalCamera),
         (Changed<TerminalCamera>, With<TiledCamera>),
     >,
-    q_term: Query<(&Terminal, &PixelsPerTile, &TileScaling)>,
+    q_term: Query<(&Terminal, &TerminalLayout)>,
 ) {
     if q_cam.is_empty() || q_term.is_empty() {
         return;
@@ -106,10 +106,10 @@ fn update_from_new(
 
     for (mut cam, tcam) in q_cam.iter_mut() {
         if let Some(term) = tcam.terminal {
-            if let Ok((term, ppt, scaling)) = q_term.get(term) {
+            if let Ok((term, layout)) = q_term.get(term) {
                 cam.tile_count = term.size();
-                cam.pixels_per_tile = **ppt;
-                match scaling {
+                cam.pixels_per_tile = layout.pixels_per_tile;
+                match layout.scaling {
                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
                     TileScaling::Pixels => cam.set_world_space(WorldSpace::Pixels),
                 }
@@ -121,8 +121,8 @@ fn update_from_new(
 #[allow(clippy::type_complexity)]
 fn update_from_terminal_change(
     q_term: Query<
-        (&Terminal, &PixelsPerTile, &TileScaling),
-        Or<(Changed<PixelsPerTile>, Changed<TileScaling>)>,
+        (&Terminal, &TerminalLayout),
+        Changed<TerminalLayout>,
     >,
     mut q_cam: Query<(&mut TiledCamera, &TerminalCamera)>,
 ) {
@@ -133,10 +133,10 @@ fn update_from_terminal_change(
 
     for (mut cam, term) in q_cam.iter_mut() {
         if let Some(term) = term.terminal {
-            if let Ok((term, ppt, scaling)) = q_term.get(term) {
+            if let Ok((term, layout)) = q_term.get(term) {
                 cam.tile_count = term.size();
-                cam.pixels_per_tile = **ppt;
-                match scaling {
+                cam.pixels_per_tile = layout.pixels_per_tile;
+                match layout.scaling {
                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
                     TileScaling::Pixels => cam.set_world_space(WorldSpace::Pixels),
                 }

@@ -1,12 +1,19 @@
 use bevy::{
     asset::HandleId,
-    prelude::{Assets, Component, Handle, Image, Plugin, Resource},
+    prelude::{
+        Assets, Commands, Component, Entity, Handle, Image, ParallelSystemDescriptorCoercion,
+        Plugin, Query, Res, ResMut, Resource,
+    },
     reflect::Reflect,
     render::texture::{ImageSampler, ImageType},
     utils::HashMap,
 };
 
 use std::borrow::Borrow;
+
+use crate::TerminalMaterial;
+
+use super::{TERMINAL_CHANGE_FONT, TERMINAL_INIT};
 
 /// Helper component for changing the terminal's font
 ///
@@ -17,7 +24,7 @@ use std::borrow::Borrow;
 ///
 /// # Example
 ///
-/// ```no_run
+/// ```rust no_run
 /// use bevy_ascii_terminal::{prelude::*, TerminalFont};
 /// use bevy::prelude::*;
 ///
@@ -85,6 +92,60 @@ macro_rules! include_font {
     }};
 }
 
+fn add_font_resource(
+    font: (TerminalFont, Image),
+    images: &mut Assets<Image>,
+    font_map: &mut HashMap<TerminalFont, Handle<Image>>,
+) -> Handle<Image> {
+    let handle = images.set(font.0.clone(), font.1);
+    font_map.insert(font.0, handle.clone());
+    handle
+}
+
+#[derive(Resource)]
+/// An internal resource for tracking built in font handles.
+pub(crate) struct BuiltInFontHandles {
+    map: HashMap<TerminalFont, Handle<Image>>,
+}
+
+impl BuiltInFontHandles {
+    /// Retrieve a built-in font handle via it's enum variant.
+    pub(crate) fn get(&self, font: impl Borrow<TerminalFont>) -> &Handle<Image> {
+        let font = font.borrow();
+        self.map
+            .get(font)
+            .unwrap_or_else(|| panic!("Error retrieving built in font: {:#?} not found", font))
+    }
+}
+
+impl From<TerminalFont> for HandleId {
+    fn from(font: TerminalFont) -> Self {
+        font.file_name().into()
+    }
+}
+
+fn terminal_renderer_change_font(
+    built_in_fonts: Res<BuiltInFontHandles>,
+    mut q_change: Query<(Entity, &mut Handle<TerminalMaterial>, &TerminalFont)>,
+    mut materials: ResMut<Assets<TerminalMaterial>>,
+    mut commands: Commands,
+    images: ResMut<Assets<Image>>,
+) {
+    for (e, mut mat, font) in q_change.iter_mut() {
+        let handle = match font {
+            TerminalFont::Custom(handle) => handle,
+            _ => built_in_fonts.get(font),
+        };
+
+        if images.get(handle).is_none() {
+            return;
+        }
+
+        *mat = materials.add(handle.clone().into());
+        commands.entity(e).remove::<TerminalFont>();
+    }
+}
+
 pub(crate) struct TerminalFontPlugin;
 
 impl Plugin for TerminalFontPlugin {
@@ -124,37 +185,11 @@ impl Plugin for TerminalFontPlugin {
         add_font_resource(font, &mut images, font_map);
 
         app.insert_resource(fonts);
-    }
-}
 
-fn add_font_resource(
-    font: (TerminalFont, Image),
-    images: &mut Assets<Image>,
-    font_map: &mut HashMap<TerminalFont, Handle<Image>>,
-) -> Handle<Image> {
-    let handle = images.set(font.0.clone(), font.1);
-    font_map.insert(font.0, handle.clone());
-    handle
-}
-
-#[derive(Resource)]
-/// An internal resource for tracking built in font handles.
-pub(crate) struct BuiltInFontHandles {
-    map: HashMap<TerminalFont, Handle<Image>>,
-}
-
-impl BuiltInFontHandles {
-    /// Retrieve a built-in font handle via it's enum variant.
-    pub(crate) fn get(&self, font: impl Borrow<TerminalFont>) -> &Handle<Image> {
-        let font = font.borrow();
-        self.map
-            .get(font)
-            .unwrap_or_else(|| panic!("Error retrieving built in font: {:#?} not found", font))
-    }
-}
-
-impl From<TerminalFont> for HandleId {
-    fn from(font: TerminalFont) -> Self {
-        font.file_name().into()
+        app.add_system(
+            terminal_renderer_change_font
+                .after(TERMINAL_INIT)
+                .label(TERMINAL_CHANGE_FONT),
+        );
     }
 }

@@ -14,7 +14,7 @@
 //!
 //! # Example
 //!
-//! ```no_run
+//! ```rust no_run
 //! use bevy::prelude::*;
 //! use bevy_ascii_terminal::*;
 //!
@@ -55,6 +55,7 @@ mod to_world;
 
 pub mod ui;
 
+use bevy::prelude::{Plugin, App};
 #[cfg(feature = "camera")]
 pub use renderer::{AutoCamera, TiledCamera, TiledCameraBundle};
 
@@ -85,10 +86,19 @@ pub mod prelude {
     pub use crate::{
         entity::TerminalBundle,
         formatting::*,
-        plugin::TerminalPlugin,
         terminal::{Terminal, Tile},
         ui::BorderGlyphs,
         ui::UiBox,
     };
     pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};
+}
+
+/// Plugin for terminal rendering and related components and systems.
+pub struct TerminalPlugin;
+
+impl Plugin for TerminalPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(renderer::TerminalRendererPlugin)
+            .add_plugin(to_world::ToWorldPlugin);
+    }
 }
