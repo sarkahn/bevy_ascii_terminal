@@ -8,8 +8,8 @@ use bevy::{
 use crate::TerminalMaterial;
 
 use super::{
-    tile_data::TileData, vertex_data::VertexData,
-    uv_mapping::UvMapping, TerminalFont,
+    tile_data::TileData,
+    uv_mapping::UvMapping, TerminalFont, mesh_data::VertexData,
 };
 
 #[derive(Component, Deref)]

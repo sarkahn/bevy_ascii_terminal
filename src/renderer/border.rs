@@ -14,7 +14,7 @@ use sark_grids::Size2d;
 use crate::{code_page_437, renderer::uv_mapping::UvMapping, Terminal, TerminalMaterial};
 
 use super::{
-    tile_data::TileData, vertex_data::VertexData,
+    tile_data::TileData, mesh_data::VertexData,
 };
 
 #[derive(Component)]
@@ -33,13 +33,14 @@ pub struct TerminalBorderBundle {
 
 impl TerminalBorderBundle {
     pub fn with_size(size: impl Size2d) -> Self {
+        let tile_count = (size.width() * 2) + ((size.height() - 2) * 2);
         TerminalBorderBundle {
             border: TerminalBorder {
                 glyphs: ['a', 'b', 'c', 'd', 'e', 'f'],
                 size: size.as_uvec2(),
             },
             renderer: Default::default(),
-            vert_data: VertexData::with_size(size),
+            vert_data: VertexData::with_tile_count(tile_count),
             tile_data: TileData::border_tiles(size),
         }
     }
@@ -71,10 +72,6 @@ fn update_border(
     }
 }
 
-fn resize_verts(size: UVec2, vert_data: &mut VertexData) {
-    let len = size.x as usize * 2 + ((size.y as usize - 2) * 2);
-}
-
 fn update_mesh(
     mut q_border: Query<
         (
@@ -88,26 +85,26 @@ fn update_mesh(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (border, mut vert_data, mut tile_data, mesh) in &mut q_border {
-        info!("Resizing border mesh");
-        vert_data.border_resize([0, 0], border.size, vec2(1.0, 1.0));
+        // info!("Resizing border mesh");
+        // vert_data.border_resize([0, 0], border.size, vec2(1.0, 1.0));
 
-        tile_data.border_resize(border.size);
-        let mesh = meshes
-            .get_mut(&mesh.0)
-            .expect("Error retrieving mesh from terminal renderer");
+        // tile_data.border_resize(border.size);
+        // let mesh = meshes
+        //     .get_mut(&mesh.0)
+        //     .expect("Error retrieving mesh from terminal renderer");
 
-        tile_data.border_update(
-            border.size,
-            Color::WHITE,
-            Color::BLACK,
-            &border.glyphs,
-            &UvMapping::code_page_437(),
-        );
+        // tile_data.border_update(
+        //     border.size,
+        //     Color::WHITE,
+        //     Color::BLACK,
+        //     &border.glyphs,
+        //     &UvMapping::code_page_437(),
+        // );
 
-        //info!("Vert len {}, uv len {}", vert_data.verts.len() / 4, tile_data.uvs.len() / 4);
+        // //info!("Vert len {}, uv len {}", vert_data.verts.len() / 4, tile_data.uvs.len() / 4);
 
-        mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
+        // mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
+        // mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
     }
 }
 

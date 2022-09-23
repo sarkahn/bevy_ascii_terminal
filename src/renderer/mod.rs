@@ -4,6 +4,7 @@ mod border;
 mod entity;
 mod material;
 mod mesh;
+mod mesh_data;
 mod tiles;
 mod util;
 
@@ -20,7 +21,7 @@ pub mod code_page_437;
 
 use crate::terminal::Terminal;
 use {
-    tile_data::TileData, vertex_data::VertexData,
+    tile_data::TileData,
 };
 
 use bevy::prelude::{Plugin, App};

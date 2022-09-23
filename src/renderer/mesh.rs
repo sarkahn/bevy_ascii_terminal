@@ -7,12 +7,13 @@ use bevy::{
     },
     sprite::Mesh2dHandle,
 };
+use sark_grids::{Size2d, point::Point2d};
 
 use crate::{Terminal, TerminalFont, TerminalMaterial};
 
 use super::{
-    tile_data::TileData, vertex_data::VertexData,
-    TileScaling, TerminalLayout,
+    tile_data::TileData,
+    TileScaling, TerminalLayout, mesh_data::VertexData,
 };
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
@@ -34,38 +35,13 @@ fn init_mesh(
     }
 }
 
-#[allow(clippy::type_complexity)]
-fn update_terminal_mesh_data(
-    mut meshes: ResMut<Assets<Mesh>>,
-    images: Res<Assets<Image>>,
+fn material_change(
     materials: Res<Assets<TerminalMaterial>>,
-    mut q: Query<
-        (
-            &Terminal,
-            &Handle<TerminalMaterial>,
-            &mut Mesh2dHandle,
-            &mut TerminalLayout,
-            &mut VertexData,
-            &mut TileData,
-        ),
-        Or<(
-            Changed<Handle<Mesh>>,
-            Changed<TerminalLayout>,
-            Changed<Handle<TerminalMaterial>>,
-            With<TerminalFont>,
-        )>,
-    >,
+    images: Res<Assets<Image>>,
+    mut q_term: Query<(&Handle<TerminalMaterial>, &mut TerminalLayout), Changed<Handle<TerminalMaterial>>>,
 ) {
-    for (
-        terminal,
-        material,
-        mesh,
-        mut layout,
-        mut vert_data,
-        mut tile_data,
-    ) in q.iter_mut()
-    {
-        if let Some(material) = materials.get(material) {
+    for (handle, mut layout) in &mut q_term {
+        if let Some(material) = materials.get(handle) {
             if let Some(image) = material.texture.clone() {
                 if let Some(image) = images.get(&image) {
                     // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
@@ -75,34 +51,68 @@ fn update_terminal_mesh_data(
                 }
             }
         }
+    }
 
-        let font_size = layout.pixels_per_tile.as_vec2();
+    // let font_size = layout.pixels_per_tile.as_vec2();
+}
 
-        let tile_size = match layout.scaling {
-            TileScaling::World => {
-                let aspect = font_size.x / font_size.y;
-                Vec2::new(aspect, 1.0)
-            }
-            TileScaling::Pixels => font_size,
-        };
-
+#[allow(clippy::type_complexity)]
+fn terminal_resize(
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut q: Query<(
+            &Terminal,
+            &TerminalLayout,
+            &Mesh2dHandle,
+            &mut VertexData,
+            &mut TileData,
+        ),
+        Or<(
+            Changed<Handle<Mesh>>,
+            Changed<TerminalLayout>,
+            Changed<Handle<TerminalMaterial>>,
+        )>,
+    >,
+) {
+    for (
+        terminal,
+        layout,
+        mesh,
+        mut verts,
+        mut tiles,
+    ) in q.iter_mut()
+    {
+        let tile_size = layout.tile_size;
         let origin = terminal_mesh_origin(
             terminal.size(), layout.term_pivot, tile_size, layout.tile_pivot);
 
-        vert_data.terminal_resize(origin, terminal.size(), tile_size);
+        //vert_data.terminal_resize(origin, terminal.size(), tile_size);
+        let len = terminal.size().len();
+        let width = terminal.width();
 
-        tile_data.terminal_resize(terminal.size());
+        verts.clear();
+        verts.reserve(len);
+
+        let mut helper = super::mesh_data::VertHelper {
+            origin: origin.as_vec2(),
+            tile_size,
+            data: &mut verts,
+        };
+
+        for i in 0..len {
+            let x = i % width;
+            let y = i / width;
+
+            helper.tile_at([x, y]);
+        }
+
+        tiles.terminal_resize(terminal.size());
 
         let mesh = meshes
             .get_mut(&mesh.0)
             .expect("Error retrieving mesh from terminal renderer");
 
-        //info!("Changing mesh size size: {}, Length: {}", size, vert_data.indices.len());
-        //info!("First 4 verts: {:?}", &vert_data.verts[0..4]);
-        //info!("First 6 indices: {:?}", &vert_data.indices[0..6]);
-        //println!("Setting indices");
-        mesh.set_indices(Some(Indices::U32(vert_data.indices.clone())));
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vert_data.verts.clone());
+        mesh.set_indices(Some(Indices::U32(verts.indices.clone())));
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts.verts.clone());
     }
 }
 
