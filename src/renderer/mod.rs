@@ -6,7 +6,6 @@ mod material;
 mod mesh;
 mod mesh_data;
 mod tiles;
-mod util;
 
 mod font;
 mod uv_mapping;
@@ -20,11 +19,9 @@ pub(crate) mod vertex_data;
 pub mod code_page_437;
 
 use crate::terminal::Terminal;
-use {
-    tile_data::TileData,
-};
+use tile_data::TileData;
 
-use bevy::prelude::{Plugin, App};
+use bevy::prelude::{App, Plugin};
 pub(crate) use font::BuiltInFontHandles;
 
 pub use entity::*;
@@ -55,7 +52,7 @@ impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(material::TerminalMaterialPlugin);
         app.add_plugin(camera::TerminalCameraPlugin);
-        app.add_plugin(border::BorderPlugin);
+        //app.add_plugin(border::BorderPlugin);
     }
 }
 

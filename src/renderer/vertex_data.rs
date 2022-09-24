@@ -4,7 +4,6 @@ use bevy::{
 };
 use sark_grids::{point::Point2d, GridPoint, Size2d};
 
-
 //     pub fn terminal_resize(
 //         &mut self,
 //         origin: impl Point2d,

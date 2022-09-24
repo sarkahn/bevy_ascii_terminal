@@ -42,7 +42,8 @@ pub struct Terminal {
     /// Tile to insert when a position is "cleared".
     ///
     /// The terminal will be filled with this tile when created.
-    clear_tile: Tile,
+    pub clear_tile: Tile,
+    pub border: Option<BorderGlyphs>,
 }
 
 /// A single tile of the terminal.
@@ -86,6 +87,7 @@ impl Terminal {
             tiles: Grid::new(clear_tile, size),
             size: size.as_uvec2(),
             clear_tile,
+            border: None,
         }
     }
 
@@ -113,6 +115,10 @@ impl Terminal {
         self.size
     }
 
+    pub fn has_border(&self) -> bool {
+        self.border.is_some()
+    }
+
     /// Convert a 2D position to it's corresponding 1D index
     /// in the terminal.
     #[inline]
@@ -134,7 +140,8 @@ impl Terminal {
     /// If you don't specify a color then the existing color in the terminal tile will
     /// be unaffected.
     ///
-    /// All tiles in the terminal begin with a white foreground and black background.
+    /// By default tiles in the terminal begin with a white foreground and black
+    /// background.
     ///
     /// # Example
     ///

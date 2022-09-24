@@ -1,16 +1,13 @@
 //! Terminal components
 use bevy::{
-    math::{vec2, uvec2},
+    math::{uvec2, vec2},
     prelude::{Bundle, Component, Deref, UVec2, Vec2},
     sprite::MaterialMesh2dBundle,
 };
 
-use crate::TerminalMaterial;
+use crate::{Terminal, TerminalMaterial};
 
-use super::{
-    tile_data::TileData,
-    uv_mapping::UvMapping, TerminalFont, mesh_data::VertexData,
-};
+use super::{mesh_data::VertexData, tile_data::TileData, uv_mapping::UvMapping, TerminalFont};
 
 #[derive(Component, Deref)]
 pub struct TerminalSize(pub UVec2);
@@ -22,17 +19,43 @@ pub struct TerminalLayout {
     pub pixels_per_tile: UVec2,
     pub term_pivot: Vec2,
     pub tile_pivot: Vec2,
+    term_size: UVec2,
+    has_border: bool,
 }
 
 impl Default for TerminalLayout {
     fn default() -> Self {
-        Self { 
-            tile_size: Vec2::ONE, 
-            scaling: TileScaling::World, 
+        Self {
+            term_size: UVec2::ONE,
+            tile_size: Vec2::ONE,
+            scaling: TileScaling::World,
             pixels_per_tile: uvec2(8, 8),
-            term_pivot: vec2(0.5,0.5),
+            term_pivot: vec2(0.5, 0.5),
             tile_pivot: Vec2::ZERO,
+            has_border: false,
         }
+    }
+}
+
+impl TerminalLayout {
+    pub fn origin(&self) -> Vec2 {
+        let term_size = self.term_size.as_vec2();
+        let term_offset = -(self.term_size.as_vec2() * self.tile_size * self.term_pivot);
+        let tile_offset = -(self.tile_size * self.tile_pivot);
+        term_offset + tile_offset
+    }
+
+    pub fn term_size(&self) -> UVec2 {
+        self.term_size
+    }
+
+    pub fn has_border(&self) -> bool {
+        self.has_border
+    }
+
+    pub(crate) fn update_state(&mut self, term: &Terminal) {
+        self.has_border = term.border.is_some();
+        self.term_size = term.size();
     }
 }
 

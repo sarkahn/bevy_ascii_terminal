@@ -1,6 +1,4 @@
-use bevy::{
-    prelude::{Color, Component},
-};
+use bevy::prelude::{Color, Component};
 use sark_grids::Size2d;
 
 use crate::terminal::Tile;
@@ -15,6 +13,12 @@ pub struct TileData {
 }
 
 impl TileData {
+    pub fn clear(&mut self) {
+        self.fg_colors.clear();
+        self.bg_colors.clear();
+        self.uvs.clear();
+    }
+
     pub fn terminal_tiles(size: impl Size2d) -> Self {
         let mut v = Self::default();
         v.terminal_resize(size);
@@ -158,8 +162,7 @@ mod tests {
             }
         }
 
-        let mut colors: TileData =
-            TileData::terminal_tiles(UVec2::new(25, 25));
+        let mut colors: TileData = TileData::terminal_tiles(UVec2::new(25, 25));
         colors.update_from_tiles(tiles.iter(), &UvMapping::default());
 
         assert_eq!([0.0, 0.0, 1.0, 1.0], colors.fg_colors[0]);

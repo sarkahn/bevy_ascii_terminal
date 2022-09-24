@@ -55,7 +55,7 @@ mod to_world;
 
 pub mod ui;
 
-use bevy::prelude::{Plugin, App};
+use bevy::prelude::{App, Plugin};
 #[cfg(feature = "camera")]
 pub use renderer::{AutoCamera, TiledCamera, TiledCameraBundle};
 

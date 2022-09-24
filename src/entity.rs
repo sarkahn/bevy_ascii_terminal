@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, default};
+use bevy::prelude::{default, Bundle};
 use sark_grids::{GridPoint, Size2d};
 
 use crate::{renderer, Terminal, TerminalFont};

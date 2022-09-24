@@ -120,10 +120,7 @@ fn update_from_new(
 
 #[allow(clippy::type_complexity)]
 fn update_from_terminal_change(
-    q_term: Query<
-        (&Terminal, &TerminalLayout),
-        Changed<TerminalLayout>,
-    >,
+    q_term: Query<(&Terminal, &TerminalLayout), Changed<TerminalLayout>>,
     mut q_cam: Query<(&mut TiledCamera, &TerminalCamera)>,
 ) {
     // Check if any terminals changed

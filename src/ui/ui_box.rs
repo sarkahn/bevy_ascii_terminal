@@ -159,8 +159,8 @@ impl Default for BorderGlyphs {
 impl BorderGlyphs {
     /// Construct a new set of [BorderGlyphs] from the given string.
     ///
-    /// The format of the string should match the example below. Line returns and spaces
-    /// will be ignored.
+    /// The format of the string should match the example below. Line returns
+    /// and spaces will be ignored.
     ///
     /// # Example
     ///
@@ -172,16 +172,17 @@ impl BorderGlyphs {
     ///      └─┘"
     /// );
     /// ```
-    pub fn from_string(box_string: &str) -> Self {
-        let mut string = box_string.to_string();
-        string.retain(|c| !c.is_whitespace());
+    pub fn from_string(box_string: impl AsRef<str>) -> Self {
+        let mut chars = box_string
+            .as_ref()
+            .chars()
+            .filter(|c| !c.is_whitespace() && *c != '\n');
         debug_assert!(
-            string.chars().count() == 8,
+            chars.clone().count() == 8,
             "Error building border glyphs from string, string should contain
-            exactly 8 glyphs (minus whitespace)"
+            exactly 8 glyphs (whitespace and line returns are ignored)"
         );
 
-        let mut chars = string.chars();
         BorderGlyphs {
             top_left: chars.next().unwrap(),
             top: chars.next().unwrap(),

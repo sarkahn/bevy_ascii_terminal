@@ -96,20 +96,11 @@ impl ToWorld {
 #[allow(clippy::type_complexity)]
 fn update_from_terminal(
     mut q_term: Query<
-        (
-            &mut ToWorld,
-            &Terminal,
-            &GlobalTransform,
-            &TerminalLayout,
-        ),
-        Or<(
-            Changed<Terminal>,
-            Changed<TerminalLayout>,
-        )>,
+        (&mut ToWorld, &Terminal, &GlobalTransform, &TerminalLayout),
+        Or<(Changed<Terminal>, Changed<TerminalLayout>)>,
     >,
 ) {
-    for (mut to_world, term, transform, layout) in q_term.iter_mut()
-    {
+    for (mut to_world, term, transform, layout) in q_term.iter_mut() {
         to_world.term_size = term.size();
         to_world.layout = *layout;
         to_world.term_pos = transform.translation();
