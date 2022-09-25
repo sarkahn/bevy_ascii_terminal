@@ -1,7 +1,7 @@
 use bevy::{
     ecs::prelude::*,
     math::vec3,
-    prelude::{Assets, BuildChildren, Children, Handle, Image, Mesh, UVec2, Vec2, Vec3, Visibility},
+    prelude::{Assets, BuildChildren, Children, Handle, Image, Mesh, UVec2, Vec2, Vec3, Visibility, info},
     render::{
         mesh::{Indices, MeshVertexAttribute, VertexAttributeValues},
         render_resource::{PrimitiveTopology, VertexFormat}, view::VisibleEntities,
@@ -23,13 +23,17 @@ pub(crate) fn init_terminal(
     mut commands: Commands,
 ) {
     for (term_entity, mut mesh, mut layout) in q.iter_mut() {
-        //info!("Initializing terminal mesh");
+        info!("Initializing terminal mesh");
         // Initialize terminal mesh
-        let new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        new_mesh.init_mesh_data();
+
         *mesh = Mesh2dHandle(meshes.add(new_mesh));
+        
 
         // Initialize border entity and mesh
-        let border_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut border_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        border_mesh.init_mesh_data();
         let border_bundle = AsciiRenderBundle {
             mesh_bundle: MaterialMesh2dBundle { 
                 mesh: Mesh2dHandle(meshes.add(border_mesh)), 
@@ -63,6 +67,7 @@ pub(crate) fn material_change(
                 if let Some(image) = images.get(&image) {
                     // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
                     // graphical terminals
+                    info!("Updating layout pppt");
                     let font_size = image.size() / 16.0;
                     layout.pixels_per_tile = font_size.as_uvec2();
                 }
@@ -75,6 +80,7 @@ pub(crate) fn update_layout(mut q_term: Query<(&Terminal, &mut TerminalLayout), 
     for (term, mut layout) in &mut q_term {
         if layout.term_size() != term.size() || layout.has_border() != term.has_border() {
             layout.update_state(term);
+            info!("Updating layout from terminal change");
         }
     }
 }
@@ -90,12 +96,13 @@ pub(crate) fn layout_changed(
         &Mesh2dHandle
     ), 
         (Changed<TerminalLayout>, Without<TerminalBorder>)
-        >,
+    >,
     mut q_border: Query<(&mut VertexData, &mut TileData, &mut Visibility, &Mesh2dHandle), 
         With<TerminalBorder>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (term, layout, mut vert_data, mut tile_data, mapping, mesh) in &mut q_term {
+        info!("Updating mesh data from layout change");
         let tile_count = term.size().len();
         let width = term.width();
         let height = term.height();
@@ -215,11 +222,15 @@ pub(crate) fn layout_changed(
 }
 
 pub(crate) fn update_tiles(
-    mut q_term: Query<(&Terminal, &mut TileData, &UvMapping, &Mesh2dHandle), 
-        Or<(Changed<Terminal>,Changed<TerminalLayout>)>>,
+    mut q_term: Query<(&Terminal,  &UvMapping, &Mesh2dHandle), 
+        Or<(
+            Changed<Terminal>,
+            Changed<TerminalLayout>,
+        )>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    for (term, mut tile_data, mapping, mesh) in &mut q_term {
+    for (term, mapping, mesh) in &mut q_term {
+        info!("Updating tile data from terminal change");
         let mesh = meshes.get_mut(&mesh.0).expect("Error retrieving terminal mesh");
 
         let (mut uvs, mut fgcol, mut bgcol) = mesh.get_tile_data();

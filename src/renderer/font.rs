@@ -188,7 +188,7 @@ impl Plugin for TerminalFontPlugin {
 
         app.add_system(
             terminal_renderer_change_font
-                .after(TERMINAL_INIT)
+                //.after(TERMINAL_INIT)
                 .label(TERMINAL_CHANGE_FONT),
         );
     }

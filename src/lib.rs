@@ -48,7 +48,6 @@
 //! | 0.7 | 0.9-0.10 |
 mod entity;
 mod formatting;
-mod plugin;
 mod renderer;
 mod terminal;
 mod to_world;
@@ -99,6 +98,6 @@ pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(renderer::TerminalRendererPlugin)
-            .add_plugin(to_world::ToWorldPlugin);
+           .add_plugin(to_world::ToWorldPlugin);
     }
 }

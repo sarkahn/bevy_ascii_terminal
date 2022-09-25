@@ -3,9 +3,10 @@
 use crate::Terminal;
 
 use super::TerminalLayout;
+use super::mesh::layout_changed;
 use super::{TileScaling, TERMINAL_INIT, TERMINAL_UPDATE_SIZE};
 
-use bevy::prelude::App;
+use bevy::prelude::{App, CoreStage};
 use bevy::prelude::Changed;
 use bevy::prelude::Commands;
 use bevy::prelude::Component;
@@ -46,17 +47,6 @@ use bevy_tiled_camera::WorldSpace;
 /// ```
 #[derive(Component)]
 pub struct AutoCamera;
-
-pub(crate) struct TerminalCameraPlugin;
-
-impl Plugin for TerminalCameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugin(TiledCameraPlugin);
-        app.add_system(init_camera.before(TERMINAL_INIT))
-            .add_system(update_from_new.after(TERMINAL_UPDATE_SIZE))
-            .add_system(update_from_terminal_change.after(TERMINAL_UPDATE_SIZE));
-    }
-}
 
 /// Will track changes to the target terminal and update the viewport so the
 /// entire terminal can be visible.
@@ -139,5 +129,16 @@ fn update_from_terminal_change(
                 }
             }
         }
+    }
+}
+
+pub(crate) struct TerminalCameraPlugin;
+
+impl Plugin for TerminalCameraPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(TiledCameraPlugin);
+        app.add_system_to_stage(CoreStage::First, init_camera)
+            .add_system(update_from_new.after(layout_changed))
+            .add_system(update_from_terminal_change.after(layout_changed));
     }
 }

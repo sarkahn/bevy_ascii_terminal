@@ -55,8 +55,8 @@ impl Plugin for TerminalRendererPlugin {
         app.add_plugin(material::TerminalMaterialPlugin);
         app.add_plugin(camera::TerminalCameraPlugin);
 
-        app.add_system_to_stage(CoreStage::First, init_terminal)
-            .add_system(material_change)
+        app.add_system(init_terminal)
+            .add_system(material_change.after(init_terminal))
             .add_system(update_layout.after(material_change))
             .add_system(layout_changed.after(update_layout))
             .add_system(update_tiles.after(layout_changed));

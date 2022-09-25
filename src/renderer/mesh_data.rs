@@ -56,6 +56,8 @@ impl TileData {
     pub uvs: Vec<[f32; 2]>,
 */
 pub trait MeshData {
+
+    fn init_mesh_data(&mut self);
     /// Verts, Indices
     fn get_vert_data(&mut self) -> (Vec<[f32;3]>, &mut Vec<u32>);
     fn insert_vert_data(&mut self, verts: Vec<[f32;3]>);
@@ -116,6 +118,14 @@ impl MeshData for Mesh {
         self.insert_attribute(ATTRIBUTE_UV, uvs);
         self.insert_attribute(ATTRIBUTE_COLOR_FG, fg);
         self.insert_attribute(ATTRIBUTE_COLOR_BG, bg);
+    }
+
+    fn init_mesh_data(&mut self) {
+        self.insert_attribute(Mesh::ATTRIBUTE_POSITION, Vec::<[f32;3]>::new());
+        self.insert_attribute(ATTRIBUTE_UV, Vec::<[f32;2]>::new());
+        self.insert_attribute(ATTRIBUTE_COLOR_FG, Vec::<[f32;4]>::new());
+        self.insert_attribute(ATTRIBUTE_COLOR_BG, Vec::<[f32;4]>::new());
+        
     }
 
     // fn remove_verts(&mut self) -> Vec<[f32;3]> {
