@@ -61,6 +61,9 @@ pub struct Tile {
 }
 
 impl Tile {
+    pub const DEFAULT_FGCOL: Color = Color::WHITE;
+    pub const DEFAULT_BGCOL: Color = Color::BLACK;
+
     /// Create an invisible tile.
     pub fn transparent() -> Tile {
         Tile {
@@ -75,8 +78,8 @@ impl Default for Tile {
     fn default() -> Self {
         Tile {
             glyph: ' ',
-            fg_color: Color::WHITE,
-            bg_color: Color::BLACK,
+            fg_color: Tile::DEFAULT_FGCOL,
+            bg_color: Tile::DEFAULT_BGCOL,
         }
     }
 }

@@ -138,14 +138,14 @@ pub enum BoxEdge {
 /// Colors can optionally be specified.
 #[derive(Debug, Clone)]
 pub struct BorderGlyphs {
-    top: char,
-    left: char,
-    right: char,
-    bottom: char,
-    top_left: char,
-    top_right: char,
-    bottom_left: char,
-    bottom_right: char,
+    pub top: char,
+    pub left: char,
+    pub right: char,
+    pub bottom: char,
+    pub top_left: char,
+    pub top_right: char,
+    pub bottom_left: char,
+    pub bottom_right: char,
 
     color_modifiers: ArrayVec<ColorFormat, 2>,
 }
@@ -258,6 +258,26 @@ impl BorderGlyphs {
         }
         self.color_modifiers.push(ColorFormat::BgColor(color));
         self
+    }
+
+    /// Retrieve the foreground color if it was set.
+    pub fn get_fg(&self) -> Option<Color> {
+        for cmod in self.color_modifiers.iter() {
+            if let ColorFormat::FgColor(col) = cmod {
+                return Some(*col)
+            }
+        }
+        None
+    }
+
+    /// Retrieve the background color if it was set.
+    pub fn get_bg(&self) -> Option<Color> {
+        for cmod in self.color_modifiers.iter() {
+            if let ColorFormat::BgColor(col) = cmod {
+                return Some(*col)
+            }
+        }
+        None
     }
 
     /// Retrieve the [TileFormat] for a given glyph, with color modifiers

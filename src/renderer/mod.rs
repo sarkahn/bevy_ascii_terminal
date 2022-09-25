@@ -18,10 +18,10 @@ pub(crate) mod vertex_data;
 
 pub mod code_page_437;
 
-use crate::terminal::Terminal;
+use crate::{terminal::Terminal};
 use tile_data::TileData;
 
-use bevy::prelude::{App, Plugin};
+use bevy::prelude::{App, Plugin, CoreStage, ParallelSystemDescriptorCoercion};
 pub(crate) use font::BuiltInFontHandles;
 
 pub use entity::*;
@@ -34,6 +34,8 @@ pub use material::TerminalMaterial;
 pub use camera::{AutoCamera, TiledCamera, TiledCameraBundle};
 
 pub use border::TerminalBorderBundle;
+
+use self::mesh::*;
 
 /// System label for the terminal mesh initialization function.
 pub const TERMINAL_INIT: &str = "terminal_init_mesh";
@@ -52,7 +54,12 @@ impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(material::TerminalMaterialPlugin);
         app.add_plugin(camera::TerminalCameraPlugin);
-        //app.add_plugin(border::BorderPlugin);
+
+        app.add_system_to_stage(CoreStage::First, init_terminal)
+            .add_system(material_change)
+            .add_system(update_layout.after(material_change))
+            .add_system(layout_changed.after(update_layout))
+            .add_system(update_tiles.after(layout_changed));
     }
 }
 

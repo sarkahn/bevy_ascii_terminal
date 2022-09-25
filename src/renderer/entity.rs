@@ -1,7 +1,7 @@
 //! Terminal components
 use bevy::{
     math::{uvec2, vec2},
-    prelude::{Bundle, Component, Deref, UVec2, Vec2},
+    prelude::{Bundle, Component, Deref, UVec2, Vec2, Entity},
     sprite::MaterialMesh2dBundle,
 };
 
@@ -21,6 +21,7 @@ pub struct TerminalLayout {
     pub tile_pivot: Vec2,
     term_size: UVec2,
     has_border: bool,
+    pub(crate) border_entity: Option<Entity>,
 }
 
 impl Default for TerminalLayout {
@@ -33,6 +34,7 @@ impl Default for TerminalLayout {
             term_pivot: vec2(0.5, 0.5),
             tile_pivot: Vec2::ZERO,
             has_border: false,
+            border_entity: None,
         }
     }
 }
@@ -91,22 +93,28 @@ pub enum TileScaling {
 // #[derive(Component, Default, Deref)]
 // pub struct PixelsPerTile(pub(crate) UVec2);
 
-/// A bundle of all the components required to render a terminal.
-///
-/// Has various functions to help with the construction of a terminal.
+/// A bundle of all the components required to render ascii tiles.
 #[derive(Default, Bundle)]
-pub struct TerminalRendererBundle {
+pub struct AsciiRenderBundle {
     pub mesh_bundle: MaterialMesh2dBundle<TerminalMaterial>,
     pub vert_data: VertexData,
     pub tile_data: TileData,
+}
+
+/// Bundle for a rendering a terminal. 
+/// Has various functions to help with the construction of a terminal.
+#[derive(Default, Bundle)]
+pub struct TerminalRenderBundle {
+    pub render_bundle: AsciiRenderBundle,
     pub uv_mapping: UvMapping,
     pub layout: TerminalLayout,
     pub font: TerminalFont,
 }
 
-impl TerminalRendererBundle {
+
+impl TerminalRenderBundle {
     pub fn new() -> Self {
-        TerminalRendererBundle::default()
+        Self::default()
     }
 
     /// Set the terminal pivot value.

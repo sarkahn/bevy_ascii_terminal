@@ -9,7 +9,7 @@ use crate::{renderer, Terminal, TerminalFont};
 #[derive(Bundle, Default)]
 pub struct TerminalBundle {
     pub terminal: Terminal,
-    pub renderer: renderer::TerminalRendererBundle,
+    pub renderer: renderer::TerminalRenderBundle,
 }
 
 impl From<Terminal> for TerminalBundle {
@@ -38,14 +38,14 @@ impl TerminalBundle {
     }
 
     pub fn with_position(mut self, pos: impl GridPoint) -> Self {
-        let p = self.renderer.mesh_bundle.transform.translation;
-        self.renderer.mesh_bundle.transform.translation = pos.as_vec2().extend(p.z);
+        let p = self.renderer.render_bundle.mesh_bundle.transform.translation;
+        self.renderer.render_bundle.mesh_bundle.transform.translation = pos.as_vec2().extend(p.z);
         self
     }
 
     /// Sets the intial z position for the terminal.
     pub fn with_depth(mut self, depth: i32) -> Self {
-        self.renderer.mesh_bundle.transform.translation.z = depth as f32;
+        self.renderer.render_bundle.mesh_bundle.transform.translation.z = depth as f32;
         self
     }
 }
