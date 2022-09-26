@@ -1,11 +1,9 @@
 //! Handles mesh construction and rendering for the terminal.
 
-mod border;
 mod entity;
 mod material;
 mod mesh;
 mod mesh_data;
-mod tiles;
 
 mod font;
 mod uv_mapping;
@@ -13,15 +11,9 @@ mod uv_mapping;
 #[cfg(feature = "camera")]
 mod camera;
 
-pub(crate) mod tile_data;
-pub(crate) mod vertex_data;
-
 pub mod code_page_437;
 
-use crate::{terminal::Terminal};
-use tile_data::TileData;
-
-use bevy::prelude::{App, Plugin, CoreStage, ParallelSystemDescriptorCoercion};
+use bevy::prelude::{App, Plugin, ParallelSystemDescriptorCoercion};
 pub(crate) use font::BuiltInFontHandles;
 
 pub use entity::*;
@@ -32,8 +24,6 @@ pub use material::TerminalMaterial;
 
 #[cfg(feature = "camera")]
 pub use camera::{AutoCamera, TiledCamera, TiledCameraBundle};
-
-pub use border::TerminalBorderBundle;
 
 use self::mesh::*;
 

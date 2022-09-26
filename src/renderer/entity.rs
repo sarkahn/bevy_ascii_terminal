@@ -7,7 +7,7 @@ use bevy::{
 
 use crate::{Terminal, TerminalMaterial};
 
-use super::{mesh_data::VertexData, tile_data::TileData, uv_mapping::UvMapping, TerminalFont};
+use super::{uv_mapping::UvMapping, TerminalFont};
 
 #[derive(Component, Deref)]
 pub struct TerminalSize(pub UVec2);
@@ -69,23 +69,6 @@ impl TerminalLayout {
     }
 }
 
-// /// Terminal component specifying the origin of the terminal mesh.
-// ///
-// /// (0,0) is the bottom left. Defaults to (0.5,0.5).
-// #[derive(Component)]
-// pub struct TerminalPivot(pub Vec2);
-// impl Default for TerminalPivot {
-//     fn default() -> Self {
-//         Self(vec2(0.5, 0.5))
-//     }
-// }
-
-// /// Terminal component specifying the origin of each tile of the terminal mesh.
-// ///
-// /// (0,0) is the bottom left. Defaults to (0,0).
-// #[derive(Component, Default)]
-// pub struct TilePivot(pub Vec2);
-
 /// Terminal component specifying how terminal mesh tiles will be scaled.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TileScaling {
@@ -98,22 +81,11 @@ pub enum TileScaling {
     Pixels,
 }
 
-// #[derive(Component, Default, Deref)]
-// pub struct PixelsPerTile(pub(crate) UVec2);
-
-/// A bundle of all the components required to render ascii tiles.
-#[derive(Default, Bundle)]
-pub struct AsciiRenderBundle {
-    pub mesh_bundle: MaterialMesh2dBundle<TerminalMaterial>,
-    pub vert_data: VertexData,
-    pub tile_data: TileData,
-}
-
 /// Bundle for a rendering a terminal. 
 /// Has various functions to help with the construction of a terminal.
 #[derive(Default, Bundle)]
 pub struct TerminalRenderBundle {
-    pub render_bundle: AsciiRenderBundle,
+    pub render_bundle: MaterialMesh2dBundle<TerminalMaterial>,
     pub uv_mapping: UvMapping,
     pub layout: TerminalLayout,
     pub font: TerminalFont,
@@ -149,3 +121,7 @@ impl TerminalRenderBundle {
         self
     }
 }
+
+
+#[derive(Component)]
+pub(crate) struct TerminalBorder;

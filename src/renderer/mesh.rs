@@ -3,8 +3,7 @@ use bevy::{
     math::vec3,
     prelude::{Assets, BuildChildren, Children, Handle, Image, Mesh, UVec2, Vec2, Vec3, Visibility, info},
     render::{
-        mesh::{Indices, MeshVertexAttribute, VertexAttributeValues},
-        render_resource::{PrimitiveTopology, VertexFormat}, view::VisibleEntities,
+        render_resource::PrimitiveTopology,
     },
     sprite::{Mesh2dHandle, MaterialMesh2dBundle},
 };
@@ -12,8 +11,7 @@ use sark_grids::Size2d;
 
 use crate::{Terminal, TerminalMaterial, Tile, TerminalFont};
 
-use super::{
-    border::TerminalBorder, mesh_data::{VertexData, TileData, MeshData, ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV}, TerminalLayout, TileScaling, AsciiRenderBundle, uv_mapping::UvMapping,
+use super::{mesh_data::{VertexData, TileData, MeshData, ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV}, TerminalLayout, TileScaling, uv_mapping::UvMapping, TerminalBorder,
 };
 
 #[allow(clippy::type_complexity)]
@@ -34,12 +32,9 @@ pub(crate) fn init_terminal(
         // Initialize border entity and mesh
         let mut border_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         border_mesh.init_mesh_data();
-        let border_bundle = AsciiRenderBundle {
-            mesh_bundle: MaterialMesh2dBundle { 
-                mesh: Mesh2dHandle(meshes.add(border_mesh)), 
-                visibility: Visibility::INVISIBLE,
-                ..Default::default()
-            },
+        let border_bundle: MaterialMesh2dBundle<TerminalMaterial> = MaterialMesh2dBundle { 
+            mesh: Mesh2dHandle(meshes.add(border_mesh)), 
+            visibility: Visibility::INVISIBLE,
             ..Default::default()
         };
 
