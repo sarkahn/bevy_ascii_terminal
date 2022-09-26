@@ -3,7 +3,7 @@ use bevy::{
     reflect::{DynamicEnum, DynamicVariant, Enum},
     render::texture::ImageSettings,
 };
-use bevy_ascii_terminal::{prelude::*, TerminalFont};
+use bevy_ascii_terminal::{prelude::*, TerminalFont, TiledCameraBundle};
 
 fn main() {
     App::new()
@@ -55,7 +55,10 @@ fn spawn_terminal(mut commands: Commands) {
     );
     commands
         .spawn_bundle(TerminalBundle::from(term))
-        .insert(AutoCamera);
+        .insert(AutoCamera)
+        ;
+
+    //commands.spawn_bundle(TiledCameraBundle::new().with_tile_count([50,50]));
 }
 
 fn draw_title(term: &mut Terminal, title: &str) {

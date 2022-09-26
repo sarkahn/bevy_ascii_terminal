@@ -121,6 +121,7 @@ impl MeshData for Mesh {
     }
 
     fn init_mesh_data(&mut self) {
+        self.set_indices(Some(Indices::U32(Vec::new())));
         self.insert_attribute(Mesh::ATTRIBUTE_POSITION, Vec::<[f32;3]>::new());
         self.insert_attribute(ATTRIBUTE_UV, Vec::<[f32;2]>::new());
         self.insert_attribute(ATTRIBUTE_COLOR_FG, Vec::<[f32;4]>::new());

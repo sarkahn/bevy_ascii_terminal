@@ -6,7 +6,7 @@ use super::TerminalLayout;
 use super::mesh::layout_changed;
 use super::{TileScaling, TERMINAL_INIT, TERMINAL_UPDATE_SIZE};
 
-use bevy::prelude::{App, CoreStage};
+use bevy::prelude::{App, CoreStage, info};
 use bevy::prelude::Changed;
 use bevy::prelude::Commands;
 use bevy::prelude::Component;
@@ -98,7 +98,7 @@ fn update_from_new(
         if let Some(term) = tcam.terminal {
             if let Ok((term, layout)) = q_term.get(term) {
                 cam.tile_count = term.size();
-                cam.pixels_per_tile = layout.pixels_per_tile;
+                cam.pixels_per_tile = layout.pixels_per_tile();
                 match layout.scaling {
                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
                     TileScaling::Pixels => cam.set_world_space(WorldSpace::Pixels),
@@ -121,8 +121,9 @@ fn update_from_terminal_change(
     for (mut cam, term) in q_cam.iter_mut() {
         if let Some(term) = term.terminal {
             if let Ok((term, layout)) = q_term.get(term) {
+                //info!("Updating camera. PPT {}", layout.pixels_per_tile());
                 cam.tile_count = term.size();
-                cam.pixels_per_tile = layout.pixels_per_tile;
+                cam.pixels_per_tile = layout.pixels_per_tile();
                 match layout.scaling {
                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
                     TileScaling::Pixels => cam.set_world_space(WorldSpace::Pixels),

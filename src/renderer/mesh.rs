@@ -10,7 +10,7 @@ use bevy::{
 };
 use sark_grids::Size2d;
 
-use crate::{Terminal, TerminalMaterial, Tile};
+use crate::{Terminal, TerminalMaterial, Tile, TerminalFont};
 
 use super::{
     border::TerminalBorder, mesh_data::{VertexData, TileData, MeshData, ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV}, TerminalLayout, TileScaling, AsciiRenderBundle, uv_mapping::UvMapping,
@@ -23,7 +23,7 @@ pub(crate) fn init_terminal(
     mut commands: Commands,
 ) {
     for (term_entity, mut mesh, mut layout) in q.iter_mut() {
-        info!("Initializing terminal mesh");
+        //info!("Initializing terminal mesh");
         // Initialize terminal mesh
         let mut new_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         new_mesh.init_mesh_data();
@@ -58,7 +58,10 @@ pub(crate) fn material_change(
     images: Res<Assets<Image>>,
     mut q_term: Query<
         (&Handle<TerminalMaterial>, &mut TerminalLayout),
-        Changed<Handle<TerminalMaterial>>,
+        Or<(
+            Changed<Handle<TerminalMaterial>>, 
+            Changed<TerminalFont>,
+        )>,
     >,
 ) {
     for (handle, mut layout) in &mut q_term {
@@ -67,21 +70,32 @@ pub(crate) fn material_change(
                 if let Some(image) = images.get(&image) {
                     // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
                     // graphical terminals
-                    info!("Updating layout pppt");
                     let font_size = image.size() / 16.0;
                     layout.pixels_per_tile = font_size.as_uvec2();
+                    layout.tile_size = match layout.scaling {
+                        TileScaling::World => {
+                            let aspect = font_size.x / font_size.y;
+                            Vec2::new(aspect, 1.0)
+                        }
+                        TileScaling::Pixels => font_size,
+                    };
+                    //info!("Updating layout ppt. Now {}", layout.pixels_per_tile);
                 }
             }
         }
     }
 }
 
-pub(crate) fn update_layout(mut q_term: Query<(&Terminal, &mut TerminalLayout), Changed<Terminal>>) {
+pub(crate) fn update_layout(
+    mut q_term: Query<(&Terminal, &mut TerminalLayout), 
+        Changed<Terminal>
+        >,
+) {
     for (term, mut layout) in &mut q_term {
         if layout.term_size() != term.size() || layout.has_border() != term.has_border() {
             layout.update_state(term);
-            info!("Updating layout from terminal change");
         }
+
     }
 }
 
@@ -90,19 +104,17 @@ pub(crate) fn layout_changed(
     mut q_term: Query<(
         &Terminal, 
         &TerminalLayout, 
-        &mut VertexData, 
-        &mut TileData, 
         &UvMapping, 
         &Mesh2dHandle
     ), 
         (Changed<TerminalLayout>, Without<TerminalBorder>)
     >,
-    mut q_border: Query<(&mut VertexData, &mut TileData, &mut Visibility, &Mesh2dHandle), 
+    mut q_border: Query<(&mut Visibility, &Mesh2dHandle), 
         With<TerminalBorder>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    for (term, layout, mut vert_data, mut tile_data, mapping, mesh) in &mut q_term {
-        info!("Updating mesh data from layout change");
+    for (term, layout, mapping, mesh) in &mut q_term {
+        //info!("Updating mesh data from layout change");
         let tile_count = term.size().len();
         let width = term.width();
         let height = term.height();
@@ -142,82 +154,82 @@ pub(crate) fn layout_changed(
 
         mesh.insert_vert_data(verts);
 
-        // Update border only when layout changes 
-        let (mut vert_data, mut tile_data, mut visibility, mesh) = 
-            q_border.get_mut(layout.border_entity.unwrap()).unwrap();
+        // // Update border only when layout changes 
+        // let (mut vert_data, mut tile_data, mut visibility, mesh) = 
+        //     q_border.get_mut(layout.border_entity.unwrap()).unwrap();
 
-        let mesh = meshes.get_mut(&mesh.0)
-            .expect("Error retrieving the terminal border mesh");
+        // let mesh = meshes.get_mut(&mesh.0)
+        //     .expect("Error retrieving the terminal border mesh");
 
-        let (mut uvs, mut fg_colors, mut bg_colors) = mesh.get_tile_data();
-        let (mut verts, indices) = mesh.get_vert_data();
+        // let (mut uvs, mut fg_colors, mut bg_colors) = mesh.get_tile_data();
+        // let (mut verts, indices) = mesh.get_vert_data();
 
-        verts.clear();
-        indices.clear();
-        uvs.clear();
-        fg_colors.clear();
-        bg_colors.clear();
+        // verts.clear();
+        // indices.clear();
+        // uvs.clear();
+        // fg_colors.clear();
+        // bg_colors.clear();
 
-        if let Some(border) = &term.border {
-            visibility.is_visible = true;
-            let tile_count = ((width + 2) * 2) + (height * 2);
+        // if let Some(border) = &term.border {
+        //     visibility.is_visible = true;
+        //     let tile_count = ((width + 2) * 2) + (height * 2);
 
-            verts.reserve(tile_count * 4);
-            indices.reserve(tile_count * 6);
-            uvs.reserve(tile_count * 4);
-            fg_colors.reserve(tile_count * 4);
-            bg_colors.reserve(tile_count * 4);
+        //     verts.reserve(tile_count * 4);
+        //     indices.reserve(tile_count * 6);
+        //     uvs.reserve(tile_count * 4);
+        //     fg_colors.reserve(tile_count * 4);
+        //     bg_colors.reserve(tile_count * 4);
             
-            let origin = origin.extend(0.0) - tile_size.extend(0.0);
-            let right = Vec3::X * tile_size.x;
-            let up = Vec3::Y * tile_size.y;
+        //     let origin = origin.extend(0.0) - tile_size.extend(0.0);
+        //     let right = Vec3::X * tile_size.x;
+        //     let up = Vec3::Y * tile_size.y;
 
-            let fg = border.get_fg().unwrap_or(term.clear_tile.fg_color);
-            let bg = border.get_bg().unwrap_or(term.clear_tile.bg_color);
+        //     let fg = border.get_fg().unwrap_or(term.clear_tile.fg_color);
+        //     let bg = border.get_bg().unwrap_or(term.clear_tile.bg_color);
 
-            let mut tile_at = |x: usize, y: usize, glyph: char| {
-                let xy = vec3(x as f32, y as f32, 0.0);
-                let p = origin + xy;
+        //     let mut tile_at = |x: usize, y: usize, glyph: char| {
+        //         let xy = vec3(x as f32, y as f32, 0.0);
+        //         let p = origin + xy;
 
-                let vi = vert_data.verts.len() as u32;
-                verts
-                    .extend(&[p + up, p, p + right + up, p + right].map(|p| p.to_array()));
-                indices
-                    .extend(&[vi + 0, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
+        //         let vi = vert_data.verts.len() as u32;
+        //         verts
+        //             .extend(&[p + up, p, p + right + up, p + right].map(|p| p.to_array()));
+        //         indices
+        //             .extend(&[vi + 0, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
 
-                let glyph_uv = mapping.uvs_from_glyph(glyph);
-                uvs.extend(glyph_uv);
-                fg_colors
-                    .extend(std::iter::repeat(fg.as_linear_rgba_f32()).take(4));
-                bg_colors
-                    .extend(std::iter::repeat(bg.as_linear_rgba_f32()).take(4));
-            };
+        //         let glyph_uv = mapping.uvs_from_glyph(glyph);
+        //         uvs.extend(glyph_uv);
+        //         fg_colors
+        //             .extend(std::iter::repeat(fg.as_linear_rgba_f32()).take(4));
+        //         bg_colors
+        //             .extend(std::iter::repeat(bg.as_linear_rgba_f32()).take(4));
+        //     };
 
-            let top = height - 1;
-            let bottom = 0;
-            let left = 0;
-            let right = width - 1;
+        //     let top = height - 1;
+        //     let bottom = 0;
+        //     let left = 0;
+        //     let right = width - 1;
 
-            tile_at(left, bottom, border.bottom_left);
-            tile_at(left, top, border.top_left);
-            tile_at(right, top, border.top_right);
-            tile_at(right, bottom, border.bottom_right);
+        //     tile_at(left, bottom, border.bottom_left);
+        //     tile_at(left, top, border.top_left);
+        //     tile_at(right, top, border.top_right);
+        //     tile_at(right, bottom, border.bottom_right);
 
-            for x in 1..width - 1 {
-                tile_at(x, bottom, border.bottom);
-                tile_at(x, top, border.top);
-            }
+        //     for x in 1..width - 1 {
+        //         tile_at(x, bottom, border.bottom);
+        //         tile_at(x, top, border.top);
+        //     }
 
-            for y in 1..height - 1 {
-                tile_at(left, y, border.left);
-                tile_at(right, y, border.right);
-            }
-        } else {
-            visibility.is_visible = false;
-        }
+        //     for y in 1..height - 1 {
+        //         tile_at(left, y, border.left);
+        //         tile_at(right, y, border.right);
+        //     }
+        // } else {
+        //     visibility.is_visible = false;
+        // }
 
-        mesh.insert_vert_data(verts);
-        mesh.insert_tile_data(uvs, fg_colors, bg_colors);
+        // mesh.insert_vert_data(verts);
+        // mesh.insert_tile_data(uvs, fg_colors, bg_colors);
     }
 }
 
@@ -230,7 +242,7 @@ pub(crate) fn update_tiles(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (term, mapping, mesh) in &mut q_term {
-        info!("Updating tile data from terminal change");
+        //info!("Updating tile data from terminal change");
         let mesh = meshes.get_mut(&mesh.0).expect("Error retrieving terminal mesh");
 
         let (mut uvs, mut fgcol, mut bgcol) = mesh.get_tile_data();

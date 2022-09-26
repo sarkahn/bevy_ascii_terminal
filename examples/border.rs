@@ -10,6 +10,6 @@ fn main() {
 }
 
 fn spawn(mut commands: Commands) {
-    commands.spawn_bundle(TerminalBorderBundle::with_size([5, 5]));
+    commands.spawn_bundle(TerminalBundle::new().with_size([5, 5]));
     commands.spawn_bundle(TiledCameraBundle::new().with_tile_count([20, 20]));
 }

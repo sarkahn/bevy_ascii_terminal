@@ -12,16 +12,20 @@ use super::{mesh_data::VertexData, tile_data::TileData, uv_mapping::UvMapping, T
 #[derive(Component, Deref)]
 pub struct TerminalSize(pub UVec2);
 
+/// Layout settings for the terminal renderer.
+/// 
+/// You can modify the `scaling`, `term_pivot`, or `tile_pivot` of the layout
+/// to change how the terminal is rendered.
 #[derive(Debug, Component, Clone, Copy)]
 pub struct TerminalLayout {
-    pub tile_size: Vec2,
     pub scaling: TileScaling,
-    pub pixels_per_tile: UVec2,
     pub term_pivot: Vec2,
     pub tile_pivot: Vec2,
-    term_size: UVec2,
-    has_border: bool,
     pub(crate) border_entity: Option<Entity>,
+    pub(crate) pixels_per_tile: UVec2,
+    pub(crate) term_size: UVec2,
+    pub(crate) tile_size: Vec2,
+    pub(crate) has_border: bool,
 }
 
 impl Default for TerminalLayout {
@@ -53,6 +57,10 @@ impl TerminalLayout {
 
     pub fn has_border(&self) -> bool {
         self.has_border
+    }
+
+    pub fn pixels_per_tile(&self) -> UVec2 {
+        self.pixels_per_tile
     }
 
     pub(crate) fn update_state(&mut self, term: &Terminal) {

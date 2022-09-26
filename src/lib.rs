@@ -83,6 +83,7 @@ pub mod prelude {
     #[cfg(feature = "camera")]
     pub use crate::renderer::AutoCamera;
     pub use crate::{
+        TerminalPlugin,
         entity::TerminalBundle,
         formatting::*,
         terminal::{Terminal, Tile},
