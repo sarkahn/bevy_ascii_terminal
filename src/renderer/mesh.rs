@@ -1,20 +1,18 @@
 use bevy::{
     ecs::prelude::*,
     math::vec3,
-    prelude::{Assets, BuildChildren, Children, Handle, Image, Mesh, UVec2, Vec2, Vec3, Visibility, info},
-    render::{
-        render_resource::PrimitiveTopology,
-    },
-    sprite::{Mesh2dHandle, MaterialMesh2dBundle},
+    prelude::{Assets, BuildChildren, Color, Handle, Image, Mesh, Vec2, Vec3, Visibility},
+    render::render_resource::PrimitiveTopology,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
 };
 use sark_grids::Size2d;
 
-use crate::{Terminal, TerminalMaterial, Tile, TerminalFont};
+use crate::{Terminal, TerminalFont, TerminalMaterial};
 
-use super::{mesh_data::{VertexData, TileData, MeshData, ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV}, TerminalLayout, TileScaling, uv_mapping::UvMapping, TerminalBorder,
+use super::{
+    mesh_data::MeshData, uv_mapping::UvMapping, TerminalBorder, TerminalLayout, TileScaling,
 };
 
-#[allow(clippy::type_complexity)]
 pub(crate) fn init_terminal(
     mut meshes: ResMut<Assets<Mesh>>,
     mut q: Query<(Entity, &mut Mesh2dHandle, &mut TerminalLayout), Added<Terminal>>,
@@ -27,20 +25,17 @@ pub(crate) fn init_terminal(
         new_mesh.init_mesh_data();
 
         *mesh = Mesh2dHandle(meshes.add(new_mesh));
-        
 
         // Initialize border entity and mesh
         let mut border_mesh = Mesh::new(PrimitiveTopology::TriangleList);
         border_mesh.init_mesh_data();
-        let border_bundle: MaterialMesh2dBundle<TerminalMaterial> = MaterialMesh2dBundle { 
-            mesh: Mesh2dHandle(meshes.add(border_mesh)), 
+        let border_mesh: MaterialMesh2dBundle<TerminalMaterial> = MaterialMesh2dBundle {
+            mesh: Mesh2dHandle(meshes.add(border_mesh)),
             visibility: Visibility::INVISIBLE,
             ..Default::default()
         };
 
-        let border_entity = commands.spawn_bundle(
-            border_bundle
-        ).id();
+        let border_entity = commands.spawn_bundle((border_mesh, TerminalBorder)).id();
 
         layout.border_entity = Some(border_entity);
 
@@ -48,15 +43,13 @@ pub(crate) fn init_terminal(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn material_change(
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
     mut q_term: Query<
         (&Handle<TerminalMaterial>, &mut TerminalLayout),
-        Or<(
-            Changed<Handle<TerminalMaterial>>, 
-            Changed<TerminalFont>,
-        )>,
+        Or<(Changed<Handle<TerminalMaterial>>, Changed<TerminalFont>)>,
     >,
 ) {
     for (handle, mut layout) in &mut q_term {
@@ -82,30 +75,22 @@ pub(crate) fn material_change(
 }
 
 pub(crate) fn update_layout(
-    mut q_term: Query<(&Terminal, &mut TerminalLayout), 
-        Changed<Terminal>
-        >,
+    mut q_term: Query<(&Terminal, &mut TerminalLayout), Changed<Terminal>>,
 ) {
     for (term, mut layout) in &mut q_term {
-        if layout.term_size() != term.size() || layout.has_border() != term.has_border() {
+        if layout.term_size() != term.size() || layout.border.as_ref() != term.border() {
             layout.update_state(term);
         }
-
     }
 }
 
 #[allow(clippy::type_complexity)]
 pub(crate) fn layout_changed(
-    mut q_term: Query<(
-        &Terminal, 
-        &TerminalLayout, 
-        &UvMapping, 
-        &Mesh2dHandle
-    ), 
-        (Changed<TerminalLayout>, Without<TerminalBorder>)
+    mut q_term: Query<
+        (&Terminal, &TerminalLayout, &UvMapping, &Mesh2dHandle),
+        (Changed<TerminalLayout>, Without<TerminalBorder>),
     >,
-    mut q_border: Query<(&mut Visibility, &Mesh2dHandle), 
-        With<TerminalBorder>>,
+    mut q_border: Query<(&mut Visibility, &Mesh2dHandle), With<TerminalBorder>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (term, layout, mapping, mesh) in &mut q_term {
@@ -114,19 +99,20 @@ pub(crate) fn layout_changed(
         let width = term.width();
         let height = term.height();
 
-        let mesh = meshes.get_mut(&mesh.0)
+        let mesh = meshes
+            .get_mut(&mesh.0)
             .expect("Error retrieving terminal mesh");
 
         // Remove vert data so we can modify it with indices without
         // the borrow checker complaining. Note indices are mutably
         // borrowed, not removed since they are separate from the attribute map.
-        let (mut verts, indices) = mesh.get_vert_data();
-        verts.clear();
-        indices.clear();
+        let mut vert_data = mesh.get_vert_data();
+        vert_data.verts.clear();
+        vert_data.indices.clear();
         // 4 verts per tile
-        verts.reserve(tile_count * 4);
+        vert_data.verts.reserve(tile_count * 4);
         // 6 indices per tile
-        indices.reserve(tile_count * 6);
+        vert_data.indices.reserve(tile_count * 6);
 
         let tile_size = layout.tile_size;
         let origin = layout.origin();
@@ -140,129 +126,164 @@ pub(crate) fn layout_changed(
             let xy = vec3(x, y, 0.0) * tile_size.extend(0.0);
             let p = origin.extend(0.0) + xy;
 
-            verts
+            vert_data
+                .verts
                 .extend(&[p + up, p, p + right + up, p + right].map(|p| p.to_array()));
             let vi = (i * 4) as u32;
-            indices
-                .extend(&[vi + 0, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
+            vert_data
+                .indices
+                .extend(&[vi, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
         }
 
+        let verts = vert_data.verts;
         mesh.insert_vert_data(verts);
 
-        // // Update border only when layout changes 
-        // let (mut vert_data, mut tile_data, mut visibility, mesh) = 
-        //     q_border.get_mut(layout.border_entity.unwrap()).unwrap();
+        //info!("Updating border");
+        // Update border only when layout changes
+        let (mut visibility, mesh) = q_border.get_mut(layout.border_entity.unwrap()).unwrap();
 
-        // let mesh = meshes.get_mut(&mesh.0)
-        //     .expect("Error retrieving the terminal border mesh");
+        let mesh = meshes
+            .get_mut(&mesh.0)
+            .expect("Error retrieving the terminal border mesh");
 
-        // let (mut uvs, mut fg_colors, mut bg_colors) = mesh.get_tile_data();
-        // let (mut verts, indices) = mesh.get_vert_data();
+        let mut td = mesh.get_tile_data();
+        let mut vd = mesh.get_vert_data();
 
-        // verts.clear();
-        // indices.clear();
-        // uvs.clear();
-        // fg_colors.clear();
-        // bg_colors.clear();
+        vd.verts.clear();
+        vd.indices.clear();
 
-        // if let Some(border) = &term.border {
-        //     visibility.is_visible = true;
-        //     let tile_count = ((width + 2) * 2) + (height * 2);
+        td.uvs.clear();
+        td.fg_cols.clear();
+        td.bg_cols.clear();
 
-        //     verts.reserve(tile_count * 4);
-        //     indices.reserve(tile_count * 6);
-        //     uvs.reserve(tile_count * 4);
-        //     fg_colors.reserve(tile_count * 4);
-        //     bg_colors.reserve(tile_count * 4);
-            
-        //     let origin = origin.extend(0.0) - tile_size.extend(0.0);
-        //     let right = Vec3::X * tile_size.x;
-        //     let up = Vec3::Y * tile_size.y;
+        if let Some(border) = term.border() {
+            visibility.is_visible = true;
+            let tile_count = ((width + 2) * 2) + (height * 2);
 
-        //     let fg = border.get_fg().unwrap_or(term.clear_tile.fg_color);
-        //     let bg = border.get_bg().unwrap_or(term.clear_tile.bg_color);
+            vd.verts.reserve(tile_count * 4);
+            vd.indices.reserve(tile_count * 6);
 
-        //     let mut tile_at = |x: usize, y: usize, glyph: char| {
-        //         let xy = vec3(x as f32, y as f32, 0.0);
-        //         let p = origin + xy;
+            td.uvs.reserve(tile_count * 4);
+            td.fg_cols.reserve(tile_count * 4);
+            td.bg_cols.reserve(tile_count * 4);
 
-        //         let vi = vert_data.verts.len() as u32;
-        //         verts
-        //             .extend(&[p + up, p, p + right + up, p + right].map(|p| p.to_array()));
-        //         indices
-        //             .extend(&[vi + 0, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
+            let origin = origin.extend(0.0) - tile_size.extend(0.0);
+            let right = Vec3::X * tile_size.x;
+            let up = Vec3::Y * tile_size.y;
 
-        //         let glyph_uv = mapping.uvs_from_glyph(glyph);
-        //         uvs.extend(glyph_uv);
-        //         fg_colors
-        //             .extend(std::iter::repeat(fg.as_linear_rgba_f32()).take(4));
-        //         bg_colors
-        //             .extend(std::iter::repeat(bg.as_linear_rgba_f32()).take(4));
-        //     };
+            let mut tile_at = |x: usize, y: usize, glyph: char, fg: Color, bg: Color| {
+                let xy = vec3(x as f32, y as f32, 0.0) * tile_size.extend(0.0);
+                let p = origin + xy;
 
-        //     let top = height - 1;
-        //     let bottom = 0;
-        //     let left = 0;
-        //     let right = width - 1;
+                let vi = vd.verts.len() as u32;
+                vd.verts
+                    .extend(&[p + up, p, p + right + up, p + right].map(|p| p.to_array()));
+                vd.indices
+                    .extend(&[vi, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
 
-        //     tile_at(left, bottom, border.bottom_left);
-        //     tile_at(left, top, border.top_left);
-        //     tile_at(right, top, border.top_right);
-        //     tile_at(right, bottom, border.bottom_right);
+                let glyph_uv = mapping.uvs_from_glyph(glyph);
+                td.uvs.extend(glyph_uv);
+                td.fg_cols
+                    .extend(std::iter::repeat(fg.as_linear_rgba_f32()).take(4));
+                td.bg_cols
+                    .extend(std::iter::repeat(bg.as_linear_rgba_f32()).take(4));
+            };
 
-        //     for x in 1..width - 1 {
-        //         tile_at(x, bottom, border.bottom);
-        //         tile_at(x, top, border.top);
-        //     }
+            let top = height + 1;
+            let bottom = 0;
+            let left = 0;
+            let right = width + 1;
 
-        //     for y in 1..height - 1 {
-        //         tile_at(left, y, border.left);
-        //         tile_at(right, y, border.right);
-        //     }
-        // } else {
-        //     visibility.is_visible = false;
-        // }
+            // If border color was not explicitly set, use terminal clear tile
+            // colors
+            let fg = border.get_fgcol().unwrap_or(term.clear_tile.fg_color);
+            let bg = border.get_bgcol().unwrap_or(term.clear_tile.bg_color);
 
-        // mesh.insert_vert_data(verts);
-        // mesh.insert_tile_data(uvs, fg_colors, bg_colors);
+            tile_at(left, bottom, border.bottom_left, fg, bg);
+            tile_at(left, top, border.top_left, fg, bg);
+            tile_at(right, top, border.top_right, fg, bg);
+            tile_at(right, bottom, border.bottom_right, fg, bg);
+
+            if let Some(title) = &border.title {
+                let stringlen = title.string.chars().count();
+
+                let title_offset = stringlen as f32 * title.align;
+                let align_offset = ((width - 1) as f32) * title.align;
+                let beg = 1 + (align_offset - title_offset).floor() as usize;
+                let end = beg + stringlen;
+
+                for x in 1..beg {
+                    tile_at(x, bottom, border.bottom, fg, bg);
+                    tile_at(x, top, border.top, fg, bg);
+                }
+
+                for (x, titlechar) in (beg..end).zip(title.string.chars()) {
+                    tile_at(x, bottom, border.bottom, fg, bg);
+                    tile_at(x, top, titlechar, title.color, bg);
+                }
+
+                for x in end..width + 1 {
+                    tile_at(x, bottom, border.bottom, fg, bg);
+                    tile_at(x, top, border.top, fg, bg);
+                }
+            } else {
+                for x in 1..width + 1 {
+                    tile_at(x, bottom, border.bottom, fg, bg);
+                    tile_at(x, top, border.top, fg, bg);
+                }
+            }
+
+            for y in 1..height + 1 {
+                tile_at(left, y, border.left, fg, bg);
+                tile_at(right, y, border.right, fg, bg);
+            }
+        } else {
+            visibility.is_visible = false;
+        }
+
+        let verts = vd.verts;
+        mesh.insert_vert_data(verts);
+        mesh.insert_tile_data(td);
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub(crate) fn update_tiles(
-    mut q_term: Query<(&Terminal,  &UvMapping, &Mesh2dHandle), 
-        Or<(
-            Changed<Terminal>,
-            Changed<TerminalLayout>,
-        )>>,
+    mut q_term: Query<
+        (&Terminal, &UvMapping, &Mesh2dHandle),
+        Or<(Changed<Terminal>, Changed<TerminalLayout>)>,
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (term, mapping, mesh) in &mut q_term {
         //info!("Updating tile data from terminal change");
-        let mesh = meshes.get_mut(&mesh.0).expect("Error retrieving terminal mesh");
+        let mesh = meshes
+            .get_mut(&mesh.0)
+            .expect("Error retrieving terminal mesh");
 
-        let (mut uvs, mut fgcol, mut bgcol) = mesh.get_tile_data();
+        let mut td = mesh.get_tile_data();
 
         let tile_count = term.size().len();
 
-        uvs.clear();
-        fgcol.clear();
-        bgcol.clear();
+        td.uvs.clear();
+        td.fg_cols.clear();
+        td.bg_cols.clear();
 
-        uvs.reserve(tile_count * 4);
-        fgcol.reserve(tile_count * 4);
-        bgcol.reserve(tile_count * 4);
-        
+        td.uvs.reserve(tile_count * 4);
+        td.fg_cols.reserve(tile_count * 4);
+        td.bg_cols.reserve(tile_count * 4);
+
         for tile in term.iter() {
             let glyph_uv = mapping.uvs_from_glyph(tile.glyph);
 
-            uvs.extend(glyph_uv);
+            td.uvs.extend(glyph_uv);
 
-            fgcol
+            td.fg_cols
                 .extend(std::iter::repeat(tile.fg_color.as_linear_rgba_f32()).take(4));
-            bgcol
+            td.bg_cols
                 .extend(std::iter::repeat(tile.bg_color.as_linear_rgba_f32()).take(4));
         }
 
-        mesh.insert_tile_data(uvs, fgcol, bgcol);
+        mesh.insert_tile_data(td);
     }
 }

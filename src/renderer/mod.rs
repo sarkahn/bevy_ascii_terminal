@@ -13,7 +13,7 @@ mod camera;
 
 pub mod code_page_437;
 
-use bevy::prelude::{App, Plugin, ParallelSystemDescriptorCoercion};
+use bevy::prelude::{App, CoreStage, ParallelSystemDescriptorCoercion, Plugin};
 pub(crate) use font::BuiltInFontHandles;
 
 pub use entity::*;
@@ -45,46 +45,10 @@ impl Plugin for TerminalRendererPlugin {
         app.add_plugin(material::TerminalMaterialPlugin);
         app.add_plugin(camera::TerminalCameraPlugin);
 
-        app.add_system(init_terminal)
-            .add_system(material_change.after(init_terminal))
-            .add_system(update_layout.after(material_change))
-            .add_system(layout_changed.after(update_layout))
-            .add_system(update_tiles.after(layout_changed));
+        app.add_system_to_stage(CoreStage::PostUpdate, init_terminal)
+            .add_system_to_stage(CoreStage::Last, material_change)
+            .add_system_to_stage(CoreStage::Last, update_layout.after(material_change))
+            .add_system_to_stage(CoreStage::Last, layout_changed.after(update_layout))
+            .add_system_to_stage(CoreStage::Last, update_tiles.after(layout_changed));
     }
 }
-
-//         //app.add_system(terminal_renderer_init.label(TERMINAL_INIT))
-//             // .add_system(
-//             //     terminal_renderer_update_size
-//             //         .after(TERMINAL_CHANGE_FONT)
-//             //         .label(TERMINAL_UPDATE_SIZE),
-//             // )
-//             // .add_system(
-//             //     terminal_renderer_update_tile_data
-//             //         .after(TERMINAL_UPDATE_SIZE)
-//             //         .label(TERMINAL_UPDATE_TILE_DATA),
-//             // )
-//             // .add_system(
-//             //     terminal_renderer_update_mesh
-//             //         .after(TERMINAL_UPDATE_TILE_DATA)
-//             //         .label(TERMINAL_UPDATE_MESH),
-//             // )
-//             //;
-
-/*
-Order of operations:
-Start:
-Spawn terminal entity with terminal mesh bundle
-SPawn border entity as child of terminal eneity with it's own terminal mesh bundle
-Meshes get initialized by system
-
-On Terminal Layout change:
-Update term mesh size
-Update term mesh tiles
-Update border mesh size
-Update border mesh tiles
-
-On Term tiles change:
-Update term mesh tiles
-
-*/

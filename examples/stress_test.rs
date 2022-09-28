@@ -22,7 +22,11 @@ struct Pause(bool);
 
 fn setup(mut commands: Commands) {
     commands
-        .spawn_bundle(TerminalBundle::new().with_size([80, 50]))
+        .spawn_bundle(
+            TerminalBundle::new()
+                .with_size([80, 50])
+                .with_border(Border::SINGLE_LINE),
+        )
         .insert(AutoCamera);
 }
 
@@ -57,8 +61,7 @@ fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Que
             }
         }
         let top = term.side_index(Side::Top) as i32;
-        term.clear_box([0, top - 1], [25, 1]);
-        term.draw_border(BorderGlyphs::single_line().with_default_colors());
-        term.put_string([1, top - 1], "Press space to pause");
+        term.clear_box([0, top], [25, 1]);
+        term.put_string([0, top], "Press space to pause");
     }
 }

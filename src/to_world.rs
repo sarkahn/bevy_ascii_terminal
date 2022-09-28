@@ -102,7 +102,7 @@ fn update_from_terminal(
 ) {
     for (mut to_world, term, transform, layout) in q_term.iter_mut() {
         to_world.term_size = term.size();
-        to_world.layout = *layout;
+        to_world.layout = layout.clone();
         to_world.term_pos = transform.translation();
     }
 }

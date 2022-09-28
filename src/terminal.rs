@@ -11,10 +11,10 @@ use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
+use crate::border::Border;
 use crate::fmt_tile::ColorFormat;
 use crate::formatting::StringWriter;
 use crate::formatting::TileModifier;
-use crate::ui::ui_box::BorderGlyphs;
 use crate::ui::ui_box::UiBox;
 use crate::ui::UiProgressBar;
 
@@ -43,7 +43,12 @@ pub struct Terminal {
     ///
     /// The terminal will be filled with this tile when created.
     pub clear_tile: Tile,
-    pub border: Option<BorderGlyphs>,
+    /// An optional border for the terminal.
+    ///
+    /// The terminal border is considered separate from the terminal itself,
+    /// terminal positions and sizes do not include the border unless otherwise
+    /// specified.
+    border: Option<Border>,
 }
 
 /// A single tile of the terminal.
@@ -84,6 +89,15 @@ impl Default for Tile {
     }
 }
 
+impl From<char> for Tile {
+    fn from(c: char) -> Self {
+        Tile {
+            glyph: c,
+            ..Default::default()
+        }
+    }
+}
+
 impl Terminal {
     pub fn new(size: impl Size2d, clear_tile: Tile) -> Self {
         Terminal {
@@ -99,25 +113,88 @@ impl Terminal {
         Terminal::new(size, Tile::default())
     }
 
-    /// Resize the terminal's internal tile data.
+    /// Specify a border for the terminal.
     ///
-    /// This will clear all tiles to default.
+    /// The terminal border is considered separate from the terminal itself,
+    /// writes and sizes within the terminal will ignore the border unless
+    /// otherwise specified.
+    pub fn with_border(mut self, border: Border) -> Self {
+        self.border = Some(border);
+        self
+    }
+
+    pub fn with_clear_tile(mut self, clear_tile: impl Into<Tile>) -> Self {
+        self.clear_tile = clear_tile.into();
+        self.clear();
+        self
+    }
+
+    pub fn set_border(&mut self, border: Border) {
+        self.border = Some(border);
+    }
+
+    pub fn remove_border(&mut self) {
+        self.border = None;
+    }
+
+    pub fn border(&self) -> Option<&Border> {
+        self.border.as_ref()
+    }
+
+    pub fn border_mut(&mut self) -> Option<&mut Border> {
+        self.border.as_mut()
+    }
+
+    /// Resize the terminal.
+    ///
+    /// This will clear the terminal.
     pub fn resize(&mut self, size: impl Size2d) {
         self.tiles = Grid::new(self.clear_tile, size);
         self.size = size.as_uvec2();
     }
 
+    /// The width of the terminal, excluding the border.
     pub fn width(&self) -> usize {
         self.size.x as usize
     }
+
+    /// The height of the terminal, excluding the border.
     pub fn height(&self) -> usize {
         self.size.y as usize
     }
 
+    /// The size of the terminal, excluding the border.
     pub fn size(&self) -> UVec2 {
         self.size
     }
 
+    /// The size of the terminal, including the border if it has one.
+    pub fn size_with_border(&self) -> UVec2 {
+        let border_size = if self.has_border() {
+            UVec2::splat(2)
+        } else {
+            UVec2::ZERO
+        };
+        self.size + border_size
+    }
+
+    pub fn width_with_border(&self) -> usize {
+        if self.has_border() {
+            self.width() + 2
+        } else {
+            self.width()
+        }
+    }
+
+    pub fn height_with_border(&self) -> usize {
+        if self.has_border() {
+            self.height() + 2
+        } else {
+            self.height()
+        }
+    }
+
+    /// Whether or not the terminal has a border.
     pub fn has_border(&self) -> bool {
         self.border.is_some()
     }
@@ -139,12 +216,9 @@ impl Terminal {
     /// Insert a formatted character into the terminal.
     ///
     /// The [`TileModifier`] trait allows you to optionally specify a foreground
-    /// and/or background color for the tile as well using the `fg` and `bg` functions.
+    /// and/or background color for the tile using the `fg` and `bg` functions.
     /// If you don't specify a color then the existing color in the terminal tile will
     /// be unaffected.
-    ///
-    /// By default tiles in the terminal begin with a white foreground and black
-    /// background.
     ///
     /// # Example
     ///
@@ -210,7 +284,7 @@ impl Terminal {
     /// term.put_string([2,1], "Hello".bg(Color::GREEN));
     /// ```
     ///
-    /// You can also specify a `Pivot` for the string via the [GridPoint] trait.
+    /// You can also specify a `Pivot` for the string via the `pivot` function.
     /// This will align the string to the given pivot point. If the string
     /// is multiple lines, it will be adjusted appropriately to fit the given
     /// alignment.
@@ -253,7 +327,7 @@ impl Terminal {
         }
     }
 
-    /// Clear a range of characters to default.
+    /// Clear a range of characters to the terminal's `clear_tile`.
     pub fn clear_string(&mut self, xy: impl GridPoint, len: usize) {
         let i = self.to_index(xy);
         for t in self.tiles.slice_mut(i..).iter_mut().take(len) {
@@ -287,7 +361,7 @@ impl Terminal {
         &mut self.tiles[i]
     }
 
-    /// Clear an area of the terminal to the default [Tile].
+    /// Clear an area of the terminal to the terminal's `clear_tile`.
     pub fn clear_box(&mut self, xy: impl GridPoint, size: impl Size2d) {
         let [width, height] = size.as_array();
         let [x, y] = xy.as_array();
@@ -312,12 +386,6 @@ impl Terminal {
         ui_box.borrow().draw(xy, size, self);
     }
 
-    /// Draw a border around the entire terminal.
-    pub fn draw_border(&mut self, glyphs: BorderGlyphs) {
-        let bx = UiBox::new().with_border(glyphs);
-        bx.draw([0, 0], self.size, self);
-    }
-
     pub fn draw_progress_bar(
         &mut self,
         xy: impl GridPoint,
@@ -327,12 +395,16 @@ impl Terminal {
         bar.borrow().draw(xy, size, self);
     }
 
-    /// Clear the terminal tiles to default - empty tiles with
-    /// a black background and white foreground.
+    /// Clear the terminal tiles to the terminal's `clear_tile`.
     pub fn clear(&mut self) {
         for t in self.tiles.iter_mut() {
             *t = self.clear_tile
         }
+    }
+
+    pub fn clear_line(&mut self, line: usize) {
+        let tile = self.clear_tile;
+        self.iter_row_mut(line).for_each(|t| *t = tile);
     }
 
     /// Returns true if the given position is inside the bounds of the terminal.
@@ -372,7 +444,7 @@ impl Terminal {
         self.tiles.iter_rows(range)
     }
 
-    /// An mutable iterator over a range of rows in the terminal.
+    /// A mutable iterator over a range of rows in the terminal.
     ///
     /// The iterator moves along each row from left to right, where 0 is the
     /// bottom row and `height - 1` is the top row.

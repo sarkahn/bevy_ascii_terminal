@@ -48,7 +48,10 @@ impl UvMapping {
 
     pub fn uvs_from_glyph(&self, ch: char) -> &[[f32; 2]; 4] {
         self.uv_map.get(&ch).unwrap_or_else(|| {
-            panic!("Error retrieving uv mapping, '{}' was not present in map", ch)
+            panic!(
+                "Error retrieving uv mapping, '{}' was not present in map",
+                ch
+            )
         })
     }
 

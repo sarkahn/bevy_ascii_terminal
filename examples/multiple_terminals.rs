@@ -10,10 +10,9 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let mut term = Terminal::with_size([17, 3]);
-    term.draw_border(BorderGlyphs::single_line());
+    let mut term = Terminal::with_size([17, 1]).with_border(Border::SINGLE_LINE);
 
-    term.put_string([1, 1], "Hello, world! ☺");
+    term.put_string([0, 0], "Hello, world! ☺");
 
     commands.spawn_bundle(
         TerminalBundle::from(term.clone())
@@ -32,6 +31,8 @@ fn setup(mut commands: Commands) {
             .with_font(TerminalFont::ZxEvolution8x8),
     );
 
-    commands
-        .spawn_bundle(TiledCameraBundle::new().with_tile_count([term.width(), term.height() * 3]));
+    commands.spawn_bundle(
+        TiledCameraBundle::new()
+            .with_tile_count([term.width_with_border(), term.height_with_border() * 3]),
+    );
 }

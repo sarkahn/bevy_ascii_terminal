@@ -23,8 +23,9 @@ use crate::TerminalFont;
 
 use super::{
     font::TerminalFontPlugin,
+    mesh_data::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
     //mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
-    BuiltInFontHandles, mesh_data::{ATTRIBUTE_UV, ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG},
+    BuiltInFontHandles,
 };
 
 /// The default shader handle used by terminals.

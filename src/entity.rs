@@ -1,7 +1,7 @@
 use bevy::prelude::{default, Bundle};
 use sark_grids::{GridPoint, Size2d};
 
-use crate::{renderer, Terminal, TerminalFont};
+use crate::{renderer, Border, Terminal, TerminalFont};
 
 /// A bundle with all the required components for a terminal.
 ///
@@ -29,6 +29,11 @@ impl TerminalBundle {
     /// Set the initial size of the terminal.
     pub fn with_size(mut self, size: impl Size2d) -> Self {
         self.terminal.resize(size.as_array());
+        self
+    }
+
+    pub fn with_border(mut self, border: Border) -> Self {
+        self.terminal.set_border(border);
         self
     }
 

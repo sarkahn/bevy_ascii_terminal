@@ -46,6 +46,7 @@
 //! | 0.8.1 | 0.11.1 |
 //! | 0.8 | 0.11 |
 //! | 0.7 | 0.9-0.10 |
+mod border;
 mod entity;
 mod formatting;
 mod renderer;
@@ -64,7 +65,7 @@ pub use to_world::ToWorld;
 
 pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};
 
-pub use ui::{BorderGlyphs, UiBox};
+pub use ui::UiBox;
 
 /// The primary terminal rendering function labels
 pub mod term_func_labels {
@@ -81,12 +82,12 @@ pub mod prelude {
     #[cfg(feature = "camera")]
     pub use crate::renderer::AutoCamera;
     pub use crate::{
-        TerminalPlugin,
+        border::{Border, BorderTitle},
         entity::TerminalBundle,
         formatting::*,
         terminal::{Terminal, Tile},
-        ui::BorderGlyphs,
         ui::UiBox,
+        TerminalPlugin,
     };
     pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};
 }
@@ -97,6 +98,6 @@ pub struct TerminalPlugin;
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(renderer::TerminalRendererPlugin)
-           .add_plugin(to_world::ToWorldPlugin);
+            .add_plugin(to_world::ToWorldPlugin);
     }
 }

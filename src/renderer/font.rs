@@ -1,7 +1,7 @@
 use bevy::{
     asset::HandleId,
     prelude::{
-        Assets, Commands, Component, Entity, Handle, Image, ParallelSystemDescriptorCoercion,
+        info, Assets, Commands, Component, Entity, Handle, Image, ParallelSystemDescriptorCoercion,
         Plugin, Query, Res, ResMut, Resource,
     },
     reflect::Reflect,
@@ -13,7 +13,7 @@ use std::borrow::Borrow;
 
 use crate::TerminalMaterial;
 
-use super::{TERMINAL_CHANGE_FONT, TERMINAL_INIT};
+use super::TERMINAL_CHANGE_FONT;
 
 /// Helper component for changing the terminal's font
 ///
@@ -137,10 +137,13 @@ fn terminal_renderer_change_font(
             _ => built_in_fonts.get(font),
         };
 
+        // The requested font might still be loading, this is why we remove
+        // the TerminalFont component rather than using change detection
         if images.get(handle).is_none() {
             return;
         }
 
+        info!("Changing material");
         *mat = materials.add(handle.clone().into());
         commands.entity(e).remove::<TerminalFont>();
     }
@@ -161,8 +164,8 @@ impl Plugin for TerminalFontPlugin {
             .unwrap_or_else(|| {
                 panic!(
                     "Error retrieving image resource - ensure
-            DefaultPlugins are added before TerminalPlugin
-            during app initialization"
+                    DefaultPlugins are added before TerminalPlugin
+                    during app initialization"
                 )
             });
 

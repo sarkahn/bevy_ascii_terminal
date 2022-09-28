@@ -2,11 +2,10 @@
 //! view a terminal.
 use crate::Terminal;
 
-use super::TerminalLayout;
 use super::mesh::layout_changed;
-use super::{TileScaling, TERMINAL_INIT, TERMINAL_UPDATE_SIZE};
+use super::TerminalLayout;
+use super::TileScaling;
 
-use bevy::prelude::{App, CoreStage, info};
 use bevy::prelude::Changed;
 use bevy::prelude::Commands;
 use bevy::prelude::Component;
@@ -16,6 +15,7 @@ use bevy::prelude::Plugin;
 use bevy::prelude::Query;
 use bevy::prelude::With;
 use bevy::prelude::Without;
+use bevy::prelude::{App, CoreStage};
 pub use bevy_tiled_camera::TiledCamera;
 pub use bevy_tiled_camera::TiledCameraBundle;
 use bevy_tiled_camera::TiledCameraPlugin;
@@ -97,7 +97,7 @@ fn update_from_new(
     for (mut cam, tcam) in q_cam.iter_mut() {
         if let Some(term) = tcam.terminal {
             if let Ok((term, layout)) = q_term.get(term) {
-                cam.tile_count = term.size();
+                cam.tile_count = term.size_with_border();
                 cam.pixels_per_tile = layout.pixels_per_tile();
                 match layout.scaling {
                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
@@ -122,7 +122,7 @@ fn update_from_terminal_change(
         if let Some(term) = term.terminal {
             if let Ok((term, layout)) = q_term.get(term) {
                 //info!("Updating camera. PPT {}", layout.pixels_per_tile());
-                cam.tile_count = term.size();
+                cam.tile_count = term.size_with_border();
                 cam.pixels_per_tile = layout.pixels_per_tile();
                 match layout.scaling {
                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
@@ -139,7 +139,10 @@ impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TiledCameraPlugin);
         app.add_system_to_stage(CoreStage::First, init_camera)
-            .add_system(update_from_new.after(layout_changed))
-            .add_system(update_from_terminal_change.after(layout_changed));
+            .add_system_to_stage(CoreStage::Last, update_from_new.after(layout_changed))
+            .add_system_to_stage(
+                CoreStage::Last,
+                update_from_terminal_change.after(layout_changed),
+            );
     }
 }

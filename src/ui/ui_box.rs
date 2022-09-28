@@ -1,14 +1,14 @@
-use arrayvec::ArrayVec;
 use bevy::math::Vec2;
 use bevy::prelude::Color;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
-use crate::fmt_tile::ColorFormat;
+use crate::border::Border;
+use crate::border::Edge;
+
 use crate::fmt_tile::TileFormat;
 use crate::formatting::TileModifier;
 use crate::Terminal;
-use crate::Tile;
 
 #[derive(Debug, Default, Clone)]
 /// Specifies the glyphs and colors to use when drawing a box on the terminal.
@@ -17,7 +17,7 @@ pub struct UiBox {
     ///
     /// Foreground and/or background color can optionally be provided with the `fg(Color)` and
     /// `bg(Color)` functions.
-    pub border_glyphs: Option<BorderGlyphs>,
+    pub border_glyphs: Option<Border>,
 
     /// Optional tile to fill the box with.
     pub fill_tile: Option<TileFormat>,
@@ -30,18 +30,18 @@ impl UiBox {
 
     /// Create a hollow UiBox with a single line border.
     pub fn single_line() -> Self {
-        let border = BorderGlyphs::single_line();
+        let border = Border::SINGLE_LINE;
         UiBox::new().with_border(border)
     }
 
     /// Create a hollow UiBox with a double line border.
     pub fn double_line() -> Self {
-        let border = BorderGlyphs::double_line();
+        let border = Border::DOUBLE_LINE;
         UiBox::new().with_border(border)
     }
 
     /// Specify the [BorderGlyphs] for the box.
-    pub fn with_border(mut self, glyphs: BorderGlyphs) -> Self {
+    pub fn with_border(mut self, glyphs: Border) -> Self {
         self.border_glyphs = Some(glyphs);
         self
     }
@@ -95,16 +95,16 @@ impl UiBox {
 
         if let Some(glyphs) = &self.border_glyphs {
             for t in term.iter_row_mut(top).skip(left).take(width) {
-                glyphs.edge_tile(BoxEdge::Top).apply(t);
+                glyphs.edge_tile(Edge::Top).apply(t);
             }
             for t in term.iter_row_mut(bottom).skip(left).take(width) {
-                glyphs.edge_tile(BoxEdge::Bottom).apply(t);
+                glyphs.edge_tile(Edge::Bottom).apply(t);
             }
             for t in term.iter_column_mut(left).skip(bottom).take(height) {
-                glyphs.edge_tile(BoxEdge::Left).apply(t);
+                glyphs.edge_tile(Edge::Left).apply(t);
             }
             for t in term.iter_column_mut(right).skip(bottom).take(height) {
-                glyphs.edge_tile(BoxEdge::Right).apply(t);
+                glyphs.edge_tile(Edge::Right).apply(t);
             }
 
             let left = left as i32;
@@ -112,244 +112,10 @@ impl UiBox {
             let top = top as i32;
             let bottom = bottom as i32;
 
-            term.put_char([left, bottom], glyphs.edge_tile(BoxEdge::BottomLeft));
-            term.put_char([left, top], glyphs.edge_tile(BoxEdge::TopLeft));
-            term.put_char([right, top], glyphs.edge_tile(BoxEdge::TopRight));
-            term.put_char([right, bottom], glyphs.edge_tile(BoxEdge::BottomRight));
+            term.put_char([left, bottom], glyphs.edge_tile(Edge::BottomLeft));
+            term.put_char([left, top], glyphs.edge_tile(Edge::TopLeft));
+            term.put_char([right, top], glyphs.edge_tile(Edge::TopRight));
+            term.put_char([right, bottom], glyphs.edge_tile(Edge::BottomRight));
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum BoxEdge {
-    Top,
-    Left,
-    Right,
-    Bottom,
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-/// Border glyphs used in box drawing functions.
-///
-/// Specifies the style of lines to use along the border of the box.
-/// Colors can optionally be specified.
-#[derive(Debug, Clone)]
-pub struct BorderGlyphs {
-    pub top: char,
-    pub left: char,
-    pub right: char,
-    pub bottom: char,
-    pub top_left: char,
-    pub top_right: char,
-    pub bottom_left: char,
-    pub bottom_right: char,
-
-    color_modifiers: ArrayVec<ColorFormat, 2>,
-}
-
-impl Default for BorderGlyphs {
-    fn default() -> Self {
-        BorderGlyphs::single_line()
-    }
-}
-
-impl BorderGlyphs {
-    /// Construct a new set of [BorderGlyphs] from the given string.
-    ///
-    /// The format of the string should match the example below. Line returns
-    /// and spaces will be ignored.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use bevy_ascii_terminal::ui::BorderGlyphs;
-    /// let border = BorderGlyphs::from_string(
-    ///     "┌─┐
-    ///      │ │
-    ///      └─┘"
-    /// );
-    /// ```
-    pub fn from_string(box_string: impl AsRef<str>) -> Self {
-        let mut chars = box_string
-            .as_ref()
-            .chars()
-            .filter(|c| !c.is_whitespace() && *c != '\n');
-        debug_assert!(
-            chars.clone().count() == 8,
-            "Error building border glyphs from string, string should contain
-            exactly 8 glyphs (whitespace and line returns are ignored)"
-        );
-
-        BorderGlyphs {
-            top_left: chars.next().unwrap(),
-            top: chars.next().unwrap(),
-            top_right: chars.next().unwrap(),
-            left: chars.next().unwrap(),
-            right: chars.next().unwrap(),
-            bottom_left: chars.next().unwrap(),
-            bottom: chars.next().unwrap(),
-            bottom_right: chars.next().unwrap(),
-            color_modifiers: ArrayVec::new(),
-        }
-    }
-
-    /// Single line border glyphs. Can be used in box drawing functions.
-    pub fn single_line() -> Self {
-        BorderGlyphs {
-            top: '─',
-            left: '│',
-            right: '│',
-            bottom: '─',
-            top_left: '┌',
-            top_right: '┐',
-            bottom_left: '└',
-            bottom_right: '┘',
-            color_modifiers: ArrayVec::new(),
-        }
-    }
-
-    /// Double line border glyphs. Can be used in box drawing functions.
-    pub fn double_line() -> Self {
-        BorderGlyphs {
-            top: '═',
-            left: '║',
-            right: '║',
-            bottom: '═',
-            top_left: '╔',
-            top_right: '╗',
-            bottom_left: '╚',
-            bottom_right: '╝',
-            color_modifiers: ArrayVec::new(),
-        }
-    }
-
-    /// Border glyphs will be colored with the default [`Tile`] foreground
-    /// and background colors.
-    pub fn with_default_colors(self) -> Self {
-        let t = Tile::default();
-        self.fg(t.fg_color).bg(t.bg_color)
-    }
-
-    /// Add a foreground color to the border glyphs.
-    pub fn fg(mut self, color: Color) -> Self {
-        for modifier in self.color_modifiers.iter_mut() {
-            if let ColorFormat::FgColor(col) = modifier {
-                *col = color;
-                return self;
-            }
-        }
-        self.color_modifiers.push(ColorFormat::FgColor(color));
-        self
-    }
-
-    /// Add a background color to the border glyphs.
-    pub fn bg(mut self, color: Color) -> Self {
-        for modifier in self.color_modifiers.iter_mut() {
-            match modifier {
-                ColorFormat::FgColor(_) => {}
-                ColorFormat::BgColor(col) => {
-                    *col = color;
-                    return self;
-                }
-            }
-        }
-        self.color_modifiers.push(ColorFormat::BgColor(color));
-        self
-    }
-
-    /// Retrieve the foreground color if it was set.
-    pub fn get_fg(&self) -> Option<Color> {
-        for cmod in self.color_modifiers.iter() {
-            if let ColorFormat::FgColor(col) = cmod {
-                return Some(*col)
-            }
-        }
-        None
-    }
-
-    /// Retrieve the background color if it was set.
-    pub fn get_bg(&self) -> Option<Color> {
-        for cmod in self.color_modifiers.iter() {
-            if let ColorFormat::BgColor(col) = cmod {
-                return Some(*col)
-            }
-        }
-        None
-    }
-
-    /// Retrieve the [TileFormat] for a given glyph, with color modifiers
-    /// applied, if any.
-    fn get_formatted_tile(&self, glyph: char) -> TileFormat {
-        let mut fmt = TileFormat::default().glyph(glyph);
-
-        for write in self.color_modifiers.iter() {
-            match write {
-                ColorFormat::FgColor(col) => fmt = fmt.fg(*col),
-                ColorFormat::BgColor(col) => fmt = fmt.bg(*col),
-            };
-        }
-
-        fmt
-    }
-
-    /// Returns the glyph for a given border edge.
-    fn edge_glyph(&self, edge: BoxEdge) -> char {
-        match edge {
-            BoxEdge::Top => self.top,
-            BoxEdge::Left => self.left,
-            BoxEdge::Right => self.right,
-            BoxEdge::Bottom => self.bottom,
-            BoxEdge::TopLeft => self.top_left,
-            BoxEdge::TopRight => self.top_right,
-            BoxEdge::BottomLeft => self.bottom_left,
-            BoxEdge::BottomRight => self.bottom_right,
-        }
-    }
-
-    /// Returns the [TileFormat] for a given box edge.
-    fn edge_tile(&self, edge: BoxEdge) -> TileFormat {
-        self.get_formatted_tile(self.edge_glyph(edge))
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::Tile;
-    use bevy::prelude::*;
-
-    use super::*;
-
-    #[test]
-    fn format_test() {
-        let fmt = BorderGlyphs::single_line().fg(Color::RED);
-
-        let tile: Tile = fmt.edge_tile(BoxEdge::Top).into();
-        assert_eq!('─', tile.glyph);
-        assert_eq!(Color::RED, tile.fg_color);
-
-        let tile: Tile = fmt.edge_tile(BoxEdge::TopLeft).into();
-        assert_eq!('┌', tile.glyph);
-        assert_eq!(Color::RED, tile.fg_color);
-    }
-
-    #[test]
-    fn from_string() {
-        let glyphs = BorderGlyphs::from_string(
-            "┌─┐
-             │ │
-             └─┘",
-        );
-
-        assert_eq!(glyphs.top, '─');
-        assert_eq!(glyphs.bottom, '─');
-        assert_eq!(glyphs.left, '│');
-        assert_eq!(glyphs.right, '│');
-        assert_eq!(glyphs.top_left, '┌');
-        assert_eq!(glyphs.top_right, '┐');
-        assert_eq!(glyphs.bottom_left, '└');
-        assert_eq!(glyphs.bottom_right, '┘');
     }
 }
