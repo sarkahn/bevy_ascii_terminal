@@ -17,7 +17,7 @@ const INFO_STRING: &str = "Arrow keys to resize\nSpacebar to change border";
 fn spawn(mut commands: Commands) {
     let mut term = Terminal::with_size([25, 2]).with_border(Border::SINGLE_LINE);
     term.put_string([0, 0].pivot(Pivot::TopLeft), INFO_STRING);
-    commands.spawn_bundle((TerminalBundle::from(term), AutoCamera));
+    commands.spawn((TerminalBundle::from(term), AutoCamera));
 }
 
 fn input(input: Res<Input<KeyCode>>, mut q_term: Query<&mut Terminal>, mut index: Local<usize>) {

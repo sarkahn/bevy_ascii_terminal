@@ -30,7 +30,5 @@ fn setup(mut commands: Commands) {
         "Hello\nThis is a multiline\nString!",
     );
 
-    commands
-        .spawn_bundle(TerminalBundle::from(term))
-        .insert(AutoCamera);
+    commands.spawn((TerminalBundle::from(term),AutoCamera));
 }

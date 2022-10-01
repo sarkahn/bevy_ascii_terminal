@@ -18,8 +18,7 @@ fn spawn_terminal(mut commands: Commands) {
     term.put_string([0, 0], "Press spacebar".bg(Color::LIME_GREEN));
 
     commands
-        .spawn_bundle(TerminalBundle::from(term))
-        .insert(AutoCamera);
+        .spawn((TerminalBundle::from(term),AutoCamera));
 }
 
 fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {

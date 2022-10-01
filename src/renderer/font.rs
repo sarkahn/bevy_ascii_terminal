@@ -1,8 +1,8 @@
 use bevy::{
     asset::HandleId,
     prelude::{
-        info, Assets, Commands, Component, Entity, Handle, Image, ParallelSystemDescriptorCoercion,
-        Plugin, Query, Res, ResMut, Resource,
+        info, Assets, Commands, Component, Entity, Handle, Image,
+        Plugin, Query, Res, ResMut, Resource, IntoSystemDescriptor,
     },
     reflect::Reflect,
     render::texture::{ImageSampler, ImageType},

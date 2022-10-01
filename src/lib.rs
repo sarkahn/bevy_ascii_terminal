@@ -20,13 +20,13 @@
 //!
 //! fn setup(mut commands: Commands) {
 //!     // Create the terminal and write to it
-//!     let mut terminal = Terminal::with_size([20,3]);
-//!     terminal.draw_border(BorderGlyphs::single_line());
+//!     let mut terminal = Terminal::with_size([20,3])
+//!         .with_border(Border::SINGLE_LINE);
 //!     // Draw a blue "Hello world!" to the terminal
 //!     terminal.put_string([1, 1], "Hello world!".fg(Color::BLUE));
 //!
 //!     // Spawn the terminal bundle from our terminal
-//!     commands.spawn_bundle(TerminalBundle::from(terminal))
+//!     commands.spawn(TerminalBundle::from(terminal))
 //!     // Automatically set up the camera for this terminal
 //!     .insert(AutoCamera);
 //! }

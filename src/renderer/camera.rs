@@ -10,7 +10,7 @@ use bevy::prelude::Changed;
 use bevy::prelude::Commands;
 use bevy::prelude::Component;
 use bevy::prelude::Entity;
-use bevy::prelude::ParallelSystemDescriptorCoercion;
+use bevy::prelude::IntoSystemDescriptor;
 use bevy::prelude::Plugin;
 use bevy::prelude::Query;
 use bevy::prelude::With;
@@ -74,10 +74,11 @@ fn init_camera(
         // Couldn't find any cameras - so let's make one
         } else {
             commands
-                .spawn_bundle(TiledCameraBundle::new())
-                .insert(TerminalCamera {
+                .spawn((
+                    TiledCameraBundle::new(),
+                    TerminalCamera {
                     terminal: Some(term_entity),
-                });
+                }));
         }
     }
 }

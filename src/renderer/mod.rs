@@ -13,7 +13,7 @@ mod camera;
 
 pub mod code_page_437;
 
-use bevy::prelude::{App, CoreStage, ParallelSystemDescriptorCoercion, Plugin};
+use bevy::prelude::{App, CoreStage, Plugin, IntoSystemDescriptor};
 pub(crate) use font::BuiltInFontHandles;
 
 pub use entity::*;
@@ -49,6 +49,7 @@ impl Plugin for TerminalRendererPlugin {
             .add_system_to_stage(CoreStage::Last, material_change)
             .add_system_to_stage(CoreStage::Last, update_layout.after(material_change))
             .add_system_to_stage(CoreStage::Last, layout_changed.after(update_layout))
-            .add_system_to_stage(CoreStage::Last, update_tiles.after(layout_changed));
+            .add_system_to_stage(CoreStage::Last, update_tiles.after(layout_changed))
+            ;
     }
 }

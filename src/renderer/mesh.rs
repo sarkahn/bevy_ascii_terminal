@@ -35,7 +35,7 @@ pub(crate) fn init_terminal(
             ..Default::default()
         };
 
-        let border_entity = commands.spawn_bundle((border_mesh, TerminalBorder)).id();
+        let border_entity = commands.spawn((border_mesh, TerminalBorder)).id();
 
         layout.border_entity = Some(border_entity);
 

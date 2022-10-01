@@ -232,6 +232,7 @@ name = "bevy_diagnostic"
 version = "0.9.0-dev"
 dependencies = [
  "bevy_app",
+ "bevy_core",
  "bevy_ecs",
  "bevy_log",
  "bevy_time",
@@ -449,7 +450,6 @@ dependencies = [
  "bevy_window",
  "bitflags",
  "codespan-reporting",
- "copyless",
  "downcast-rs",
  "encase",
  "futures-lite",
@@ -494,7 +494,6 @@ dependencies = [
  "bevy_utils",
  "bitflags",
  "bytemuck",
- "copyless",
  "fixedbitset",
  "guillotiere",
  "rectangle-pack",
@@ -507,6 +506,7 @@ version = "0.9.0-dev"
 dependencies = [
  "async-channel",
  "async-executor",
+ "concurrent-queue",
  "futures-lite",
  "once_cell",
  "wasm-bindgen-futures",
@@ -1795,7 +1795,7 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "sark_grids"
-version = "0.5.0"
+version = "0.5.3"
 dependencies = [
  "glam",
  "itertools",

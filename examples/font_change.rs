@@ -55,8 +55,7 @@ fn spawn_terminal(mut commands: Commands) {
         "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞".bg(bg_color),
     );
     commands
-        .spawn_bundle(TerminalBundle::from(term))
-        .insert(AutoCamera);
+        .spawn((TerminalBundle::from(term),AutoCamera));
 
     //commands.spawn_bundle(TiledCameraBundle::new().with_tile_count([50,50]));
 }

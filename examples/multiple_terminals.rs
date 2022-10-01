@@ -14,24 +14,24 @@ fn setup(mut commands: Commands) {
 
     term.put_string([0, 0], "Hello, world! ☺");
 
-    commands.spawn_bundle(
+    commands.spawn(
         TerminalBundle::from(term.clone())
             .with_position([0, 3])
             .with_font(TerminalFont::Px4378x8),
     );
 
-    commands.spawn_bundle(
+    commands.spawn(
         TerminalBundle::from(term.clone())
             .with_position([0, 0])
             .with_font(TerminalFont::Pastiche8x8),
     );
-    commands.spawn_bundle(
+    commands.spawn(
         TerminalBundle::from(term.clone())
             .with_position([0, -3])
             .with_font(TerminalFont::ZxEvolution8x8),
     );
 
-    commands.spawn_bundle(
+    commands.spawn(
         TiledCameraBundle::new()
             .with_tile_count([term.width_with_border(), term.height_with_border() * 3]),
     );

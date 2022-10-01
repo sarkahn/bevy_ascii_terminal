@@ -21,13 +21,12 @@ fn main() {
 struct Pause(bool);
 
 fn setup(mut commands: Commands) {
-    commands
-        .spawn_bundle(
-            TerminalBundle::new()
-                .with_size([80, 50])
-                .with_border(Border::SINGLE_LINE),
-        )
-        .insert(AutoCamera);
+    commands.spawn((
+        TerminalBundle::new()
+            .with_size([80, 50])
+            .with_border(Border::SINGLE_LINE),
+        AutoCamera
+    ));
 }
 
 fn rand_color(rng: &mut ThreadRng) -> Color {

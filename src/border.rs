@@ -108,8 +108,8 @@ impl Border {
     /// # Example
     ///
     /// ```rust
-    /// use bevy_ascii_terminal::ui::BorderGlyphs;
-    /// let border = BorderGlyphs::from_string(
+    /// use bevy_ascii_terminal::Border;
+    /// let border = Border::from_string(
     ///     "┌─┐
     ///      │ │
     ///      └─┘"

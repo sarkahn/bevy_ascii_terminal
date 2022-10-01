@@ -34,9 +34,11 @@ fn setup(mut commands: Commands) {
     );
 
     commands
-        .spawn_bundle(TerminalBundle::from(term))
-        .insert(AutoCamera)
-        .insert(ToWorld::default());
+        .spawn((
+            TerminalBundle::from(term),
+            AutoCamera,
+            ToWorld::default()
+        ));
 }
 
 fn update(mut q_term: Query<(&mut Terminal, &ToWorld)>, windows: Res<Windows>) {
