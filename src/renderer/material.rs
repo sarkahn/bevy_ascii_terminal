@@ -6,7 +6,7 @@
 
 use bevy::{
     math::Vec4,
-    prelude::{default, Assets, Color, Handle, HandleUntyped, Image, Mesh, Plugin, Shader},
+    prelude::{default, Assets, Color, Handle, HandleUntyped, Image, Mesh, Plugin, Shader, Res, Query, Or, Changed, Vec2},
     reflect::TypeUuid,
     render::{
         mesh::MeshVertexBufferLayout,
@@ -19,13 +19,13 @@ use bevy::{
     sprite::{Material2d, Material2dKey, Material2dPlugin},
 };
 
-use crate::TerminalFont;
+use crate::{TerminalFont, TerminalLayout};
 
 use super::{
     font::TerminalFontPlugin,
     mesh_data::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
     //mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
-    BuiltInFontHandles,
+    BuiltInFontHandles, TileScaling,
 };
 
 /// The default shader handle used by terminals.
@@ -147,5 +147,35 @@ impl Material2d for TerminalMaterial {
         descriptor.vertex.buffers = vec![vertex_layout];
 
         Ok(())
+    }
+}
+
+
+#[allow(clippy::type_complexity)]
+pub(crate) fn material_change(
+    materials: Res<Assets<TerminalMaterial>>,
+    images: Res<Assets<Image>>,
+    mut q_term: Query<
+        (&Handle<TerminalMaterial>, &mut TerminalLayout),
+        Or<(Changed<Handle<TerminalMaterial>>, Changed<TerminalFont>)>,
+    >,
+) {
+    for (handle, mut layout) in &mut q_term {
+        if let Some(material) = materials.get(handle) 
+        && let Some(image) = material.texture.clone()
+        && let Some(image) = images.get(&image) {
+            // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
+            // graphical terminals
+            let font_size = image.size() / 16.0;
+            layout.pixels_per_tile = font_size.as_uvec2();
+            layout.tile_size = match layout.scaling {
+                TileScaling::World => {
+                    let aspect = font_size.x / font_size.y;
+                    Vec2::new(aspect, 1.0)
+                }
+                TileScaling::Pixels => font_size,
+            };
+            //info!("Updating layout ppt. Now {}", layout.pixels_per_tile);
+        }
     }
 }

@@ -27,7 +27,7 @@ fn spawn_terminal(mut commands: Commands) {
     let size = [47, 13];
     let font = TerminalFont::default();
     let title = BorderTitle::new(font.variant_name().to_uppercase()).color(Color::RED);
-    let mut term = Terminal::with_size(size)
+    let mut term = Terminal::new(size)
         .with_clear_tile(' '.fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE))
         .with_border(Border::SINGLE_LINE.with_title(title));
 
@@ -54,8 +54,7 @@ fn spawn_terminal(mut commands: Commands) {
         [0, 9].pivot(Pivot::TopLeft),
         "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞".bg(bg_color),
     );
-    commands
-        .spawn((TerminalBundle::from(term),AutoCamera));
+    commands.spawn((TerminalBundle::from(term), AutoCamera));
 
     //commands.spawn_bundle(TiledCameraBundle::new().with_tile_count([50,50]));
 }

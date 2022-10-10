@@ -25,7 +25,7 @@ fn setup(mut commands: Commands) {
         TerminalBundle::new()
             .with_size([80, 50])
             .with_border(Border::SINGLE_LINE),
-        AutoCamera
+        AutoCamera,
     ));
 }
 

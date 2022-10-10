@@ -33,12 +33,7 @@ fn setup(mut commands: Commands) {
         'O'.fg(Color::WHITE).bg(Color::BLACK),
     );
 
-    commands
-        .spawn((
-            TerminalBundle::from(term),
-            AutoCamera,
-            ToWorld::default()
-        ));
+    commands.spawn((TerminalBundle::from(term), AutoCamera, ToWorld::default()));
 }
 
 fn update(mut q_term: Query<(&mut Terminal, &ToWorld)>, windows: Res<Windows>) {

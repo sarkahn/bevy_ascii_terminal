@@ -1,13 +1,14 @@
 //! Terminal components
 use bevy::{
     math::{uvec2, vec2},
-    prelude::{Bundle, Component, Deref, Entity, UVec2, Vec2},
+    prelude::{Bundle, Component, Deref, Entity, UVec2, Vec2, Handle},
     sprite::MaterialMesh2dBundle,
 };
+use sark_grids::Pivot;
 
 use crate::{Border, Terminal, TerminalMaterial};
 
-use super::{uv_mapping::UvMapping, TerminalFont};
+use super::{uv_mapping::UvMapping, TerminalFont, mesh_data::{TileData, VertData}};
 
 #[derive(Component, Deref)]
 pub struct TerminalSize(pub UVec2);
@@ -19,13 +20,12 @@ pub struct TerminalSize(pub UVec2);
 #[derive(Debug, Component, Clone)]
 pub struct TerminalLayout {
     pub scaling: TileScaling,
-    pub term_pivot: Vec2,
-    pub tile_pivot: Vec2,
     pub(crate) border_entity: Option<Entity>,
     pub(crate) border: Option<Border>,
     pub(crate) pixels_per_tile: UVec2,
     pub(crate) term_size: UVec2,
     pub(crate) tile_size: Vec2,
+    pub(crate) term_pivot: Pivot,
 }
 
 impl Default for TerminalLayout {
@@ -35,8 +35,7 @@ impl Default for TerminalLayout {
             tile_size: Vec2::ONE,
             scaling: TileScaling::World,
             pixels_per_tile: uvec2(8, 8),
-            term_pivot: vec2(0.5, 0.5),
-            tile_pivot: Vec2::ZERO,
+            term_pivot: Pivot::Center,
             border_entity: None,
             border: None,
         }
@@ -45,9 +44,8 @@ impl Default for TerminalLayout {
 
 impl TerminalLayout {
     pub fn origin(&self) -> Vec2 {
-        let term_offset = -(self.term_size.as_vec2() * self.tile_size * self.term_pivot);
-        let tile_offset = -(self.tile_size * self.tile_pivot);
-        term_offset + tile_offset
+        let pivot = Vec2::from(self.term_pivot);
+        -(self.term_size.as_vec2() * self.tile_size * pivot)
     }
 
     pub fn term_size(&self) -> UVec2 {
@@ -61,6 +59,14 @@ impl TerminalLayout {
     pub(crate) fn update_state(&mut self, term: &Terminal) {
         self.border = term.border().cloned();
         self.term_size = term.size();
+    }
+
+    pub fn width(&self) -> usize {
+        self.term_size.x as usize
+    }
+
+    pub fn height(&self) -> usize {
+        self.term_size.y as usize
     }
 }
 
@@ -81,38 +87,14 @@ pub enum TileScaling {
 #[derive(Default, Bundle)]
 pub struct TerminalRenderBundle {
     pub render_bundle: MaterialMesh2dBundle<TerminalMaterial>,
-    pub uv_mapping: UvMapping,
-    pub layout: TerminalLayout,
-    pub font: TerminalFont,
+    pub uv_mapping: Handle<UvMapping>,
+    pub tile_data: TileData,
+    pub vert_data: VertData,
 }
 
 impl TerminalRenderBundle {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Set the terminal pivot value.
-    ///
-    /// Terminal pivot determines where the origin of the terminal mesh sits, where
-    /// (0,0) is the bottom left. Defaults to centered (0.5,0.5).
-    pub fn with_terminal_pivot(mut self, x: f32, y: f32) -> Self {
-        self.layout.term_pivot = (x, y).into();
-        self
-    }
-
-    /// Set the tile pivot value.
-    ///
-    /// Tile pivot determines where the origin of a tile sits within the mesh, where
-    /// (0,0) is the bottom left. Defaults to bottom left (0,0).
-    pub fn with_tile_pivot(mut self, x: f32, y: f32) -> Self {
-        self.layout.tile_pivot = (x, y).into();
-        self
-    }
-
-    /// Sets the [TileScaling] for the terminal.
-    pub fn with_tile_scaling(mut self, scaling: TileScaling) -> Self {
-        self.layout.scaling = scaling;
-        self
     }
 }
 

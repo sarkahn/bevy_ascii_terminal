@@ -21,16 +21,16 @@ use crate::{Terminal, Tile};
 /// // Insert a an 'a' character with a blue foreground and green background.
 /// term.put_char([1,1], 'a'.fg(Color::BLUE).bg(Color::GREEN));
 /// ```
-pub trait TileModifier: Clone {
+pub trait TileFormatter: Clone {
     /// Change the glyph of a tile.
-    fn glyph(self, glyph: char) -> TileFormat;
+    fn glyph(self, glyph: char) -> FormattedTile;
     /// Change the foreground color of a tile.
-    fn fg(self, color: Color) -> TileFormat;
+    fn fg(self, color: Color) -> FormattedTile;
     /// Change the background color of a tile.
-    fn bg(self, color: Color) -> TileFormat;
+    fn bg(self, color: Color) -> FormattedTile;
 
     /// Get the [TileFormat] which can be used to apply tile modifications.
-    fn format(self) -> TileFormat;
+    fn format(self) -> FormattedTile;
 }
 
 /// Formatting that can be applied to a terminal tile.
@@ -38,7 +38,7 @@ pub trait TileModifier: Clone {
 /// Formatting allows you to create an object that specifies certain aspects
 /// to modify without necessarily replacing an entire tile.
 #[derive(Debug, Default, Clone)]
-pub struct TileFormat {
+pub struct FormattedTile {
     /// Modifications to be applied to a tile.
     modifications: ArrayVec<TileModification, 3>,
 }
@@ -54,9 +54,9 @@ pub enum TileModification {
     BgColor(Color),
 }
 
-impl TileFormat {
-    pub fn new() -> TileFormat {
-        TileFormat::default()
+impl FormattedTile {
+    pub fn new() -> FormattedTile {
+        FormattedTile::default()
     }
 
     #[inline]
@@ -73,8 +73,8 @@ impl TileFormat {
 
     /// Create a [TileFormat] which will clear a tile to default
     /// when applied.
-    pub fn clear() -> TileFormat {
-        TileFormat::from(Tile::default())
+    pub fn clear() -> FormattedTile {
+        FormattedTile::from(Tile::default())
     }
 
     /// Iterate over tile modifications.
@@ -90,9 +90,9 @@ impl TileFormat {
     }
 }
 
-impl TileModifier for TileFormat {
+impl TileFormatter for FormattedTile {
     /// Change the forergound color of a tile.
-    fn fg(mut self, color: Color) -> TileFormat {
+    fn fg(mut self, color: Color) -> FormattedTile {
         for modifier in self.modifications.iter_mut() {
             if let TileModification::FgColor(col) = modifier {
                 *col = color;
@@ -104,7 +104,7 @@ impl TileModifier for TileFormat {
     }
 
     /// Change the background color of a tile.
-    fn bg(mut self, color: Color) -> TileFormat {
+    fn bg(mut self, color: Color) -> FormattedTile {
         for modifier in self.modifications.iter_mut() {
             if let TileModification::BgColor(col) = modifier {
                 *col = color;
@@ -116,7 +116,7 @@ impl TileModifier for TileFormat {
     }
 
     /// Change the glyph of a tile.
-    fn glyph(mut self, ch: char) -> TileFormat {
+    fn glyph(mut self, ch: char) -> FormattedTile {
         for modifier in self.modifications.iter_mut() {
             if let TileModification::Glyph(glyph) = modifier {
                 *glyph = ch;
@@ -127,46 +127,46 @@ impl TileModifier for TileFormat {
         self
     }
     /// Get the [TileFormat] which can be used to apply tile modifications.
-    fn format(self) -> TileFormat {
+    fn format(self) -> FormattedTile {
         self
     }
 }
 
-impl TileModifier for char {
+impl TileFormatter for char {
     /// Replace the original character with a given one.
     ///
     /// This is pointless.
-    fn glyph(self, glyph: char) -> TileFormat {
-        TileFormat::default().glyph(glyph)
+    fn glyph(self, glyph: char) -> FormattedTile {
+        FormattedTile::default().glyph(glyph)
     }
 
     /// Modify the foreground color of the tile.
-    fn fg(self, color: Color) -> TileFormat {
-        TileFormat::default().glyph(self).fg(color)
+    fn fg(self, color: Color) -> FormattedTile {
+        FormattedTile::default().glyph(self).fg(color)
     }
 
     /// Modify the background color of the tile.
-    fn bg(self, color: Color) -> TileFormat {
-        TileFormat::default().glyph(self).bg(color)
+    fn bg(self, color: Color) -> FormattedTile {
+        FormattedTile::default().glyph(self).bg(color)
     }
 
     /// Get the [TileFormat] for this character.
-    fn format(self) -> TileFormat {
-        TileFormat::default().glyph(self)
+    fn format(self) -> FormattedTile {
+        FormattedTile::default().glyph(self)
     }
 }
 
-impl From<TileFormat> for Tile {
-    fn from(fmt: TileFormat) -> Self {
+impl From<FormattedTile> for Tile {
+    fn from(fmt: FormattedTile) -> Self {
         let mut tile = Tile::default();
         fmt.apply(&mut tile);
         tile
     }
 }
 
-impl From<Tile> for TileFormat {
+impl From<Tile> for FormattedTile {
     fn from(tile: Tile) -> Self {
-        TileFormat::default()
+        FormattedTile::default()
             .glyph(tile.glyph)
             .fg(tile.fg_color)
             .bg(tile.bg_color)
@@ -186,12 +186,12 @@ impl From<Tile> for TileFormat {
 /// // Set the background color for the given tile to blue.
 /// term.put_color([3,3], Color::BLUE.bg());
 /// ```
-pub trait ColorModifier {
+pub trait ColorFormatter {
     fn fg(&self) -> ColorFormat;
     fn bg(&self) -> ColorFormat;
 }
 
-impl ColorModifier for Color {
+impl ColorFormatter for Color {
     fn fg(&self) -> ColorFormat {
         ColorFormat::FgColor(*self)
     }
@@ -208,3 +208,14 @@ pub enum ColorFormat {
     FgColor(Color),
     BgColor(Color),
 }
+
+
+
+    //     for modifier in self.modifications.iter_mut() {
+    //         if let TileModification::FgColor(col) = modifier {
+    //             *col = color;
+    //             return self;
+    //         }
+    //     }
+    //     self.modifications.push(TileModification::FgColor(color));
+    //     self

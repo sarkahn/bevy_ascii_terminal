@@ -1,7 +1,7 @@
-use bevy::prelude::{default, Bundle};
-use sark_grids::{GridPoint, Size2d};
+use bevy::prelude::{default, Bundle, Changed, Component, Query, With};
+use sark_grids::{GridPoint, Size2d, Pivot};
 
-use crate::{renderer, Border, Terminal, TerminalFont};
+use crate::{renderer::{self, TileScaling}, Border, Terminal, TerminalFont, TerminalLayout};
 
 /// A bundle with all the required components for a terminal.
 ///
@@ -10,6 +10,8 @@ use crate::{renderer, Border, Terminal, TerminalFont};
 pub struct TerminalBundle {
     pub terminal: Terminal,
     pub renderer: renderer::TerminalRenderBundle,
+    pub layout: TerminalLayout,
+    pub font: TerminalFont,
 }
 
 impl From<Terminal> for TerminalBundle {
@@ -38,7 +40,7 @@ impl TerminalBundle {
     }
 
     pub fn with_font(mut self, font: TerminalFont) -> Self {
-        self.renderer.font = font;
+        self.font = font;
         self
     }
 
@@ -53,4 +55,30 @@ impl TerminalBundle {
         self.renderer.render_bundle.transform.translation.z = depth as f32;
         self
     }
+
+    /// Set the terminal pivot value.
+    ///
+    /// Terminal pivot determines where the origin of the terminal mesh sits, where
+    /// (0,0) is the bottom left. Defaults to centered (0.5,0.5).
+    pub fn with_terminal_pivot(mut self, pivot: Pivot) -> Self {
+        self.terminal.set_pivot(pivot);
+        self
+    }
+
+    /// Sets the [TileScaling] for the terminal.
+    pub fn with_tile_scaling(mut self, scaling: TileScaling) -> Self {
+        self.layout.scaling = scaling;
+        self
+    }
+}
+
+/// If this component is added to a terminal the terminal will automatically be
+/// cleared after every render.
+#[derive(Default, Debug, Component)]
+pub struct ClearAfterRender;
+
+pub(crate) fn clear_after_render(mut q_term: Query<
+    &mut Terminal,
+    (Changed<Terminal>, With<ClearAfterRender>)>) {
+    q_term.for_each_mut(|mut t| t.clear());
 }

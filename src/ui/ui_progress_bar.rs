@@ -4,7 +4,7 @@ use bevy::{
 };
 use sark_grids::GridPoint;
 
-use crate::{Terminal, TileModifier};
+use crate::{Terminal, TileFormatter};
 
 #[derive(Debug, Clone)]
 pub struct UiProgressBar {
@@ -242,7 +242,7 @@ mod test {
 
     #[test]
     fn transition() {
-        let mut term = Terminal::with_size([10, 1]);
+        let mut term = Terminal::new([10, 1]);
         let glyph_fill = GlyphFill::EmptyOrFilledWithTransition(" ░▒▓█".to_string());
         let max = 30;
 
@@ -253,7 +253,7 @@ mod test {
 
     #[test]
     fn empty_or_filled() {
-        let mut term = Terminal::with_size([10, 1]);
+        let mut term = Terminal::new([10, 1]);
         let glyph_fill = GlyphFill::EmptyOrFilled(' ', '█');
         let max = 30;
 

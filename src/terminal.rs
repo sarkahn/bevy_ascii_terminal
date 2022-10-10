@@ -6,15 +6,17 @@ use bevy::math::UVec2;
 use bevy::prelude::Color;
 use bevy::prelude::Component;
 use bevy::prelude::Vec2;
+use sark_grids::Pivot;
+use sark_grids::geometry::GridRect;
 use sark_grids::grid::Side;
 use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
+use crate::TileFormatter;
 use crate::border::Border;
 use crate::fmt_tile::ColorFormat;
-use crate::formatting::StringWriter;
-use crate::formatting::TileModifier;
+use crate::formatting::StringFormatter;
 use crate::ui::ui_box::UiBox;
 use crate::ui::UiProgressBar;
 
@@ -54,7 +56,7 @@ pub struct Terminal {
 /// A single tile of the terminal.
 ///
 /// Defaults to a blank glyph with a black background and a white foreground.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tile {
     /// The glyph for the tile. Glyphs are mapped to sprites via the
     /// terminal's `UvMapping`
@@ -99,18 +101,16 @@ impl From<char> for Tile {
 }
 
 impl Terminal {
-    pub fn new(size: impl Size2d, clear_tile: Tile) -> Self {
+    /// Construct a terminal with the given size
+    pub fn new(size: impl Size2d) -> Terminal {
+        let clear_tile = Tile::default();
         Terminal {
-            tiles: Grid::new(clear_tile, size),
+            tiles: Grid::new(clear_tile, size)
+                .with_pivot(Pivot::Center),
             size: size.as_uvec2(),
             clear_tile,
             border: None,
         }
-    }
-
-    /// Construct a terminal with the given size
-    pub fn with_size(size: impl Size2d) -> Terminal {
-        Terminal::new(size, Tile::default())
     }
 
     /// Specify a border for the terminal.
@@ -126,6 +126,11 @@ impl Terminal {
     pub fn with_clear_tile(mut self, clear_tile: impl Into<Tile>) -> Self {
         self.clear_tile = clear_tile.into();
         self.clear();
+        self
+    }
+
+    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
+        self.tiles.set_pivot(pivot);
         self
     }
 
@@ -151,6 +156,10 @@ impl Terminal {
     pub fn resize(&mut self, size: impl Size2d) {
         self.tiles = Grid::new(self.clear_tile, size);
         self.size = size.as_uvec2();
+    }
+
+    pub fn set_pivot(&mut self, pivot: Pivot) {
+        self.tiles.set_pivot(pivot);
     }
 
     /// The width of the terminal, excluding the border.
@@ -233,7 +242,7 @@ impl Terminal {
     /// // unaffected
     /// term.put_char([2,3], 'q');
     /// ```
-    pub fn put_char(&mut self, xy: impl GridPoint, writer: impl TileModifier) {
+    pub fn put_char(&mut self, xy: impl GridPoint, writer: impl TileFormatter) {
         let fmt = writer.format();
         fmt.draw(xy, self);
     }
@@ -266,7 +275,7 @@ impl Terminal {
 
     /// Write a formatted string to the terminal.
     ///
-    /// The [`StringWriter`] trait allows you to optionally specify a foreground
+    /// The [`StringFormatter`] trait allows you to optionally specify a foreground
     /// and/or background color for the string using the `fg` and `bg` functions.
     /// If you don't specify a color then the existing colors in the terminal
     /// will be unaffected.
@@ -299,7 +308,7 @@ impl Terminal {
     /// // Write a mutli-line string to the center of the terminal
     /// term.put_string([0,0].pivot(Pivot::Center), "Hello\nHow are you?");
     /// ```
-    pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringWriter<'a> + 'a) {
+    pub fn put_string<'a>(&mut self, xy: impl GridPoint, writer: impl StringFormatter<'a> + 'a) {
         let pivot = xy.get_pivot().pivot;
         let axis = Vec2::from(pivot);
         let origin = xy.get_aligned_point(self.size);
@@ -309,16 +318,22 @@ impl Terminal {
         let h = string.lines().count() as i32;
         let y = (origin.y as f32 + (h - 1) as f32 * (1.0 - axis.y)) as i32;
 
+        let bounds = self.tiles.bounds();
+
+        //println!("Y {}", y);
+
         for (i, line) in string.lines().enumerate() {
             let y = y - i as i32;
-            if y < 0 || y >= self.height() as i32 {
+            if y < bounds.min_i().y || y >= bounds.max_i().y {
                 break;
             }
 
             let len = line.chars().count().min(self.width());
             let x = origin.x - ((len - 1) as f32 * axis.x) as i32;
             let i = self.to_index([x, y]);
-            let tiles = self.tiles.slice_mut(i..).iter_mut().take(len);
+            let tiles = self.tiles.slice_mut()[i..].iter_mut().take(len);
+
+            //println!("Writing string at {:?}", [x,y]);
 
             for (char, mut t) in line.chars().zip(tiles) {
                 t.glyph = char;
@@ -330,7 +345,7 @@ impl Terminal {
     /// Clear a range of characters to the terminal's `clear_tile`.
     pub fn clear_string(&mut self, xy: impl GridPoint, len: usize) {
         let i = self.to_index(xy);
-        for t in self.tiles.slice_mut(i..).iter_mut().take(len) {
+        for t in self.tiles.slice_mut()[i..].iter_mut().take(len) {
             *t = self.clear_tile;
         }
     }
@@ -343,7 +358,7 @@ impl Terminal {
     /// Retrieve a string from the terminal.
     pub fn get_string(&self, xy: impl GridPoint, len: usize) -> String {
         let i = self.to_index(xy);
-        let slice = self.tiles.slice(i..).iter().take(len).map(|t| t.glyph);
+        let slice = self.tiles.slice()[i..].iter().take(len).map(|t| t.glyph);
 
         String::from_iter(slice)
     }
@@ -474,26 +489,27 @@ impl Terminal {
         self.tiles.side_index(side)
     }
 
-    /// Convert a position from terminal space (bottom left origin) to world
-    /// space (centered origin).
-    ///
-    /// Note this assumes a centered terminal and ignores pivots and world
-    /// positions, which are rendering specific properties of the terminal
-    /// entity. The `ToWorld` component can be used if these properties must be
-    /// accounted for.
-    pub fn to_world(&self, pos: impl GridPoint) -> IVec2 {
-        pos.as_ivec2() - self.size.as_ivec2() / 2
+    /// Convert a position from terminal local space to world space.
+    pub fn transform_ltw(&self, pos: impl GridPoint) -> IVec2 {
+        self.tiles.transform_ltw(pos)
     }
 
-    /// Convert a position from world space (centered origin) to terminal space
-    /// (bottom left origin).
-    ///
-    /// Note this assumes a centered terminal and ignores pivots and world
-    /// positions, which are rendering specific propertes of the terminal
-    /// entity. The `ToWorld` component can be used if these properties must be
-    /// accounted for.
-    pub fn from_world(&self, pos: impl GridPoint) -> IVec2 {
-        pos.as_ivec2() + self.size.as_ivec2() / 2
+    /// Convert a position from world space to terminal local space, accounting
+    /// for the terminal pivot.
+    pub fn transform_wtl(&self, pos: impl GridPoint) -> IVec2 {
+        self.tiles.transform_wtl(pos)
+    }
+
+    pub fn slice(&self) -> &[Tile] {
+        self.tiles.slice()
+    }
+
+    pub fn slice_mut(&mut self) -> &mut [Tile] {
+        self.tiles.slice_mut()
+    }
+
+    pub fn bounds(&self) -> GridRect {
+        self.tiles.bounds()
     }
 }
 
@@ -504,7 +520,7 @@ mod tests {
 
     #[test]
     fn put_char() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
 
         term.put_char([5, 5], 'h');
 
@@ -519,22 +535,22 @@ mod tests {
 
     #[test]
     fn put_string() {
-        let mut term = Terminal::with_size([20, 20]);
-        term.put_string([0, 0], "Hello");
-        assert_eq!("Hello", term.get_string([0, 0], 5));
+        let mut term = Terminal::new([20, 20]);
+        // term.put_string([0, 0], "Hello");
+        // assert_eq!("Hello", term.get_string([0, 0], 5));
 
-        term.put_string([18, 19], "Hello");
-        assert_eq!("He", term.get_string([18, 19], 2));
+        term.put_string([-5, -5], "Hello");
+        assert_eq!("He", term.get_string([-5, -5], 2));
     }
 
     #[test]
     fn column_get() {
-        let mut term = Terminal::with_size([15, 10]);
-        term.put_char([3, 0], 'H');
-        term.put_char([3, 1], 'e');
-        term.put_char([3, 2], 'l');
-        term.put_char([3, 3], 'l');
-        term.put_char([3, 4], 'o');
+        let mut term = Terminal::new([15, 10]);
+        term.put_char([3, -4], 'H');
+        term.put_char([3, -3], 'e');
+        term.put_char([3, -2], 'l');
+        term.put_char([3, -1], 'l');
+        term.put_char([3,  0], 'o');
 
         let chars: Vec<_> = term.iter_column(3).take(5).map(|t| t.glyph).collect();
         assert_eq!("Hello", String::from_iter(chars));
@@ -542,30 +558,50 @@ mod tests {
 
     #[test]
     fn column_put() {
-        let mut term = Terminal::with_size([15, 10]);
+        let mut term = Terminal::new([15, 10]);
         let text = "Hello".chars();
         for (mut t, c) in term.iter_column_mut(5).take(5).zip(text) {
             t.glyph = c;
         }
 
-        assert_eq!('H', term.get_char([5, 0]));
-        assert_eq!('e', term.get_char([5, 1]));
-        assert_eq!('l', term.get_char([5, 2]));
-        assert_eq!('l', term.get_char([5, 3]));
-        assert_eq!('o', term.get_char([5, 4]));
+        assert_eq!('H', term.get_char([5, -4]));
+        assert_eq!('e', term.get_char([5, -3]));
+        assert_eq!('l', term.get_char([5, -2]));
+        assert_eq!('l', term.get_char([5, -1]));
+        assert_eq!('o', term.get_char([5,  0]));
     }
 
     #[test]
     fn from_world() {
-        let term = Terminal::with_size([20, 20]);
+        let term = Terminal::new([20, 20]);
 
-        assert_eq!([10, 10], term.from_world([0, 0]).to_array());
+        assert_eq!([9, 9], term.transform_ltw([0, 0]).to_array());
     }
 
     #[test]
     fn to_world() {
-        let term = Terminal::with_size([20, 20]);
+        let term = Terminal::new([20, 20]);
 
-        assert_eq!([0, 0], term.to_world([10, 10]).to_array());
+        assert_eq!([0, 0], term.transform_ltw([-9, -9]).to_array());
+    }
+
+    #[test]
+    fn pivot() {
+        let mut term = Terminal::new([10,10]).with_pivot(Pivot::BottomLeft);
+        assert_eq!([0,0], term.transform_ltw([0,0]).to_array());
+
+        term.set_pivot(Pivot::TopLeft);
+        assert_eq!([0,9], term.transform_ltw([0,0]).to_array());
+
+        term.set_pivot(Pivot::TopRight);
+        assert_eq!([9,9], term.transform_ltw([0,0]).to_array());
+
+        term.set_pivot(Pivot::BottomRight);
+        assert_eq!([9,0], term.transform_ltw([0,0]).to_array());
+    }
+
+    #[test]
+    fn bounds() {
+        let term = Terminal::new([5,5]).with_pivot(Pivot::TopRight);
     }
 }

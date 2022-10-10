@@ -10,7 +10,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let mut term = Terminal::with_size([80, 35]);
+    let mut term = Terminal::new([80, 35]);
 
     term.put_string([0, 0], "Hello\nThis is a multiline\nString!");
     term.put_string(
@@ -30,5 +30,5 @@ fn setup(mut commands: Commands) {
         "Hello\nThis is a multiline\nString!",
     );
 
-    commands.spawn((TerminalBundle::from(term),AutoCamera));
+    commands.spawn((TerminalBundle::from(term), AutoCamera));
 }

@@ -12,7 +12,7 @@ pub enum StringModifier {
 }
 
 /// A trait for building a formatted terminal string.
-pub trait StringWriter<'a>: Clone {
+pub trait StringFormatter<'a>: Clone {
     fn string(&self) -> &str;
     /// Change the foreground color.
     fn fg(self, color: Color) -> FormattedString<'a>; //FormattedString<'a>;
@@ -40,7 +40,7 @@ impl<'a> FormattedString<'a> {
     }
 }
 
-impl<'a> StringWriter<'a> for FormattedString<'a> {
+impl<'a> StringFormatter<'a> for FormattedString<'a> {
     fn string(&self) -> &str {
         self.string.as_ref()
     }
@@ -69,7 +69,7 @@ impl<'a> StringWriter<'a> for FormattedString<'a> {
     }
 }
 
-impl<'a> StringWriter<'a> for &'a str {
+impl<'a> StringFormatter<'a> for &'a str {
     fn string(&self) -> &str {
         self
     }
@@ -89,7 +89,7 @@ impl<'a> StringWriter<'a> for &'a str {
     fn apply(&self, _tile: &mut Tile) {}
 }
 
-impl<'a> StringWriter<'a> for String {
+impl<'a> StringFormatter<'a> for String {
     fn string(&self) -> &str {
         self.as_str()
     }
@@ -111,7 +111,7 @@ impl<'a> StringWriter<'a> for String {
     fn apply(&self, _tile: &mut Tile) {}
 }
 
-impl<'a> StringWriter<'a> for &'a String {
+impl<'a> StringFormatter<'a> for &'a String {
     fn string(&self) -> &str {
         self.as_str()
     }
@@ -144,11 +144,11 @@ mod test {
 
     use crate::Terminal;
 
-    use super::StringWriter;
+    use super::StringFormatter;
 
     #[test]
     fn string_color() {
-        let mut term = Terminal::with_size([15, 15]);
+        let mut term = Terminal::new([15, 15]);
         term.put_string([5, 5], "Hello".fg(Color::GREEN));
 
         assert_eq!(term.get_tile([5, 5]).fg_color, Color::GREEN);
@@ -156,7 +156,7 @@ mod test {
 
     #[test]
     fn pivot_top_right() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::TopRight), "Hello");
 
         assert_eq!("Hello", term.get_string([15, 19], 5));
@@ -164,7 +164,7 @@ mod test {
 
     #[test]
     fn pivot_top_left() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::TopLeft), "Hello");
 
         assert_eq!("Hello", term.get_string([0, 19], 5));
@@ -172,7 +172,7 @@ mod test {
 
     #[test]
     fn pivot_center() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::Center), "Hello");
 
         assert_eq!("Hello", term.get_string([7, 9], 5));
@@ -180,7 +180,7 @@ mod test {
 
     #[test]
     fn pivot_bottom_right() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::BottomRight), "Hello");
 
         assert_eq!("Hello", term.get_string([15, 0], 5));
@@ -188,7 +188,7 @@ mod test {
 
     #[test]
     fn pivot_multiline_bottom_right() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::BottomRight), "Hello\nHow are you?\nOk");
 
         assert_eq!("Hello", term.get_string([15, 2], 5));
@@ -198,7 +198,7 @@ mod test {
 
     #[test]
     fn pivot_multiline_top_right() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::TopRight), "Hello\nHow are you?\nOk");
 
         assert_eq!("Hello", term.get_string([15, 19], 5));
@@ -208,7 +208,7 @@ mod test {
 
     #[test]
     fn pivot_multiline_top_left() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::TopLeft), "Hello\nHow are you?\nOk");
 
         assert_eq!("Hello", term.get_string([0, 19], 5));
@@ -218,7 +218,7 @@ mod test {
 
     #[test]
     fn pivot_multiline_bottom_left() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::BottomLeft), "Hello\nHow are you?\nOk");
 
         assert_eq!("Hello", term.get_string([0, 2], 5));
@@ -228,7 +228,7 @@ mod test {
 
     #[test]
     fn pivot_multiline_center() {
-        let mut term = Terminal::with_size([20, 20]);
+        let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::Center), "Hello\nHow are you?\nOk");
 
         assert_eq!("Hello", term.get_string([7, 10], 5));

@@ -2,9 +2,9 @@
 //! view a terminal.
 use crate::Terminal;
 
-use super::mesh::layout_changed;
 use super::TerminalLayout;
 use super::TileScaling;
+use super::TERMINAL_LAYOUT_CHANGE;
 
 use bevy::prelude::Changed;
 use bevy::prelude::Commands;
@@ -73,12 +73,12 @@ fn init_camera(
             });
         // Couldn't find any cameras - so let's make one
         } else {
-            commands
-                .spawn((
-                    TiledCameraBundle::new(),
-                    TerminalCamera {
+            commands.spawn((
+                TiledCameraBundle::new(),
+                TerminalCamera {
                     terminal: Some(term_entity),
-                }));
+                },
+            ));
         }
     }
 }
@@ -140,10 +140,13 @@ impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TiledCameraPlugin);
         app.add_system_to_stage(CoreStage::First, init_camera)
-            .add_system_to_stage(CoreStage::Last, update_from_new.after(layout_changed))
             .add_system_to_stage(
                 CoreStage::Last,
-                update_from_terminal_change.after(layout_changed),
+                update_from_new.after(TERMINAL_LAYOUT_CHANGE),
+            )
+            .add_system_to_stage(
+                CoreStage::Last,
+                update_from_terminal_change.after(TERMINAL_LAYOUT_CHANGE),
             );
     }
 }

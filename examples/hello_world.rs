@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{prelude::*, TerminalPlugin};
+use bevy_ascii_terminal::{prelude::*, TerminalPlugin, TiledCameraBundle};
 
 fn main() {
     App::new()
@@ -12,26 +12,30 @@ fn main() {
 }
 
 fn spawn_terminal(mut commands: Commands) {
-    let title = BorderTitle::center("Hello World!").color(Color::YELLOW_GREEN);
-    let mut term = Terminal::with_size([20, 1]).with_border(Border::SINGLE_LINE.with_title(title));
+    //let title = BorderTitle::center("Hello World!").color(Color::YELLOW_GREEN);
+    let mut term = Terminal::new([20, 1]).with_border(Border::SINGLE_LINE);
 
-    term.put_string([0, 0], "Press spacebar".bg(Color::LIME_GREEN));
+    term.put_string([0, 0].pivot(Pivot::Center), "Press spacebar".bg(Color::LIME_GREEN));
 
-    commands
-        .spawn((TerminalBundle::from(term),AutoCamera));
+    commands.spawn(
+        (
+            TerminalBundle::from(term)
+    , AutoCamera)
+    );
+    commands.spawn(TiledCameraBundle::new().with_tile_count([20,3]).with_clear_color(Color::DARK_GRAY));
 }
 
 fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
     if keys.just_pressed(KeyCode::Space) {
         for mut term in q.iter_mut() {
             term.clear();
-            term.put_char([1, 0], 'H'.fg(Color::BLUE).bg(Color::GREEN));
-            term.put_char([2, 0], 'e'.fg(Color::BLUE).bg(Color::WHITE));
-            term.put_char([3, 0], 'l'.fg(Color::GREEN).bg(Color::BLUE));
-            term.put_char([4, 0], 'l'.fg(Color::RED).bg(Color::GREEN));
-            term.put_char([5, 0], 'o'.fg(Color::GREEN).bg(Color::GRAY));
+            term.put_char([0, 0], 'H'.fg(Color::BLUE).bg(Color::GREEN));
+            term.put_char([1, 0], 'e'.fg(Color::BLUE).bg(Color::WHITE));
+            term.put_char([2, 0], 'l'.fg(Color::GREEN).bg(Color::BLUE));
+            term.put_char([3, 0], 'l'.fg(Color::RED).bg(Color::GREEN));
+            term.put_char([4, 0], 'o'.fg(Color::GREEN).bg(Color::GRAY));
 
-            term.put_string([6, 0], " World!");
+            term.put_string([6, 0], "World!");
         }
     }
 }
