@@ -20,12 +20,12 @@ pub struct TerminalSize(pub UVec2);
 #[derive(Debug, Component, Clone)]
 pub struct TerminalLayout {
     pub scaling: TileScaling,
-    pub(crate) border_entity: Option<Entity>,
+    pub pivot: Pivot,
+    //pub(crate) border_entity: Option<Entity>,
     pub(crate) border: Option<Border>,
     pub(crate) pixels_per_tile: UVec2,
     pub(crate) term_size: UVec2,
     pub(crate) tile_size: Vec2,
-    pub(crate) term_pivot: Pivot,
 }
 
 impl Default for TerminalLayout {
@@ -35,8 +35,8 @@ impl Default for TerminalLayout {
             tile_size: Vec2::ONE,
             scaling: TileScaling::World,
             pixels_per_tile: uvec2(8, 8),
-            term_pivot: Pivot::Center,
-            border_entity: None,
+            pivot: Pivot::Center,
+            //border_entity: None,
             border: None,
         }
     }
@@ -44,7 +44,7 @@ impl Default for TerminalLayout {
 
 impl TerminalLayout {
     pub fn origin(&self) -> Vec2 {
-        let pivot = Vec2::from(self.term_pivot);
+        let pivot = Vec2::from(self.pivot);
         -(self.term_size.as_vec2() * self.tile_size * pivot)
     }
 

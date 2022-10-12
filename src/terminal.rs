@@ -1,12 +1,12 @@
 use std::borrow::Borrow;
 use std::ops::RangeBounds;
+use std::ops::Sub;
 
 use bevy::math::IVec2;
 use bevy::math::UVec2;
 use bevy::prelude::Color;
 use bevy::prelude::Component;
 use bevy::prelude::Vec2;
-use sark_grids::Pivot;
 use sark_grids::geometry::GridRect;
 use sark_grids::grid::Side;
 use sark_grids::Grid;
@@ -37,7 +37,7 @@ use crate::ui::UiProgressBar;
 ///
 /// let hello = term.get_string([1,1], 5);
 /// ```
-#[derive(Component, Default, Clone, Debug)]
+#[derive(Component, Clone, Debug)]
 pub struct Terminal {
     tiles: Grid<Tile>,
     size: UVec2,
@@ -51,6 +51,17 @@ pub struct Terminal {
     /// terminal positions and sizes do not include the border unless otherwise
     /// specified.
     border: Option<Border>,
+}
+
+impl Default for Terminal {
+    fn default() -> Self {
+        Self { 
+            tiles: Default::default(), 
+            size: Default::default(), 
+            clear_tile: Default::default(), 
+            border: Default::default(), 
+        }
+    }
 }
 
 /// A single tile of the terminal.
@@ -106,10 +117,10 @@ impl Terminal {
         let clear_tile = Tile::default();
         Terminal {
             tiles: Grid::new(clear_tile, size)
-                .with_pivot(Pivot::Center),
+                .with_2d_origin_from_pivot(Vec2::splat(0.5)),
             size: size.as_uvec2(),
             clear_tile,
-            border: None,
+            ..Default::default()
         }
     }
 
@@ -126,11 +137,6 @@ impl Terminal {
     pub fn with_clear_tile(mut self, clear_tile: impl Into<Tile>) -> Self {
         self.clear_tile = clear_tile.into();
         self.clear();
-        self
-    }
-
-    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
-        self.tiles.set_pivot(pivot);
         self
     }
 
@@ -156,10 +162,6 @@ impl Terminal {
     pub fn resize(&mut self, size: impl Size2d) {
         self.tiles = Grid::new(self.clear_tile, size);
         self.size = size.as_uvec2();
-    }
-
-    pub fn set_pivot(&mut self, pivot: Pivot) {
-        self.tiles.set_pivot(pivot);
     }
 
     /// The width of the terminal, excluding the border.
@@ -212,14 +214,14 @@ impl Terminal {
     /// in the terminal.
     #[inline]
     pub fn to_index(&self, xy: impl GridPoint) -> usize {
-        self.tiles.pos_to_index(xy.get_aligned_point(self.size))
+        self.tiles.xy_to_index(xy.get_aligned_point(self.size))
     }
 
     /// Convert 1D index to it's 2D position given the dimensions
     /// of the terminal.
     #[inline]
     pub fn to_xy(&self, i: usize) -> IVec2 {
-        self.tiles.index_to_pos(i)
+        self.tiles.index_to_xy(i)
     }
 
     /// Insert a formatted character into the terminal.
@@ -424,7 +426,7 @@ impl Terminal {
 
     /// Returns true if the given position is inside the bounds of the terminal.
     #[inline]
-    pub fn is_in_bounds(&self, xy: impl GridPoint) -> bool {
+    pub fn in_bounds(&self, xy: impl GridPoint) -> bool {
         self.tiles.in_bounds(xy)
     }
 
@@ -489,15 +491,16 @@ impl Terminal {
         self.tiles.side_index(side)
     }
 
-    /// Convert a position from terminal local space to world space.
+    /// Transform a position from terminal local space to world space.
+    #[inline]
     pub fn transform_ltw(&self, pos: impl GridPoint) -> IVec2 {
-        self.tiles.transform_ltw(pos)
+        pos.as_ivec2() - self.size.as_ivec2().sub(1) / 2
     }
 
-    /// Convert a position from world space to terminal local space, accounting
-    /// for the terminal pivot.
+    /// Transform a position from world space to terminal local space.
+    #[inline]
     pub fn transform_wtl(&self, pos: impl GridPoint) -> IVec2 {
-        self.tiles.transform_wtl(pos)
+        pos.as_ivec2() + self.size.as_ivec2().sub(1) / 2
     }
 
     pub fn slice(&self) -> &[Tile] {
@@ -509,7 +512,7 @@ impl Terminal {
     }
 
     pub fn bounds(&self) -> GridRect {
-        self.tiles.bounds()
+        GridRect::origin(self.size)
     }
 }
 
@@ -572,36 +575,20 @@ mod tests {
     }
 
     #[test]
-    fn from_world() {
-        let term = Terminal::new([20, 20]);
+    fn local_to_world() {
+        let term = Terminal::new([5, 5]);
+        assert_eq!([-2, -2], term.transform_ltw([0, 0]).to_array());
+        assert_eq!([0, 0], term.transform_ltw([2, 2]).to_array());
 
-        assert_eq!([9, 9], term.transform_ltw([0, 0]).to_array());
+        let term = Terminal::new([6, 6]);
+        assert_eq!([-2, -2], term.transform_ltw([0, 0]).to_array());
+        assert_eq!([0, 0], term.transform_ltw([2, 2]).to_array());
     }
 
     #[test]
-    fn to_world() {
-        let term = Terminal::new([20, 20]);
+    fn world_to_local() {
+        let term = Terminal::new([5, 5]);
 
-        assert_eq!([0, 0], term.transform_ltw([-9, -9]).to_array());
-    }
-
-    #[test]
-    fn pivot() {
-        let mut term = Terminal::new([10,10]).with_pivot(Pivot::BottomLeft);
-        assert_eq!([0,0], term.transform_ltw([0,0]).to_array());
-
-        term.set_pivot(Pivot::TopLeft);
-        assert_eq!([0,9], term.transform_ltw([0,0]).to_array());
-
-        term.set_pivot(Pivot::TopRight);
-        assert_eq!([9,9], term.transform_ltw([0,0]).to_array());
-
-        term.set_pivot(Pivot::BottomRight);
-        assert_eq!([9,0], term.transform_ltw([0,0]).to_array());
-    }
-
-    #[test]
-    fn bounds() {
-        let term = Terminal::new([5,5]).with_pivot(Pivot::TopRight);
+        assert_eq!([0, 0], term.transform_wtl([-10, -10]).to_array());
     }
 }

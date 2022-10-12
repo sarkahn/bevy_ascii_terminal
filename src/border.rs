@@ -44,7 +44,7 @@ impl Border {
         bottom_right: '╝',
     };
 
-    /// Construct a new set of [BorderGlyphs] from the given string.
+    /// Construct a new [Border] from the given string.
     ///
     /// The format of the string should match the example below. Line returns
     /// and spaces will be ignored.
@@ -143,9 +143,3 @@ mod test {
         assert_eq!(glyphs.bottom_right, '┘');
     }
 }
-
-
-const BSTRING: &str = 
-"┌─[CoolTitle]─┐
- │ │
- └─┘";

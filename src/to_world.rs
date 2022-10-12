@@ -48,7 +48,7 @@ impl ToWorld {
     /// world position.
     pub fn tile_to_world(&self, tile: impl GridPoint) -> Vec3 {
         let term_pos = self.term_pos.truncate();
-        let term_offset = self.term_size.as_vec2() * Vec2::from(self.layout.term_pivot);
+        let term_offset = self.term_size.as_vec2() * Vec2::from(self.layout.pivot);
         (tile.as_vec2() + term_pos - term_offset).extend(self.term_pos.z)
     }
 
@@ -60,7 +60,7 @@ impl ToWorld {
 
     pub fn world_to_tile(&self, world: Vec2) -> IVec2 {
         let term_pos = self.term_pos.truncate();
-        let term_offset = self.term_size.as_vec2() * Vec2::from(self.layout.term_pivot);
+        let term_offset = self.term_size.as_vec2() * Vec2::from(self.layout.pivot);
         let xy = world - term_pos + term_offset;
         xy.floor().as_ivec2()
     }

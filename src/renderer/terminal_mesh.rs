@@ -3,20 +3,20 @@ use sark_grids::Size2d;
 
 use crate::{TerminalLayout, Terminal};
 
-use super::{mesh_data::{ATTRIBUTE_UV, ATTRIBUTE_COLOR_FG, ATTRIBUTE_COLOR_BG, VertData, VertMesher, TileData, UvMesher}, TileScaling, uv_mapping::UvMapping, TerminalRenderBundle, border_mesh::BorderMesh};
+use super::{mesh_data::{VertData, VertMesher, TileData, UvMesher}, uv_mapping::UvMapping, TerminalRenderBundle, border_mesh::BorderMesh};
 
 
 pub(crate) fn init_terminal(
-    mut q: Query<(Entity, &mut Mesh2dHandle), Added<Terminal>>,
+    mut q: Query<Entity, Added<Terminal>>,
     mut commands: Commands,
 ) {
-    for (term_entity, mut handle) in q.iter_mut() {
-        let border = commands.spawn((
-            TerminalRenderBundle::default(),
-            BorderMesh::default(),
-        )).id();
+    for term_entity in q.iter_mut() {
+        // let border = commands.spawn((
+        //     TerminalRenderBundle::default(),
+        //     BorderMesh::default(),
+        // )).id();
 
-        commands.entity(term_entity).push_children(&[border]);
+        // commands.entity(term_entity).push_children(&[border]);
     }
 }
 
@@ -25,7 +25,9 @@ pub(crate) fn update_layout(
     mut q_term: Query<(&Terminal, &mut TerminalLayout), Changed<Terminal>>,
 ) {
     for (term, mut layout) in &mut q_term {
-        if layout.term_size() != term.size() || layout.border.as_ref() != term.border() {
+        if layout.term_size() != term.size() 
+        || layout.border.as_ref() != term.border()
+        {
            // println!("Updating layout");
             layout.update_state(term);
         }
@@ -53,6 +55,7 @@ pub(crate) fn update_vert_data(
             layout.tile_size, 
             &mut verts
         );
+        
         // Note the order verts are added - uvs must be added in the same order!
         for i in 0..layout.term_size().len() {
             let x = i % layout.width();

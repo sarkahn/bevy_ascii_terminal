@@ -12,13 +12,13 @@ fn main() {
 fn setup(
     mut commands: Commands
 ) {
-    let mut term = Terminal::new([10,10]).with_pivot(Pivot::BottomLeft);
+    let mut term = Terminal::new([10,10]);
     term.put_string([0,0], "Hello");
 
-    commands.spawn((
-        TerminalBundle::from(term),
+    commands.spawn(
+        TerminalBundle::from(term).with_pivot(Pivot::BottomLeft),
         //AutoCamera
-    ));
+    );
 
     commands.spawn(SpriteBundle {
         sprite: Sprite {

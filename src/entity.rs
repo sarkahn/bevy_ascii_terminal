@@ -60,8 +60,8 @@ impl TerminalBundle {
     ///
     /// Terminal pivot determines where the origin of the terminal mesh sits, where
     /// (0,0) is the bottom left. Defaults to centered (0.5,0.5).
-    pub fn with_terminal_pivot(mut self, pivot: Pivot) -> Self {
-        self.terminal.set_pivot(pivot);
+    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
+        self.layout.pivot = pivot;
         self
     }
 
