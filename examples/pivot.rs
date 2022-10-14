@@ -1,5 +1,7 @@
 use bevy::{prelude::*, sprite::Anchor};
-use bevy_ascii_terminal::{Terminal, TerminalBundle, AutoCamera, TiledCameraBundle, TerminalPlugin, Pivot};
+use bevy_ascii_terminal::{Terminal, TerminalBundle, 
+    //AutoCamera, 
+    TiledCameraBundle, TerminalPlugin, Pivot};
 
 fn main() {
     App::new()

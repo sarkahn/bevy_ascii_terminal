@@ -78,7 +78,6 @@ pub mod term_systems {
         TERMINAL_MATERIAL_CHANGE, 
         TERMINAL_UPDATE_TILES,
         TERMINAL_RENDER, 
-        //TERMINAL_UPDATE_MESH,
     };
 }
 

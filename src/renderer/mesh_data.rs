@@ -112,6 +112,7 @@ impl<'a> VertMesher<'a> {
         tile_size: impl Point2d,
         vert_data: &'a mut VertData,
     ) -> Self {
+        //println!("Starting new mesher at {}", origin.as_vec2());
         Self {
             tile_size: tile_size.as_vec2(),
             origin: origin.as_vec2(),

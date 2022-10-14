@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-use bevy_ascii_terminal::{prelude::*, ToWorld};
+// use bevy::prelude::*;
+// use bevy_ascii_terminal::{prelude::*, ToWorld};
 
 fn main() {
     // App::new()

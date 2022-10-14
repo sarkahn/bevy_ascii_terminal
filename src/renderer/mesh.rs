@@ -22,7 +22,6 @@ pub(crate) fn init_mesh(
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, Vec::<[f32; 4]>::new());
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, Vec::<[f32; 4]>::new());
         *handle = Mesh2dHandle(meshes.add(mesh));
-        println!("init mesh");
     }
 }
 
@@ -36,7 +35,7 @@ pub(crate) fn update_mesh_verts(
                 continue;
             }
             vd.build_mesh_verts(&mut mesh);
-            println!("Updating mesh verts. Indices count {}", mesh.indices().unwrap().len());
+            //println!("Updating mesh verts. Indices count {}", mesh.indices().unwrap().len());
         }
     }
 }
@@ -51,7 +50,7 @@ pub(crate) fn update_mesh_tiles(
                 continue;
             }
             td.build_mesh_tiles(&mut mesh);
-            println!("Update mesh uvs. UvCount {}", mesh.attribute(ATTRIBUTE_UV).unwrap().len());
+            //println!("Update mesh uvs. UvCount {}", mesh.attribute(ATTRIBUTE_UV).unwrap().len());
         }
     }
 }

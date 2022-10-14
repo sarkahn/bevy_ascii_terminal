@@ -1,6 +1,6 @@
-use bevy::prelude::Color;
+// use bevy::prelude::Color;
 
-use crate::{Tile, FormattedTile, TileFormatter};
+// use crate::{Tile, FormattedTile, TileFormatter};
 
 /// Specifies the style of lines to use along the border of a box.
 #[derive(Debug, Clone, PartialEq)]
@@ -112,8 +112,8 @@ pub enum Edge {
 
 #[cfg(test)]
 mod test {
-    use crate::Tile;
-    use bevy::prelude::*;
+    // use crate::Tile;
+    // use bevy::prelude::*;
 
     use super::*;
 

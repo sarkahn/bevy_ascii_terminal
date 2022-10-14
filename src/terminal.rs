@@ -322,10 +322,9 @@ impl Terminal {
 
         let bounds = self.tiles.bounds();
 
-        //println!("Y {}", y);
-
         for (i, line) in string.lines().enumerate() {
             let y = y - i as i32;
+            println!("Printstring line at {}. Bounds min y {}", y, bounds.min_i().y);
             if y < bounds.min_i().y || y >= bounds.max_i().y {
                 break;
             }
@@ -335,7 +334,7 @@ impl Terminal {
             let i = self.to_index([x, y]);
             let tiles = self.tiles.slice_mut()[i..].iter_mut().take(len);
 
-            //println!("Writing string at {:?}", [x,y]);
+            println!("Writing string at {:?}", [x,y]);
 
             for (char, mut t) in line.chars().zip(tiles) {
                 t.glyph = char;

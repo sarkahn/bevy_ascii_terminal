@@ -1,4 +1,4 @@
-use bevy::{prelude::{ResMut, Assets, Mesh, Added, Commands, Entity, Query, Vec2, Changed, Handle, Res, Or, BuildChildren}, sprite::Mesh2dHandle, render::{render_resource::PrimitiveTopology, mesh::Indices}};
+use bevy::{prelude::{ResMut, Assets, Mesh, Added, Commands, Entity, Query, Vec2, Changed, Handle, Res, Or, BuildChildren, GlobalTransform}, sprite::Mesh2dHandle, render::{render_resource::PrimitiveTopology, mesh::Indices}};
 use sark_grids::Size2d;
 
 use crate::{TerminalLayout, Terminal};
@@ -22,14 +22,15 @@ pub(crate) fn init_terminal(
 
 
 pub(crate) fn update_layout(
-    mut q_term: Query<(&Terminal, &mut TerminalLayout), Changed<Terminal>>,
+    mut q_term: Query<(&Terminal, &mut TerminalLayout, &GlobalTransform), Changed<Terminal>>,
 ) {
-    for (term, mut layout) in &mut q_term {
+    for (term, mut layout, transform) in &mut q_term {
         if layout.term_size() != term.size() 
         || layout.border.as_ref() != term.border()
         {
-           // println!("Updating layout");
-            layout.update_state(term);
+            // println!("Updating layout");
+            let pos = transform.translation().truncate().as_ivec2();
+            layout.update_state(term, pos);
         }
     }
 }

@@ -17,12 +17,15 @@ fn spawn_terminal(mut commands: Commands) {
 
     term.put_string([0, 0].pivot(Pivot::Center), "Press spacebar".bg(Color::LIME_GREEN));
 
+    commands.spawn((
+        TerminalBundle::from(term), 
+        //AutoCamera
+    ));
     commands.spawn(
-        (
-            TerminalBundle::from(term)
-    , AutoCamera)
+        TiledCameraBundle::new()
+        .with_tile_count([40,10])
+        .with_clear_color(Color::DARK_GRAY)
     );
-    commands.spawn(TiledCameraBundle::new().with_tile_count([20,3]).with_clear_color(Color::DARK_GRAY));
 }
 
 fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
