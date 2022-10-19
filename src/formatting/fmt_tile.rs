@@ -133,9 +133,7 @@ impl TileFormatter for FormattedTile {
 }
 
 impl TileFormatter for char {
-    /// Replace the original character with a given one.
-    ///
-    /// This is pointless.
+    /// Replace the original glyph with the given one.
     fn glyph(self, glyph: char) -> FormattedTile {
         FormattedTile::default().glyph(glyph)
     }
@@ -208,14 +206,3 @@ pub enum ColorFormat {
     FgColor(Color),
     BgColor(Color),
 }
-
-
-
-    //     for modifier in self.modifications.iter_mut() {
-    //         if let TileModification::FgColor(col) = modifier {
-    //             *col = color;
-    //             return self;
-    //         }
-    //     }
-    //     self.modifications.push(TileModification::FgColor(color));
-    //     self

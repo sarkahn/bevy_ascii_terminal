@@ -16,8 +16,10 @@ pub struct TerminalBundle {
 
 impl From<Terminal> for TerminalBundle {
     fn from(terminal: Terminal) -> Self {
+        let layout = TerminalLayout::from(&terminal);
         TerminalBundle {
             terminal,
+            layout,
             ..default()
         }
     }
@@ -56,14 +58,14 @@ impl TerminalBundle {
         self
     }
 
-    /// Set the terminal pivot value.
-    ///
-    /// Terminal pivot determines where the origin of the terminal mesh sits, where
-    /// (0,0) is the bottom left. Defaults to centered (0.5,0.5).
-    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
-        self.layout.pivot = pivot;
-        self
-    }
+    // /// Set the terminal pivot value.
+    // ///
+    // /// Terminal pivot determines where the origin of the terminal mesh sits, where
+    // /// (0,0) is the bottom left. Defaults to centered (0.5,0.5).
+    // pub fn with_pivot(mut self, pivot: Pivot) -> Self {
+    //     self.layout.pivot = pivot;
+    //     self
+    // }
 
     /// Sets the [TileScaling] for the terminal.
     pub fn with_tile_scaling(mut self, scaling: TileScaling) -> Self {

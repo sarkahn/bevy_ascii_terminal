@@ -22,19 +22,18 @@ pub struct TerminalSize(pub UVec2);
 #[derive(Debug, Component, Clone)]
 pub struct TerminalLayout {
     pub scaling: TileScaling,
-    pub pivot: Pivot,
+    pub(crate) pivot: Pivot,
     //pub(crate) border_entity: Option<Entity>,
     pub(crate) border: Option<Border>,
     pub(crate) pixels_per_tile: UVec2,
-    pub(crate) term_size: UVec2,
     pub(crate) tile_size: Vec2,
     pub(crate) pos: IVec2,
+    pub(crate) bounds: GridRect,
 }
 
 impl Default for TerminalLayout {
     fn default() -> Self {
         Self {
-            term_size: UVec2::ONE,
             tile_size: Vec2::ONE,
             scaling: TileScaling::World,
             pixels_per_tile: uvec2(8, 8),
@@ -42,18 +41,20 @@ impl Default for TerminalLayout {
             //border_entity: None,
             border: None,
             pos: Default::default(),
+            bounds: GridRect::new([0,0], [1,1]),
         }
     }
 }
 
 impl TerminalLayout {
+    /// Returns the bottom left point of the terminal in world space.
     pub fn origin(&self) -> Vec2 {
         let pivot = Vec2::from(self.pivot);
-        -(self.term_size.as_vec2() * self.tile_size * pivot)
+        -(self.bounds.size().as_vec2() * self.tile_size * pivot)
     }
 
     pub fn term_size(&self) -> UVec2 {
-        self.term_size
+        self.bounds.size().as_uvec2()
     }
 
     pub fn pixels_per_tile(&self) -> UVec2 {
@@ -62,22 +63,18 @@ impl TerminalLayout {
 
     pub(crate) fn update_state(&mut self, term: &Terminal, pos: IVec2) {
         self.border = term.border().cloned();
-        self.term_size = term.size();
+        let mut bounds = term.bounds();
+        bounds.center += pos;
+        self.bounds = bounds;
         self.pos = pos;
     }
 
     pub fn width(&self) -> usize {
-        self.term_size.x as usize
+        self.bounds.size().x as usize
     }
 
     pub fn height(&self) -> usize {
-        self.term_size.y as usize
-    }
-
-    pub fn bounds(&self) -> GridRect {
-        let pivot = Vec2::from(self.pivot);
-        let offset = self.term_size.as_vec2().div(2.0) * pivot;
-        GridRect::new(self.pos - offset.as_ivec2(), self.term_size)
+        self.bounds.size().y as usize
     }
 }
 
@@ -107,6 +104,17 @@ pub struct TerminalRenderBundle {
 impl TerminalRenderBundle {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+impl From<&Terminal> for TerminalLayout {
+    fn from(t: &Terminal) -> Self {
+        Self {
+            pivot: t.pivot(),
+            border: t.border().cloned(),
+            bounds: t.bounds(),
+            ..Default::default()
+        }
     }
 }
 

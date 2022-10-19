@@ -1,7 +1,5 @@
 use bevy::{prelude::*, sprite::Anchor};
-use bevy_ascii_terminal::{Terminal, TerminalBundle, 
-    //AutoCamera, 
-    TiledCameraBundle, TerminalPlugin, Pivot};
+use bevy_ascii_terminal::{prelude::*, TiledCameraBundle};
 
 fn main() {
     App::new()
@@ -14,13 +12,20 @@ fn main() {
 fn setup(
     mut commands: Commands
 ) {
-    let mut term = Terminal::new([10,10]);
-    term.put_string([0,0], "Hello");
+    let terms = [
+        Terminal::new([10,10]).with_pivot(Pivot::BottomLeft),
+        Terminal::new([10,10]).with_pivot(Pivot::TopLeft),
+        Terminal::new([10,10]).with_pivot(Pivot::BottomRight),
+        Terminal::new([10,10]).with_pivot(Pivot::TopRight),
+    ];
 
-    commands.spawn(
-        TerminalBundle::from(term).with_pivot(Pivot::BottomLeft),
-        //AutoCamera
-    );
+    for (i, mut term) in terms.into_iter().enumerate() {
+        term.put_string([0,0], "Hello");
+        commands.spawn((
+            TerminalBundle::from(term).with_depth(i as i32),
+            AutoCamera
+        ));
+    }
 
     commands.spawn(SpriteBundle {
         sprite: Sprite {
@@ -32,6 +37,4 @@ fn setup(
         transform: Transform::from_xyz(0.0, 0.0, 1.0),
         ..Default::default()
     });
-
-    commands.spawn(TiledCameraBundle::new().with_tile_count([10,10]));
 }

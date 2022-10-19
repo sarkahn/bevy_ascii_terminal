@@ -95,122 +95,122 @@ impl UiProgressBar {
     }
 
     pub fn draw(&self, xy: impl GridPoint, size: usize, term: &mut Terminal) {
-        let val_normalized = match self.max {
-            0 => 0.0,
-            _ => self.value_normalized(),
-        };
+        // let val_normalized = match self.max {
+        //     0 => 0.0,
+        //     _ => self.value_normalized(),
+        // };
 
-        let bg_color = self.background_color;
+        // let bg_color = self.background_color;
 
-        let empty_color = match self.color_fill {
-            ColorFill::Static(col) => col,
-            ColorFill::EmptyOrFilled(empty, _) => empty,
-            //_ => Color::GRAY,
-        };
+        // let empty_color = match self.color_fill {
+        //     ColorFill::Static(col) => col,
+        //     ColorFill::EmptyOrFilled(empty, _) => empty,
+        //     //_ => Color::GRAY,
+        // };
 
-        let value_color = match self.color_fill {
-            ColorFill::Static(col) => col,
-            ColorFill::EmptyOrFilled(_, filled) => filled,
-            //_ => Color::WHITE,
-        };
+        // let value_color = match self.color_fill {
+        //     ColorFill::Static(col) => col,
+        //     ColorFill::EmptyOrFilled(_, filled) => filled,
+        //     //_ => Color::WHITE,
+        // };
 
-        let filled_color = match self.color_fill {
-            ColorFill::Static(col) => col,
-            ColorFill::EmptyOrFilled(_, filled) => filled,
-            //_ => Color::WHITE,
-        };
+        // let filled_color = match self.color_fill {
+        //     ColorFill::Static(col) => col,
+        //     ColorFill::EmptyOrFilled(_, filled) => filled,
+        //     //_ => Color::WHITE,
+        // };
 
-        // Bar segment index with fraction representing progress between segments.
-        let seg_value_float = match self.glyph_fill {
-            GlyphFill::Static(_) => todo!(),
-            GlyphFill::EmptyOrFilled(_, _) => (size - 1) as f32 * val_normalized,
-            GlyphFill::EmptyOrFilledWithTransition(_) => size as f32 * val_normalized,
-        };
-        // Index of the value segment
-        let seg_value_index = match self.glyph_fill {
-            GlyphFill::Static(_) => todo!(),
-            GlyphFill::EmptyOrFilled(_, _) => seg_value_float.floor() as usize,
-            GlyphFill::EmptyOrFilledWithTransition(_) => {
-                (seg_value_float - 1.0).ceil().max(0.0) as usize
-            }
-        };
+        // // Bar segment index with fraction representing progress between segments.
+        // let seg_value_float = match self.glyph_fill {
+        //     GlyphFill::Static(_) => todo!(),
+        //     GlyphFill::EmptyOrFilled(_, _) => (size - 1) as f32 * val_normalized,
+        //     GlyphFill::EmptyOrFilledWithTransition(_) => size as f32 * val_normalized,
+        // };
+        // // Index of the value segment
+        // let seg_value_index = match self.glyph_fill {
+        //     GlyphFill::Static(_) => todo!(),
+        //     GlyphFill::EmptyOrFilled(_, _) => seg_value_float.floor() as usize,
+        //     GlyphFill::EmptyOrFilledWithTransition(_) => {
+        //         (seg_value_float - 1.0).ceil().max(0.0) as usize
+        //     }
+        // };
 
-        let empty_glyph = match &self.glyph_fill {
-            GlyphFill::Static(glyph) => *glyph,
-            GlyphFill::EmptyOrFilled(empty, _) => *empty,
-            GlyphFill::EmptyOrFilledWithTransition(string) => string
-                .chars()
-                .next()
-                .expect("Error parsing progress bar empty glyph from transition string."),
-        };
+        // let empty_glyph = match &self.glyph_fill {
+        //     GlyphFill::Static(glyph) => *glyph,
+        //     GlyphFill::EmptyOrFilled(empty, _) => *empty,
+        //     GlyphFill::EmptyOrFilledWithTransition(string) => string
+        //         .chars()
+        //         .next()
+        //         .expect("Error parsing progress bar empty glyph from transition string."),
+        // };
 
-        let filled_glyph = match &self.glyph_fill {
-            GlyphFill::Static(glyph) => *glyph,
-            GlyphFill::EmptyOrFilled(_, filled) => *filled,
-            GlyphFill::EmptyOrFilledWithTransition(string) => string
-                .chars()
-                .last()
-                .expect("Error parsing progress bar filled glyph from transition string."),
-        };
+        // let filled_glyph = match &self.glyph_fill {
+        //     GlyphFill::Static(glyph) => *glyph,
+        //     GlyphFill::EmptyOrFilled(_, filled) => *filled,
+        //     GlyphFill::EmptyOrFilledWithTransition(string) => string
+        //         .chars()
+        //         .last()
+        //         .expect("Error parsing progress bar filled glyph from transition string."),
+        // };
 
-        let value_glyph = match &self.glyph_fill {
-            GlyphFill::Static(glyph) => *glyph,
-            GlyphFill::EmptyOrFilled(empty, filled) => {
-                if self.value == 0 {
-                    *empty
-                } else {
-                    *filled
-                }
-            }
-            GlyphFill::EmptyOrFilledWithTransition(string) => {
-                // Distance between segments
-                let seg_t = seg_value_float.fract();
+        // let value_glyph = match &self.glyph_fill {
+        //     GlyphFill::Static(glyph) => *glyph,
+        //     GlyphFill::EmptyOrFilled(empty, filled) => {
+        //         if self.value == 0 {
+        //             *empty
+        //         } else {
+        //             *filled
+        //         }
+        //     }
+        //     GlyphFill::EmptyOrFilledWithTransition(string) => {
+        //         // Distance between segments
+        //         let seg_t = seg_value_float.fract();
 
-                let seg_t = if seg_t == 0.0 {
-                    if seg_value_float != 0.0 {
-                        1.0
-                    } else {
-                        seg_t
-                    }
-                } else {
-                    seg_t
-                };
+        //         let seg_t = if seg_t == 0.0 {
+        //             if seg_value_float != 0.0 {
+        //                 1.0
+        //             } else {
+        //                 seg_t
+        //             }
+        //         } else {
+        //             seg_t
+        //         };
 
-                let count = string.chars().count();
-                let max_char_index = count - 1;
-                let transition_index = (max_char_index as f32 * seg_t).ceil() as usize;
-                string.chars().nth(transition_index).unwrap_or_else(|| {
-                    panic!(
-                        "Error parsing value glyph from progress bar glyph string. 
-                Couldn't get index {} from {}. Seg_T: {}. Stringlen {}",
-                        transition_index,
-                        string,
-                        seg_t,
-                        max_char_index + 1
-                    )
-                })
-            }
-        };
+        //         let count = string.chars().count();
+        //         let max_char_index = count - 1;
+        //         let transition_index = (max_char_index as f32 * seg_t).ceil() as usize;
+        //         string.chars().nth(transition_index).unwrap_or_else(|| {
+        //             panic!(
+        //                 "Error parsing value glyph from progress bar glyph string. 
+        //         Couldn't get index {} from {}. Seg_T: {}. Stringlen {}",
+        //                 transition_index,
+        //                 string,
+        //                 seg_t,
+        //                 max_char_index + 1
+        //             )
+        //         })
+        //     }
+        // };
 
-        let pivot = Vec2::from(xy.get_pivot().pivot);
-        let align = (size as f32 - 1.0) * pivot.x as f32;
-        let mut xy = xy.get_aligned_point(term.size());
-        xy.x -= align as i32;
+        // let pivot = Vec2::from(xy.get_pivot().pivot);
+        // let align = (size as f32 - 1.0) * pivot.x as f32;
+        // let mut xy = xy.get_aligned_point(term.size());
+        // xy.x -= align as i32;
 
-        for i in 0..seg_value_index {
-            let pos = xy + IVec2::new(i as i32, 0);
-            term.put_char(pos, filled_glyph.fg(filled_color).bg(bg_color));
-        }
+        // for i in 0..seg_value_index {
+        //     let pos = xy + IVec2::new(i as i32, 0);
+        //     term.put_char(pos, filled_glyph.fg(filled_color).bg(bg_color));
+        // }
 
-        term.put_char(
-            xy + IVec2::new(seg_value_index as i32, 0),
-            value_glyph.fg(value_color).bg(bg_color),
-        );
+        // term.put_char(
+        //     xy + IVec2::new(seg_value_index as i32, 0),
+        //     value_glyph.fg(value_color).bg(bg_color),
+        // );
 
-        for i in seg_value_index + 1..size as usize {
-            let pos = xy + IVec2::new(i as i32, 0);
-            term.put_char(pos, empty_glyph.fg(empty_color).bg(bg_color));
-        }
+        // for i in seg_value_index + 1..size as usize {
+        //     let pos = xy + IVec2::new(i as i32, 0);
+        //     term.put_char(pos, empty_glyph.fg(empty_color).bg(bg_color));
+        // }
     }
 }
 

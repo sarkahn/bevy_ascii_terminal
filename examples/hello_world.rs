@@ -15,7 +15,7 @@ fn spawn_terminal(mut commands: Commands) {
     //let title = BorderTitle::center("Hello World!").color(Color::YELLOW_GREEN);
     let mut term = Terminal::new([20, 1]).with_border(Border::SINGLE_LINE);
 
-    term.put_string([0, 0].pivot(Pivot::Center), "Press spacebar".bg(Color::LIME_GREEN));
+    term.put_string([0, 0], "Press spacebar".bg(Color::LIME_GREEN));
 
     commands.spawn((
         TerminalBundle::from(term), 

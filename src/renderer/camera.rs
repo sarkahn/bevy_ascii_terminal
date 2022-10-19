@@ -52,32 +52,6 @@ pub struct AutoCamera;
 #[derive(Default, Debug, Component)]
 struct TerminalCamera;
 
-fn init_camera(
-    mut commands: Commands,
-    q_term: Query<Entity, (With<Terminal>, With<AutoCamera>)>,
-    q_cam: Query<Entity, With<TiledCamera>>,
-    q_term_cam: Query<&TerminalCamera>,
-) {
-    // Found a terminal with an autocamera
-    if !q_term.is_empty() {
-        // Camera not set up yet, create one
-        if q_cam.is_empty() {
-            println!("Spawning auto camera");
-            commands.spawn((
-                TiledCameraBundle::new(),
-                TerminalCamera
-            ));
-        } else {
-            // Use the first camera we can find
-            let ecam = q_cam.iter().next().unwrap();
-
-            // Found camera but it's missing our TerminalCamera component
-            if !q_term_cam.get(ecam).is_ok() {
-                commands.entity(ecam).insert(TerminalCamera);
-            }
-        }
-    }
-}
 
 // #[allow(clippy::type_complexity)]
 // fn update_from_new(
@@ -158,12 +132,40 @@ impl Plugin for TerminalCameraPlugin {
 //     mut q_cam: Query<(&mut TiledCamera, &mut Transform), With<TerminalCamera>>,
 // )
 
+
+fn init_camera(
+    mut commands: Commands,
+    q_term: Query<Entity, (With<Terminal>, With<AutoCamera>)>,
+    q_cam: Query<Entity, With<TiledCamera>>,
+    q_term_cam: Query<&TerminalCamera>,
+) {
+    // Found a terminal with an autocamera
+    if !q_term.is_empty() {
+        // Camera not set up yet, create one
+        if q_cam.is_empty() {
+            println!("Spawning auto camera");
+            commands.spawn((
+                TiledCameraBundle::new(),
+                TerminalCamera
+            ));
+        } else {
+            // Use the first camera we can find
+            let ecam = q_cam.iter().next().unwrap();
+
+            // Found camera but it's missing our TerminalCamera component
+            if !q_term_cam.get(ecam).is_ok() {
+                commands.entity(ecam).insert(TerminalCamera);
+            }
+        }
+    }
+}
+
 fn update(
     q_terminals: Query<&TerminalLayout, With<AutoCamera>>,
     mut q_cam: Query<(&mut TiledCamera, &mut Transform), With<TerminalCamera>>,
 ) { 
     if let Ok((mut cam, mut transform)) = q_cam.get_single_mut() {
-        let mut iter = q_terminals.iter().map(|layout|layout.bounds());
+        let mut iter = q_terminals.iter().map(|layout| layout.bounds);
         if let Some(mut rect) = iter.next() {
             while let Some(next) = iter.next() {
                 rect.envelope_rect(next);
