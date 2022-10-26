@@ -28,7 +28,7 @@ pub(crate) fn update_layout(
         if layout.term_size() != term.size() 
         || layout.border.as_ref() != term.border()
         {
-            // println!("Updating layout");
+            println!("Updating layout");
             let pos = transform.translation().truncate().as_ivec2();
             layout.update_state(term, pos);
         }
@@ -51,6 +51,8 @@ pub(crate) fn update_vert_data(
         verts.clear();
         verts.reserve(layout.term_size().len());
         
+        let origin = layout.origin();
+        println!("Origin {}", origin);
         let mut mesher = VertMesher::new(
             layout.origin(), 
             layout.tile_size, 

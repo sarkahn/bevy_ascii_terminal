@@ -326,7 +326,7 @@ impl Terminal {
 
         let bounds = self.tiles.bounds();
 
-        println!("Origin {}, y {}", origin, y);
+        //println!("Origin {}, y {}", origin, y);
 
         for (i, line) in string.lines().enumerate() {
             let y = y - i as i32;
@@ -337,12 +337,12 @@ impl Terminal {
 
             let len = line.chars().count().min(self.width());
             let x = origin.x - ((len - 1) as f32 * pivot.x) as i32;
-            println!("Getting index for {}, {}", x, y);
+            //println!("Getting index for {}, {}", x, y);
             let i = self.transform_lti([x, y]);
             //println!("X {}, I {}", x, i);
             let tiles = self.tiles.slice_mut()[i..].iter_mut().take(len);
 
-            println!("Writing string at {:?}", [x,y]);
+            //println!("Writing string at {:?}", [x,y]);
 
             for (char, mut t) in line.chars().zip(tiles) {
                 t.glyph = char;
@@ -521,15 +521,19 @@ impl Terminal {
     }
 
     pub fn bounds_with_border(&self) -> GridRect {
+        let bounds = self.bounds_without_border();
         if self.has_border() {
-            self.tiles.bounds().resized([1,1])
+            bounds.resized([1,1])
         } else {
-            self.tiles.bounds()
+            bounds
         }
     }
 
     pub fn bounds_without_border(&self) -> GridRect {
-        self.tiles.bounds()
+        let mut bounds = self.tiles.bounds();
+        bounds.center -= self.size.as_ivec2() / 2;
+        println!("TERM BOUNDS {}", bounds);
+        bounds 
     }
 }
 

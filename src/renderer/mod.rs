@@ -6,6 +6,7 @@ mod mesh;
 mod mesh_data;
 mod border_mesh;
 mod terminal_mesh;
+mod layout;
 
 mod font;
 mod uv_mapping;
@@ -23,6 +24,7 @@ pub use entity::*;
 pub use font::TerminalFont;
 
 pub use material::TerminalMaterial;
+pub use layout::TerminalLayout;
 
 #[cfg(feature = "camera")]
 pub use camera::{AutoCamera, TiledCamera, TiledCameraBundle};

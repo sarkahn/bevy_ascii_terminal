@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_ascii_terminal::{prelude::*, TerminalFont, TiledCameraBundle};
+use bevy_ascii_terminal::{prelude::*, TerminalFont};
 
 fn main() {
     App::new()
@@ -14,25 +14,23 @@ fn setup(mut commands: Commands) {
 
     term.put_string([0, 0], "Hello, world! ☺");
 
-    commands.spawn(
+    commands.spawn((
         TerminalBundle::from(term.clone())
             .with_position([0, 3])
             .with_font(TerminalFont::Px4378x8),
-    );
+        AutoCamera
+    ));
 
-    commands.spawn(
+    commands.spawn((
         TerminalBundle::from(term.clone())
             .with_position([0, 0])
             .with_font(TerminalFont::Pastiche8x8),
-    );
-    commands.spawn(
+        AutoCamera
+    ));
+    commands.spawn((
         TerminalBundle::from(term.clone())
             .with_position([0, -3])
             .with_font(TerminalFont::ZxEvolution8x8),
-    );
-
-    commands.spawn(
-        TiledCameraBundle::new()
-            .with_tile_count([term.width_with_border(), term.height_with_border() * 3]),
-    );
+        AutoCamera
+    ));
 }

@@ -31,4 +31,13 @@ fn setup(mut commands: Commands) {
     );
 
     commands.spawn((TerminalBundle::from(term), AutoCamera));
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::MAROON,
+            custom_size: Some(Vec2::ONE),
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(0.0, 0.0, 1.0),
+        ..Default::default()
+    });
 }
