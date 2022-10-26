@@ -1,5 +1,5 @@
-use bevy::{prelude::{Mesh, Component, UVec2, Vec2, Vec3, Color}, render::{mesh::{VertexAttributeValues, Indices, MeshVertexAttribute}, render_resource::VertexFormat}};
-use sark_grids::{point::Point2d, Size2d, GridPoint};
+use bevy::{prelude::{Mesh, Component, Vec2, Vec3, Color}, render::{mesh::{VertexAttributeValues, Indices, MeshVertexAttribute}, render_resource::VertexFormat}};
+use sark_grids::{point::Point2d, GridPoint};
 
 use super::uv_mapping::UvMapping;
 
@@ -171,7 +171,7 @@ impl<'a> UvMesher<'a> {
 
 #[cfg(test)]
 mod test {
-    use bevy::{prelude::{Mesh, Color}, render::render_resource::PrimitiveTopology};
+    use bevy::{prelude::{Color}};
 
     use crate::renderer::{uv_mapping::UvMapping};
 

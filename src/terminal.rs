@@ -1,13 +1,15 @@
 use std::borrow::Borrow;
+use std::ops::Div;
 use std::ops::RangeBounds;
 use std::ops::Sub;
+
 
 use bevy::math::IVec2;
 use bevy::math::UVec2;
 use bevy::prelude::Color;
 use bevy::prelude::Component;
 use bevy::prelude::Vec2;
-use sark_grids::Pivot;
+
 use sark_grids::geometry::GridRect;
 use sark_grids::grid::Side;
 use sark_grids::Grid;
@@ -117,8 +119,7 @@ impl Terminal {
     pub fn new(size: impl Size2d) -> Terminal {
         let clear_tile = Tile::default();
         Terminal {
-            tiles: Grid::new(clear_tile, size)
-                .with_pivot(Pivot::Center),
+            tiles: Grid::new(clear_tile, size),
             size: size.as_uvec2(),
             clear_tile,
             ..Default::default()
@@ -141,15 +142,6 @@ impl Terminal {
         self
     }
     
-    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
-        self.tiles.pivot = pivot;
-        self
-    }
-
-    pub fn pivot(&self) -> Pivot {
-        self.tiles.pivot
-    }
-
     pub fn set_border(&mut self, border: Border) {
         self.border = Some(border);
     }
@@ -323,7 +315,7 @@ impl Terminal {
         let pivot = if let Some(pivot) = xy.get_pivot() {
             Vec2::from(pivot)
         } else {
-            Vec2::from(self.tiles.pivot)
+            Vec2::ZERO
         };
         let origin = self.tiles.pivoted_point(xy);
         let fmt = writer.formatted();
@@ -506,17 +498,19 @@ impl Terminal {
         self.tiles.side_index(side)
     }
 
-    // /// Transform a position from terminal local space to world space.
-    // #[inline]
-    // pub fn transform_ltw(&self, pos: impl GridPoint) -> IVec2 {
-    //     self.tiles.transform_ltw(pos)
-    // }
+    /// Transform a position from terminal local space (origin bottom left) to 
+    /// world space (origin center).
+    #[inline]
+    pub fn transform_ltw(&self, pos: impl GridPoint) -> IVec2 {
+        pos.as_ivec2() - self.size.as_ivec2().sub(1).div(2)
+    }
 
-    // /// Transform a position from world space to terminal local space.
-    // #[inline]
-    // pub fn transform_wtl(&self, pos: impl GridPoint) -> IVec2 {
-    //     self.tiles.transform_wtl(pos)
-    // }
+    /// Transform a position from world space (origin center) to terminal local
+    /// space (origin bottom left).
+    #[inline]
+    pub fn transform_wtl(&self, pos: impl GridPoint) -> IVec2 {
+        pos.as_ivec2() + self.size.as_ivec2().sub(1).div(2)
+    }
 
     pub fn slice(&self) -> &[Tile] {
         self.tiles.slice()
@@ -526,7 +520,15 @@ impl Terminal {
         self.tiles.slice_mut()
     }
 
-    pub fn bounds(&self) -> GridRect {
+    pub fn bounds_with_border(&self) -> GridRect {
+        if self.has_border() {
+            self.tiles.bounds().resized([1,1])
+        } else {
+            self.tiles.bounds()
+        }
+    }
+
+    pub fn bounds_without_border(&self) -> GridRect {
         self.tiles.bounds()
     }
 }
@@ -553,7 +555,7 @@ mod tests {
 
     #[test]
     fn put_string() {
-        let mut term = Terminal::new([20, 20]).with_pivot(Pivot::BottomLeft);
+        let mut term = Terminal::new([20, 20]);
         // term.put_string([0, 0], "Hello");
         // assert_eq!("Hello", term.get_string([0, 0], 5));
 

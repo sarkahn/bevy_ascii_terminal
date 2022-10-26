@@ -1,4 +1,4 @@
-use bevy::math::Vec2;
+
 use bevy::prelude::Color;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
@@ -69,7 +69,7 @@ impl UiBox {
     }
 
     /// Draw the box to a terminal.
-    pub(crate) fn draw(&self, xy: impl GridPoint, size: impl Size2d, term: &mut Terminal) {
+    pub(crate) fn draw(&self, _xy: impl GridPoint, _size: impl Size2d, _term: &mut Terminal) {
         // let pivoted_point = xy.get_pivot();
         // let xy = xy.get_aligned_point(term.size());
         // let pivot = pivoted_point.pivot;
@@ -95,7 +95,7 @@ impl UiBox {
         //     }
         // }
 
-        if let Some(glyphs) = &self.border_glyphs {
+        if let Some(_glyphs) = &self.border_glyphs {
             // for t in term.iter_row_mut(top).skip(left).take(width) {
             //     glyphs.edge_tile(Edge::Top).apply(t);
             // }

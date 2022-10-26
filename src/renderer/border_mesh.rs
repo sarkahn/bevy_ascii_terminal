@@ -1,11 +1,11 @@
 //use std::collections::BTreeMap;
 
-use bevy::{utils::HashMap, prelude::{Changed, Query, Component, Children, Handle, Mesh, ResMut, Mut, Or, IVec2, Vec2, Assets, Res, Plugin, CoreStage, IntoSystemDescriptor, DetectChanges}};
+use bevy::{utils::HashMap, prelude::{Changed, Query, Component, Children, Handle, IVec2, Vec2, Assets, Res, Plugin, CoreStage, IntoSystemDescriptor, DetectChanges}};
 use sark_grids::GridPoint;
 
-use crate::{Edge, Tile, Terminal, Border, TerminalLayout};
+use crate::{Edge, Tile, Terminal, TerminalLayout};
 
-use super::{mesh_data::{TileData, VertData, VertMesher, UvMesher}, uv_mapping::UvMapping, TERMINAL_LAYOUT_CHANGE, TERMINAL_UPDATE_TILES, TERMINAL_RENDER};
+use super::{mesh_data::{TileData, VertData, VertMesher, UvMesher}, uv_mapping::UvMapping, TERMINAL_UPDATE_TILES, TERMINAL_RENDER};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct BorderTile {
@@ -50,8 +50,8 @@ fn update_from_terminal(
                 border.tile_size = layout.tile_size;
                 let w = border.size.x;
                 let h = border.size.y;
-                let hw = w / 2;
-                let hh = h / 2;
+                let _hw = w / 2;
+                let _hh = h / 2;
 
                 let tile = get_tile(Edge::TopLeft, term);
                 border.put_tile([-1,1], tile);

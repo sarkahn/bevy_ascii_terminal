@@ -1,5 +1,5 @@
 use bevy::prelude::{default, Bundle, Changed, Component, Query, With};
-use sark_grids::{GridPoint, Size2d, Pivot};
+use sark_grids::{GridPoint, Size2d};
 
 use crate::{renderer::{self, TileScaling}, Border, Terminal, TerminalFont, TerminalLayout};
 

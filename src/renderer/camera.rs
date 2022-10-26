@@ -165,7 +165,7 @@ fn update(
     mut q_cam: Query<(&mut TiledCamera, &mut Transform), With<TerminalCamera>>,
 ) { 
     if let Ok((mut cam, mut transform)) = q_cam.get_single_mut() {
-        let mut iter = q_terminals.iter().map(|layout| layout.bounds);
+        let mut iter = q_terminals.iter().map(|layout| layout.bounds_without_border());
         if let Some(mut rect) = iter.next() {
             while let Some(next) = iter.next() {
                 rect.envelope_rect(next);

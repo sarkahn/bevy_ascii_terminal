@@ -1,16 +1,16 @@
-use bevy::{prelude::{ResMut, Assets, Mesh, Added, Commands, Entity, Query, Vec2, Changed, Handle, Res, Or, BuildChildren, GlobalTransform}, sprite::Mesh2dHandle, render::{render_resource::PrimitiveTopology, mesh::Indices}};
+use bevy::{prelude::{Assets, Added, Commands, Entity, Query, Changed, Handle, Res, Or, GlobalTransform}};
 use sark_grids::Size2d;
 
 use crate::{TerminalLayout, Terminal};
 
-use super::{mesh_data::{VertData, VertMesher, TileData, UvMesher}, uv_mapping::UvMapping, TerminalRenderBundle, border_mesh::BorderMesh};
+use super::{mesh_data::{VertData, VertMesher, TileData, UvMesher}, uv_mapping::UvMapping};
 
 
 pub(crate) fn init_terminal(
     mut q: Query<Entity, Added<Terminal>>,
-    mut commands: Commands,
+    _commands: Commands,
 ) {
-    for term_entity in q.iter_mut() {
+    for _term_entity in q.iter_mut() {
         // let border = commands.spawn((
         //     TerminalRenderBundle::default(),
         //     BorderMesh::default(),

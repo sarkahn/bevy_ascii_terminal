@@ -1,17 +1,16 @@
 use bevy::{
-    math::{IVec2, Vec2},
     prelude::Color,
 };
 use sark_grids::GridPoint;
 
-use crate::{Terminal, TileFormatter};
+use crate::{Terminal};
 
 #[derive(Debug, Clone)]
 pub struct UiProgressBar {
     max: i32,
     value: i32,
     glyph_fill: GlyphFill,
-    background_color: Color,
+    //background_color: Color,
     color_fill: ColorFill,
 }
 
@@ -94,7 +93,7 @@ impl UiProgressBar {
         self
     }
 
-    pub fn draw(&self, xy: impl GridPoint, size: usize, term: &mut Terminal) {
+    pub fn draw(&self, _xy: impl GridPoint, _size: usize, _term: &mut Terminal) {
         // let val_normalized = match self.max {
         //     0 => 0.0,
         //     _ => self.value_normalized(),
@@ -221,7 +220,7 @@ impl Default for UiProgressBar {
             value: 0,
             color_fill: Default::default(),
             glyph_fill: Default::default(),
-            background_color: Color::BLACK,
+            //background_color: Color::BLACK,
         }
     }
 }

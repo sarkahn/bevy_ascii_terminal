@@ -1,7 +1,7 @@
 //! A terminal component which determines how glyphs are mapped to their
 //! corresponding uvs on the tile sheet.
 
-use bevy::{math::Vec2, prelude::{Component, Plugin, Handle, Assets, AddAsset, EventReader, AssetEvent, Query, DetectChanges}, utils::HashMap, reflect::TypeUuid};
+use bevy::{math::Vec2, prelude::{Plugin, Handle, Assets, AddAsset, EventReader, AssetEvent, Query, DetectChanges}, utils::HashMap, reflect::TypeUuid};
 
 use crate::{code_page_437, TerminalLayout};
 

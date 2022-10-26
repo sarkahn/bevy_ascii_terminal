@@ -1,16 +1,16 @@
 //! Terminal components
-use std::ops::Div;
+
 
 use bevy::{
-    math::{uvec2, vec2},
-    prelude::{Bundle, Component, Deref, Entity, UVec2, Vec2, Handle, IVec2},
+    math::{uvec2},
+    prelude::{Bundle, Component, Deref, UVec2, Vec2, Handle, IVec2},
     sprite::MaterialMesh2dBundle,
 };
-use sark_grids::{Pivot, geometry::GridRect, GridPoint, Size2d};
+use sark_grids::{Pivot, geometry::GridRect};
 
 use crate::{Border, Terminal, TerminalMaterial};
 
-use super::{uv_mapping::UvMapping, TerminalFont, mesh_data::{TileData, VertData}};
+use super::{uv_mapping::UvMapping, mesh_data::{TileData, VertData}};
 
 #[derive(Component, Deref)]
 pub struct TerminalSize(pub UVec2);
@@ -28,7 +28,7 @@ pub struct TerminalLayout {
     pub(crate) pixels_per_tile: UVec2,
     pub(crate) tile_size: Vec2,
     pub(crate) pos: IVec2,
-    pub(crate) bounds: GridRect,
+    bounds: GridRect,
 }
 
 impl Default for TerminalLayout {
@@ -63,7 +63,7 @@ impl TerminalLayout {
 
     pub(crate) fn update_state(&mut self, term: &Terminal, pos: IVec2) {
         self.border = term.border().cloned();
-        let mut bounds = term.bounds();
+        let mut bounds = term.bounds_without_border();
         bounds.center += pos;
         self.bounds = bounds;
         self.pos = pos;
@@ -75,6 +75,18 @@ impl TerminalLayout {
 
     pub fn height(&self) -> usize {
         self.bounds.size().y as usize
+    }
+
+    pub fn bounds_without_border(&self) -> GridRect {
+        self.bounds
+    }
+
+    pub fn bounds_with_border(&self) -> GridRect {
+        if self.border.is_some() {
+            self.bounds.resized([1,1])
+        } else {
+            self.bounds
+        }
     }
 }
 
@@ -110,9 +122,8 @@ impl TerminalRenderBundle {
 impl From<&Terminal> for TerminalLayout {
     fn from(t: &Terminal) -> Self {
         Self {
-            pivot: t.pivot(),
             border: t.border().cloned(),
-            bounds: t.bounds(),
+            bounds: t.bounds_with_border(),
             ..Default::default()
         }
     }
@@ -123,31 +134,31 @@ pub(crate) struct TerminalBorder;
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    #[test]
-    fn boundss() {
-        let b = bounds(Pivot::TopRight, [1,1], [3,3]);
-        let [min,max] = b.min_max_i();
-        println!("{:?}\nMin {}, max {}", b, min, max);
+    // use super::*;
+    // #[test]
+    // fn boundss() {
+    //     let b = bounds(Pivot::TopRight, [1,1], [3,3]);
+    //     let [min,max] = b.min_max_i();
+    //     println!("{:?}\nMin {}, max {}", b, min, max);
         
-        // let b = bounds(Pivot::TopLeft, [0,0], [3,3]);
-        // let [min,max] = b.min_max_i();
-        // println!("{:?}\nMin {}, max {}", b, min, max);
+    //     // let b = bounds(Pivot::TopLeft, [0,0], [3,3]);
+    //     // let [min,max] = b.min_max_i();
+    //     // println!("{:?}\nMin {}, max {}", b, min, max);
         
-        // let b = bounds(Pivot::BottomLeft, [0,0], [3,3]);
-        // let [min,max] = b.min_max_i();
-        // println!("{:?}\nMin {}, max {}", b, min, max);
+    //     // let b = bounds(Pivot::BottomLeft, [0,0], [3,3]);
+    //     // let [min,max] = b.min_max_i();
+    //     // println!("{:?}\nMin {}, max {}", b, min, max);
         
-        // let b = bounds(Pivot::BottomRight, [0,0], [3,3]);
-        // let [min,max] = b.min_max_i();
-        // println!("{:?}\nMin {}, max {}", b, min, max);
-    }
-    fn bounds(pivot: Pivot, pos: impl GridPoint, size: impl Size2d) -> GridRect {
-        let pivot = Vec2::from(pivot);
-        let bl = -pivot * size.as_vec2();
-        GridRect::from_bl(bl.as_ivec2() + pos.as_ivec2(), size)
-        //let offset = size.as_vec2().div(2.0) * pivot;
-        //GridRect::new(pos.as_ivec2() - offset.as_ivec2(), size)
-    }
+    //     // let b = bounds(Pivot::BottomRight, [0,0], [3,3]);
+    //     // let [min,max] = b.min_max_i();
+    //     // println!("{:?}\nMin {}, max {}", b, min, max);
+    // }
+    // fn bounds(pivot: Pivot, pos: impl GridPoint, size: impl Size2d) -> GridRect {
+    //     let pivot = Vec2::from(pivot);
+    //     let bl = -pivot * size.as_vec2();
+    //     GridRect::from_bl(bl.as_ivec2() + pos.as_ivec2(), size)
+    //     //let offset = size.as_vec2().div(2.0) * pivot;
+    //     //GridRect::new(pos.as_ivec2() - offset.as_ivec2(), size)
+    // }
     
 }
