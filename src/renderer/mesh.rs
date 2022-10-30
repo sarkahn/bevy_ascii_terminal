@@ -31,9 +31,6 @@ pub(crate) fn update_mesh_verts(
 ) {
     for (mut vd, handle) in &mut q_mesh {
         if let Some(mut mesh) = meshes.get_mut(&handle.0) {
-            if vd.indices.len() == 0 {
-                continue;
-            }
             vd.build_mesh_verts(&mut mesh);
             //println!("Updating mesh verts. Indices count {}", mesh.indices().unwrap().len());
         }
@@ -46,9 +43,6 @@ pub(crate) fn update_mesh_tiles(
 ) {
     for (mut td, handle) in &mut q_mesh {
         if let Some(mut mesh) = meshes.get_mut(&handle.0) {
-            if td.uvs.len() == 0 {
-                continue;
-            }
             td.build_mesh_tiles(&mut mesh);
             //println!("Update mesh uvs. UvCount {}", mesh.attribute(ATTRIBUTE_UV).unwrap().len());
         }

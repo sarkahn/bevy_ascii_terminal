@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use bevy_ascii_terminal::*;
 
-const BORDERS: &[Option<Border>] = &[Some(Border::SINGLE_LINE), Some(Border::DOUBLE_LINE), None];
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -15,18 +13,29 @@ fn main() {
 const INFO_STRING: &str = "Arrow keys to resize\nSpacebar to change border";
 
 fn spawn(mut commands: Commands) {
-    let mut term = Terminal::new([25, 2]).with_border(Border::SINGLE_LINE);
+    let mut term = Terminal::new([25, 2]).with_border(Border::single_line());
     term.put_string([0, 0].pivot(Pivot::TopLeft), INFO_STRING);
-    commands.spawn((TerminalBundle::from(term), AutoCamera));
+    commands.spawn((
+        TerminalBundle::from(term), 
+        AutoCamera
+    ));
+
+    //commands.spawn(TiledCameraBundle::new().with_tile_count([30, 10]));
 }
 
 fn input(input: Res<Input<KeyCode>>, mut q_term: Query<&mut Terminal>, mut index: Local<usize>) {
+    let borders = &[
+        Some(Border::single_line()), 
+        Some(Border::double_line()),
+        None
+    ];
+
     let mut cleared = false;
     if input.just_pressed(KeyCode::Space) {
         let mut term = q_term.single_mut();
 
-        *index = (*index + 1) % BORDERS.len();
-        if let Some(border) = BORDERS[*index].clone() {
+        *index = (*index + 1) % borders.len();
+        if let Some(border) = borders[*index].clone() {
             term.set_border(border);
         } else {
             term.remove_border();

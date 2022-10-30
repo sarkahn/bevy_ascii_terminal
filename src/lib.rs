@@ -87,7 +87,7 @@ pub mod prelude {
     #[cfg(feature = "camera")]
     pub use crate::renderer::AutoCamera;
     pub use crate::{
-        border::{Border, Edge},
+        border::{Border, AlignedStringFormatter, Edge},
         entity::ClearAfterRender,
         entity::TerminalBundle,
         formatting::*,

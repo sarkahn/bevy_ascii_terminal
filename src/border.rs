@@ -2,6 +2,10 @@
 
 // use crate::{Tile, FormattedTile, TileFormatter};
 
+use bevy::{utils::HashMap, prelude::Color};
+
+use crate::{StringFormatter, FormattedString};
+
 /// Specifies the style of lines to use along the border of a box.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Border {
@@ -13,36 +17,74 @@ pub struct Border {
     pub top_right: char,
     pub bottom_left: char,
     pub bottom_right: char,
+    pub(crate) edge_strings: HashMap<Edge, AlignedString>,
+}
+
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct AlignedString {
+    pub align: f32,
+    pub string: String,
+    pub fg_col: Option<Color>,
+    pub bg_col: Option<Color>,
+}
+
+pub trait AlignedStringFormatter {
+    fn fg_col(self, color: Color) -> AlignedString;
+    fn bg_col(self, color: Color) -> AlignedString;
+    fn aligned(self, align: f32) -> AlignedString;
+}
+
+impl AlignedStringFormatter for AlignedString {
+    fn fg_col(mut self, color: Color) -> AlignedString {
+        self.fg_col = Some(color);
+        self
+    }
+
+    fn bg_col(mut self, color: Color) -> AlignedString {
+        self.bg_col = Some(color);
+        self
+    }
+
+    fn aligned(mut self, align: f32) -> AlignedString {
+        self.align = align;
+        self
+    }
 }
 
 impl Default for Border {
     fn default() -> Self {
-        Border::SINGLE_LINE
+        Border::single_line()
     }
 }
 
 impl Border {
-    pub const SINGLE_LINE: Border = Border {
-        top: '─',
-        left: '│',
-        right: '│',
-        bottom: '─',
-        top_left: '┌',
-        top_right: '┐',
-        bottom_left: '└',
-        bottom_right: '┘',
-    };
+    pub fn single_line() -> Border {
+        Self {
+            top: '─',
+            left: '│',
+            right: '│',
+            bottom: '─',
+            top_left: '┌',
+            top_right: '┐',
+            bottom_left: '└',
+            bottom_right: '┘',
+            edge_strings: Default::default(),
+        }
+    }
 
-    pub const DOUBLE_LINE: Border = Border {
-        top: '═',
-        left: '║',
-        right: '║',
-        bottom: '═',
-        top_left: '╔',
-        top_right: '╗',
-        bottom_left: '╚',
-        bottom_right: '╝',
-    };
+    pub fn double_line() -> Border {
+        Border {
+            top: '═',
+            left: '║',
+            right: '║',
+            bottom: '═',
+            top_left: '╔',
+            top_right: '╗',
+            bottom_left: '╚',
+            bottom_right: '╝',
+            ..Default::default()
+        }
+    }
 
     /// Construct a new [Border] from the given string.
     ///
@@ -96,6 +138,16 @@ impl Border {
             Edge::BottomRight => self.bottom_right,
         }
     }
+
+    pub fn with_title(mut self,title: impl Into<AlignedString>) -> Self {
+        self.edge_strings.insert(Edge::Top, title.into());
+        self
+    }
+
+    pub fn set_title_string(&mut self, title: impl Into<String>) {
+        let string = self.edge_strings.entry(Edge::Top).or_default();
+        string.string = title.into();
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -110,6 +162,85 @@ pub enum Edge {
     BottomRight,
 }
 
+impl AlignedStringFormatter for &String {
+    fn fg_col(self, color: Color) -> AlignedString {
+        AlignedString { 
+            string: self.to_string(),
+            fg_col: Some(color),
+            ..Default::default() 
+        }
+    }
+
+    fn bg_col(self, color: Color) -> AlignedString {
+        AlignedString { 
+            string: self.to_string(),
+            bg_col: Some(color),
+            ..Default::default() 
+        }
+    }
+
+    fn aligned(self, align: f32) -> AlignedString {
+        AlignedString { 
+            string: self.to_string(),
+            align: align,
+            ..Default::default() 
+        }
+    }
+}
+
+impl AlignedStringFormatter for &str {
+    fn fg_col(self, color: Color) -> AlignedString {
+        AlignedString { 
+            string: self.to_string(),
+            fg_col: Some(color),
+            ..Default::default() 
+        }
+    }
+
+    fn bg_col(self, color: Color) -> AlignedString {
+        AlignedString { 
+            string: self.to_string(),
+            bg_col: Some(color),
+            ..Default::default() 
+        }
+    }
+
+    fn aligned(self, align: f32) -> AlignedString {
+        AlignedString { 
+            string: self.to_string(),
+            align: align,
+            ..Default::default() 
+        }
+    }
+}
+
+impl From<&str> for AlignedString {
+    fn from(string: &str) -> Self {
+        AlignedString {
+            string: string.to_string(),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<String> for AlignedString {
+    fn from(string: String) -> Self {
+        AlignedString {
+            string: string,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<&String> for AlignedString {
+    fn from(string: &String) -> Self {
+        AlignedString {
+            string: string.to_owned(),
+            ..Default::default()
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     // use crate::Tile;
@@ -119,7 +250,7 @@ mod test {
 
     #[test]
     fn format_test() {
-        let border = Border::SINGLE_LINE;
+        let border = Border::single_line();
 
         assert_eq!('─', border.top);
         assert_eq!('┌', border.top_left);
@@ -141,5 +272,10 @@ mod test {
         assert_eq!(glyphs.top_right, '┐');
         assert_eq!(glyphs.bottom_left, '└');
         assert_eq!(glyphs.bottom_right, '┘');
+    }
+
+    #[test]
+    fn title() {
+        let b = Border::single_line().with_title("Hello".aligned(0.5));
     }
 }

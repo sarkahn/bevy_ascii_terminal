@@ -1,5 +1,5 @@
 use bevy::prelude::{default, Bundle, Changed, Component, Query, With};
-use sark_grids::{GridPoint, Size2d};
+use sark_grids::{GridPoint, Size2d, Pivot};
 
 use crate::{renderer::{self, TileScaling}, Border, Terminal, TerminalFont, TerminalLayout};
 
@@ -38,6 +38,11 @@ impl TerminalBundle {
 
     pub fn with_border(mut self, border: Border) -> Self {
         self.terminal.set_border(border);
+        self
+    }
+
+    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
+        self.layout.pivot = pivot;
         self
     }
 

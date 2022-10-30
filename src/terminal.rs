@@ -521,7 +521,7 @@ impl Terminal {
     }
 
     pub fn bounds_with_border(&self) -> GridRect {
-        let bounds = self.bounds_without_border();
+        let bounds = self.bounds();
         if self.has_border() {
             bounds.resized([1,1])
         } else {
@@ -529,10 +529,10 @@ impl Terminal {
         }
     }
 
-    pub fn bounds_without_border(&self) -> GridRect {
+    pub fn bounds(&self) -> GridRect {
         let mut bounds = self.tiles.bounds();
         bounds.center -= self.size.as_ivec2() / 2;
-        println!("TERM BOUNDS {}", bounds);
+        //println!("TERM BOUNDS {}", bounds);
         bounds 
     }
 }

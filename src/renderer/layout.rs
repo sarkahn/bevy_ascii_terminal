@@ -1,7 +1,7 @@
 use bevy::{prelude::{Component, UVec2, Vec2, IVec2}, math::uvec2};
 use sark_grids::{Pivot, geometry::GridRect};
 
-use crate::{Border, Terminal};
+use crate::{Border, Terminal, Tile};
 
 use super::TileScaling;
 
@@ -15,11 +15,12 @@ pub struct TerminalLayout {
     pub scaling: TileScaling,
     pub(crate) pivot: Pivot,
     //pub(crate) border_entity: Option<Entity>,
-    pub(crate) border: Option<Border>,
+    border: Option<Border>,
     pub(crate) pixels_per_tile: UVec2,
     pub(crate) tile_size: Vec2,
     pub(crate) pos: IVec2,
-    pub(crate) bounds: GridRect,
+    bounds: GridRect,
+    clear_tile: Tile,
 }
 
 impl Default for TerminalLayout {
@@ -29,10 +30,10 @@ impl Default for TerminalLayout {
             scaling: TileScaling::World,
             pixels_per_tile: uvec2(8, 8),
             pivot: Pivot::Center,
-            //border_entity: None,
             border: None,
             pos: Default::default(),
             bounds: GridRect::new([0,0], [1,1]),
+            clear_tile: Default::default(),
         }
     }
 }
@@ -40,7 +41,7 @@ impl Default for TerminalLayout {
 impl TerminalLayout {
     /// Returns the bottom left point of the terminal in world space.
     pub fn origin(&self) -> Vec2 {
-        let pivot = Vec2::splat(0.5);
+        let pivot = Vec2::from(self.pivot);
         -(self.bounds.size().as_vec2() * self.tile_size * pivot)
     }
 
@@ -53,11 +54,18 @@ impl TerminalLayout {
     }
 
     pub(crate) fn update_state(&mut self, term: &Terminal, pos: IVec2) {
-        self.border = term.border().cloned();
-        let mut bounds = term.bounds_without_border();
-        bounds.center += pos;
-        self.bounds = bounds;
-        self.pos = pos;
+        if self.border.as_ref() != term.border() {
+            self.border = term.border().cloned();
+        }
+        if self.bounds != term.bounds() {
+            self.bounds = term.bounds();
+        }
+        if self.pos != pos {
+            self.pos = pos;
+        }
+        if self.clear_tile != term.clear_tile {
+            self.clear_tile = term.clear_tile;
+        }
     }
 
     pub fn width(&self) -> usize {
@@ -68,16 +76,28 @@ impl TerminalLayout {
         self.bounds.size().y as usize
     }
 
-    pub fn bounds_without_border(&self) -> GridRect {
-        self.bounds
+    pub fn bounds(&self) -> GridRect {
+        self.bounds.pivoted(self.pivot).translated(self.pos)
     }
 
     pub fn bounds_with_border(&self) -> GridRect {
         if self.border.is_some() {
-            self.bounds.resized([1,1])
+            self.bounds().resized([2,2])
         } else {
-            self.bounds
+            self.bounds()
         }
+    }
+
+    pub fn has_border(&self) -> bool {
+        self.border.is_some()
+    }
+
+    pub fn clear_tile(&self) -> Tile {
+        self.clear_tile
+    }
+
+    pub fn border(&self) -> Option<&Border> {
+        self.border.as_ref()
     }
 }
 
@@ -85,7 +105,7 @@ impl From<&Terminal> for TerminalLayout {
     fn from(t: &Terminal) -> Self {
         Self {
             border: t.border().cloned(),
-            bounds: t.bounds_with_border(),
+            bounds: t.bounds(),
             ..Default::default()
         }
     }

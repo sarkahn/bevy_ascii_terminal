@@ -1,22 +1,22 @@
-use bevy::{prelude::{Assets, Added, Commands, Entity, Query, Changed, Handle, Res, Or, GlobalTransform}};
+use bevy::{prelude::{Assets, Added, Commands, Entity, Query, Changed, Handle, Res, Or, GlobalTransform, BuildChildren}};
 use sark_grids::Size2d;
 
 use crate::{TerminalLayout, Terminal};
 
-use super::{mesh_data::{VertData, VertMesher, TileData, UvMesher}, uv_mapping::UvMapping};
+use super::{mesh_data::{VertData, VertMesher, TileData, UvMesher}, uv_mapping::UvMapping, TerminalRenderBundle, border_mesh::BorderMesh};
 
 
 pub(crate) fn init_terminal(
     mut q: Query<Entity, Added<Terminal>>,
-    _commands: Commands,
+    mut commands: Commands,
 ) {
-    for _term_entity in q.iter_mut() {
-        // let border = commands.spawn((
-        //     TerminalRenderBundle::default(),
-        //     BorderMesh::default(),
-        // )).id();
+    for term_entity in q.iter_mut() {
+        let border = commands.spawn((
+            TerminalRenderBundle::default(),
+            BorderMesh::default(),
+        )).id();
 
-        // commands.entity(term_entity).push_children(&[border]);
+        commands.entity(term_entity).push_children(&[border]);
     }
 }
 
@@ -26,7 +26,7 @@ pub(crate) fn update_layout(
 ) {
     for (term, mut layout, transform) in &mut q_term {
         if layout.term_size() != term.size() 
-        || layout.border.as_ref() != term.border()
+        || layout.border() != term.border()
         {
             println!("Updating layout");
             let pos = transform.translation().truncate().as_ivec2();
@@ -51,8 +51,8 @@ pub(crate) fn update_vert_data(
         verts.clear();
         verts.reserve(layout.term_size().len());
         
-        let origin = layout.origin();
-        println!("Origin {}", origin);
+        //let origin = layout.origin();
+        //println!("Origin {}", origin);
         let mut mesher = VertMesher::new(
             layout.origin(), 
             layout.tile_size, 

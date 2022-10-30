@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 use crate::Tile;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StringModifier {
     FgColor(Color),
     BgColor(Color),
@@ -25,14 +25,14 @@ pub trait StringFormatter<'a>: Clone {
     fn apply(&self, tile: &mut Tile);
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct FormattedString<'a> {
     pub string: Cow<'a, str>,
     pub writes: ArrayVec<StringModifier, 3>,
 }
 
 impl<'a> FormattedString<'a> {
-    fn new(string: impl Into<Cow<'a, str>>) -> Self {
+    pub(crate) fn new(string: impl Into<Cow<'a, str>>) -> Self {
         FormattedString {
             string: string.into(),
             ..Default::default()

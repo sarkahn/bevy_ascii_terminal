@@ -24,7 +24,7 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         TerminalBundle::new()
             .with_size([80, 50])
-            .with_border(Border::SINGLE_LINE),
+            .with_border(Border::single_line()),
         AutoCamera,
     ));
 }

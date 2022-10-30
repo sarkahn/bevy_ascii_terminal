@@ -10,7 +10,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let mut term = Terminal::new([17, 1]).with_border(Border::SINGLE_LINE);
+    let mut term = Terminal::new([17, 1]).with_border(Border::single_line());
 
     term.put_string([0, 0], "Hello, world! ☺");
 

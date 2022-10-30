@@ -15,20 +15,18 @@ use bevy::prelude::Plugin;
 use bevy::prelude::Query;
 use bevy::prelude::Transform;
 use bevy::prelude::With;
+use bevy::prelude::info;
 use bevy::prelude::{App, CoreStage};
 pub use bevy_tiled_camera::TiledCamera;
 pub use bevy_tiled_camera::TiledCameraBundle;
 use bevy_tiled_camera::TiledCameraPlugin;
 
-/// This component can be added to a terminal entity as a simple way to have
-/// that terminal be the primary focus for the camera.
+/// This component can be added to terminal entities as a simple way to have
+/// have the camera render the terminals. The camera viewport will automatically
+/// be resized to contain all terminal entities with this component.
 ///
 /// If no camera exists, one will be automatically created. If a camera exists,
-/// the first one found will be made to focus on the terminal.
-///
-/// When a terminal is focused by a camera the viewport will automatically
-/// be adjusted to display the entire terminal, scaled up as much as it can be
-/// while avoiding pixel artifacts.  
+/// the first one found will be used.
 ///
 /// # Example
 ///
@@ -37,72 +35,22 @@ use bevy_tiled_camera::TiledCameraPlugin;
 /// use bevy_ascii_terminal::*;
 ///
 /// fn setup(mut commands: Commands) {
-///     let mut term = Terminal::with_size([10,3]);
+///     let mut term = Terminal::with_size([7,3]);
 ///     term.put_string([1,1], "Hello");
 ///
-///     commands.spawn_bundle(TerminalBundle::from(term))
-///     .insert(AutoCamera);
+///     commands.spawn((
+///         TerminalBundle::from(term),
+///         AutoCamera
+///     ));
 /// }
 /// ```
 #[derive(Component)]
 pub struct AutoCamera;
 
-/// Will track changes to the target terminal and update the viewport so the
+/// Will track changes to a terminal and update the viewport so the
 /// entire terminal can be visible.
 #[derive(Default, Debug, Component)]
 struct TerminalCamera;
-
-
-// #[allow(clippy::type_complexity)]
-// fn update_from_new(
-//     mut q_cam: Query<
-//         (&mut TiledCamera, &TerminalCamera),
-//         (Changed<TerminalCamera>, With<TiledCamera>),
-//     >,
-//     q_term: Query<(&Terminal, &TerminalLayout)>,
-// ) {
-//     if q_cam.is_empty() || q_term.is_empty() {
-//         return;
-//     }
-
-//     for (mut cam, tcam) in q_cam.iter_mut() {
-//         if let Some(term) = tcam.terminal {
-//             if let Ok((term, layout)) = q_term.get(term) {
-//                 cam.tile_count = term.size_with_border();
-//                 cam.pixels_per_tile = layout.pixels_per_tile();
-//                 match layout.scaling {
-//                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
-//                     TileScaling::Pixels => cam.set_world_space(WorldSpace::Pixels),
-//                 }
-//             }
-//         }
-//     }
-// }
-
-// #[allow(clippy::type_complexity)]
-// fn update_from_terminal_change(
-//     q_term: Query<(&Terminal, &TerminalLayout), Changed<TerminalLayout>>,
-//     mut q_cam: Query<(&mut TiledCamera, &TerminalCamera)>,
-// ) {
-//     // Check if any terminals changed
-//     if q_term.is_empty() {
-//         return;
-//     }
-
-//     for (mut cam, term) in q_cam.iter_mut() {
-//         if let Some(term) = term.terminal {
-//             if let Ok((term, layout)) = q_term.get(term) {
-//                 //info!("Updating camera. PPT {}", layout.pixels_per_tile());
-//                 cam.tile_count = term.size_with_border();
-//                 cam.pixels_per_tile = layout.pixels_per_tile();
-//                 match layout.scaling {
-//                     TileScaling::World => cam.set_world_space(WorldSpace::Units),
-//                     TileScaling::Pixels => cam.set_world_space(WorldSpace::Pixels),
-//                 }
-//             }
-//         }
-//     }
-// }
 
 pub(crate) struct TerminalCameraPlugin;
 
@@ -114,24 +62,9 @@ impl Plugin for TerminalCameraPlugin {
             update
             .with_run_criteria(update_cam_conditions)
             .after(super::TERMINAL_LAYOUT_CHANGE)
-        )
-        //     .add_system_to_stage(
-        //         CoreStage::Last,
-        //         update_from_new.after(TERMINAL_LAYOUT_CHANGE),
-        //     )
-        //     .add_system_to_stage(
-        //         CoreStage::Last,
-        //         update_from_terminal_change.after(TERMINAL_LAYOUT_CHANGE),
-        //     
-        ;
+        );
     }
 }
-
-// fn update_from_new(
-//     q_terminals: Query<&TerminalLayout, (With<AutoCamera>, Changed<TerminalLayout>)>,
-//     mut q_cam: Query<(&mut TiledCamera, &mut Transform), With<TerminalCamera>>,
-// )
-
 
 fn init_camera(
     mut commands: Commands,
@@ -143,7 +76,7 @@ fn init_camera(
     if !q_term.is_empty() {
         // Camera not set up yet, create one
         if q_cam.is_empty() {
-            println!("Spawning auto camera");
+            //println!("Spawning auto camera");
             commands.spawn((
                 TiledCameraBundle::new(),
                 TerminalCamera
@@ -165,13 +98,16 @@ fn update(
     mut q_cam: Query<(&mut TiledCamera, &mut Transform), With<TerminalCamera>>,
 ) { 
     if let Ok((mut cam, mut transform)) = q_cam.get_single_mut() {
-        let mut iter = q_terminals.iter().map(|layout| layout.bounds_without_border());
+        let mut iter = q_terminals.iter().map(|layout| layout.bounds_with_border());
+        for rect in q_terminals.iter().map(|layout| layout.bounds_with_border()) {
+            info!("Rect {:?}, Min {}, max {}", rect, rect.min_i(), rect.max_i());
+        }
         if let Some(mut rect) = iter.next() {
             while let Some(next) = iter.next() {
                 rect.envelope_rect(next);
             }
     
-            println!("Updating camera bounds. Final Rect {}", rect);
+            info!("Updating camera bounds. Final Rect {}", rect);
             cam.tile_count = rect.size().as_uvec2();
             let z = transform.translation.z;
             transform.translation = rect.center.as_vec2().extend(z);
