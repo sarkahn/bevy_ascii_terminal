@@ -1,4 +1,10 @@
-use bevy::{prelude::{Mesh, Component, Vec2, Vec3, Color}, render::{mesh::{VertexAttributeValues, Indices, MeshVertexAttribute}, render_resource::VertexFormat}};
+use bevy::{
+    prelude::{Color, Component, Mesh, Vec2, Vec3},
+    render::{
+        mesh::{Indices, MeshVertexAttribute, VertexAttributeValues},
+        render_resource::VertexFormat,
+    },
+};
 use sark_grids::{point::Point2d, GridPoint};
 
 use super::uv_mapping::UvMapping;
@@ -12,7 +18,7 @@ pub const ATTRIBUTE_COLOR_FG: MeshVertexAttribute =
 
 #[derive(Debug, Default, Component)]
 pub struct VertData {
-    pub verts: Vec<[f32;3]>,
+    pub verts: Vec<[f32; 3]>,
     pub indices: Vec<u32>,
 }
 
@@ -50,9 +56,9 @@ impl VertData {
 
 #[derive(Debug, Default, Component)]
 pub struct TileData {
-    pub uvs: Vec<[f32;2]>,
-    pub fg: Vec<[f32;4]>,
-    pub bg: Vec<[f32;4]>,
+    pub uvs: Vec<[f32; 2]>,
+    pub fg: Vec<[f32; 4]>,
+    pub bg: Vec<[f32; 4]>,
 }
 
 impl TileData {
@@ -69,7 +75,8 @@ impl TileData {
     }
 
     pub fn build_mesh_tiles(&mut self, mesh: &mut Mesh) {
-        let uvs = mesh.attribute_mut(ATTRIBUTE_UV)
+        let uvs = mesh
+            .attribute_mut(ATTRIBUTE_UV)
             .expect("Error retrieving mesh uv data");
         let uvs = match uvs {
             VertexAttributeValues::Float32x2(uvs) => uvs,
@@ -78,7 +85,8 @@ impl TileData {
         uvs.clear();
         uvs.append(&mut self.uvs);
 
-        let fg_cols = mesh.attribute_mut(ATTRIBUTE_COLOR_FG)
+        let fg_cols = mesh
+            .attribute_mut(ATTRIBUTE_COLOR_FG)
             .expect("Error retrieving terminal mesh fg colors");
         let fg_cols = match fg_cols {
             VertexAttributeValues::Float32x4(fg) => fg,
@@ -87,7 +95,8 @@ impl TileData {
         fg_cols.clear();
         fg_cols.append(&mut self.fg);
 
-        let bg_cols = mesh.attribute_mut(ATTRIBUTE_COLOR_BG)
+        let bg_cols = mesh
+            .attribute_mut(ATTRIBUTE_COLOR_BG)
             .expect("Error retrieving terminal mesh bg colors");
         let bg_cols = match bg_cols {
             VertexAttributeValues::Float32x4(bg) => bg,
@@ -98,7 +107,6 @@ impl TileData {
     }
 }
 
-
 /// Helper for building the terminal mesh's vertex data.
 pub struct VertMesher<'a> {
     pub tile_size: Vec2,
@@ -107,11 +115,7 @@ pub struct VertMesher<'a> {
 }
 
 impl<'a> VertMesher<'a> {
-    pub fn new(
-        origin: impl Point2d, 
-        tile_size: impl Point2d,
-        vert_data: &'a mut VertData,
-    ) -> Self {
+    pub fn new(origin: impl Point2d, tile_size: impl Point2d, vert_data: &'a mut VertData) -> Self {
         //println!("Starting new mesher at {}", origin.as_vec2());
         Self {
             tile_size: tile_size.as_vec2(),
@@ -134,7 +138,6 @@ impl<'a> VertMesher<'a> {
             .extend(&[p + up, p, p + right + up, p + right].map(|p| p.to_array()));
         vd.indices
             .extend(&[vi, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
-
     }
 }
 
@@ -145,15 +148,8 @@ pub struct UvMesher<'a> {
 }
 
 impl<'a> UvMesher<'a> {
-
-    pub fn new(
-        mapping: &'a UvMapping,
-        tile_data: &'a mut TileData,
-    ) -> Self {
-        Self {
-            mapping,
-            tile_data
-        }
+    pub fn new(mapping: &'a UvMapping, tile_data: &'a mut TileData) -> Self {
+        Self { mapping, tile_data }
     }
 
     /// Generate tile uvs for the next tile. Note these are not positional,
@@ -171,18 +167,18 @@ impl<'a> UvMesher<'a> {
 
 #[cfg(test)]
 mod test {
-    use bevy::{prelude::{Color}};
+    use bevy::prelude::Color;
 
-    use crate::renderer::{uv_mapping::UvMapping};
+    use crate::renderer::uv_mapping::UvMapping;
 
     use super::*;
 
     #[test]
     fn mesher() {
         let mut vd = VertData::default();
-        let mut mesher = VertMesher::new([0,0], [1.0,1.0], &mut vd);
+        let mut mesher = VertMesher::new([0, 0], [1.0, 1.0], &mut vd);
 
-        mesher.tile_verts_at([1,1]);
+        mesher.tile_verts_at([1, 1]);
 
         assert_eq!(4, vd.verts.len());
         assert_eq!(6, vd.indices.len());

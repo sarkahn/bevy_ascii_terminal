@@ -1,8 +1,6 @@
-use std::borrow::Borrow;
 use std::ops::Div;
 use std::ops::RangeBounds;
 use std::ops::Sub;
-
 
 use bevy::math::IVec2;
 use bevy::math::UVec2;
@@ -16,12 +14,10 @@ use sark_grids::Grid;
 use sark_grids::GridPoint;
 use sark_grids::Size2d;
 
-use crate::TileFormatter;
 use crate::border::Border;
 use crate::fmt_tile::ColorFormat;
 use crate::formatting::StringFormatter;
-use crate::ui::ui_box::UiBox;
-use crate::ui::UiProgressBar;
+use crate::TileFormatter;
 
 /// A simple terminal for writing text in a readable grid.
 ///
@@ -33,14 +29,14 @@ use crate::ui::UiProgressBar;
 /// use bevy_ascii_terminal::*;
 /// use bevy::prelude::Color;
 ///
-/// let mut term = Terminal::with_size([10,10]);
+/// let mut term = Terminal::new([10,10]);
 ///
 /// term.put_char([1,1], 'h'.fg(Color::RED));
 /// term.put_string([2,1], "ello".bg(Color::BLUE));
 ///
 /// let hello = term.get_string([1,1], 5);
 /// ```
-#[derive(Component, Clone, Debug)]
+#[derive(Component, Clone, Debug, Default)]
 pub struct Terminal {
     tiles: Grid<Tile>,
     size: UVec2,
@@ -54,17 +50,6 @@ pub struct Terminal {
     /// terminal positions and sizes do not include the border unless otherwise
     /// specified.
     border: Option<Border>,
-}
-
-impl Default for Terminal {
-    fn default() -> Self {
-        Self { 
-            tiles: Default::default(), 
-            size: Default::default(), 
-            clear_tile: Default::default(), 
-            border: Default::default(),
-        }
-    }
 }
 
 /// A single tile of the terminal.
@@ -141,7 +126,7 @@ impl Terminal {
         self.clear();
         self
     }
-    
+
     pub fn set_border(&mut self, border: Border) {
         self.border = Some(border);
     }
@@ -238,7 +223,7 @@ impl Terminal {
     /// use bevy_ascii_terminal::prelude::*;
     /// use bevy::prelude::Color;
     ///
-    /// let mut term = Terminal::with_size([10,10]);
+    /// let mut term = Terminal::new([10,10]);
     /// // Insert an 'a' with a blue foreground and a red background.
     /// term.put_char([2,3], 'a'.fg(Color::BLUE).bg(Color::RED));
     /// // Replace the 'a' with a 'q'. Foreground and background color will be
@@ -257,7 +242,7 @@ impl Terminal {
     /// ```rust
     /// use bevy::prelude::*;
     /// use bevy_ascii_terminal::prelude::*;
-    /// let mut term = Terminal::with_size([10,10]);
+    /// let mut term = Terminal::new([10,10]);
     ///
     /// // Set the background color for the given tile to blue.
     /// term.put_color([3,3], Color::BLUE.bg());
@@ -289,7 +274,7 @@ impl Terminal {
     /// use bevy_ascii_terminal::prelude::*;
     /// use bevy::prelude::Color;
     ///
-    /// let mut term = Terminal::with_size([10,10]);
+    /// let mut term = Terminal::new([10,10]);
     /// // Write a blue "Hello" to the terminal
     /// term.put_string([1,2], "Hello".fg(Color::BLUE));
     /// // Write "Hello" with a green background
@@ -307,7 +292,7 @@ impl Terminal {
     /// use bevy_ascii_terminal::*;
     /// use bevy::prelude::Color;
     ///
-    /// let mut term = Terminal::with_size([10,10]);
+    /// let mut term = Terminal::new([10,10]);
     /// // Write a mutli-line string to the center of the terminal
     /// term.put_string([0,0].pivot(Pivot::Center), "Hello\nHow are you?");
     /// ```
@@ -396,29 +381,6 @@ impl Terminal {
         }
     }
 
-    /// Draw a formatted box to the terminal.
-    /// # Example
-    ///
-    /// ```rust
-    /// use bevy_ascii_terminal::*;
-    /// use bevy_ascii_terminal::ui::*;
-    ///
-    /// let mut term = Terminal::with_size([10,10]);
-    /// term.draw_box([0,0], [3,3], UiBox::single_line());
-    /// ```
-    pub fn draw_box(&mut self, xy: impl GridPoint, size: impl Size2d, ui_box: impl Borrow<UiBox>) {
-        ui_box.borrow().draw(xy, size, self);
-    }
-
-    pub fn draw_progress_bar(
-        &mut self,
-        xy: impl GridPoint,
-        size: usize,
-        bar: impl Borrow<UiProgressBar>,
-    ) {
-        bar.borrow().draw(xy, size, self);
-    }
-
     /// Clear the terminal tiles to the terminal's `clear_tile`.
     pub fn clear(&mut self) {
         for t in self.tiles.iter_mut() {
@@ -498,7 +460,7 @@ impl Terminal {
         self.tiles.side_index(side)
     }
 
-    /// Transform a position from terminal local space (origin bottom left) to 
+    /// Transform a position from terminal local space (origin bottom left) to
     /// world space (origin center).
     #[inline]
     pub fn transform_ltw(&self, pos: impl GridPoint) -> IVec2 {
@@ -523,7 +485,7 @@ impl Terminal {
     pub fn bounds_with_border(&self) -> GridRect {
         let bounds = self.bounds();
         if self.has_border() {
-            bounds.resized([1,1])
+            bounds.resized([1, 1])
         } else {
             bounds
         }
@@ -533,7 +495,7 @@ impl Terminal {
         let mut bounds = self.tiles.bounds();
         bounds.center -= self.size.as_ivec2() / 2;
         //println!("TERM BOUNDS {}", bounds);
-        bounds 
+        bounds
     }
 }
 
@@ -563,7 +525,7 @@ mod tests {
         // term.put_string([0, 0], "Hello");
         // assert_eq!("Hello", term.get_string([0, 0], 5));
 
-        term.put_string([1,1], "Hello");
+        term.put_string([1, 1], "Hello");
         assert_eq!("He", term.get_string([1, 1], 2));
     }
 }

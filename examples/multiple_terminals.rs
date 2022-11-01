@@ -18,19 +18,19 @@ fn setup(mut commands: Commands) {
         TerminalBundle::from(term.clone())
             .with_position([0, 3])
             .with_font(TerminalFont::Px4378x8),
-        AutoCamera
+        AutoCamera,
     ));
 
     commands.spawn((
         TerminalBundle::from(term.clone())
             .with_position([0, 0])
             .with_font(TerminalFont::Pastiche8x8),
-        AutoCamera
+        AutoCamera,
     ));
     commands.spawn((
         TerminalBundle::from(term.clone())
             .with_position([0, -3])
             .with_font(TerminalFont::ZxEvolution8x8),
-        AutoCamera
+        AutoCamera,
     ));
 }

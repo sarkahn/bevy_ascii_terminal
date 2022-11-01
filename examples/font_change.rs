@@ -29,20 +29,21 @@ fn spawn_terminal(mut commands: Commands) {
     //let title = BorderTitle::new(font.variant_name().to_uppercase()).color(Color::RED);
     let mut term = Terminal::new(size)
         .with_clear_tile(' '.fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE))
-        .with_border(Border::single_line().with_title(
-            font.variant_name().to_uppercase()
-                .aligned(0.1).fg_col(Color::RED)
-        ));
+        .with_border(
+            Border::single_line().with_title(
+                font.variant_name()
+                    .to_uppercase()
+                    .aligned(0.1)
+                    .fg_col(Color::RED),
+            ),
+        );
 
     //draw_title(&mut term, font.variant_name());
     term.put_string(
         [0, 1].pivot(Pivot::TopLeft),
         "Press spacebar to change fonts",
     );
-    term.put_string(
-        [0, 3].pivot(Pivot::TopLeft),
-        "!@#$%^&*()_+=-`~",
-    );
+    term.put_string([0, 3].pivot(Pivot::TopLeft), "!@#$%^&*()_+=-`~");
     term.put_string(
         [0, 5].pivot(Pivot::TopLeft),
         "The quick brown fox jumps over the lazy dog.",
@@ -57,7 +58,6 @@ fn spawn_terminal(mut commands: Commands) {
     );
     commands.spawn((TerminalBundle::from(term), AutoCamera));
 }
-
 
 fn change_font(
     keys: Res<Input<KeyCode>>,

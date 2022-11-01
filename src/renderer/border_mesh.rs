@@ -1,11 +1,21 @@
 //use std::collections::BTreeMap;
 
-use bevy::{utils::HashMap, prelude::{Changed, Query, Component, Children, Handle, IVec2, Vec2, Assets, Res, Plugin, CoreStage, IntoSystemDescriptor, DetectChanges, ChangeTrackers}, ecs::schedule::ShouldRun};
-use sark_grids::{GridPoint, geometry::GridRect};
+use bevy::{
+    prelude::{
+        Added, Assets, BuildChildren, Changed, Children, Commands, Component, CoreStage, Entity,
+        Handle, IVec2, IntoSystemDescriptor, Plugin, Query, Res, Vec2,
+    },
+    utils::HashMap,
+};
+use sark_grids::GridPoint;
 
-use crate::{Edge, Tile, Terminal, TerminalLayout, Border, StringFormatter};
+use crate::{Edge, TerminalLayout, Tile};
 
-use super::{mesh_data::{TileData, VertData, VertMesher, UvMesher}, uv_mapping::UvMapping, TERMINAL_UPDATE_TILES, TERMINAL_RENDER};
+use super::{
+    mesh_data::{TileData, UvMesher, VertData, VertMesher},
+    uv_mapping::UvMapping,
+    TerminalRenderBundle, TERMINAL_INIT, TERMINAL_RENDER, TERMINAL_UPDATE_TILES,
+};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct BorderTile {
@@ -23,9 +33,9 @@ pub struct BorderMesh {
 
 impl Default for BorderMesh {
     fn default() -> Self {
-        Self { 
-            tiles: Default::default(), 
-            size: Default::default(), 
+        Self {
+            tiles: Default::default(),
+            size: Default::default(),
             tile_size: Vec2::ONE,
             clear_tile: Default::default(),
         }
@@ -33,13 +43,35 @@ impl Default for BorderMesh {
 }
 
 impl BorderMesh {
+    pub fn new(layout: &TerminalLayout) -> Self {
+        Self {
+            size: layout.term_size().as_ivec2(),
+            tile_size: layout.tile_size,
+            clear_tile: layout.clear_tile(),
+            ..Default::default()
+        }
+    }
+
     pub fn clear(&mut self) {
         self.tiles.clear();
     }
 
     pub fn put_tile(&mut self, xy: impl GridPoint, tile: Tile) {
-        let tile = BorderTile { pos: xy.as_ivec2(), tile };
+        let tile = BorderTile {
+            pos: xy.as_ivec2(),
+            tile,
+        };
         self.tiles.insert(xy.as_ivec2(), tile);
+    }
+}
+
+fn init(mut q: Query<(Entity, &TerminalLayout), Added<TerminalLayout>>, mut commands: Commands) {
+    for (term_entity, layout) in q.iter_mut() {
+        let border = commands
+            .spawn((TerminalRenderBundle::default(), BorderMesh::new(layout)))
+            .id();
+
+        commands.entity(term_entity).push_children(&[border]);
     }
 }
 
@@ -54,7 +86,7 @@ fn update(
 
                 mesh.clear();
                 if !layout.has_border() {
-                        return;
+                    return;
                 }
                 //println!("FOUND BORDER. Inserting border tiles");
 
@@ -65,16 +97,16 @@ fn update(
                 let h = mesh.size.y - 1;
 
                 let tile = get_tile(Edge::BottomLeft, layout);
-                mesh.put_tile([0,0], tile);
+                mesh.put_tile([0, 0], tile);
 
                 let tile = get_tile(Edge::TopLeft, layout);
-                mesh.put_tile([0,h], tile);
+                mesh.put_tile([0, h], tile);
 
                 let tile = get_tile(Edge::TopRight, layout);
-                mesh.put_tile([w,h], tile);
+                mesh.put_tile([w, h], tile);
 
                 let tile = get_tile(Edge::BottomRight, layout);
-                mesh.put_tile([w,0], tile);
+                mesh.put_tile([w, 0], tile);
 
                 let top = get_tile(Edge::Top, layout);
                 let bot = get_tile(Edge::Bottom, layout);
@@ -83,15 +115,15 @@ fn update(
                     mesh.put_tile([x as i32, 0], bot);
                 }
                 let left = get_tile(Edge::Left, layout);
-                let right  = get_tile(Edge::Right, layout);
+                let right = get_tile(Edge::Right, layout);
                 for y in 1..h {
                     mesh.put_tile([0, y as i32], left);
                     mesh.put_tile([w, y as i32], right);
                 }
 
                 let border = layout.border().unwrap();
-                
-                for (edge,aligned_string) in border.edge_strings.iter() {
+
+                for (edge, aligned_string) in border.edge_strings.iter() {
                     match edge {
                         Edge::Top => {
                             let align = aligned_string.align;
@@ -112,12 +144,12 @@ fn update(
                                 if let Some(col) = aligned_string.bg_col {
                                     tile.bg_color = col;
                                 }
-                                mesh.put_tile([x,h], tile);
+                                mesh.put_tile([x, h], tile);
                             }
 
-                            //let mut tile = 
+                            //let mut tile =
                             //mesh.put_tile(xy, tile)
-                        },
+                        }
                         Edge::Left => todo!(),
                         Edge::Right => todo!(),
                         Edge::Bottom => todo!(),
@@ -129,32 +161,36 @@ fn update(
                 }
             }
         }
-    } 
+    }
 }
 
-
 fn update_tile_data(
-    mut q_mesh: Query<(
-        &BorderMesh, &mut TileData, &mut VertData, &Handle<UvMapping>
-    ), 
-    Changed<BorderMesh>>,
+    mut q_mesh: Query<
+        (
+            &BorderMesh,
+            &mut TileData,
+            &mut VertData,
+            &Handle<UvMapping>,
+        ),
+        Changed<BorderMesh>,
+    >,
     mappings: Res<Assets<UvMapping>>,
 ) {
     for (bmesh, mut td, mut vd, mapping) in &mut q_mesh {
         td.clear();
         vd.clear();
-        if bmesh.tiles.len() == 0 {
+        if bmesh.tiles.is_empty() {
             continue;
         }
 
-        let origin = -(bmesh.size.as_vec2() / 2.0);
+        let origin = -(bmesh.size.as_vec2() / 2.0) * bmesh.tile_size;
         //println!("Update border tile data");
         let mapping = mappings.get(mapping).unwrap();
         let mut vmesher = VertMesher::new(origin, bmesh.tile_size, &mut vd);
         let mut tmesher = UvMesher::new(mapping, &mut td);
 
         //println!("border tiles {}", bmesh.tiles.len());
-        for (p,t) in bmesh.tiles.iter() {
+        for (p, t) in bmesh.tiles.iter() {
             let t = t.tile;
             vmesher.tile_verts_at(*p);
             tmesher.tile_uvs(t.glyph, t.fg_color, t.bg_color);
@@ -174,18 +210,16 @@ pub struct BorderMeshPlugin;
 
 impl Plugin for BorderMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system_to_stage(
-            CoreStage::Last,
-            update
-                .after(TERMINAL_UPDATE_TILES)
-                .before(TERMINAL_RENDER)
-                //.with_run_criteria(should_update)
-        )
-        .add_system_to_stage(CoreStage::Last, 
-            update_tile_data
-                .after(TERMINAL_UPDATE_TILES)
-                .before(TERMINAL_RENDER)
-        );
+        app.add_system_to_stage(CoreStage::PostUpdate, init.label(TERMINAL_INIT))
+            .add_system_to_stage(
+                CoreStage::Last,
+                update.after(TERMINAL_UPDATE_TILES).before(TERMINAL_RENDER), //.with_run_criteria(should_update)
+            )
+            .add_system_to_stage(
+                CoreStage::Last,
+                update_tile_data
+                    .after(TERMINAL_UPDATE_TILES)
+                    .before(TERMINAL_RENDER),
+            );
     }
 }
-

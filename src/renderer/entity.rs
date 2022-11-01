@@ -1,18 +1,19 @@
 //! Terminal components
 
-
 use bevy::{
-    prelude::{Bundle, Component, Deref, UVec2, Handle},
+    prelude::{Bundle, Component, Deref, Handle, UVec2},
     sprite::MaterialMesh2dBundle,
 };
 
-use crate::{TerminalMaterial};
+use crate::TerminalMaterial;
 
-use super::{uv_mapping::UvMapping, mesh_data::{TileData, VertData}};
+use super::{
+    mesh_data::{TileData, VertData},
+    uv_mapping::UvMapping,
+};
 
 #[derive(Component, Deref)]
 pub struct TerminalSize(pub UVec2);
-
 
 /// Terminal component specifying how terminal mesh tiles will be scaled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,7 +43,6 @@ impl TerminalRenderBundle {
     }
 }
 
-
 #[derive(Component)]
 pub(crate) struct TerminalBorder;
 
@@ -54,15 +54,15 @@ mod test {
     //     let b = bounds(Pivot::TopRight, [1,1], [3,3]);
     //     let [min,max] = b.min_max_i();
     //     println!("{:?}\nMin {}, max {}", b, min, max);
-        
+
     //     // let b = bounds(Pivot::TopLeft, [0,0], [3,3]);
     //     // let [min,max] = b.min_max_i();
     //     // println!("{:?}\nMin {}, max {}", b, min, max);
-        
+
     //     // let b = bounds(Pivot::BottomLeft, [0,0], [3,3]);
     //     // let [min,max] = b.min_max_i();
     //     // println!("{:?}\nMin {}, max {}", b, min, max);
-        
+
     //     // let b = bounds(Pivot::BottomRight, [0,0], [3,3]);
     //     // let [min,max] = b.min_max_i();
     //     // println!("{:?}\nMin {}, max {}", b, min, max);
@@ -74,5 +74,4 @@ mod test {
     //     //let offset = size.as_vec2().div(2.0) * pivot;
     //     //GridRect::new(pos.as_ivec2() - offset.as_ivec2(), size)
     // }
-    
 }

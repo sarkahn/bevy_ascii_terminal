@@ -1,7 +1,12 @@
 //! A terminal component which determines how glyphs are mapped to their
 //! corresponding uvs on the tile sheet.
 
-use bevy::{math::Vec2, prelude::{Plugin, Handle, Assets, AddAsset, EventReader, AssetEvent, Query, DetectChanges}, utils::HashMap, reflect::TypeUuid};
+use bevy::{
+    math::Vec2,
+    prelude::{AddAsset, AssetEvent, Assets, DetectChanges, EventReader, Handle, Plugin, Query},
+    reflect::TypeUuid,
+    utils::HashMap,
+};
 
 use crate::{code_page_437, TerminalLayout};
 
@@ -72,19 +77,17 @@ pub struct UvMappingPlugin;
 
 impl Plugin for UvMappingPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_asset::<UvMapping>()
-        .add_system(uv_mapping_loaded);
-        app.world.resource_mut::<Assets<UvMapping>>().set_untracked(
-            Handle::<UvMapping>::default(), UvMapping::code_page_437()
-        );
+        app.add_asset::<UvMapping>().add_system(uv_mapping_loaded);
+        app.world
+            .resource_mut::<Assets<UvMapping>>()
+            .set_untracked(Handle::<UvMapping>::default(), UvMapping::code_page_437());
     }
 }
-
 
 /// Force terminals to update if their uv mapping changes
 pub(crate) fn uv_mapping_loaded(
     mut ev_mapping_loaded: EventReader<AssetEvent<UvMapping>>,
-    mut q_term: Query<(&mut TerminalLayout, &Handle<UvMapping>)>
+    mut q_term: Query<(&mut TerminalLayout, &Handle<UvMapping>)>,
 ) {
     let mut update_terminals = |asset: &Handle<UvMapping>| {
         for (mut term, handle) in &mut q_term {

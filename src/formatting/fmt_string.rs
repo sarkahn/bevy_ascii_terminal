@@ -175,7 +175,7 @@ mod test {
         let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::Center), "Hello");
 
-        assert_eq!("Hello", term.get_string([7, 9], 5));
+        assert_eq!("Hello", term.get_string([8, 10], 5));
     }
 
     #[test]
@@ -231,8 +231,8 @@ mod test {
         let mut term = Terminal::new([20, 20]);
         term.put_string([0, 0].pivot(Pivot::Center), "Hello\nHow are you?\nOk");
 
-        assert_eq!("Hello", term.get_string([7, 10], 5));
-        assert_eq!("How are you?", term.get_string([4, 9], 12));
-        assert_eq!("Ok", term.get_string([9, 8], 2));
+        assert_eq!("Hello", term.get_string([8, 11], 5));
+        assert_eq!("How are you?", term.get_string([5, 10], 12));
+        assert_eq!("Ok", term.get_string([10, 9], 2));
     }
 }

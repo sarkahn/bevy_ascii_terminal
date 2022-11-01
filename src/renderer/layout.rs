@@ -1,10 +1,12 @@
-use bevy::{prelude::{Component, UVec2, Vec2, IVec2}, math::uvec2};
-use sark_grids::{Pivot, geometry::GridRect};
+use bevy::{
+    math::uvec2,
+    prelude::{Component, IVec2, UVec2, Vec2},
+};
+use sark_grids::{geometry::GridRect, Pivot};
 
 use crate::{Border, Terminal, Tile};
 
 use super::TileScaling;
-
 
 /// Layout settings for the terminal renderer.
 ///
@@ -32,7 +34,7 @@ impl Default for TerminalLayout {
             pivot: Pivot::Center,
             border: None,
             pos: Default::default(),
-            bounds: GridRect::new([0,0], [1,1]),
+            bounds: GridRect::new([0, 0], [1, 1]),
             clear_tile: Default::default(),
         }
     }
@@ -82,7 +84,7 @@ impl TerminalLayout {
 
     pub fn bounds_with_border(&self) -> GridRect {
         if self.border.is_some() {
-            self.bounds().resized([2,2])
+            self.bounds().resized([2, 2])
         } else {
             self.bounds()
         }
@@ -104,6 +106,7 @@ impl TerminalLayout {
 impl From<&Terminal> for TerminalLayout {
     fn from(t: &Terminal) -> Self {
         Self {
+            clear_tile: t.clear_tile,
             border: t.border().cloned(),
             bounds: t.bounds(),
             ..Default::default()
@@ -113,11 +116,11 @@ impl From<&Terminal> for TerminalLayout {
 
 #[cfg(test)]
 mod tests {
-    use crate::{TerminalLayout, Terminal};
+    use crate::{Terminal, TerminalLayout};
 
     #[test]
     fn bounds() {
-        let term = Terminal::new([10,10]);
+        let term = Terminal::new([10, 10]);
         let layout = TerminalLayout::from(&term);
         println!("{:?}", layout.bounds);
     }

@@ -6,7 +6,10 @@
 
 use bevy::{
     math::Vec4,
-    prelude::{default, Assets, Color, Handle, HandleUntyped, Image, Mesh, Plugin, Shader, Res, Query, Or, Changed, Vec2},
+    prelude::{
+        default, Assets, Changed, Color, Handle, HandleUntyped, Image, Mesh, Or, Plugin, Query,
+        Res, Shader, Vec2,
+    },
     reflect::TypeUuid,
     render::{
         mesh::MeshVertexBufferLayout,
@@ -25,7 +28,8 @@ use super::{
     font::TerminalFontPlugin,
     mesh_data::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
     //mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
-    BuiltInFontHandles, TileScaling,
+    BuiltInFontHandles,
+    TileScaling,
 };
 
 /// The default shader handle used by terminals.
@@ -150,7 +154,6 @@ impl Material2d for TerminalMaterial {
     }
 }
 
-
 #[allow(clippy::type_complexity)]
 pub(crate) fn material_change(
     materials: Res<Assets<TerminalMaterial>>,
@@ -161,7 +164,7 @@ pub(crate) fn material_change(
     >,
 ) {
     for (handle, mut layout) in &mut q_term {
-        if let Some(material) = materials.get(handle) 
+        if let Some(material) = materials.get(handle)
         && let Some(image) = material.texture.clone()
         && let Some(image) = images.get(&image) {
             // TODO: Should be derived from image size, can't assume 16x16 tilesheet for

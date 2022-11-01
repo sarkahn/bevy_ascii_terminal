@@ -1,12 +1,12 @@
 //! Handles mesh construction and rendering for the terminal.
 
+mod border_mesh;
 mod entity;
+mod layout;
 mod material;
 mod mesh;
 mod mesh_data;
-mod border_mesh;
 mod terminal_mesh;
-mod layout;
 
 mod font;
 mod uv_mapping;
@@ -23,8 +23,8 @@ pub use entity::*;
 
 pub use font::TerminalFont;
 
-pub use material::TerminalMaterial;
 pub use layout::TerminalLayout;
+pub use material::TerminalMaterial;
 
 #[cfg(feature = "camera")]
 pub use camera::{AutoCamera, TiledCamera, TiledCameraBundle};
@@ -49,46 +49,43 @@ pub(crate) struct TerminalRendererPlugin;
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_system_to_stage(CoreStage::PostUpdate, 
-                terminal_mesh::init_terminal
-                    .label(TERMINAL_INIT)
-            )
-            .add_system_to_stage(CoreStage::Last,
-                mesh::init_mesh
-                    .label(MESH_INIT)
-            )
-            .add_system_to_stage(CoreStage::Last,
+        app.add_system_to_stage(CoreStage::Last, mesh::init_mesh.label(MESH_INIT))
+            .add_system_to_stage(
+                CoreStage::Last,
                 material::material_change
                     .label(TERMINAL_MATERIAL_CHANGE)
                     .after(MESH_INIT),
             )
-            .add_system_to_stage(CoreStage::Last,
+            .add_system_to_stage(
+                CoreStage::Last,
                 terminal_mesh::update_layout
                     .label(TERMINAL_LAYOUT_CHANGE)
                     .after(TERMINAL_MATERIAL_CHANGE),
             )
-            .add_system_to_stage(CoreStage::Last,
+            .add_system_to_stage(
+                CoreStage::Last,
                 terminal_mesh::update_vert_data
                     .label(TERMINAL_UPDATE_TILES)
-                    .after(TERMINAL_LAYOUT_CHANGE)
+                    .after(TERMINAL_LAYOUT_CHANGE),
             )
-            .add_system_to_stage(CoreStage::Last,
+            .add_system_to_stage(
+                CoreStage::Last,
                 terminal_mesh::update_tile_data
                     .label(TERMINAL_UPDATE_TILES)
-                    .after(TERMINAL_LAYOUT_CHANGE)
+                    .after(TERMINAL_LAYOUT_CHANGE),
             )
-            .add_system_to_stage(CoreStage::Last,
+            .add_system_to_stage(
+                CoreStage::Last,
                 mesh::update_mesh_verts
                     .label(TERMINAL_RENDER)
                     .after(TERMINAL_UPDATE_TILES),
             )
-            .add_system_to_stage(CoreStage::Last,
+            .add_system_to_stage(
+                CoreStage::Last,
                 mesh::update_mesh_tiles
                     .label(TERMINAL_RENDER)
                     .after(TERMINAL_UPDATE_TILES),
-            )
-            ;
+            );
         app.add_plugin(material::TerminalMaterialPlugin);
         app.add_plugin(camera::TerminalCameraPlugin);
         app.add_plugin(uv_mapping::UvMappingPlugin);

@@ -1,20 +1,18 @@
 use bevy::{
     ecs::prelude::*,
-    prelude::{Assets, Mesh,},
-    render::{render_resource::PrimitiveTopology, mesh::Indices},
-    sprite::{ Mesh2dHandle}, 
+    prelude::{Assets, Mesh},
+    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    sprite::Mesh2dHandle,
 };
 
-use super::{
-    mesh_data::{ATTRIBUTE_UV, ATTRIBUTE_COLOR_FG, ATTRIBUTE_COLOR_BG, TileData, VertData},
-};
+use super::mesh_data::{TileData, VertData, ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
 
 pub(crate) fn init_mesh(
     mut q_mesh: Query<&mut Mesh2dHandle, Added<VertData>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for mut handle in &mut q_mesh {
-    // Initialize terminal mesh
+        // Initialize terminal mesh
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.set_indices(Some(Indices::U32(Vec::new())));
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, Vec::<[f32; 3]>::new());
@@ -30,8 +28,8 @@ pub(crate) fn update_mesh_verts(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (mut vd, handle) in &mut q_mesh {
-        if let Some(mut mesh) = meshes.get_mut(&handle.0) {
-            vd.build_mesh_verts(&mut mesh);
+        if let Some(mesh) = meshes.get_mut(&handle.0) {
+            vd.build_mesh_verts(mesh);
             //println!("Updating mesh verts. Indices count {}", mesh.indices().unwrap().len());
         }
     }
@@ -42,8 +40,8 @@ pub(crate) fn update_mesh_tiles(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for (mut td, handle) in &mut q_mesh {
-        if let Some(mut mesh) = meshes.get_mut(&handle.0) {
-            td.build_mesh_tiles(&mut mesh);
+        if let Some(mesh) = meshes.get_mut(&handle.0) {
+            td.build_mesh_tiles(mesh);
             //println!("Update mesh uvs. UvCount {}", mesh.attribute(ATTRIBUTE_UV).unwrap().len());
         }
     }

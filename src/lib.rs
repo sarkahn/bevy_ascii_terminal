@@ -19,16 +19,18 @@
 //! use bevy_ascii_terminal::*;
 //!
 //! fn setup(mut commands: Commands) {
-//!     // Create the terminal and write to it
-//!     let mut terminal = Terminal::with_size([20,3])
-//!         .with_border(Border::SINGLE_LINE);
+//!     // Create the terminal
+//!     let mut terminal = Terminal::new([20,3]).with_border(Border::single_line());
 //!     // Draw a blue "Hello world!" to the terminal
 //!     terminal.put_string([1, 1], "Hello world!".fg(Color::BLUE));
 //!
-//!     // Spawn the terminal bundle from our terminal
-//!     commands.spawn(TerminalBundle::from(terminal))
-//!     // Automatically set up the camera for this terminal
-//!     .insert(AutoCamera);
+//!     
+//!     commands.spawn((
+//!         // Spawn the terminal bundle from our terminal
+//!         TerminalBundle::from(terminal),
+//!         // Automatically set up the camera to render the terminal
+//!         AutoCamera
+//!     ));
 //! }
 //!
 //! fn main () {
@@ -43,6 +45,7 @@
 //! ## Versions
 //! | bevy | bevy_ascii_terminal |
 //! | --- | --- |
+//! | 0.9 | 0.12 |
 //! | 0.8.1 | 0.11.1 |
 //! | 0.8 | 0.11 |
 //! | 0.7 | 0.9-0.10 |
@@ -52,8 +55,6 @@ mod formatting;
 mod renderer;
 mod terminal;
 mod to_world;
-
-pub mod ui;
 
 use bevy::prelude::{App, CoreStage, IntoSystemDescriptor, Plugin};
 #[cfg(feature = "camera")]
@@ -66,18 +67,11 @@ pub use to_world::ToWorld;
 
 pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};
 
-pub use ui::UiBox;
-
 /// The primary terminal rendering function labels
 pub mod term_systems {
     pub use crate::renderer::{
-        TERMINAL_CHANGE_FONT, 
-        TERMINAL_INIT, 
-        TERMINAL_LAYOUT_CHANGE, 
-        TERMINAL_LAYOUT_UPDATE,
-        TERMINAL_MATERIAL_CHANGE, 
-        TERMINAL_UPDATE_TILES,
-        TERMINAL_RENDER, 
+        TERMINAL_CHANGE_FONT, TERMINAL_INIT, TERMINAL_LAYOUT_CHANGE, TERMINAL_LAYOUT_UPDATE,
+        TERMINAL_MATERIAL_CHANGE, TERMINAL_RENDER, TERMINAL_UPDATE_TILES,
     };
 }
 
@@ -87,12 +81,11 @@ pub mod prelude {
     #[cfg(feature = "camera")]
     pub use crate::renderer::AutoCamera;
     pub use crate::{
-        border::{Border, AlignedStringFormatter, Edge},
+        border::{AlignedStringFormatter, Border, Edge},
         entity::ClearAfterRender,
         entity::TerminalBundle,
         formatting::*,
         terminal::{Terminal, Tile},
-        ui::UiBox,
         TerminalPlugin,
     };
     pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};

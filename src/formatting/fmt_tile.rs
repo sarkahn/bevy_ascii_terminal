@@ -16,7 +16,7 @@ use crate::{Terminal, Tile};
 /// ```rust
 /// use bevy::prelude::Color;
 /// use bevy_ascii_terminal::prelude::*;
-/// let mut term = Terminal::with_size([10,10]);
+/// let mut term = Terminal::new([10,10]);
 ///
 /// // Insert a an 'a' character with a blue foreground and green background.
 /// term.put_char([1,1], 'a'.fg(Color::BLUE).bg(Color::GREEN));
@@ -179,7 +179,7 @@ impl From<Tile> for FormattedTile {
 /// ```rust
 /// use bevy::prelude::Color;
 /// use bevy_ascii_terminal::prelude::*;
-/// let mut term = Terminal::with_size([10,10]);
+/// let mut term = Terminal::new([10,10]);
 ///
 /// // Set the background color for the given tile to blue.
 /// term.put_color([3,3], Color::BLUE.bg());

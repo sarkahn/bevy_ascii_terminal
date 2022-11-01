@@ -19,19 +19,20 @@ roguelikes" in mind, but should serve as a simple UI tool if needed.
 
 ```rust
 use bevy::prelude::*;
-use bevy_ascii_terminal::*;
+use bevy_ascii_terminal::prelude::*;
 
 fn setup(mut commands: Commands) {
-    // Create the terminal and write to it
-    let mut terminal = Terminal::with_size([20,3]);
-    terminal.draw_border(BorderGlyphs::single_line());
+    // Create the terminal
+    let mut terminal = Terminal::new([20,3]).with_border(Border::single_line());
     // Draw a blue "Hello world!" to the terminal
     terminal.put_string([1, 1], "Hello world!".fg(Color::BLUE));
 
-    // Spawn the terminal bundle from our terminal
-    commands.spawn_bundle(TerminalBundle::from(terminal))
-    // Automatically set up the camera for this terminal
-    .insert(AutoCamera);
+    commands.spawn((
+        // Spawn the terminal bundle from our terminal
+        TerminalBundle::from(terminal),
+        // Automatically set up the camera to render the terminal
+        AutoCamera,
+    ));
 }
 
 fn main () {
@@ -43,10 +44,10 @@ fn main () {
 }
 ```
 
-
 ## Versions
 | bevy | bevy_ascii_terminal |
 | --- | --- |
+| 0.9 | 0.12 |
 | 0.8.1 | 0.11.1-4 |
 | 0.8 | 0.11 |
 | 0.7 | 0.9-0.10 |
