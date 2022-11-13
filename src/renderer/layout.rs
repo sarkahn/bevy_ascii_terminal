@@ -2,7 +2,7 @@ use bevy::{
     math::uvec2,
     prelude::{Component, IVec2, UVec2, Vec2},
 };
-use sark_grids::{geometry::GridRect, Pivot, GridPoint};
+use sark_grids::{geometry::GridRect, GridPoint, Pivot};
 
 use crate::{Border, Terminal, Tile};
 
@@ -144,8 +144,8 @@ mod tests {
     fn pivot_pos() {
         let layout = TerminalLayout {
             pivot: Pivot::Center,
-            pos: [0,0].into(),
-            bounds: GridRect::origin([10,10]),
+            pos: [0, 0].into(),
+            bounds: GridRect::origin([10, 10]),
             ..Default::default()
         };
 

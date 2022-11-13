@@ -118,9 +118,7 @@ fn update_cam_conditions(
     q_layout_changed: Query<&TerminalLayout, Changed<TerminalLayout>>,
     ev_asset: EventReader<AssetEvent<Image>>,
 ) -> ShouldRun {
-    if !q_cam_added.is_empty() 
-    || !q_layout_changed.is_empty() 
-    || !ev_asset.is_empty() {
+    if !q_cam_added.is_empty() || !q_layout_changed.is_empty() || !ev_asset.is_empty() {
         ShouldRun::Yes
     } else {
         ShouldRun::No
