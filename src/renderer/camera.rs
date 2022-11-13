@@ -105,7 +105,7 @@ fn update(
                 rect.envelope_rect(next.0.bounds_with_border());
             }
 
-            //info!("Updating camera bounds. Final Rect {}", rect);
+            //println!("Updating camera bounds. Final Rect {}", rect);
             cam.tile_count = rect.size().as_uvec2();
             let z = transform.translation.z;
             transform.translation = rect.center.as_vec2().extend(z);
@@ -118,7 +118,9 @@ fn update_cam_conditions(
     q_layout_changed: Query<&TerminalLayout, Changed<TerminalLayout>>,
     ev_asset: EventReader<AssetEvent<Image>>,
 ) -> ShouldRun {
-    if !q_cam_added.is_empty() || !q_layout_changed.is_empty() || !ev_asset.is_empty() {
+    if !q_cam_added.is_empty() 
+    || !q_layout_changed.is_empty() 
+    || !ev_asset.is_empty() {
         ShouldRun::Yes
     } else {
         ShouldRun::No

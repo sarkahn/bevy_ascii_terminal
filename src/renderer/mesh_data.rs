@@ -135,9 +135,9 @@ impl<'a> VertMesher<'a> {
 
         let vi = vd.verts.len() as u32;
         vd.verts
-            .extend(&[p + up, p, p + right + up, p + right].map(|p| p.to_array()));
+            .extend([p + up, p, p + right + up, p + right].map(|p| p.to_array()));
         vd.indices
-            .extend(&[vi, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
+            .extend([vi, vi + 1, vi + 2, vi + 3, vi + 2, vi + 1]);
     }
 }
 

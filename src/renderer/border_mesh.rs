@@ -111,14 +111,14 @@ fn update(
                 let top = get_tile(Edge::Top, layout);
                 let bot = get_tile(Edge::Bottom, layout);
                 for x in 1..w {
-                    mesh.put_tile([x as i32, h], top);
-                    mesh.put_tile([x as i32, 0], bot);
+                    mesh.put_tile([x, h], top);
+                    mesh.put_tile([x, 0], bot);
                 }
                 let left = get_tile(Edge::Left, layout);
                 let right = get_tile(Edge::Right, layout);
                 for y in 1..h {
-                    mesh.put_tile([0, y as i32], left);
-                    mesh.put_tile([w, y as i32], right);
+                    mesh.put_tile([0, y], left);
+                    mesh.put_tile([w, y], right);
                 }
 
                 let border = layout.border().unwrap();

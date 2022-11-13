@@ -49,6 +49,7 @@
 //! | 0.8.1 | 0.11.1 |
 //! | 0.8 | 0.11 |
 //! | 0.7 | 0.9-0.10 |
+#![feature(let_chains)]
 mod border;
 mod entity;
 mod formatting;

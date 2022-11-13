@@ -2,7 +2,7 @@ use bevy::{
     math::uvec2,
     prelude::{Component, IVec2, UVec2, Vec2},
 };
-use sark_grids::{geometry::GridRect, Pivot};
+use sark_grids::{geometry::GridRect, Pivot, GridPoint};
 
 use crate::{Border, Terminal, Tile};
 
@@ -101,6 +101,19 @@ impl TerminalLayout {
     pub fn border(&self) -> Option<&Border> {
         self.border.as_ref()
     }
+
+    pub fn set_size(&mut self, size: impl GridPoint) {
+        self.bounds = self.bounds.resized(size);
+    }
+
+    pub fn set_border(&mut self, border: Option<Border>) {
+        self.border = border;
+    }
+
+    /// Returns the world space position of the given pivot on the terminal.
+    pub fn pivot_pos(&self, pivot: Pivot) -> IVec2 {
+        self.bounds().pivot_point(pivot)
+    }
 }
 
 impl From<&Terminal> for TerminalLayout {
@@ -116,6 +129,8 @@ impl From<&Terminal> for TerminalLayout {
 
 #[cfg(test)]
 mod tests {
+    use sark_grids::{geometry::GridRect, Pivot};
+
     use crate::{Terminal, TerminalLayout};
 
     #[test]
@@ -123,5 +138,17 @@ mod tests {
         let term = Terminal::new([10, 10]);
         let layout = TerminalLayout::from(&term);
         println!("{:?}", layout.bounds);
+    }
+
+    #[test]
+    fn pivot_pos() {
+        let layout = TerminalLayout {
+            pivot: Pivot::Center,
+            pos: [0,0].into(),
+            bounds: GridRect::origin([10,10]),
+            ..Default::default()
+        };
+
+        println!("P {}", layout.pivot_pos(Pivot::TopRight));
     }
 }

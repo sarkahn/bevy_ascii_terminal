@@ -36,11 +36,13 @@ impl TerminalBundle {
     /// Set the initial size of the terminal.
     pub fn with_size(mut self, size: impl Size2d) -> Self {
         self.terminal.resize(size.as_array());
+        self.layout.set_size(size.as_ivec2());
         self
     }
 
     pub fn with_border(mut self, border: Border) -> Self {
-        self.terminal.set_border(border);
+        self.terminal.set_border(border.clone());
+        self.layout.set_border(Some(border));
         self
     }
 

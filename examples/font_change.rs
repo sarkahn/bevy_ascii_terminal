@@ -1,7 +1,6 @@
 use bevy::{
     prelude::*,
     reflect::{DynamicEnum, DynamicVariant, Enum},
-    render::texture::ImageSettings,
 };
 use bevy_ascii_terminal::{prelude::*, TerminalFont};
 
@@ -11,8 +10,7 @@ fn main() {
         // This ensures our font loaded at runtime is set to
         // nearest sampling by default. Failing to do this
         // will result in visual artifacts for the loaded font!
-        .insert_resource(ImageSettings::default_nearest())
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugin(TerminalPlugin)
         .insert_resource(ClearColor(Color::BLACK))
         .add_startup_system(spawn_terminal)
@@ -26,7 +24,6 @@ struct FontIndex(pub usize);
 fn spawn_terminal(mut commands: Commands) {
     let size = [47, 13];
     let font = TerminalFont::default();
-    //let title = BorderTitle::new(font.variant_name().to_uppercase()).color(Color::RED);
     let mut term = Terminal::new(size)
         .with_clear_tile(' '.fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE))
         .with_border(

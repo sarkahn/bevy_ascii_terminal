@@ -471,7 +471,8 @@ impl Terminal {
     /// space (origin bottom left).
     #[inline]
     pub fn transform_wtl(&self, pos: impl GridPoint) -> IVec2 {
-        pos.as_ivec2() + self.size.as_ivec2().sub(1).div(2)
+        //println!("P {}, Half size {}", pos.as_ivec2(),  self.size.as_ivec2().sub(1).div(2));
+        pos.as_ivec2() + self.size.as_ivec2().div(2)
     }
 
     pub fn slice(&self) -> &[Tile] {
