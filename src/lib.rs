@@ -63,24 +63,21 @@ pub use renderer::{AutoCamera, TiledCamera, TiledCameraBundle};
 
 pub use renderer::{code_page_437, TerminalFont, TerminalLayout, TerminalMaterial};
 
-use term_systems::TERMINAL_RENDER;
 pub use to_world::ToWorld;
 
 pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};
 
 /// The primary terminal rendering function labels
-pub mod term_systems {
-    pub use crate::renderer::{
-        TERMINAL_CHANGE_FONT, TERMINAL_INIT, TERMINAL_LAYOUT_CHANGE, TERMINAL_LAYOUT_UPDATE,
-        TERMINAL_MATERIAL_CHANGE, TERMINAL_RENDER, TERMINAL_UPDATE_TILES,
-    };
-}
+pub use crate::renderer::{
+    TERMINAL_CHANGE_FONT, TERMINAL_INIT, TERMINAL_LAYOUT_CHANGE, TERMINAL_LAYOUT_UPDATE,
+    TERMINAL_MATERIAL_CHANGE, TERMINAL_RENDER, TERMINAL_UPDATE_TILES,
+};
 
 pub use prelude::*;
 
 pub mod prelude {
     #[cfg(feature = "camera")]
-    pub use crate::renderer::AutoCamera;
+    pub use crate::renderer::{AutoCamera, TileScaling};
     pub use crate::{
         border::{AlignedStringFormatter, Border, Edge},
         entity::ClearAfterRender,

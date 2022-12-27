@@ -104,7 +104,7 @@ impl Terminal {
     pub fn new(size: impl Size2d) -> Terminal {
         let clear_tile = Tile::default();
         Terminal {
-            tiles: Grid::new(clear_tile, size),
+            tiles: Grid::new(size),
             size: size.as_uvec2(),
             clear_tile,
             ..Default::default()
@@ -147,7 +147,7 @@ impl Terminal {
     ///
     /// This will clear the terminal.
     pub fn resize(&mut self, size: impl Size2d) {
-        self.tiles = Grid::new(self.clear_tile, size);
+        self.tiles = Grid::new(size);
         self.size = size.as_uvec2();
     }
 
