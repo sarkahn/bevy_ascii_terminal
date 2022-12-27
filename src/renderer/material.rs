@@ -164,21 +164,23 @@ pub(crate) fn material_change(
     >,
 ) {
     for (handle, mut layout) in &mut q_term {
-        if let Some(material) = materials.get(handle)
-        && let Some(image) = material.texture.clone()
-        && let Some(image) = images.get(&image) {
-            // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
-            // graphical terminals
-            let font_size = image.size() / 16.0;
-            layout.pixels_per_tile = font_size.as_uvec2();
-            layout.tile_size = match layout.scaling {
-                TileScaling::World => {
-                    let aspect = font_size.x / font_size.y;
-                    Vec2::new(aspect, 1.0)
+        if let Some(material) = materials.get(handle) {
+            if let Some(image) = material.texture.clone() {
+                if let Some(image) = images.get(&image) {
+                    // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
+                    // graphical terminals
+                    let font_size = image.size() / 16.0;
+                    layout.pixels_per_tile = font_size.as_uvec2();
+                    layout.tile_size = match layout.scaling {
+                        TileScaling::World => {
+                            let aspect = font_size.x / font_size.y;
+                            Vec2::new(aspect, 1.0)
+                        }
+                        TileScaling::Pixels => font_size,
+                    };
+                    //info!("Updating layout ppt. Now {}", layout.pixels_per_tile);
                 }
-                TileScaling::Pixels => font_size,
-            };
-            //info!("Updating layout ppt. Now {}", layout.pixels_per_tile);
+            }
         }
     }
 }

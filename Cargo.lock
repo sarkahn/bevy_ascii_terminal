@@ -154,7 +154,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.12.2"
+version = "0.12.3"
 dependencies = [
  "arrayvec",
  "bevy",

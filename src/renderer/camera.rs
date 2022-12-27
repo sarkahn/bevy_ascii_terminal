@@ -93,11 +93,13 @@ fn update(
             // pixels per unit -  properly handling that would require
             // calculating a correct resolution to handle all ppu's without
             // pixel artifacts
-            if let Some(material) = materials.get(material)
-            && let Some(image) = &material.texture
-            && let Some(image) = images.get(image) {
-                let ppu = image.size().as_uvec2() / 16;
-                cam.pixels_per_tile = ppu;
+            if let Some(material) = materials.get(material) {
+                if let Some(image) = &material.texture {
+                    if let Some(image) = images.get(image) {
+                        let ppu = image.size().as_uvec2() / 16;
+                        cam.pixels_per_tile = ppu;
+                    }
+                }
             }
 
             let mut rect = layout.bounds_with_border();

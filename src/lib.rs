@@ -49,7 +49,6 @@
 //! | 0.8.1 | 0.11.1 |
 //! | 0.8 | 0.11 |
 //! | 0.7 | 0.9-0.10 |
-#![feature(let_chains)]
 mod border;
 mod entity;
 mod formatting;
@@ -96,10 +95,9 @@ impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(renderer::TerminalRendererPlugin)
             .add_plugin(to_world::ToWorldPlugin)
-            .add_system_to_stage(CoreStage::Last,
-                entity::clear_after_render.after(TERMINAL_RENDER)
-            )
-            //.add_system_to_stage(CoreStage::First, entity::clear)
-            ;
+            .add_system_to_stage(
+                CoreStage::Last,
+                entity::clear_after_render.after(TERMINAL_RENDER),
+            );
     }
 }
