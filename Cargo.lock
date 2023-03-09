@@ -1520,6 +1520,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "mio"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b9d9a46eff5b4ff64b45a9e316a6d1e0bc719ef429cbec4dc630684212bfdf9"
+dependencies = [
+ "libc",
+ "log",
+ "wasi",
+ "windows-sys 0.45.0",
+]
+
+[[package]]
 name = "naga"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1736,6 +1748,12 @@ name = "paste"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f746c4065a8fa3fe23974dd82f15431cc8d40779821001404d10d2e79ca7d79"
+
+[[package]]
+name = "percent-encoding"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 
 [[package]]
 name = "petgraph"
@@ -2638,16 +2656,19 @@ dependencies = [
  "instant",
  "libc",
  "log",
+ "mio",
  "ndk",
  "objc2",
  "once_cell",
  "orbclient",
+ "percent-encoding",
  "raw-window-handle",
  "redox_syscall 0.3.4",
  "wasm-bindgen",
  "wayland-scanner",
  "web-sys",
  "windows-sys 0.45.0",
+ "x11-dl",
 ]
 
 [[package]]
@@ -2657,6 +2678,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee7b2c67f962bf5042bfd8b6a916178df33a26eec343ae064cb8e069f638fa6f"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "x11-dl"
+version = "2.20.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1536d6965a5d4e573c7ef73a2c15ebcd0b2de3347bdf526c34c297c00ac40f0"
+dependencies = [
+ "lazy_static",
+ "libc",
+ "pkg-config",
 ]
 
 [[package]]
