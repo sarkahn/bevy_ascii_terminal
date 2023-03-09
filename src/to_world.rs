@@ -5,10 +5,10 @@ use bevy::{
     math::{IVec2, Mat4, UVec2, Vec2, Vec3},
     prelude::{
         App, Assets, Camera, Changed, Component, Entity, GlobalTransform, Image, Or, Plugin, Query,
-        Res,
+        Res, With,
     },
     render::camera::RenderTarget,
-    window::Windows,
+    window::{PrimaryWindow, Window, WindowRef},
 };
 use sark_grids::GridPoint;
 
@@ -112,7 +112,8 @@ fn update_from_camera(
         Or<(Changed<Camera>, Changed<GlobalTransform>)>,
     >,
     mut q_to_world: Query<&mut ToWorld>,
-    windows: Res<Windows>,
+    windows: Query<&Window>,
+    primary_window: Query<&Window, With<PrimaryWindow>>,
     images: Res<Assets<Image>>,
 ) {
     if q_cam.is_empty() {
@@ -139,10 +140,15 @@ fn update_from_camera(
             } else {
                 tw.viewport_pos = Vec2::ZERO;
                 let res = match &cam.target {
-                    RenderTarget::Window(win_id) => {
-                        windows
-                            .get(*win_id)
-                            .map(|window| Vec2::new(window.width(), window.height()))
+                    RenderTarget::Window(win_ref) => {
+                        let window = match win_ref {
+                            WindowRef::Primary => primary_window.get_single().ok(),
+                            WindowRef::Entity(win_entity) => {
+                                windows.get_component(*win_entity).ok()
+                            }
+                        };
+
+                        window.map(|window| Vec2::new(window.width(), window.height()))
                         // if let Some(window) = windows.get(*win_id) {
                         //     Some(Vec2::new(window.width(), window.height()))
                         // } else {

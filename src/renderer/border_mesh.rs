@@ -2,8 +2,8 @@
 
 use bevy::{
     prelude::{
-        Added, Assets, BuildChildren, Changed, Children, Commands, Component, CoreStage, Entity,
-        Handle, IVec2, IntoSystemDescriptor, Plugin, Query, Res, Vec2,
+        Added, Assets, BuildChildren, Changed, Children, Commands, Component, CoreSet, Entity,
+        Handle, IVec2, IntoSystemConfig, Plugin, Query, Res, Vec2,
     },
     utils::HashMap,
 };
@@ -210,16 +210,21 @@ pub struct BorderMeshPlugin;
 
 impl Plugin for BorderMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system_to_stage(CoreStage::PostUpdate, init.label(TERMINAL_INIT))
-            .add_system_to_stage(
-                CoreStage::Last,
-                update.after(TERMINAL_UPDATE_TILES).before(TERMINAL_RENDER), //.with_run_criteria(should_update)
+        app.add_system(init.in_set(TERMINAL_INIT).in_base_set(CoreSet::PostUpdate))
+            .add_system(
+                update
+                    .after(TERMINAL_UPDATE_TILES)
+                    .before(TERMINAL_RENDER)
+                    // The following comment is outdated. `with_run_criteria` was
+                    // replaced with `run_if`.
+                    //.with_run_criteria(should_update)
+                    .in_base_set(CoreSet::Last),
             )
-            .add_system_to_stage(
-                CoreStage::Last,
+            .add_system(
                 update_tile_data
                     .after(TERMINAL_UPDATE_TILES)
-                    .before(TERMINAL_RENDER),
+                    .before(TERMINAL_RENDER)
+                    .in_base_set(CoreSet::Last),
             );
     }
 }

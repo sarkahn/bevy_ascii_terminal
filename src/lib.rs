@@ -56,7 +56,7 @@ mod renderer;
 mod terminal;
 mod to_world;
 
-use bevy::prelude::{App, CoreStage, IntoSystemDescriptor, Plugin};
+use bevy::prelude::{App, CoreSet, IntoSystemConfig, Plugin};
 #[cfg(feature = "camera")]
 pub use renderer::{AutoCamera, TiledCamera, TiledCameraBundle};
 
@@ -95,9 +95,10 @@ impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(renderer::TerminalRendererPlugin)
             .add_plugin(to_world::ToWorldPlugin)
-            .add_system_to_stage(
-                CoreStage::Last,
-                entity::clear_after_render.after(TERMINAL_RENDER),
+            .add_system(
+                entity::clear_after_render
+                    .after(TERMINAL_RENDER)
+                    .in_base_set(CoreSet::Last),
             );
     }
 }
