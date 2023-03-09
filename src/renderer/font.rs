@@ -13,7 +13,7 @@ use std::borrow::Borrow;
 
 use crate::TerminalMaterial;
 
-use super::TERMINAL_CHANGE_FONT;
+use super::TerminalChangeFont;
 
 /// Helper component for changing the terminal's font
 ///
@@ -192,7 +192,7 @@ impl Plugin for TerminalFontPlugin {
         app.add_system(
             terminal_renderer_change_font
                 //.after(TERMINAL_INIT)
-                .in_set(TERMINAL_CHANGE_FONT),
+                .in_set(TerminalChangeFont),
         );
     }
 }

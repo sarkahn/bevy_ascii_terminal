@@ -68,8 +68,8 @@ pub use sark_grids::{grid::Side, GridPoint, Pivot, Size2d};
 
 /// The primary terminal rendering function labels
 pub use crate::renderer::{
-    TERMINAL_CHANGE_FONT, TERMINAL_INIT, TERMINAL_LAYOUT_CHANGE, TERMINAL_LAYOUT_UPDATE,
-    TERMINAL_MATERIAL_CHANGE, TERMINAL_RENDER, TERMINAL_UPDATE_TILES,
+    TerminalChangeFont, TerminalInit, TerminalLayoutChange, TerminalLayoutUpdate,
+    TerminalMaterialChange, TerminalRender, TerminalUpdateTiles,
 };
 
 pub use prelude::*;
@@ -97,7 +97,7 @@ impl Plugin for TerminalPlugin {
             .add_plugin(to_world::ToWorldPlugin)
             .add_system(
                 entity::clear_after_render
-                    .after(TERMINAL_RENDER)
+                    .after(TerminalRender)
                     .in_base_set(CoreSet::Last),
             );
     }

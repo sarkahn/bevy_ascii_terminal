@@ -14,7 +14,7 @@ use crate::{Edge, TerminalLayout, Tile};
 use super::{
     mesh_data::{TileData, UvMesher, VertData, VertMesher},
     uv_mapping::UvMapping,
-    TerminalRenderBundle, TERMINAL_INIT, TERMINAL_RENDER, TERMINAL_UPDATE_TILES,
+    TerminalInit, TerminalRender, TerminalRenderBundle, TerminalUpdateTiles,
 };
 
 #[derive(Debug, Default, PartialEq)]
@@ -210,11 +210,11 @@ pub struct BorderMeshPlugin;
 
 impl Plugin for BorderMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system(init.in_set(TERMINAL_INIT).in_base_set(CoreSet::PostUpdate))
+        app.add_system(init.in_set(TerminalInit).in_base_set(CoreSet::PostUpdate))
             .add_system(
                 update
-                    .after(TERMINAL_UPDATE_TILES)
-                    .before(TERMINAL_RENDER)
+                    .after(TerminalUpdateTiles)
+                    .before(TerminalRender)
                     // The following comment is outdated. `with_run_criteria` was
                     // replaced with `run_if`.
                     //.with_run_criteria(should_update)
@@ -222,8 +222,8 @@ impl Plugin for BorderMeshPlugin {
             )
             .add_system(
                 update_tile_data
-                    .after(TERMINAL_UPDATE_TILES)
-                    .before(TERMINAL_RENDER)
+                    .after(TerminalUpdateTiles)
+                    .before(TerminalRender)
                     .in_base_set(CoreSet::Last),
             );
     }

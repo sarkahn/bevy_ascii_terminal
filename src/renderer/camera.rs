@@ -137,7 +137,7 @@ impl Plugin for TerminalCameraPlugin {
             .add_system(
                 update
                     .run_if(update_cam_conditions)
-                    .after(super::TERMINAL_LAYOUT_CHANGE)
+                    .after(super::TerminalLayoutChange)
                     .in_base_set(CoreSet::Last),
             );
     }
