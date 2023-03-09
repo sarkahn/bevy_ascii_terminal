@@ -3,7 +3,7 @@
 
 use bevy::{
     math::Vec2,
-    prelude::{AddAsset, AssetEvent, Assets, DetectChanges, EventReader, Handle, Plugin, Query},
+    prelude::{AddAsset, AssetEvent, Assets, DetectChangesMut, EventReader, Handle, Plugin, Query},
     reflect::TypeUuid,
     utils::HashMap,
 };
