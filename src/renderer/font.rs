@@ -1,8 +1,8 @@
 use bevy::{
     asset::HandleId,
     prelude::{
-        info, Assets, Commands, Component, Entity, Handle, Image, IntoSystemDescriptor, Plugin,
-        Query, Res, ResMut, Resource,
+        info, Assets, Commands, Component, Entity, Handle, Image, IntoSystemConfig, Plugin, Query,
+        Res, ResMut, Resource,
     },
     reflect::Reflect,
     render::texture::{ImageSampler, ImageType},
@@ -13,7 +13,7 @@ use std::borrow::Borrow;
 
 use crate::TerminalMaterial;
 
-use super::TERMINAL_CHANGE_FONT;
+use super::TerminalChangeFont;
 
 /// Helper component for changing the terminal's font
 ///
@@ -163,8 +163,8 @@ impl Plugin for TerminalFontPlugin {
             .get_resource_mut::<Assets<Image>>()
             .unwrap_or_else(|| {
                 panic!(
-                    "Error retrieving image resource - ensure
-                    DefaultPlugins are added before TerminalPlugin
+                    "Error retrieving image resource - ensure \
+                    DefaultPlugins are added before TerminalPlugin \
                     during app initialization"
                 )
             });
@@ -192,7 +192,7 @@ impl Plugin for TerminalFontPlugin {
         app.add_system(
             terminal_renderer_change_font
                 //.after(TERMINAL_INIT)
-                .label(TERMINAL_CHANGE_FONT),
+                .in_set(TerminalChangeFont),
         );
     }
 }

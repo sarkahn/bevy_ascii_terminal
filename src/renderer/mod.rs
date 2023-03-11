@@ -16,7 +16,7 @@ mod camera;
 
 pub mod code_page_437;
 
-use bevy::prelude::{App, CoreStage, IntoSystemDescriptor, Plugin};
+use bevy::prelude::{App, CoreSet, IntoSystemConfig, Plugin, SystemSet};
 pub(crate) use font::BuiltInFontHandles;
 
 pub use entity::*;
@@ -29,62 +29,77 @@ pub use material::TerminalMaterial;
 #[cfg(feature = "camera")]
 pub use camera::{AutoCamera, TiledCamera, TiledCameraBundle};
 
-/// System label for the terminal mesh initialization system.
-pub const TERMINAL_INIT: &str = "terminal_init";
-pub const MESH_INIT: &str = "mesh_init";
-/// System label for the terminal material change system.
-pub const TERMINAL_MATERIAL_CHANGE: &str = "terminal_material_change";
-/// System label for the terminal layout update system.
-pub const TERMINAL_LAYOUT_UPDATE: &str = "terminal_layout_update";
-/// System label for the terminal mesh size update function.
-pub const TERMINAL_LAYOUT_CHANGE: &str = "terminal_layout_change";
-/// System label for the terminal font changing function.
-pub const TERMINAL_CHANGE_FONT: &str = "terminal_change_font";
-pub const TERMINAL_UPDATE_TILES: &str = "terminal_update_tile_data";
-/// System label for the terminal render system. This is the last terminal
+/// System set for the terminal mesh initialization system.
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct TerminalInit;
+
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct MeshInit;
+
+/// System set for the terminal material change system.
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct TerminalMaterialChange;
+
+/// System set for the terminal layout update system.
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct TerminalLayoutUpdate;
+
+/// System set for the terminal mesh size update function.
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct TerminalLayoutChange;
+
+/// System set for the terminal font changing function.
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct TerminalChangeFont;
+
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct TerminalUpdateTiles;
+
+/// System set for the terminal render system. This is the last terminal
 /// system to run and runs at the end of the frame.
-pub const TERMINAL_RENDER: &str = "terminal_update_mesh";
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+pub struct TerminalRender;
 
 pub(crate) struct TerminalRendererPlugin;
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(CoreStage::Last, mesh::init_mesh.label(MESH_INIT))
-            .add_system_to_stage(
-                CoreStage::Last,
+        app.add_system(mesh::init_mesh.in_set(MeshInit).in_base_set(CoreSet::Last))
+            .add_system(
                 material::material_change
-                    .label(TERMINAL_MATERIAL_CHANGE)
-                    .after(MESH_INIT),
+                    .in_set(TerminalMaterialChange)
+                    .after(MeshInit)
+                    .in_base_set(CoreSet::Last),
             )
-            .add_system_to_stage(
-                CoreStage::Last,
+            .add_system(
                 terminal_mesh::update_layout
-                    .label(TERMINAL_LAYOUT_CHANGE)
-                    .after(TERMINAL_MATERIAL_CHANGE),
+                    .in_set(TerminalLayoutChange)
+                    .after(TerminalMaterialChange)
+                    .in_base_set(CoreSet::Last),
             )
-            .add_system_to_stage(
-                CoreStage::Last,
+            .add_system(
                 terminal_mesh::update_vert_data
-                    .label(TERMINAL_UPDATE_TILES)
-                    .after(TERMINAL_LAYOUT_CHANGE),
+                    .in_set(TerminalUpdateTiles)
+                    .after(TerminalLayoutChange)
+                    .in_base_set(CoreSet::Last),
             )
-            .add_system_to_stage(
-                CoreStage::Last,
+            .add_system(
                 terminal_mesh::update_tile_data
-                    .label(TERMINAL_UPDATE_TILES)
-                    .after(TERMINAL_LAYOUT_CHANGE),
+                    .in_set(TerminalUpdateTiles)
+                    .after(TerminalLayoutChange)
+                    .in_base_set(CoreSet::Last),
             )
-            .add_system_to_stage(
-                CoreStage::Last,
+            .add_system(
                 mesh::update_mesh_verts
-                    .label(TERMINAL_RENDER)
-                    .after(TERMINAL_UPDATE_TILES),
+                    .in_set(TerminalRender)
+                    .after(TerminalUpdateTiles)
+                    .in_base_set(CoreSet::Last),
             )
-            .add_system_to_stage(
-                CoreStage::Last,
+            .add_system(
                 mesh::update_mesh_tiles
-                    .label(TERMINAL_RENDER)
-                    .after(TERMINAL_UPDATE_TILES),
+                    .in_set(TerminalRender)
+                    .after(TerminalUpdateTiles)
+                    .in_base_set(CoreSet::Last),
             );
         app.add_plugin(material::TerminalMaterialPlugin);
         app.add_plugin(camera::TerminalCameraPlugin);

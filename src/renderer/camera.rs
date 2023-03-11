@@ -5,25 +5,25 @@ use crate::TerminalMaterial;
 
 use super::TerminalLayout;
 
-use bevy::ecs::schedule::ShouldRun;
 use bevy::prelude::Added;
 use bevy::prelude::AssetEvent;
 use bevy::prelude::Assets;
 use bevy::prelude::Changed;
 use bevy::prelude::Commands;
 use bevy::prelude::Component;
+use bevy::prelude::CoreSet;
 use bevy::prelude::Entity;
 use bevy::prelude::EventReader;
 use bevy::prelude::Handle;
 use bevy::prelude::Image;
-use bevy::prelude::IntoSystemDescriptor;
+use bevy::prelude::IntoSystemConfig;
 use bevy::prelude::Plugin;
 use bevy::prelude::Query;
 use bevy::prelude::Res;
 use bevy::prelude::Transform;
 use bevy::prelude::With;
 
-use bevy::prelude::{App, CoreStage};
+use bevy::prelude::App;
 pub use bevy_tiled_camera::TiledCamera;
 pub use bevy_tiled_camera::TiledCameraBundle;
 use bevy_tiled_camera::TiledCameraPlugin;
@@ -119,12 +119,8 @@ fn update_cam_conditions(
     q_cam_added: Query<Entity, (With<TiledCamera>, Added<TerminalCamera>)>,
     q_layout_changed: Query<&TerminalLayout, Changed<TerminalLayout>>,
     ev_asset: EventReader<AssetEvent<Image>>,
-) -> ShouldRun {
-    if !q_cam_added.is_empty() || !q_layout_changed.is_empty() || !ev_asset.is_empty() {
-        ShouldRun::Yes
-    } else {
-        ShouldRun::No
-    }
+) -> bool {
+    !q_cam_added.is_empty() || !q_layout_changed.is_empty() || !ev_asset.is_empty()
 }
 
 /// Will track changes to a terminal and update the viewport so the
@@ -137,12 +133,12 @@ pub(crate) struct TerminalCameraPlugin;
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(TiledCameraPlugin);
-        app.add_system_to_stage(CoreStage::First, init_camera)
-            .add_system_to_stage(
-                CoreStage::Last,
+        app.add_system(init_camera.in_base_set(CoreSet::First))
+            .add_system(
                 update
-                    .with_run_criteria(update_cam_conditions)
-                    .after(super::TERMINAL_LAYOUT_CHANGE),
+                    .run_if(update_cam_conditions)
+                    .after(super::TerminalLayoutChange)
+                    .in_base_set(CoreSet::Last),
             );
     }
 }
