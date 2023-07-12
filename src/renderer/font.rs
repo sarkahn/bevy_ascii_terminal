@@ -44,22 +44,17 @@ use super::TerminalChangeFont;
 /// }
 ///
 /// ```
-#[derive(Debug, Clone, Component, Eq, PartialEq, Hash, Reflect)]
+#[derive(Debug, Clone, Component, Eq, PartialEq, Hash, Reflect, Default)]
 pub enum TerminalFont {
     JtCurses12x12,
     Pastiche8x8,
+    #[default]
     Px4378x8,
     Taffer10x10,
     ZxEvolution8x8,
     TaritusCurses8x12,
     /// Change to a custom font texture
     Custom(Handle<Image>),
-}
-
-impl Default for TerminalFont {
-    fn default() -> Self {
-        TerminalFont::Px4378x8
-    }
 }
 
 impl TerminalFont {

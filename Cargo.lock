@@ -729,6 +729,8 @@ dependencies = [
 [[package]]
 name = "bevy_tiled_camera"
 version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f703221865231a94f9afdb5a3c5277862393f6028f4cf21b0c9a04554acd197"
 dependencies = [
  "bevy",
  "sark_grids",
@@ -2072,6 +2074,8 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 [[package]]
 name = "sark_grids"
 version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfd0df4497208af341c990617633b998a10232f40e14bacfb695dd1a86ae6d70"
 dependencies = [
  "glam",
  "itertools",
