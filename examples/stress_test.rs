@@ -7,13 +7,15 @@ use rand::Rng;
 fn main() {
     App::new()
         .init_resource::<Pause>()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
+        .add_plugins((
+            DefaultPlugins,
+            TerminalPlugin,
+            LogDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin::default(),
+        ))
         .insert_resource(ClearColor(Color::BLACK))
-        .add_plugin(LogDiagnosticsPlugin::default())
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_startup_system(setup)
-        .add_system(spam_terminal)
+        .add_systems(Startup, setup)
+        .add_systems(Update, spam_terminal)
         .run();
 }
 

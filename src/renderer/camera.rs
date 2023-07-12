@@ -11,12 +11,13 @@ use bevy::prelude::Assets;
 use bevy::prelude::Changed;
 use bevy::prelude::Commands;
 use bevy::prelude::Component;
-use bevy::prelude::CoreSet;
 use bevy::prelude::Entity;
 use bevy::prelude::EventReader;
+use bevy::prelude::First;
 use bevy::prelude::Handle;
 use bevy::prelude::Image;
-use bevy::prelude::IntoSystemConfig;
+use bevy::prelude::IntoSystemConfigs;
+use bevy::prelude::Last;
 use bevy::prelude::Plugin;
 use bevy::prelude::Query;
 use bevy::prelude::Res;
@@ -132,13 +133,12 @@ pub(crate) struct TerminalCameraPlugin;
 
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(TiledCameraPlugin);
-        app.add_system(init_camera.in_base_set(CoreSet::First))
-            .add_system(
-                update
-                    .run_if(update_cam_conditions)
-                    .after(super::TerminalLayoutChange)
-                    .in_base_set(CoreSet::Last),
-            );
+        app.add_plugins(TiledCameraPlugin);
+        app.add_systems(First, init_camera).add_systems(
+            Last,
+            update
+                .run_if(update_cam_conditions)
+                .after(super::TerminalLayoutChange),
+        );
     }
 }

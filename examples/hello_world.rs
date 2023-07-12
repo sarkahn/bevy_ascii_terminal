@@ -3,11 +3,10 @@ use bevy_ascii_terminal::{prelude::*, TerminalPlugin};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
+        .add_plugins((DefaultPlugins, TerminalPlugin))
         .insert_resource(ClearColor(Color::BLACK))
-        .add_startup_system(spawn_terminal)
-        .add_system(hello_world)
+        .add_systems(Startup, spawn_terminal)
+        .add_systems(Update, hello_world)
         .run()
 }
 

@@ -37,9 +37,8 @@ fn setup(mut commands: Commands) {
 
 fn main () {
     App::new()
-    .add_plugins(DefaultPlugins)
-    .add_plugin(TerminalPlugin)
-    .add_startup_system(setup)
+    .add_plugins((DefaultPlugins, TerminalPlugin))
+    .add_systems(Startup, setup)
     .run();
 }
 ```
@@ -47,6 +46,7 @@ fn main () {
 ## Versions
 | bevy | bevy_ascii_terminal |
 | --- | --- |
+| 0.9 | 0.13.0 |
 | 0.9 | 0.12.1 |
 | 0.8.1 | 0.11.1-4 |
 | 0.8 | 0.11 |

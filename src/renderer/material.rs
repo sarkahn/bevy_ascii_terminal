@@ -10,7 +10,7 @@ use bevy::{
         default, Assets, Changed, Color, Handle, HandleUntyped, Image, Mesh, Or, Plugin, Query,
         Res, Shader, Vec2,
     },
-    reflect::TypeUuid,
+    reflect::{TypePath, TypeUuid},
     render::{
         mesh::MeshVertexBufferLayout,
         render_asset::RenderAssets,
@@ -40,9 +40,10 @@ pub struct TerminalMaterialPlugin;
 
 impl Plugin for TerminalMaterialPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugin(TerminalFontPlugin);
-
-        app.add_plugin(Material2dPlugin::<TerminalMaterial>::default());
+        app.add_plugins((
+            TerminalFontPlugin,
+            Material2dPlugin::<TerminalMaterial>::default(),
+        ));
 
         let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().expect(
             "Error initializing TerminalPlugin. Ensure TerminalPlugin is added AFTER
@@ -51,7 +52,7 @@ impl Plugin for TerminalMaterialPlugin {
 
         shaders.set_untracked(
             TERMINAL_MATERIAL_SHADER_HANDLE,
-            Shader::from_wgsl(include_str!("terminal.wgsl")),
+            Shader::from_wgsl(include_str!("terminal.wgsl"), "terminal.wgsl"),
         );
 
         let fonts = app
@@ -67,7 +68,7 @@ impl Plugin for TerminalMaterialPlugin {
     }
 }
 
-#[derive(AsBindGroup, Debug, Clone, TypeUuid)]
+#[derive(AsBindGroup, Debug, Clone, TypeUuid, TypePath)]
 #[uuid = "e228a534-e3ca-2e1e-ab9d-4d8bc1ad8c19"]
 #[uniform(0, TerminalMaterialUniform)]
 pub struct TerminalMaterial {
