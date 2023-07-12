@@ -10,11 +10,13 @@ fn main() {
         // This ensures our font loaded at runtime is set to
         // nearest sampling by default. Failing to do this
         // will result in visual artifacts for the loaded font!
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugin(TerminalPlugin)
+        .add_plugins((
+            DefaultPlugins.set(ImagePlugin::default_nearest()),
+            TerminalPlugin,
+        ))
         .insert_resource(ClearColor(Color::BLACK))
-        .add_startup_system(spawn_terminal)
-        .add_system(change_font)
+        .add_systems(Startup, spawn_terminal)
+        .add_systems(Update, change_font)
         .run()
 }
 
@@ -65,8 +67,8 @@ fn change_font(
 ) {
     if keys.just_pressed(KeyCode::Space) {
         for (entity, mut term) in q.iter_mut() {
-            let info = match TerminalFont::default().get_type_info() {
-                bevy::reflect::TypeInfo::Enum(info) => info,
+            let info = match TerminalFont::default().get_represented_type_info() {
+                Some(bevy::reflect::TypeInfo::Enum(info)) => info,
                 _ => unreachable!(),
             };
 
@@ -89,12 +91,8 @@ fn change_font(
                     _ => unreachable!(),
                 };
                 let mut a = TerminalFont::default();
-                let b = DynamicEnum::new_with_index(
-                    info.type_name(),
-                    font_index.0,
-                    variant.name(),
-                    DynamicVariant::Unit,
-                );
+                let b =
+                    DynamicEnum::new_with_index(font_index.0, variant.name(), DynamicVariant::Unit);
                 a.apply(&b);
                 term.border_mut()
                     .unwrap()

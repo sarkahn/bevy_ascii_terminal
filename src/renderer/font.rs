@@ -1,8 +1,8 @@
 use bevy::{
     asset::HandleId,
     prelude::{
-        info, Assets, Commands, Component, Entity, Handle, Image, IntoSystemConfig, Plugin, Query,
-        Res, ResMut, Resource,
+        info, Assets, Commands, Component, Entity, Handle, Image, IntoSystemConfigs, Plugin, Query,
+        Res, ResMut, Resource, Update,
     },
     reflect::Reflect,
     render::texture::{ImageSampler, ImageType},
@@ -189,7 +189,8 @@ impl Plugin for TerminalFontPlugin {
 
         app.insert_resource(fonts);
 
-        app.add_system(
+        app.add_systems(
+            Update,
             terminal_renderer_change_font
                 //.after(TERMINAL_INIT)
                 .in_set(TerminalChangeFont),

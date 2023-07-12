@@ -16,7 +16,7 @@ mod camera;
 
 pub mod code_page_437;
 
-use bevy::prelude::{App, CoreSet, IntoSystemConfig, Plugin, SystemSet};
+use bevy::prelude::{App, IntoSystemConfigs, Last, Plugin, SystemSet};
 pub(crate) use font::BuiltInFontHandles;
 
 pub use entity::*;
@@ -64,46 +64,25 @@ pub(crate) struct TerminalRendererPlugin;
 
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(mesh::init_mesh.in_set(MeshInit).in_base_set(CoreSet::Last))
-            .add_system(
-                material::material_change
-                    .in_set(TerminalMaterialChange)
-                    .after(MeshInit)
-                    .in_base_set(CoreSet::Last),
+        app.add_systems(
+            Last,
+            (
+                mesh::init_mesh.in_set(MeshInit),
+                material::material_change.in_set(TerminalMaterialChange),
+                terminal_mesh::update_layout.in_set(TerminalLayoutChange),
+                terminal_mesh::update_vert_data.in_set(TerminalUpdateTiles),
+                terminal_mesh::update_tile_data.in_set(TerminalUpdateTiles),
+                mesh::update_mesh_verts.in_set(TerminalRender),
+                mesh::update_mesh_tiles.in_set(TerminalRender),
             )
-            .add_system(
-                terminal_mesh::update_layout
-                    .in_set(TerminalLayoutChange)
-                    .after(TerminalMaterialChange)
-                    .in_base_set(CoreSet::Last),
-            )
-            .add_system(
-                terminal_mesh::update_vert_data
-                    .in_set(TerminalUpdateTiles)
-                    .after(TerminalLayoutChange)
-                    .in_base_set(CoreSet::Last),
-            )
-            .add_system(
-                terminal_mesh::update_tile_data
-                    .in_set(TerminalUpdateTiles)
-                    .after(TerminalLayoutChange)
-                    .in_base_set(CoreSet::Last),
-            )
-            .add_system(
-                mesh::update_mesh_verts
-                    .in_set(TerminalRender)
-                    .after(TerminalUpdateTiles)
-                    .in_base_set(CoreSet::Last),
-            )
-            .add_system(
-                mesh::update_mesh_tiles
-                    .in_set(TerminalRender)
-                    .after(TerminalUpdateTiles)
-                    .in_base_set(CoreSet::Last),
-            );
-        app.add_plugin(material::TerminalMaterialPlugin);
-        app.add_plugin(camera::TerminalCameraPlugin);
-        app.add_plugin(uv_mapping::UvMappingPlugin);
-        app.add_plugin(border_mesh::BorderMeshPlugin);
+                .chain(),
+        );
+        app.add_plugins((
+            material::TerminalMaterialPlugin,
+            #[cfg(feature = "camera")]
+            camera::TerminalCameraPlugin,
+            uv_mapping::UvMappingPlugin,
+            border_mesh::BorderMeshPlugin,
+        ));
     }
 }

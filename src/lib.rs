@@ -35,9 +35,8 @@
 //!
 //! fn main () {
 //!     App::new()
-//!     .add_plugins(DefaultPlugins)
-//!     .add_plugin(TerminalPlugin)
-//!     .add_startup_system(setup)
+//!     .add_plugins((DefaultPlugins, TerminalPlugin))
+//!     .add_systems(Startup, setup)
 //!     .run();
 //! }
 //! ```
@@ -56,7 +55,7 @@ mod renderer;
 mod terminal;
 mod to_world;
 
-use bevy::prelude::{App, CoreSet, IntoSystemConfig, Plugin};
+use bevy::prelude::{App, IntoSystemConfigs, Last, Plugin};
 #[cfg(feature = "camera")]
 pub use renderer::{AutoCamera, TiledCamera, TiledCameraBundle};
 
@@ -93,12 +92,7 @@ pub struct TerminalPlugin;
 
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(renderer::TerminalRendererPlugin)
-            .add_plugin(to_world::ToWorldPlugin)
-            .add_system(
-                entity::clear_after_render
-                    .after(TerminalRender)
-                    .in_base_set(CoreSet::Last),
-            );
+        app.add_plugins((renderer::TerminalRendererPlugin, to_world::ToWorldPlugin))
+            .add_systems(Last, entity::clear_after_render.after(TerminalRender));
     }
 }

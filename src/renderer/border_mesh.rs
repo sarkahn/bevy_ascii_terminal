@@ -2,8 +2,8 @@
 
 use bevy::{
     prelude::{
-        Added, Assets, BuildChildren, Changed, Children, Commands, Component, CoreSet, Entity,
-        Handle, IVec2, IntoSystemConfig, Plugin, Query, Res, Vec2,
+        Added, Assets, BuildChildren, Changed, Children, Commands, Component, Entity, Handle,
+        IVec2, IntoSystemConfigs, Last, Plugin, PostUpdate, Query, Res, Vec2,
     },
     utils::HashMap,
 };
@@ -210,21 +210,12 @@ pub struct BorderMeshPlugin;
 
 impl Plugin for BorderMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system(init.in_set(TerminalInit).in_base_set(CoreSet::PostUpdate))
-            .add_system(
-                update
+        app.add_systems(PostUpdate, init.in_set(TerminalInit))
+            .add_systems(
+                Last,
+                (update, update_tile_data)
                     .after(TerminalUpdateTiles)
-                    .before(TerminalRender)
-                    // The following comment is outdated. `with_run_criteria` was
-                    // replaced with `run_if`.
-                    //.with_run_criteria(should_update)
-                    .in_base_set(CoreSet::Last),
-            )
-            .add_system(
-                update_tile_data
-                    .after(TerminalUpdateTiles)
-                    .before(TerminalRender)
-                    .in_base_set(CoreSet::Last),
+                    .before(TerminalRender),
             );
     }
 }

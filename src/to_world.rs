@@ -5,9 +5,9 @@ use bevy::{
     math::{IVec2, Mat4, UVec2, Vec2, Vec3},
     prelude::{
         App, Assets, Camera, Changed, Component, Entity, GlobalTransform, Image, Or, Plugin, Query,
-        Res, With,
+        Res, Update, With,
     },
-    render::camera::RenderTarget,
+    render::camera::{ManualTextureViews, RenderTarget},
     window::{PrimaryWindow, Window, WindowRef},
 };
 use sark_grids::GridPoint;
@@ -21,8 +21,7 @@ pub(crate) struct ToWorldPlugin;
 
 impl Plugin for ToWorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(update_from_terminal)
-            .add_system(update_from_camera);
+        app.add_systems(Update, (update_from_terminal, update_from_camera));
     }
 }
 
@@ -115,6 +114,7 @@ fn update_from_camera(
     windows: Query<&Window>,
     primary_window: Query<&Window, With<PrimaryWindow>>,
     images: Res<Assets<Image>>,
+    manual_texture_views: Res<ManualTextureViews>,
 ) {
     if q_cam.is_empty() {
         return;
@@ -163,6 +163,9 @@ fn update_from_camera(
                         //     None
                         // }
                     }
+                    RenderTarget::TextureView(texture_view) => manual_texture_views
+                        .get(texture_view)
+                        .map(|manual_texture_view| manual_texture_view.size.as_vec2()),
                 };
                 tw.viewport_size = res;
             }

@@ -3,9 +3,8 @@ use bevy_ascii_terminal::*;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(TerminalPlugin)
-        .add_startup_system(setup)
+        .add_plugins((DefaultPlugins, TerminalPlugin))
+        .add_systems(Startup, setup)
         .run();
 }
 
