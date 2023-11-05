@@ -27,6 +27,4 @@ fn setup(mut commands: Commands) {
             AutoCamera,
         ));
     }
-
-    //commands.spawn(TiledCameraBundle::new().with_tile_count([15,4]));
 }

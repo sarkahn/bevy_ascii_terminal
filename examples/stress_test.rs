@@ -1,5 +1,6 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
+use bevy::window::PresentMode;
 use bevy_ascii_terminal::{code_page_437, prelude::*};
 use rand::prelude::ThreadRng;
 use rand::Rng;
@@ -8,10 +9,16 @@ fn main() {
     App::new()
         .init_resource::<Pause>()
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    present_mode: PresentMode::AutoNoVsync,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
             TerminalPlugin,
             LogDiagnosticsPlugin::default(),
-            FrameTimeDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin,
         ))
         .insert_resource(ClearColor(Color::BLACK))
         .add_systems(Startup, setup)

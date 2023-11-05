@@ -759,6 +759,8 @@ dependencies = [
 [[package]]
 name = "bevy_tiled_camera"
 version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84cebe2818d333f57024b35f921380a57f18629509c48106ef5a733458fb31cc"
 dependencies = [
  "bevy",
  "sark_grids",

@@ -11,7 +11,6 @@ fn main() {
 }
 
 fn spawn_terminal(mut commands: Commands) {
-    //let title = BorderTitle::center("Hello World!").color(Color::YELLOW_GREEN);
     let mut term = Terminal::new([20, 1]).with_border(Border::single_line());
 
     term.put_string([0, 0], "Press spacebar".bg(Color::LIME_GREEN));
