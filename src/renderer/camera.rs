@@ -97,7 +97,7 @@ fn update(
             if let Some(material) = materials.get(material) {
                 if let Some(image) = &material.texture {
                     if let Some(image) = images.get(image) {
-                        let ppu = image.size().as_uvec2() / 16;
+                        let ppu = image.size() / 16;
                         cam.pixels_per_tile = ppu;
                     }
                 }

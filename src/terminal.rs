@@ -329,7 +329,7 @@ impl Terminal {
 
             //println!("Writing string at {:?}", [x,y]);
 
-            for (char, mut t) in line.chars().zip(tiles) {
+            for (char, t) in line.chars().zip(tiles) {
                 t.glyph = char;
                 fmt.apply(t);
             }

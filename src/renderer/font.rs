@@ -1,11 +1,11 @@
 use bevy::{
-    asset::HandleId,
+    log::info,
     prelude::{
-        info, Assets, Commands, Component, Entity, Handle, Image, IntoSystemConfigs, Plugin, Query,
-        Res, ResMut, Resource, Update,
+        Assets, Commands, Component, Entity, Handle, Image, IntoSystemConfigs, Plugin, Query, Res,
+        ResMut, Resource, Update,
     },
     reflect::Reflect,
-    render::texture::{ImageSampler, ImageType},
+    render::texture::{ImageSampler, ImageSamplerDescriptor, ImageType},
     utils::HashMap,
 };
 
@@ -75,14 +75,14 @@ impl TerminalFont {
 macro_rules! include_font {
     ($font:expr, $path:literal) => {{
         let bytes = include_bytes!(concat!("builtin/", $path));
-        let mut image = Image::from_buffer(
+        let image = Image::from_buffer(
             bytes,
             ImageType::Extension("png"),
             bevy::render::texture::CompressedImageFormats::NONE,
             false,
+            ImageSampler::Descriptor(ImageSamplerDescriptor::nearest()),
         )
         .unwrap();
-        image.sampler_descriptor = ImageSampler::Descriptor(ImageSampler::nearest_descriptor());
         ($font, image)
     }};
 }
@@ -91,10 +91,9 @@ fn add_font_resource(
     font: (TerminalFont, Image),
     images: &mut Assets<Image>,
     font_map: &mut HashMap<TerminalFont, Handle<Image>>,
-) -> Handle<Image> {
-    let handle = images.set(font.0.clone(), font.1);
+) {
+    let handle = images.add(font.1);
     font_map.insert(font.0, handle.clone());
-    handle
 }
 
 #[derive(Resource)]
@@ -110,12 +109,6 @@ impl BuiltInFontHandles {
         self.map
             .get(font)
             .unwrap_or_else(|| panic!("Error retrieving built in font: {:#?} not found", font))
-    }
-}
-
-impl From<TerminalFont> for HandleId {
-    fn from(font: TerminalFont) -> Self {
-        font.file_name().into()
     }
 }
 
