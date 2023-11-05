@@ -7,10 +7,10 @@
 use bevy::{
     math::Vec4,
     prelude::{
-        default, Assets, Changed, Color, Handle, HandleUntyped, Image, Mesh, Or, Plugin, Query,
-        Res, Shader, Vec2,
+        default, Asset, Assets, Changed, Color, Handle, Image, Mesh, Or, Plugin, Query, Res,
+        Shader, Vec2,
     },
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     render::{
         mesh::MeshVertexBufferLayout,
         render_asset::RenderAssets,
@@ -33,8 +33,8 @@ use super::{
 };
 
 /// The default shader handle used by terminals.
-pub const TERMINAL_MATERIAL_SHADER_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 3142086811234592509);
+pub const TERMINAL_MATERIAL_SHADER_HANDLE: Handle<Shader> =
+    Handle::weak_from_u128(3142086811234592509);
 
 pub struct TerminalMaterialPlugin;
 
@@ -50,7 +50,7 @@ impl Plugin for TerminalMaterialPlugin {
             DefaultPlugins during app initialization. (issue #1255)",
         );
 
-        shaders.set_untracked(
+        shaders.insert(
             TERMINAL_MATERIAL_SHADER_HANDLE,
             Shader::from_wgsl(include_str!("terminal.wgsl"), "terminal.wgsl"),
         );
@@ -64,12 +64,11 @@ impl Plugin for TerminalMaterialPlugin {
 
         app.world
             .resource_mut::<Assets<TerminalMaterial>>()
-            .set_untracked(Handle::<TerminalMaterial>::default(), material);
+            .insert(Handle::<TerminalMaterial>::default(), material);
     }
 }
 
-#[derive(AsBindGroup, Debug, Clone, TypeUuid, TypePath)]
-#[uuid = "e228a534-e3ca-2e1e-ab9d-4d8bc1ad8c19"]
+#[derive(AsBindGroup, Asset, Debug, Clone, TypePath)]
 #[uniform(0, TerminalMaterialUniform)]
 pub struct TerminalMaterial {
     /// This determines the "background color" for the texture,
@@ -131,11 +130,11 @@ impl AsBindGroupShaderType<TerminalMaterialUniform> for TerminalMaterial {
 
 impl Material2d for TerminalMaterial {
     fn fragment_shader() -> ShaderRef {
-        TERMINAL_MATERIAL_SHADER_HANDLE.typed().into()
+        TERMINAL_MATERIAL_SHADER_HANDLE.into()
     }
 
     fn vertex_shader() -> ShaderRef {
-        TERMINAL_MATERIAL_SHADER_HANDLE.typed().into()
+        TERMINAL_MATERIAL_SHADER_HANDLE.into()
     }
 
     fn specialize(
@@ -170,7 +169,7 @@ pub(crate) fn material_change(
                 if let Some(image) = images.get(&image) {
                     // TODO: Should be derived from image size, can't assume 16x16 tilesheet for
                     // graphical terminals
-                    let font_size = image.size() / 16.0;
+                    let font_size = image.size().as_vec2() / 16.0;
                     layout.pixels_per_tile = font_size.as_uvec2();
                     layout.tile_size = match layout.scaling {
                         TileScaling::World => {

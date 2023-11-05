@@ -156,7 +156,7 @@ fn update_from_camera(
                         // }
                     }
                     RenderTarget::Image(image) => {
-                        images.get(image).map(|image| image.size())
+                        images.get(image).map(|image| image.size().as_vec2())
                         // if let Some(image) = images.get(image) {
                         //     Some(image.size())
                         // } else {

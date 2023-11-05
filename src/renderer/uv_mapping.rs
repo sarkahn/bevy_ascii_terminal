@@ -4,9 +4,10 @@
 use bevy::{
     math::Vec2,
     prelude::{
-        AddAsset, AssetEvent, Assets, DetectChangesMut, EventReader, Handle, Plugin, Query, Update,
+        Asset, AssetApp, AssetEvent, AssetId, Assets, DetectChangesMut, EventReader, Handle,
+        Plugin, Query, Update,
     },
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     utils::HashMap,
 };
 
@@ -14,8 +15,7 @@ use crate::{code_page_437, TerminalLayout};
 
 use super::code_page_437::CP_437_CHARS;
 
-#[derive(Debug, Clone, TypeUuid, TypePath)]
-#[uuid = "e118b332-e1ca-4e3e-ac9d-2d8bc0ad4c21"]
+#[derive(Debug, Clone, Asset, TypePath)]
 pub struct UvMapping {
     uv_map: HashMap<char, [[f32; 2]; 4]>,
 }
@@ -79,11 +79,11 @@ pub struct UvMappingPlugin;
 
 impl Plugin for UvMappingPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_asset::<UvMapping>()
+        app.init_asset::<UvMapping>()
             .add_systems(Update, uv_mapping_loaded);
         app.world
             .resource_mut::<Assets<UvMapping>>()
-            .set_untracked(Handle::<UvMapping>::default(), UvMapping::code_page_437());
+            .insert(Handle::<UvMapping>::default(), UvMapping::code_page_437());
     }
 }
 
@@ -92,18 +92,19 @@ pub(crate) fn uv_mapping_loaded(
     mut ev_mapping_loaded: EventReader<AssetEvent<UvMapping>>,
     mut q_term: Query<(&mut TerminalLayout, &Handle<UvMapping>)>,
 ) {
-    let mut update_terminals = |asset: &Handle<UvMapping>| {
+    let mut update_terminals = |asset: &AssetId<UvMapping>| {
         for (mut term, handle) in &mut q_term {
-            if handle == asset {
+            if handle.id() == *asset {
                 term.set_changed();
             }
         }
     };
-    for ev in ev_mapping_loaded.iter() {
+    for ev in ev_mapping_loaded.read() {
         match ev {
-            AssetEvent::Created { handle } => update_terminals(handle),
-            AssetEvent::Modified { handle } => update_terminals(handle),
-            AssetEvent::Removed { handle } => update_terminals(handle),
+            AssetEvent::Added { id } => update_terminals(id),
+            AssetEvent::LoadedWithDependencies { id } => update_terminals(id),
+            AssetEvent::Modified { id } => update_terminals(id),
+            AssetEvent::Removed { id } => update_terminals(id),
         }
     }
 }
