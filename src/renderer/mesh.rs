@@ -1,7 +1,7 @@
 use bevy::{
     ecs::prelude::*,
     prelude::{Assets, Mesh},
-    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    render::{mesh::Indices, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology},
     sprite::Mesh2dHandle,
 };
 
@@ -13,8 +13,11 @@ pub(crate) fn init_mesh(
 ) {
     for mut handle in &mut q_mesh {
         // Initialize terminal mesh
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-        mesh.set_indices(Some(Indices::U32(Vec::new())));
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_indices(Indices::U32(Vec::new()));
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, Vec::<[f32; 3]>::new());
         mesh.insert_attribute(ATTRIBUTE_UV, Vec::<[f32; 2]>::new());
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, Vec::<[f32; 4]>::new());

@@ -105,6 +105,7 @@ pub(crate) fn uv_mapping_loaded(
             AssetEvent::LoadedWithDependencies { id } => update_terminals(id),
             AssetEvent::Modified { id } => update_terminals(id),
             AssetEvent::Removed { id } => update_terminals(id),
+            AssetEvent::Unused { id } => update_terminals(id),
         }
     }
 }

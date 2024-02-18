@@ -143,9 +143,7 @@ fn update_from_camera(
                     RenderTarget::Window(win_ref) => {
                         let window = match win_ref {
                             WindowRef::Primary => primary_window.get_single().ok(),
-                            WindowRef::Entity(win_entity) => {
-                                windows.get_component(*win_entity).ok()
-                            }
+                            WindowRef::Entity(win_entity) => windows.get(*win_entity).ok(),
                         };
 
                         window.map(|window| Vec2::new(window.width(), window.height()))

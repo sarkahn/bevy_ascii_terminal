@@ -59,7 +59,7 @@ fn spawn_terminal(mut commands: Commands) {
 }
 
 fn change_font(
-    keys: Res<Input<KeyCode>>,
+    keys: Res<ButtonInput<KeyCode>>,
     server: Res<AssetServer>,
     mut font_index: ResMut<FontIndex>,
     mut q: Query<(Entity, &mut Terminal)>,
