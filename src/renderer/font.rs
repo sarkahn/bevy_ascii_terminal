@@ -5,7 +5,10 @@ use bevy::{
         ResMut, Resource, Update,
     },
     reflect::Reflect,
-    render::texture::{ImageSampler, ImageSamplerDescriptor, ImageType},
+    render::{
+        render_asset::RenderAssetUsages,
+        texture::{ImageSampler, ImageSamplerDescriptor, ImageType},
+    },
     utils::HashMap,
 };
 
@@ -81,6 +84,7 @@ macro_rules! include_font {
             bevy::render::texture::CompressedImageFormats::NONE,
             false,
             ImageSampler::Descriptor(ImageSamplerDescriptor::nearest()),
+            RenderAssetUsages::default(),
         )
         .unwrap();
         ($font, image)
@@ -132,7 +136,7 @@ fn terminal_renderer_change_font(
         }
 
         info!("Changing material");
-        *mat = materials.add(handle.clone().into());
+        *mat = materials.add(handle.clone());
         commands.entity(e).remove::<TerminalFont>();
     }
 }

@@ -45,7 +45,11 @@ fn rand_color(rng: &mut ThreadRng) -> Color {
     Color::rgb(r, g, b)
 }
 
-fn spam_terminal(keys: Res<Input<KeyCode>>, mut pause: ResMut<Pause>, mut q: Query<&mut Terminal>) {
+fn spam_terminal(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut pause: ResMut<Pause>,
+    mut q: Query<&mut Terminal>,
+) {
     if keys.just_pressed(KeyCode::Space) {
         pause.0 = !pause.0;
     }

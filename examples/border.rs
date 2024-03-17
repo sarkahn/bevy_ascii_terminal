@@ -17,7 +17,11 @@ fn spawn(mut commands: Commands) {
     commands.spawn((TerminalBundle::from(term), AutoCamera));
 }
 
-fn input(input: Res<Input<KeyCode>>, mut q_term: Query<&mut Terminal>, mut index: Local<usize>) {
+fn input(
+    input: Res<ButtonInput<KeyCode>>,
+    mut q_term: Query<&mut Terminal>,
+    mut index: Local<usize>,
+) {
     let borders = &[
         Some(Border::single_line()),
         Some(Border::double_line()),
@@ -37,28 +41,28 @@ fn input(input: Res<Input<KeyCode>>, mut q_term: Query<&mut Terminal>, mut index
         cleared = true;
     }
 
-    if input.just_pressed(KeyCode::Right) {
+    if input.just_pressed(KeyCode::ArrowRight) {
         let mut term = q_term.single_mut();
 
         let size = [term.width() + 1, term.height()];
         term.resize(size);
         cleared = true;
     }
-    if input.just_pressed(KeyCode::Left) {
+    if input.just_pressed(KeyCode::ArrowLeft) {
         let mut term = q_term.single_mut();
 
         let size = [term.width().saturating_sub(1).max(1), term.height()];
         term.resize(size);
         cleared = true;
     }
-    if input.just_pressed(KeyCode::Up) {
+    if input.just_pressed(KeyCode::ArrowUp) {
         let mut term = q_term.single_mut();
 
         let size = [term.width(), term.height() + 1];
         term.resize(size);
         cleared = true;
     }
-    if input.just_pressed(KeyCode::Down) {
+    if input.just_pressed(KeyCode::ArrowDown) {
         let mut term = q_term.single_mut();
 
         let size = [term.width(), term.height().saturating_sub(1).max(1)];

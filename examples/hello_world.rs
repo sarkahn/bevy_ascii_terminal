@@ -18,7 +18,7 @@ fn spawn_terminal(mut commands: Commands) {
     commands.spawn((TerminalBundle::from(term), AutoCamera));
 }
 
-fn hello_world(keys: Res<Input<KeyCode>>, mut q: Query<&mut Terminal>) {
+fn hello_world(keys: Res<ButtonInput<KeyCode>>, mut q: Query<&mut Terminal>) {
     if keys.just_pressed(KeyCode::Space) {
         for mut term in q.iter_mut() {
             term.clear();

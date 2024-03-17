@@ -84,5 +84,5 @@ pub struct ClearAfterRender;
 pub(crate) fn clear_after_render(
     mut q_term: Query<&mut Terminal, (Changed<Terminal>, With<ClearAfterRender>)>,
 ) {
-    q_term.for_each_mut(|mut t| t.clear());
+    q_term.iter_mut().for_each(|mut t| t.clear());
 }
