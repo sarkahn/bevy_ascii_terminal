@@ -247,25 +247,25 @@ pub struct TerminalTiles<'a> {
     rect: GridRect,
 }
 
-impl<'a> TerminalTiles<'a> {
-    pub fn iter_mut(&'a mut self) -> impl Iterator<Item = &'a mut Tile> {
-        self.terminal.iter_rect_mut(self.rect)
-    }
+// impl<'a> TerminalTiles<'a> {
+//     pub fn iter_mut(&'a mut self) -> impl Iterator<Item = &'a mut Tile> {
+//         self.terminal.iter_rect_mut(self.rect)
+//     }
 
-    pub fn glyphs(&'a mut self, glyph: char) {
-        self.iter_mut().for_each(|t| t.glyph = glyph);
-    }
-}
+//     pub fn glyphs(&'a mut self, glyph: char) {
+//         self.iter_mut().for_each(|t| t.glyph = glyph);
+//     }
+// }
 
-impl<'a> IntoIterator for TerminalTiles<'a> {
-    type Item;
+// impl<'a> IntoIterator for TerminalTiles<'a> {
+//     type Item;
 
-    type IntoIter;
+//     type IntoIter;
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.terminal.iter_rect_mut(self.rect)
-    }
-}
+//     fn into_iter(self) -> Self::IntoIter {
+//         self.terminal.iter_rect_mut(self.rect)
+//     }
+// }
 
 // impl<'a> TerminalTiles<'a> {
 //     pub fn iter(&'a mut self) -> impl Iterator<Item = &'a mut Tile> {
