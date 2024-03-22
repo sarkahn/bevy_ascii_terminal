@@ -12,8 +12,8 @@ repository = "https://github.com/sarkahn/bevy_ascii_terminal"
 version = "0.16.0"
 
 [dependencies]
+bitflags = "2.3"
 enum-ordinalize = "4.3.0"
-itertools = "0.12.1"
 thiserror = "1.0.56"
 
 [dependencies.bevy]

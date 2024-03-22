@@ -13,4 +13,19 @@ impl Tile {
         fg_color: Color::WHITE,
         bg_color: Color::BLACK,
     };
+
+    pub fn glyph(&mut self, glyph: char) -> &mut Self {
+        self.glyph = glyph;
+        self
+    }
+
+    pub fn fg(&mut self, color: Color) -> &mut Self {
+        self.fg_color = color;
+        self
+    }
+
+    pub fn bg(&mut self, color: Color) -> &mut Self {
+        self.bg_color = color;
+        self
+    }
 }
