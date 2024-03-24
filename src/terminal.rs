@@ -7,7 +7,9 @@ use std::{
 use bevy::{math::IVec2, render::color::Color};
 
 use crate::{
-    border::BorderState, Dir4, FormattedString, GridPoint, GridRect, Pivot, PivotedPoint, Tile,
+    border::{BorderState, TerminalBorder},
+    string::{NoWordWrapStringIter, StringFormatter, WrappedStringIter, XyStringIter},
+    Dir4, FormattedString, GridPoint, GridRect, Pivot, PivotedPoint, Tile,
 };
 
 pub struct Terminal {
@@ -65,12 +67,49 @@ impl Terminal {
         self.tile_mut(xy).bg(color)
     }
 
+    /// Write a string to the terminal.
+    ///
+    /// The [StringFormatter] trait can be used to customize the string before
+    /// it gets written to the terminal. You can set a foreground or background
+    /// color, prevent word wrapping, or prevent colors from being written to
+    /// empty characters:
+    ///
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    ///
+    /// let mut term = Terminal::new([8,4]);
+    /// term.put_string([0,0], "Hello".fg(Color::BLUE));
+    /// term.put_string([0,1].pivot(Pivot::TopLeft), "A looooong string".no_word_wrap().ignore_spaces());
+    /// ```
     pub fn put_string<'a>(
         &'a mut self,
         xy: impl Into<PivotedPoint>,
         string: impl Into<FormattedString<'a>>,
     ) {
-        todo!()
+        let fmt: FormattedString = string.into();
+        // TODO: Change to bottom left default?
+        let pivot = xy.into().pivot().unwrap_or(Pivot::TopLeft);
+        let iter = match fmt.wrapped {
+            true => XyStringIter::Wrapped(WrappedStringIter::new(fmt.string, self.bounds(), pivot)),
+            false => XyStringIter::NotWrapped(NoWordWrapStringIter::new(
+                fmt.string,
+                self.bounds(),
+                pivot,
+            )),
+        };
+        for (xy, ch) in iter {
+            if fmt.ignore_spaces && ch == ' ' {
+                continue;
+            }
+            let tile = self.tile_mut(xy);
+            tile.glyph = ch;
+            if let Some(fg) = fmt.fg_color {
+                tile.fg_color = fg;
+            }
+            if let Some(bg) = fmt.bg_color {
+                tile.bg_color = bg;
+            }
+        }
     }
 
     pub fn clear(&mut self) {
@@ -143,8 +182,14 @@ impl Terminal {
         self.border.as_ref()
     }
 
-    pub fn border_mut(&mut self) -> Option<&mut BorderState> {
-        self.border.as_mut()
+    pub fn border_mut(&mut self) -> Option<TerminalBorder> {
+        let clear_tile = self.clear_tile;
+        let term_size = self.size;
+        self.border.as_mut().map(|state| TerminalBorder {
+            border: state,
+            term_size,
+            clear_tile,
+        })
     }
 
     pub fn bounds(&self) -> GridRect {
@@ -197,38 +242,6 @@ impl Terminal {
 //         self
 //     }
 // }
-
-pub struct TerminalBorder<'a> {
-    border: &'a mut BorderState,
-    terminal: &'a Terminal,
-}
-
-impl<'a> TerminalBorder<'a> {
-    pub fn put_string(
-        &'a mut self,
-        edge: Pivot,
-        direction: Dir4,
-        offset: i32,
-        string: impl AsRef<str>,
-    ) -> &'a mut Self {
-        let xy = edge.size_offset(self.terminal.size());
-
-        self
-    }
-
-    // pub fn put_title(&'a mut self, string: impl AsRef<str>) -> TerminalTiles {
-    //     self.put_string(Pivot::TopLeft, Dir4::Right, 1, string);
-    // }
-
-    pub fn clear_colors(&'a mut self) -> &'a mut Self {
-        let clear = self.terminal.clear_tile;
-        for tile in self.border.tiles.values_mut() {
-            tile.fg_color = clear.fg_color;
-            tile.bg_color = clear.bg_color;
-        }
-        self
-    }
-}
 
 // pub struct TilesIter<'a, T>
 // where
@@ -371,13 +384,15 @@ mod tests {
     #[test]
     fn string() {
         let mut term = Terminal::new([15, 15]);
-        let string = "Hello".dont_wrap().fg(Color::BLUE);
+        let string = "Hello".no_word_wrap().fg(Color::BLUE);
         term.put_string([1, 1].pivot(Pivot::TopLeft), string);
 
         term.put_string(
             [1, 1].pivot(Pivot::TopLeft),
-            "hi".dont_wrap().fg(Color::RED),
+            "hi".no_word_wrap().fg(Color::RED),
         );
+
+        term.put_string([1, 1], "Hello");
 
         // let string = "whoa".to_string();
 

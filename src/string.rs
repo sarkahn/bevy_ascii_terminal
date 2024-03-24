@@ -1,14 +1,18 @@
-use std::{ops::Sub, str::Chars};
+use std::{
+    ops::Sub,
+    str::{Chars, Lines},
+};
 
 use bevy::{math::IVec2, render::color::Color};
 
-use crate::{GridRect, Pivot, Terminal};
+use crate::{GridRect, Pivot};
 
 pub struct FormattedString<'a> {
-    string: &'a str,
-    wrapped: bool,
-    fg_color: Option<Color>,
-    bg_color: Option<Color>,
+    pub(crate) string: &'a str,
+    pub(crate) wrapped: bool,
+    pub(crate) ignore_spaces: bool,
+    pub(crate) fg_color: Option<Color>,
+    pub(crate) bg_color: Option<Color>,
 }
 
 impl<'a> Default for FormattedString<'a> {
@@ -16,6 +20,7 @@ impl<'a> Default for FormattedString<'a> {
         Self {
             string: Default::default(),
             wrapped: true,
+            ignore_spaces: false,
             fg_color: Default::default(),
             bg_color: Default::default(),
         }
@@ -26,17 +31,21 @@ pub trait StringFormatter<'a> {
     /// By default any string written to the terminal will be wrapped at any
     /// newline and also "word wrapped". If disabled, strings will be written
     /// as is
-    fn dont_wrap(self) -> FormattedString<'a>;
+    fn no_word_wrap(self) -> FormattedString<'a>;
 
     /// Set the foreground color for the string tiles
     fn fg(self, color: Color) -> FormattedString<'a>;
 
     /// Set the background color for the string tiles
     fn bg(self, color: Color) -> FormattedString<'a>;
+
+    /// If set then no colors or glyphs will be written for space (' ')
+    /// characters.
+    fn ignore_spaces(self) -> FormattedString<'a>;
 }
 
 impl<'a> StringFormatter<'a> for &'static str {
-    fn dont_wrap(self) -> FormattedString<'a> {
+    fn no_word_wrap(self) -> FormattedString<'a> {
         FormattedString {
             string: self,
             wrapped: false,
@@ -56,13 +65,21 @@ impl<'a> StringFormatter<'a> for &'static str {
         FormattedString {
             string: self,
             bg_color: Some(color),
+            ..Default::default()
+        }
+    }
+
+    fn ignore_spaces(self) -> FormattedString<'a> {
+        FormattedString {
+            string: self,
+            ignore_spaces: true,
             ..Default::default()
         }
     }
 }
 
 impl<'a> StringFormatter<'a> for &'static String {
-    fn dont_wrap(self) -> FormattedString<'a> {
+    fn no_word_wrap(self) -> FormattedString<'a> {
         FormattedString {
             string: self,
             wrapped: false,
@@ -85,10 +102,18 @@ impl<'a> StringFormatter<'a> for &'static String {
             ..Default::default()
         }
     }
+
+    fn ignore_spaces(self) -> FormattedString<'a> {
+        FormattedString {
+            string: self,
+            ignore_spaces: true,
+            ..Default::default()
+        }
+    }
 }
 
 impl<'a> StringFormatter<'a> for FormattedString<'a> {
-    fn dont_wrap(mut self) -> FormattedString<'a> {
+    fn no_word_wrap(mut self) -> FormattedString<'a> {
         self.wrapped = false;
         self
     }
@@ -102,49 +127,132 @@ impl<'a> StringFormatter<'a> for FormattedString<'a> {
         self.bg_color = Some(color);
         self
     }
+
+    fn ignore_spaces(mut self) -> FormattedString<'a> {
+        self.ignore_spaces = true;
+        self
+    }
 }
 
-pub struct WrappedString<'a> {
+pub enum XyStringIter<'a> {
+    Wrapped(WrappedStringIter<'a>),
+    NotWrapped(NoWordWrapStringIter<'a>),
+}
+
+impl<'a> Iterator for XyStringIter<'a> {
+    type Item = (IVec2, char);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            XyStringIter::Wrapped(iter) => iter.next(),
+            XyStringIter::NotWrapped(iter) => iter.next(),
+        }
+    }
+}
+
+pub struct WrappedStringIter<'a> {
     rect: GridRect,
     pivot: Pivot,
     xy: IVec2,
     remaining: &'a str,
-
-    chars: Option<Chars<'a>>,
-    chars2: Chars<'a>,
+    chars: Chars<'a>,
 }
 
-impl<'a> Iterator for WrappedString<'a> {
+impl<'a> WrappedStringIter<'a> {
+    pub fn new(string: &'a str, rect: GridRect, pivot: Pivot) -> Self {
+        let mut xy = rect.pivot_point(pivot);
+        let vertical_offset = vertical_pivot_offset(string, pivot, rect.width());
+        // +1 as first iteration will immediately line feed
+        xy.y += vertical_offset + 1;
+        Self {
+            rect,
+            pivot,
+            xy,
+            remaining: string,
+            chars: "".chars(),
+        }
+    }
+
+    fn line_feed(&mut self, line_len: usize) {
+        let origin = self.rect.pivot_point(self.pivot);
+        let hor_offset = horizontal_pivot_offset(self.pivot, line_len);
+        self.xy.x = origin.x + hor_offset;
+        self.xy.y -= 1;
+    }
+}
+
+impl<'a> Iterator for WrappedStringIter<'a> {
     type Item = (IVec2, char);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.chars.is_none() {
-            if let Some((nextline, remaining)) = wrap_string(self.remaining, self.rect.width()) {
-                let len = nextline.len();
-                self.remaining = remaining;
-                self.chars = Some(nextline.chars());
-
-                let origin = self.rect.pivot_point(self.pivot);
-                let len_offset = (len as f32 * self.pivot.normalized().x).round() as i32;
-                self.xy.x = origin.x - len_offset;
-                self.xy.y -= 1;
-            } else {
+        let Some(ch) = self.chars.next().or_else(|| {
+            let Some((next_line, remaining)) = wrap_string(self.remaining, self.rect.width())
+            else {
                 return None;
-            }
+            };
+            self.line_feed(next_line.len());
+            self.remaining = remaining;
+            self.chars = next_line.chars();
+            self.chars.next()
+        }) else {
+            return None;
+        };
+        let ret = Some((self.xy, ch));
+        self.xy.x += 1;
+        ret
+    }
+}
+
+// TODO: Need to wrap at width
+pub struct NoWordWrapStringIter<'a> {
+    rect: GridRect,
+    pivot: Pivot,
+    lines: Lines<'a>,
+    chars: Chars<'a>,
+    xy: IVec2,
+}
+
+impl<'a> Iterator for NoWordWrapStringIter<'a> {
+    type Item = (IVec2, char);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let Some(ch) = self.chars.next().or_else(|| {
+            let Some(line) = self.lines.next() else {
+                return None;
+            };
+            let line = line.trim_end();
+            self.line_feed(line.len());
+            self.chars = line.chars();
+            self.chars.next()
+        }) else {
+            return None;
+        };
+        let ret = Some((self.xy, ch));
+        self.xy.x += 1;
+        ret
+    }
+}
+
+impl<'a> NoWordWrapStringIter<'a> {
+    pub fn new(string: &'a str, rect: GridRect, pivot: Pivot) -> Self {
+        let mut xy = rect.pivot_point(pivot);
+        let vertical_offset = vertical_pivot_offset(string, pivot, rect.width());
+        // +1 as first iteration will immediately line feed
+        xy.y += vertical_offset + 1;
+        Self {
+            rect,
+            pivot,
+            lines: string.lines(),
+            chars: "".chars(),
+            xy,
         }
+    }
 
-        None
-
-        // if self.x >= self.current_line.len() {
-        //     if let Some((nextline, remaining)) = wrap_string(self.remaining, self.rect.width()) {
-        //         self.remaining = remaining;
-        //         self.chars = nextline.chars();
-        //     } else {
-        //         return None;
-        //     }
-        // }
-        // let xy = self.rect.min() + IVec2::new(self.x as i32, self.y as i32);
-        // Some((xy, ))
+    fn line_feed(&mut self, line_len: usize) {
+        let origin = self.rect.pivot_point(self.pivot);
+        let hor_offset = horizontal_pivot_offset(self.pivot, line_len);
+        self.xy.x = origin.x + hor_offset;
+        self.xy.y -= 1;
     }
 }
 
@@ -184,6 +292,23 @@ fn wrap_string(string: &str, max_len: usize) -> Option<(&str, &str)> {
     Some((a.trim_end(), b))
 }
 
+fn horizontal_pivot_offset(pivot: Pivot, line_len: usize) -> i32 {
+    match pivot {
+        Pivot::TopLeft | Pivot::LeftCenter | Pivot::BottomLeft => 0,
+        _ => -(line_len.sub(1) as f32 * pivot.normalized().x).round() as i32,
+    }
+}
+
+fn vertical_pivot_offset(string: &str, pivot: Pivot, max_width: usize) -> i32 {
+    match pivot {
+        Pivot::TopLeft | Pivot::TopCenter | Pivot::TopRight => 0,
+        _ => {
+            let line_count = wrapped_line_count(string, max_width);
+            (line_count.sub(1) as f32 * (1.0 - pivot.normalized().y)).round() as i32
+        }
+    }
+}
+
 fn wrapped_line_count(mut input: &str, max_len: usize) -> usize {
     let mut line_count = 0;
     while let Some((_, rem)) = wrap_string(input, max_len) {
@@ -193,9 +318,29 @@ fn wrapped_line_count(mut input: &str, max_len: usize) -> usize {
     line_count
 }
 
+impl<'a> From<&'static str> for FormattedString<'a> {
+    fn from(value: &'static str) -> Self {
+        FormattedString {
+            string: value,
+            ..Default::default()
+        }
+    }
+}
+
+impl<'a> From<&'static String> for FormattedString<'a> {
+    fn from(value: &'static String) -> Self {
+        FormattedString {
+            string: value,
+            ..Default::default()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::wrap_string;
+    use crate::{GridRect, Pivot};
+
+    use super::{wrap_string, WrappedStringIter};
 
     #[test]
     fn wrap() {
@@ -228,5 +373,85 @@ mod tests {
         let (a, b) = wrap_string(b, 17).unwrap();
         assert_eq!("An early newline.", a);
         assert_eq!("", b);
+    }
+
+    #[test]
+    fn iter() {
+        let rect = GridRect::new([0, 0], [17, 17]);
+        let string = "A string\nwith\nAn early newline.";
+        let iter = WrappedStringIter::new(string, rect, Pivot::TopLeft);
+
+        let charpoints: Vec<_> = iter.collect();
+        let chars = String::from_iter(charpoints.iter().map(|(_, ch)| ch));
+        assert_eq!("A stringwithAn early newline.", chars.as_str());
+
+        let points: Vec<_> = charpoints.iter().map(|(p, _)| p.to_array()).collect();
+
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..8 {
+            let [x, y] = points[i];
+            assert_eq!(i as i32, x);
+            assert_eq!(16, y);
+        }
+
+        for i in 0..4 {
+            let [x, y] = points[8 + i];
+            assert_eq!(i as i32, x);
+            assert_eq!(15, y);
+        }
+
+        for i in 0..16 {
+            let [x, y] = points[12 + i];
+            assert_eq!(i as i32, x);
+            assert_eq!(14, y);
+        }
+
+        let iter = WrappedStringIter::new(string, rect, Pivot::TopRight);
+
+        let charpoints: Vec<_> = iter.collect();
+        let chars = String::from_iter(charpoints.iter().map(|(_, ch)| ch));
+        assert_eq!("A stringwithAn early newline.", chars.as_str());
+
+        let points: Vec<_> = charpoints.iter().map(|(p, _)| p.to_array()).collect();
+
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..8 {
+            let [x, y] = points[i];
+            assert_eq!(9 + i as i32, x);
+            assert_eq!(16, y);
+        }
+
+        for i in 0..4 {
+            let [x, y] = points[8 + i];
+            assert_eq!(13 + i as i32, x);
+            assert_eq!(15, y);
+        }
+
+        let iter = WrappedStringIter::new(string, rect, Pivot::BottomRight);
+
+        let charpoints: Vec<_> = iter.collect();
+        let chars = String::from_iter(charpoints.iter().map(|(_, ch)| ch));
+        assert_eq!("A stringwithAn early newline.", chars.as_str());
+
+        let points: Vec<_> = charpoints.iter().map(|(p, _)| p.to_array()).collect();
+
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..8 {
+            let [x, y] = points[i];
+            assert_eq!(9 + i as i32, x);
+            assert_eq!(2, y);
+        }
+
+        for i in 0..4 {
+            let [x, y] = points[8 + i];
+            assert_eq!(13 + i as i32, x);
+            assert_eq!(1, y);
+        }
+
+        for i in 0..16 {
+            let [x, y] = points[12 + i];
+            assert_eq!(i as i32, x);
+            assert_eq!(0, y);
+        }
     }
 }
