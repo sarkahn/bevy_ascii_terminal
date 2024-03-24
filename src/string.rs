@@ -27,6 +27,7 @@ impl<'a> Default for FormattedString<'a> {
     }
 }
 
+/// Allows you to customize a string before it gets written to the terminal.
 pub trait StringFormatter<'a> {
     /// By default any string written to the terminal will be wrapped at any
     /// newline and also "word wrapped". If disabled, strings will be written
