@@ -4,18 +4,19 @@ use std::{
     slice::{self, IterMut},
 };
 
-use bevy::{math::IVec2, render::color::Color};
+use bevy::{ecs::component::Component, math::IVec2, render::color::Color};
 
 use crate::{
-    border::{BorderState, TerminalBorder},
+    border::{Border, TerminalBorderMut},
     string::{NoWordWrapStringIter, StringFormatter, WrappedStringIter, XyStringIter},
-    Dir4, FormattedString, GridPoint, GridRect, Pivot, PivotedPoint, Tile,
+    FormattedString, GridPoint, GridRect, Pivot, PivotedPoint, Tile,
 };
 
+#[derive(Debug, Default, Clone, Component)]
 pub struct Terminal {
     tiles: Vec<Tile>,
     size: IVec2,
-    border: Option<BorderState>,
+    border: Option<Border>,
     clear_tile: Tile,
 }
 
@@ -40,6 +41,10 @@ impl Terminal {
 
     pub fn height(&self) -> usize {
         self.size.y as usize
+    }
+
+    pub fn tile_count(&self) -> usize {
+        self.tiles.len()
     }
 
     pub fn tile(&self, xy: impl Into<PivotedPoint>) -> &Tile {
@@ -79,7 +84,8 @@ impl Terminal {
     ///
     /// let mut term = Terminal::new([8,4]);
     /// term.put_string([0,0], "Hello".fg(Color::BLUE));
-    /// term.put_string([0,1].pivot(Pivot::TopLeft), "A looooong string".no_word_wrap().ignore_spaces());
+    /// let string = "A looooong string".bg(Color::GREEN).no_word_wrap().ignore_spaces();
+    /// term.put_string([0,1].pivot(Pivot::TopLeft), string);
     /// ```
     pub fn put_string<'a>(
         &'a mut self,
@@ -168,201 +174,73 @@ impl Terminal {
             .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter_mut())
     }
 
-    pub fn set_border(&mut self, border: Option<impl Into<BorderState>>) {
-        if let Some(border) = border.map(|b| b.into()) {
-            // border.clear_tile = self.clear_tile;
-            // border.terminal_size = self.size;
+    pub fn iter_xy(&self) -> impl DoubleEndedIterator<Item = (IVec2, &Tile)> {
+        self.tiles
+            .iter()
+            .enumerate()
+            .map(|(i, t)| (self.index_to_xy(i), t))
+    }
+
+    pub fn put_border(&mut self, border: Border) -> TerminalBorderMut {
+        self.set_border(Some(border));
+        self.border_mut()
+    }
+
+    pub fn set_border(&mut self, border: Option<Border>) {
+        if let Some(mut border) = border {
+            border.build_edge_tiles(self.size, self.clear_tile);
             self.border = Some(border);
         } else {
             self.border = None
         }
     }
 
-    pub fn border(&self) -> Option<&BorderState> {
+    pub fn border(&self) -> &Border {
+        self.border.as_ref().unwrap()
+    }
+
+    pub fn border_mut(&mut self) -> TerminalBorderMut {
+        self.get_border_mut().unwrap()
+    }
+
+    pub fn get_border(&self) -> Option<&Border> {
         self.border.as_ref()
     }
 
-    pub fn border_mut(&mut self) -> Option<TerminalBorder> {
+    pub fn get_border_mut(&mut self) -> Option<TerminalBorderMut> {
         let clear_tile = self.clear_tile;
         let term_size = self.size;
-        self.border.as_mut().map(|state| TerminalBorder {
-            border: state,
-            term_size,
-            clear_tile,
-        })
+        self.border
+            .as_mut()
+            .map(|state| TerminalBorderMut::new(state, term_size, clear_tile))
     }
 
     pub fn bounds(&self) -> GridRect {
         GridRect::new([0, 0], self.size())
     }
 
-    // T: Fn(&mut [Tile]) -> slice::IterMut<'_, Tile>
-    // iter::FlatMap<iter::Skip<slice::ChunksMut<'a, Tile>>, IterMut<'a, Tile>, T>
-    fn iter_test(&mut self, rect: GridRect) {
-        // -> impl Iterator<Item = &mut Tile> {
-        let start = rect.min().as_index(self.width());
-        let end = rect.max().as_index(self.width());
-        let step = self.width() - rect.width();
-        let iter = self.tiles[start..=end]
-            .windows(rect.width())
-            .step_by(step)
-            .flatten();
-        // //let row_width = self.width();
-        // let w = self.width();
-        // self.tiles
-        //     .chunks_mut(w)
-        //     .skip(rect.bottom() as usize)
-        //     .flat_map(move |tiles: &'_ mut [Tile]| {
-        //         tiles[rect.left() as usize..=rect.right() as usize].iter_mut()
-        //     })
+    pub fn xy_to_index(&self, xy: IVec2) -> usize {
+        xy.as_index(self.width())
+    }
+
+    pub fn index_to_xy(&self, i: usize) -> IVec2 {
+        let x = (i % self.width()) as i32;
+        let y = (i / self.width()) as i32;
+        IVec2::new(x, y)
     }
 }
-
-// pub struct TerminalTile<'a> {
-//     index: usize,
-//     terminal: &'a mut Terminal,
-// }
-
-// impl<'a> TerminalTile<'a> {
-//     pub fn glyph(self, glyph: char) -> Self {
-//         let i = self.index;
-//         self.terminal.tiles[i].glyph = glyph;
-//         self
-//     }
-
-//     pub fn fg(self, color: Color) -> Self {
-//         let i = self.index;
-//         self.terminal.tiles[i].fg_color = color;
-//         self
-//     }
-
-//     pub fn bg(self, color: Color) -> Self {
-//         let i = self.index;
-//         self.terminal.tiles[i].bg_color = color;
-//         self
-//     }
-// }
-
-// pub struct TilesIter<'a, T>
-// where
-//     T: Fn(&mut [Tile]) -> slice::IterMut<'_, Tile>,
-// {
-//     iter: iter::FlatMap<iter::Skip<slice::ChunksMut<'a, Tile>>, IterMut<'a, Tile>, T>,
-// }
-
-// impl<'a, T: Fn(&mut [Tile]) -> slice::IterMut<'_, Tile>> Iterator for TilesIter<'a, T> {
-//     type Item = &'a mut Tile;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         self.iter.next()
-//     }
-// }
-
-pub struct TerminalRectIterMut<'a> {
-    iter: IterMut<'a, Tile>,
-    head: IVec2,
-    tail: IVec2,
-    rect: GridRect,
-    skip: usize,
-}
-
-impl<'a> TerminalRectIterMut<'a> {
-    pub fn new(term: &'a mut Terminal, rect: GridRect) -> Self {
-        let start = rect.min().as_index(term.width());
-        let end = rect.max().as_index(term.width());
-        let skip = term.width() - rect.width();
-        Self {
-            iter: term.tiles[start..=end].iter_mut(),
-            head: rect.min(),
-            tail: rect.max(),
-            rect,
-            skip,
-        }
-    }
-}
-
-impl<'a> Iterator for TerminalRectIterMut<'a> {
-    type Item = &'a mut Tile;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.head.cmpgt(self.tail).all() {
-            return None;
-        }
-        let ret = self.iter.next();
-        if self.head.x > self.rect.right() {
-            self.head.x = self.rect.left();
-            self.head.y += 1;
-            self.iter.nth(self.skip);
-        }
-        ret
-    }
-}
-
-impl<'a> DoubleEndedIterator for TerminalRectIterMut<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        if self.tail.cmplt(self.head).all() {
-            return None;
-        }
-        let ret = self.iter.next_back();
-        if self.tail.x < self.rect.left() {
-            self.tail.x = self.rect.right();
-            self.tail.y -= 1;
-            self.iter.nth_back(self.skip);
-        }
-        ret
-    }
-}
-
-// impl<'a> TerminalTiles<'a> {
-//     pub fn iter_mut(&'a mut self) -> impl Iterator<Item = &'a mut Tile> {
-//         self.terminal.iter_rect_mut(self.rect)
-//     }
-
-//     pub fn glyphs(&'a mut self, glyph: char) {
-//         self.iter_mut().for_each(|t| t.glyph = glyph);
-//     }
-// }
-
-// impl<'a> IntoIterator for TerminalTiles<'a> {
-//     type Item;
-
-//     type IntoIter;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.terminal.iter_rect_mut(self.rect)
-//     }
-// }
-
-// impl<'a> TerminalTiles<'a> {
-//     pub fn iter(&'a mut self) -> impl Iterator<Item = &'a mut Tile> {
-//         self.terminal.iter_rect_mut(self.rect)
-//     }
-// }
-
-// impl<'a, T> IntoIterator for TerminalTiles<'a>
-// where
-//     T: Fn(&mut [Tile]) -> slice::IterMut<'_, Tile>,
-// {
-//     type Item = &'a mut Tile;
-
-//     type IntoIter = iter::FlatMap<iter::Skip<slice::ChunksMut<'a, Tile>>, IterMut<'a, Tile>, T>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         todo!()
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
 
     use bevy::render::color::Color;
 
-    use crate::{string::StringFormatter, GridPoint, GridRect, Pivot};
+    use crate::{border::Border, string::StringFormatter, GridPoint, GridRect, Pivot};
 
-    use super::{BorderState, Terminal};
+    use super::Terminal;
 
     #[test]
-    fn border() {
+    fn iter_rect_mut() {
         let mut term = Terminal::new([10, 10]);
         let rect = GridRect::from_points([7, 7], [9, 9]);
         let chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
@@ -372,13 +250,6 @@ mod tests {
 
         assert_eq!('a', term.tile([7, 7]).glyph);
         assert_eq!('i', term.tile([9, 9]).glyph);
-
-        // for t in term.iter_test(rect) {
-        //     println!("{}", t.glyph);
-        // }
-
-        //let border = TerminalBorder::from_string("abcdefgh").put_title("Hello");
-        //term.set_border(Some(border)).put_title("Hello");
     }
 
     #[test]
@@ -393,9 +264,15 @@ mod tests {
         );
 
         term.put_string([1, 1], "Hello");
+    }
 
-        // let string = "whoa".to_string();
-
-        // term.put_string([10, 10], &string);
+    #[test]
+    fn border() {
+        let mut term = Terminal::new([15, 15]);
+        term.put_border(Border::single_line())
+            .put_title("Hello".fg(Color::BLUE));
+        for (_, t) in term.border().iter() {
+            println!("{}", t.glyph);
+        }
     }
 }

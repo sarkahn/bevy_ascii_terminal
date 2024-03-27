@@ -30,8 +30,8 @@ impl<'a> Default for FormattedString<'a> {
 /// Allows you to customize a string before it gets written to the terminal.
 pub trait StringFormatter<'a> {
     /// By default any string written to the terminal will be wrapped at any
-    /// newline and also "word wrapped". If disabled, strings will be written
-    /// as is
+    /// newline and also "word wrapped". If disabled, strings will only be
+    /// wrapped at the edge of the terminal.
     fn no_word_wrap(self) -> FormattedString<'a>;
 
     /// Set the foreground color for the string tiles
@@ -162,7 +162,7 @@ pub struct WrappedStringIter<'a> {
 impl<'a> WrappedStringIter<'a> {
     pub fn new(string: &'a str, rect: GridRect, pivot: Pivot) -> Self {
         let mut xy = rect.pivot_point(pivot);
-        let vertical_offset = vertical_pivot_offset(string, pivot, rect.width());
+        let vertical_offset = wrapped_line_count_offset(string, pivot, rect.width());
         // +1 as first iteration will immediately line feed
         xy.y += vertical_offset + 1;
         Self {
@@ -186,18 +186,13 @@ impl<'a> Iterator for WrappedStringIter<'a> {
     type Item = (IVec2, char);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Some(ch) = self.chars.next().or_else(|| {
-            let Some((next_line, remaining)) = wrap_string(self.remaining, self.rect.width())
-            else {
-                return None;
-            };
+        let ch = self.chars.next().or_else(|| {
+            let (next_line, remaining) = wrap_string(self.remaining, self.rect.width())?;
             self.line_feed(next_line.len());
             self.remaining = remaining;
             self.chars = next_line.chars();
             self.chars.next()
-        }) else {
-            return None;
-        };
+        })?;
         let ret = Some((self.xy, ch));
         self.xy.x += 1;
         ret
@@ -205,6 +200,7 @@ impl<'a> Iterator for WrappedStringIter<'a> {
 }
 
 // TODO: Need to wrap at width
+// TODO: Does this make sense? We wrap on newlines but don't word wrap?
 pub struct NoWordWrapStringIter<'a> {
     rect: GridRect,
     pivot: Pivot,
@@ -217,17 +213,13 @@ impl<'a> Iterator for NoWordWrapStringIter<'a> {
     type Item = (IVec2, char);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Some(ch) = self.chars.next().or_else(|| {
-            let Some(line) = self.lines.next() else {
-                return None;
-            };
+        let ch = self.chars.next().or_else(|| {
+            let line = self.lines.next()?;
             let line = line.trim_end();
             self.line_feed(line.len());
             self.chars = line.chars();
             self.chars.next()
-        }) else {
-            return None;
-        };
+        })?;
         let ret = Some((self.xy, ch));
         self.xy.x += 1;
         ret
@@ -237,7 +229,7 @@ impl<'a> Iterator for NoWordWrapStringIter<'a> {
 impl<'a> NoWordWrapStringIter<'a> {
     pub fn new(string: &'a str, rect: GridRect, pivot: Pivot) -> Self {
         let mut xy = rect.pivot_point(pivot);
-        let vertical_offset = vertical_pivot_offset(string, pivot, rect.width());
+        let vertical_offset = wrapped_line_count_offset(string, pivot, rect.width());
         // +1 as first iteration will immediately line feed
         xy.y += vertical_offset + 1;
         Self {
@@ -293,6 +285,8 @@ fn wrap_string(string: &str, max_len: usize) -> Option<(&str, &str)> {
     Some((a.trim_end(), b))
 }
 
+/// Calculate the number of tiles to offset a string by horizontally based
+/// on it's pivot.
 fn horizontal_pivot_offset(pivot: Pivot, line_len: usize) -> i32 {
     match pivot {
         Pivot::TopLeft | Pivot::LeftCenter | Pivot::BottomLeft => 0,
@@ -300,7 +294,8 @@ fn horizontal_pivot_offset(pivot: Pivot, line_len: usize) -> i32 {
     }
 }
 
-fn vertical_pivot_offset(string: &str, pivot: Pivot, max_width: usize) -> i32 {
+/// Calculate the number of vertical lines a wrapped string will occupy.
+fn wrapped_line_count_offset(string: &str, pivot: Pivot, max_width: usize) -> i32 {
     match pivot {
         Pivot::TopLeft | Pivot::TopCenter | Pivot::TopRight => 0,
         _ => {

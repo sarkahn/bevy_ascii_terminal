@@ -43,16 +43,6 @@ impl GridRect {
         Self::new(bl, size)
     }
 
-    /// Creates a [GridRect] from the given pivot position and size.
-    pub fn from_pivot_pos(pivot: Pivot, pos: impl GridPoint, size: impl GridPoint) -> Self {
-        let xy = pos.as_ivec2();
-        let size = size.as_ivec2();
-
-        let bl = xy - (size.sub(1).as_vec2() * pivot.normalized()).as_ivec2();
-        let tr = bl + size.sub(1);
-        Self::from_points(bl, tr)
-    }
-
     /// Returns a [GridRect] clipped by the bounds of the given [GridRect]
     pub fn clipped(&self, clipper: GridRect) -> GridRect {
         let [bmin, bmax] = [clipper.min(), clipper.max()];
@@ -67,22 +57,16 @@ impl GridRect {
         GridRect::new(self.xy + xy.as_ivec2(), self.size)
     }
 
-    /// Returns a [GridRect] of the same size, adjusted to the given pivot.
-    pub fn pivoted(&self, pivot: Pivot) -> GridRect {
-        Self::from_pivot_pos(pivot, self.xy, self.size)
-    }
-
     /// Returns a [GridRect] with both rects contained in it.
     pub fn merged(&self, mut other: GridRect) -> GridRect {
-        let [min, max] = [self.min(), self.max()];
-        other.envelope_point(min);
-        other.envelope_point(max);
+        other.envelope_point(self.min());
+        other.envelope_point(self.max());
         other
     }
 
     /// Adjusts a single corner of the rect to contain the given point.
-    pub fn envelope_point(&mut self, point: impl Into<IVec2>) {
-        let point = point.into();
+    pub fn envelope_point(&mut self, point: impl GridPoint) {
+        let point = point.as_ivec2();
         let min = self.min().min(point);
         let max = self.max().max(point);
         *self = GridRect::from_points(min, max);
@@ -205,7 +189,7 @@ impl GridRect {
     }
 
     /// Iterate over each point of the rect.
-    pub fn iter_points(&self) -> GridRectIter {
+    pub fn iter_points(&self) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
         GridRectIter::new(*self)
     }
 
@@ -553,6 +537,19 @@ mod tests {
         assert_eq!([-4, 5], rect.pivot_point(Pivot::TopLeft).to_array());
         assert_eq!([5, 5], rect.pivot_point(Pivot::TopRight).to_array());
         assert_eq!([5, -4], rect.pivot_point(Pivot::BottomRight).to_array());
+    }
+
+    #[test]
+    fn iter() {
+        let rect = GridRect::new([0, 0], [3, 3]);
+        #[rustfmt::skip]
+        let points = vec![
+            [0,0], [1,0], [2,0], 
+            [0,1], [1,1], [2,1], 
+            [0,2], [1,2], [2,2]
+        ];
+        let rect_points: Vec<_> = rect.iter_points().map(|p| p.to_array()).collect();
+        assert_eq!(points, rect_points);
     }
 
     #[test]
