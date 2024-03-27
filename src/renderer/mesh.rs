@@ -1,13 +1,10 @@
 use std::iter::repeat;
 
 use bevy::{
-    app::Plugin,
+    app::{Plugin, PostUpdate},
     asset::{Assets, Handle},
     ecs::{
-        component::Component,
-        entity::Entity,
-        query::{Added, Changed, Or, With},
-        system::{Commands, Query, Res, ResMut},
+        component::Component, entity::Entity, query::{Added, Changed, Or, With}, schedule::IntoSystemConfigs, system::{Commands, Query, Res, ResMut}
     },
     hierarchy::BuildChildren,
     math::{bounding::Aabb2d, IVec2, Vec2},
@@ -17,7 +14,7 @@ use bevy::{
         render_asset::RenderAssetUsages,
         render_resource::{PrimitiveTopology, VertexFormat},
     },
-    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+    sprite::{Mesh2dHandle},
 };
 
 use crate::{GridPoint, Pivot, Terminal};
@@ -36,6 +33,7 @@ pub struct TerminalMeshPlugin;
 impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         //app.add_systems(Update, (add_and_remove, update).chain());
+        app.add_systems(PostUpdate, (init_mesh, update_mesh, reset_terminal_state).chain());
     }
 }
 
@@ -97,31 +95,6 @@ impl TerminalMeshRenderer {
     }
 }
 
-// fn add_remove_border(
-//     mut commands: Commands,
-//     mut q_term: Query<(Entity, &Terminal)>,
-//     mut meshes: ResMut<Assets<Mesh>>,
-// ) {
-//     for (entity, term, mut border_entity) in &mut q_term {
-//         if term.border().is_some() && border_entity.0.is_none() {
-//             let mesh = new_tile_mesh();
-//             let mesh_bundle = MaterialMesh2dBundle::<TerminalMaterial> {
-//                 mesh: Mesh2dHandle(meshes.add(mesh)),
-//                 ..Default::default()
-//             };
-//             let border = commands.spawn((mesh_bundle, BorderMesh)).id();
-//             let border = commands.entity(entity).add_child(border).id();
-//             border_entity.0 = Some(border);
-//         }
-
-//         if let Some(border_entity) = border_entity.0 {
-//             if term.border().is_none() {
-//                 commands.entity(border_entity).despawn();
-//             }
-//         }
-//     }
-// }
-
 fn init_mesh(
     mut q_term: Query<(&Terminal, &mut Mesh2dHandle, &TerminalMeshRenderer), Added<Mesh2dHandle>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -179,15 +152,46 @@ fn update_mesh(
             }
         });
 
-        let tile_count = term.tile_count();
-        if term.get_border().is_some() {
+        if term.get_border().is_some() && has_border.is_some() {
+            let border = term.border();
+            if border.changed() {
+
+            }
+        } else if term.get_border().is_some() && has_border.is_none() {
             commands.entity(term_entity).insert(HasBorder);
-        } else if mesh.count_vertices() > tile_count * 4 {
+            let border = term.border();
+            let origin = renderer.mesh_origin();
+            let tile_size = renderer.tile_size();
+            VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
+                for (p, _) in border.iter() {
+                    mesher.add_tile(p.x, p.y);
+                }
+            });
+
+            UVMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
+                for (_, t) in border.iter() {
+                    mesher.add_tile(t.glyph, t.fg_color, t.bg_color);
+                }
+            });
+        }// If border is removed we resize the mesh for just the base terminal tiles
+        else if term.get_border().is_none() && has_border.is_some() {
+            resize_mesh_data(mesh, term.tile_count());
+            commands.entity(term_entity).remove::<HasBorder>();
         }
     }
 }
 
-fn resize_mesh(mesh: &mut Mesh, tile_count: usize) {
+fn reset_terminal_state(
+    mut q_term: Query<&mut Terminal>
+) {
+    for mut term in &mut q_term {
+        if let Some(mut border) = term.get_border_mut() {
+            border.reset_changed_state();
+        }
+    }
+}
+
+fn resize_mesh_data(mesh: &mut Mesh, tile_count: usize) {
     let Some(Indices::U32(indices)) = mesh.indices_mut() else {
         panic!("Incorrect terminal mesh indices format");
     };

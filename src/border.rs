@@ -62,6 +62,10 @@ impl Border {
         }
     }
 
+    pub fn changed(&self) -> bool {
+        self.changed
+    }
+
     pub(crate) fn build_edge_tiles(&mut self, size: IVec2, mut clear_tile: Tile) {
         let rect = GridRect::from_points([-1, -1], size);
         clear_tile.glyph = self.edge_glyphs[0];
@@ -98,7 +102,8 @@ impl Border {
     }
 
     fn put_tile(&mut self, xy: impl GridPoint, value: Tile) {
-        // Note tile positions are stored y-first for proper left-to-right, down-to-up sorting
+        // Note tile positions are stored y-first for proper left-to-right, 
+        // down-to-up sorting
         self.tiles.insert((xy.y(), xy.x()), value);
     }
 
@@ -216,6 +221,11 @@ impl<'a> TerminalBorderMut<'a> {
     pub fn clear_strings(&'a mut self) -> &'a mut Self {
         self.border.tiles.clear();
         self
+    }
+
+    
+    pub(crate) fn reset_changed_state(&mut self) {
+        self.border.changed = false;
     }
 }
 
