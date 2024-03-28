@@ -2,9 +2,9 @@ use std::iter::repeat;
 
 use bevy::{
     app::{Plugin, PostUpdate},
-    asset::{Assets, Handle},
+    asset::{AssetEvent, Assets, Handle},
     ecs::{
-        component::Component, entity::Entity, query::{Added, Changed, Or, With}, schedule::IntoSystemConfigs, system::{Commands, Query, Res, ResMut}
+        component::Component, entity::Entity, event::EventReader, query::{Added, Changed, Or, With}, schedule::IntoSystemConfigs, system::{Commands, Query, Res, ResMut}
     },
     hierarchy::BuildChildren,
     math::{bounding::Aabb2d, IVec2, Vec2},
@@ -12,9 +12,9 @@ use bevy::{
         color::Color,
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
         render_asset::RenderAssetUsages,
-        render_resource::{PrimitiveTopology, VertexFormat},
+        render_resource::{PrimitiveTopology, VertexFormat}, texture::Image,
     },
-    sprite::{Mesh2dHandle},
+    sprite::Mesh2dHandle,
 };
 
 use crate::{GridPoint, Pivot, Terminal};
@@ -33,12 +33,17 @@ pub struct TerminalMeshPlugin;
 impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         //app.add_systems(Update, (add_and_remove, update).chain());
-        app.add_systems(PostUpdate, (init_mesh, update_mesh, reset_terminal_state).chain());
+        app
+        .add_systems(PostUpdate, (update_mesh_verts, update_mesh, reset_terminal_state).chain());
     }
 }
 
 #[derive(Component)]
 pub struct HasBorder;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct UpdateMeshVerts;
 
 #[derive(Component)]
 pub struct TerminalMeshRenderer {
@@ -95,30 +100,69 @@ impl TerminalMeshRenderer {
     }
 }
 
-fn init_mesh(
-    mut q_term: Query<(&Terminal, &mut Mesh2dHandle, &TerminalMeshRenderer), Added<Mesh2dHandle>>,
+fn handle_font_change(
+    mut q_term: Query<(Entity, &Terminal, &mut TerminalMeshRenderer, &Handle<TerminalMaterial>)>,
+    images: Res<Assets<Image>>,
+    mut mat_evt: EventReader<AssetEvent<Image>>,
+    mut materials: ResMut<Assets<TerminalMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut commands: Commands,
 ) {
-    for (term, mut handle, renderer) in &mut q_term {
-        let len = term.tile_count();
-        let mut mesh = Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::default(),
-        );
-        mesh.insert_indices(Indices::U32(vec![0; len * 6]));
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0; 3]; len * 4]);
-        mesh.insert_attribute(ATTRIBUTE_UV, vec![[0.0; 2]; len * 4]);
-        mesh.insert_attribute(ATTRIBUTE_COLOR_FG, vec![[0.0; 4]; len * 4]);
-        mesh.insert_attribute(ATTRIBUTE_COLOR_BG, vec![[0.0; 4]; len * 4]);
+    for evt in mat_evt.read() {
+        match evt {
+            AssetEvent::Added { id } | 
+            AssetEvent::Modified { id } |
+            AssetEvent::Unused { id } |
+            AssetEvent::Removed { id } |
+            AssetEvent::LoadedWithDependencies { id } => {
+                for (e, term, mut renderer, mat_handle) in &mut q_term {
+                    let mat = materials.get(mat_handle).expect("Error getting terminal matieral");
+                    if let Some(image) = mat.texture.clone() {
+                        if image.id() == *id {
+                            if let Some(image) = images.get(image) {
+                                // TODO: Account for tile scaling
+                                let tile_size = (image.size() / 16).as_vec2();
+                                renderer.update_data(term.size(), tile_size);
+                            }
+                            commands.entity(e).insert(UpdateMeshVerts);
+                            
+                            // renderer.update_data(term.size(), tile_size)
+                        }
+                    }
+                }
+            },
+        }
+    }
+}
 
+fn update_mesh_verts(
+    q_term: Query<(Entity, &Terminal, &Mesh2dHandle, &TerminalMeshRenderer), With<UpdateMeshVerts>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut commands: Commands,
+) {
+    for (term_entity, term, mesh_handle, renderer) in &q_term {
+        if meshes.get(mesh_handle.0.clone()).is_none() {  
+            let len = term.tile_count();  
+            let mut mesh = Mesh::new(
+                PrimitiveTopology::TriangleList,
+                RenderAssetUsages::default(),
+            );
+            mesh.insert_indices(Indices::U32(vec![0; len * 6]));
+            mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vec![[0.0; 3]; len * 4]);
+            mesh.insert_attribute(ATTRIBUTE_UV, vec![[0.0; 2]; len * 4]);
+            mesh.insert_attribute(ATTRIBUTE_COLOR_FG, vec![[0.0; 4]; len * 4]);
+            mesh.insert_attribute(ATTRIBUTE_COLOR_BG, vec![[0.0; 4]; len * 4]);
+            meshes.insert(mesh_handle.0.clone(), mesh);
+        }
+        let mesh = meshes.get_mut(mesh_handle.0.clone()).expect("Error getting terminal mesh");
         let origin = renderer.mesh_origin();
         let tile_size = renderer.tile_size();
-        VertMesher::build_mesh_verts(origin, tile_size, &mut mesh, |mesher| {
+        VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
             for (i, (p, _)) in term.iter_xy().enumerate() {
                 mesher.set_tile(p.x, p.y, i);
             }
         });
-        handle.0 = meshes.add(mesh);
+        commands.entity(term_entity).remove::<UpdateMeshVerts>();
     }
 }
 
