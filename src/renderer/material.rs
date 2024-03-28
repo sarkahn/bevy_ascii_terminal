@@ -1,4 +1,5 @@
 use bevy::{
+    ecs::schedule::SystemSet,
     prelude::{Asset, Assets, Color, Handle, Image, Mesh, Plugin, Shader},
     reflect::TypePath,
     render::{
@@ -32,7 +33,7 @@ impl Plugin for TerminalMaterialPlugin {
     }
 }
 
-#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+#[derive(Asset, TypePath, AsBindGroup, Debug, PartialEq, Clone)]
 pub struct TerminalMaterial {
     #[uniform(0)]
     pub clip_color: Color,

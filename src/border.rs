@@ -1,15 +1,8 @@
-use std::{collections::BTreeMap, iter::once};
+use std::collections::BTreeMap;
 
-use bevy::{
-    math::{IVec2, Mat2},
-    render::color::Color,
-};
+use bevy::math::IVec2;
 
-use crate::{
-    direction::{self, Dir4, DOWN, LEFT, RIGHT, UP},
-    string::StringFormatter,
-    FormattedString, GridPoint, GridRect, Pivot, Tile,
-};
+use crate::{direction::Dir4, FormattedString, GridPoint, GridRect, Pivot, Tile};
 
 #[derive(Debug, Clone)]
 pub struct Border {
@@ -102,7 +95,7 @@ impl Border {
     }
 
     fn put_tile(&mut self, xy: impl GridPoint, value: Tile) {
-        // Note tile positions are stored y-first for proper left-to-right, 
+        // Note tile positions are stored y-first for proper left-to-right,
         // down-to-up sorting
         self.tiles.insert((xy.y(), xy.x()), value);
     }
@@ -163,6 +156,7 @@ impl<'a> TerminalBorderMut<'a> {
         offset: i32,
         string: impl Into<FormattedString<'a>>,
     ) -> &mut Self {
+        self.border.changed = true;
         let fmt: FormattedString = string.into();
         let fg_color = fmt.fg_color.unwrap_or(self.clear_tile.fg_color);
         let bg_color = fmt.bg_color.unwrap_or(self.clear_tile.bg_color);
@@ -209,6 +203,7 @@ impl<'a> TerminalBorderMut<'a> {
 
     /// Set all the border tile colors to match the terminal's clear tile
     pub fn clear_colors(&'a mut self) -> &'a mut Self {
+        self.border.changed = true;
         let clear = self.clear_tile;
         for tile in self.border.tiles.values_mut() {
             tile.fg_color = clear.fg_color;
@@ -219,11 +214,11 @@ impl<'a> TerminalBorderMut<'a> {
 
     /// Remove any text written to the border.
     pub fn clear_strings(&'a mut self) -> &'a mut Self {
+        self.border.changed = true;
         self.border.tiles.clear();
         self
     }
 
-    
     pub(crate) fn reset_changed_state(&mut self) {
         self.border.changed = false;
     }
