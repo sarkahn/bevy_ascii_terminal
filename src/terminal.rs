@@ -21,11 +21,10 @@ pub struct Terminal {
 }
 
 impl Terminal {
-    pub fn new(size: impl Into<IVec2>) -> Self {
-        let size = size.into();
+    pub fn new(size: impl GridPoint) -> Self {
         Self {
             tiles: vec![Tile::DEFAULT; size.len()],
-            size,
+            size: size.as_ivec2(),
             border: None,
             clear_tile: Tile::DEFAULT,
         }

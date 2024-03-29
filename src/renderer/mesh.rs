@@ -22,9 +22,9 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::{GridPoint, GridRect, Pivot, Terminal};
+use crate::{transform::TerminalTransform, GridPoint, GridRect, Pivot, Terminal, TerminalGrid};
 
-use super::{material::TerminalMaterial, uv_mapping::UvMapping, TerminalRenderSettings};
+use super::{material::TerminalMaterial, uv_mapping::UvMapping};
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Uv", 1123131, VertexFormat::Float32x2);
@@ -62,7 +62,7 @@ pub struct TerminalMeshSystems;
 pub struct UpdateMeshVerts;
 
 #[derive(Component)]
-pub struct TerminalMeshRenderer {
+pub struct TerminalRenderer {
     pub mesh_pivot: Pivot,
     pixels_per_tile: IVec2,
     /// The size of a tile of the terminal mesh in world space, as read from
@@ -70,22 +70,24 @@ pub struct TerminalMeshRenderer {
     tile_size_world: Vec2,
     /// Terminal grid size as read from previous mesh rebuild.
     term_grid_size: IVec2,
-    mesh_bounds: Aabb2d,
+    mesh_bounds: Rect,
 }
 
-impl TerminalMeshRenderer {
-    /// The local 2d bounds of the rendered terminal mesh in local
-    /// space, as derived from the most previous mesh rebuild.
-    pub fn mesh_bounds(&self) -> Aabb2d {
-        self.mesh_bounds
+impl TerminalRenderer {
+    pub fn new(mesh_pivot: Pivot, size: impl GridPoint) -> Self {
+        Self {
+            mesh_pivot,
+            term_grid_size: size.as_ivec2(),
+            pixels_per_tile: Default::default(),
+            tile_size_world: Default::default(),
+            mesh_bounds: Default::default(),
+        }
     }
 
-    /// Returns the world position (bottom left corner) of a mesh tile in the
-    /// terminal from it's tile index. Note this ignores bounds.
-    ///
-    /// Tile indices range from 0 at the bottom/left to size-1 at the top/right.
-    pub fn tile_position_world(&self, xy: impl GridPoint) -> Vec2 {
-        self.mesh_bounds.min + xy.as_vec2() * self.tile_size_world
+    /// The local 2d bounds of the rendered terminal mesh in local
+    /// space, as derived from the most previous mesh rebuild.
+    pub fn mesh_bounds(&self) -> Rect {
+        self.mesh_bounds
     }
 
     /// The grid size of the terminal
@@ -105,8 +107,7 @@ impl TerminalMeshRenderer {
         // Truncate to a grid position
         let min = -(size * pivot).as_ivec2().as_vec2();
         let max = min + size;
-        let bounds = Aabb2d { min, max };
-        self.mesh_bounds = bounds;
+        self.mesh_bounds = Rect::from_corners(min, max);
     }
 
     pub fn mesh_origin(&self) -> Vec2 {
@@ -115,17 +116,6 @@ impl TerminalMeshRenderer {
 
     pub fn tile_size_world(&self) -> Vec2 {
         self.tile_size_world
-    }
-
-    pub fn world_to_tile(&self, world_pos: impl Into<Vec2>) -> Option<IVec2> {
-        let world_pos: Vec2 = world_pos.into();
-        let pos = ((world_pos - self.mesh_bounds.min) / self.tile_size_world)
-            .floor()
-            .as_ivec2();
-        if pos.cmplt(IVec2::ZERO).any() || pos.cmpge(self.term_grid_size).any() {
-            return None;
-        }
-        Some(pos)
     }
 
     pub fn world_grid(&self, world_pos: Vec2) -> GridRect {
@@ -162,15 +152,11 @@ fn init_mesh(
 }
 
 fn on_image_load(
-    mut q_term: Query<(
-        &mut TerminalMeshRenderer,
-        &Terminal,
-        &Handle<TerminalMaterial>,
-    )>,
+    mut q_term: Query<(&mut TerminalRenderer, &Terminal, &Handle<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
     mut img_evt: EventReader<AssetEvent<Image>>,
-    settings: Res<TerminalRenderSettings>,
+    settings: Res<TerminalGrid>,
 ) {
     for evt in img_evt.read() {
         let id = match evt {
@@ -201,15 +187,11 @@ fn on_image_load(
 }
 
 fn on_image_change(
-    mut q_term: Query<(
-        &mut TerminalMeshRenderer,
-        &Terminal,
-        &Handle<TerminalMaterial>,
-    )>,
+    mut q_term: Query<(&mut TerminalRenderer, &Terminal, &Handle<TerminalMaterial>)>,
     mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
-    settings: Res<TerminalRenderSettings>,
+    settings: Res<TerminalGrid>,
 ) {
     for evt in mat_evt.read() {
         let event_id = match evt {
@@ -244,10 +226,10 @@ fn on_renderer_change(
         (
             &Terminal,
             &Mesh2dHandle,
-            &TerminalMeshRenderer,
+            &TerminalRenderer,
             &Handle<UvMapping>,
         ),
-        Changed<TerminalMeshRenderer>,
+        Changed<TerminalRenderer>,
     >,
     mut meshes: ResMut<Assets<Mesh>>,
     mappings: Res<Assets<UvMapping>>,
@@ -296,7 +278,7 @@ fn on_terminal_change(
         (
             &Terminal,
             &Mesh2dHandle,
-            &TerminalMeshRenderer,
+            &TerminalRenderer,
             &Handle<UvMapping>,
         ),
         Changed<Terminal>,

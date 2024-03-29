@@ -4,7 +4,7 @@ use bevy_ascii_terminal::{renderer::TerminalMaterial, *};
 fn main() {
     App::new()
         .init_resource::<Images>()
-        .add_plugins((DefaultPlugins, TerminalPlugin))
+        .add_plugins((DefaultPlugins, TerminalPlugin::default()))
         //.add_systems(Startup, setup)
         //.add_systems(Update, (on_image_event, on_material_event, set_image))
         .run();

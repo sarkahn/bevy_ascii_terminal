@@ -1,4 +1,4 @@
-use crate::GridRect;
+use crate::{transform::TerminalTransform, GridRect, TerminalGrid};
 use bevy::{
     app::PostStartup,
     ecs::{
@@ -19,9 +19,7 @@ use bevy::{
 
 use crate::Terminal;
 
-use super::{
-    material::TerminalMaterial, mesh::TerminalMeshRenderer, TerminalRenderSettings, TileScaling,
-};
+use super::{material::TerminalMaterial, mesh::TerminalRenderer};
 
 pub(crate) struct TerminalCameraPlugin;
 
@@ -118,11 +116,11 @@ impl TerminalCamera {
     ///
     /// For accurate results this should be called in [PostUpdate] after
     /// [TerminalCameraSystem].
-    pub fn cursor_to_tile(&self, terminal: &TerminalMeshRenderer) -> Option<IVec2> {
+    pub fn cursor_to_tile(&self, transform: &TerminalTransform) -> Option<IVec2> {
         self.cam_data
             .as_ref()
             .and_then(|d| d.cursor)
-            .and_then(|p| self.viewport_to_tile(p, terminal))
+            .and_then(|p| self.viewport_to_tile(p, transform))
     }
 
     /// Converts a window viewport position (IE: the cursor) to it's
@@ -133,10 +131,10 @@ impl TerminalCamera {
     pub fn viewport_to_tile(
         &self,
         viewport_position: Vec2,
-        renderer: &TerminalMeshRenderer,
+        transform: &TerminalTransform,
     ) -> Option<IVec2> {
         self.viewport_to_world(viewport_position)
-            .and_then(|p| renderer.world_to_tile(p))
+            .and_then(|p| transform.world_to_tile(p))
     }
 
     /// Transform a viewport position to it's corresponding world position using
@@ -205,7 +203,7 @@ fn on_window_resized(
 }
 
 fn on_renderer_change(
-    q_term: Query<&TerminalMeshRenderer, Changed<TerminalMeshRenderer>>,
+    q_term: Query<&TerminalRenderer, Changed<TerminalRenderer>>,
     mut vp_evt: EventWriter<UpdateViewportEvent>,
 ) {
     if !q_term.is_empty() {
@@ -219,7 +217,7 @@ fn update_viewport(
         &GlobalTransform,
         &Terminal,
         &Handle<TerminalMaterial>,
-        &TerminalMeshRenderer,
+        &TerminalRenderer,
     )>,
     mut q_cam: Query<(
         &mut Camera,
@@ -230,7 +228,7 @@ fn update_viewport(
     q_window: Query<&Window, With<PrimaryWindow>>,
     images: Res<Assets<Image>>,
     materials: Res<Assets<TerminalMaterial>>,
-    render_settings: Res<TerminalRenderSettings>,
+    render_settings: Res<TerminalGrid>,
 ) {
     if evt_vp_update.is_empty() || q_term.is_empty() || q_cam.is_empty() || q_window.is_empty() {
         return;
@@ -242,11 +240,11 @@ fn update_viewport(
         return;
     }
 
-    let ppu = q_term.iter().map(|(_,_,_,renderer)| renderer.pixels_per_tile())
+    let ppu = q_term
+        .iter()
+        .map(|(_, _, _, renderer)| renderer.pixels_per_tile())
         .reduce(IVec2::max)
         .unwrap();
-
-
 
     // For a tilescaling::world camera, every tile is 1 world
     // unit vertically.

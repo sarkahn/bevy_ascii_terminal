@@ -42,6 +42,10 @@ impl Border {
         Self::from_string("╔═╗║║╚═╝")
     }
 
+    pub fn empty() -> Self {
+        Self::from_string("        ")
+    }
+
     pub fn edge_glyph(&self, edge: Pivot) -> char {
         match edge {
             Pivot::TopLeft => self.edge_glyphs[0],
