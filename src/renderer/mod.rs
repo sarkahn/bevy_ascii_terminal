@@ -1,6 +1,6 @@
 use bevy::{
     app::Plugin,
-    ecs::system::Resource,
+    ecs::{bundle::Bundle, system::Resource},
     math::{UVec2, Vec2},
 };
 
@@ -18,7 +18,7 @@ pub use self::{
     camera::TerminalCameraSystems,
     font::{TerminalFont, TerminalFontSystems},
     material::TerminalMaterial,
-    mesh::TerminalMeshSystems,
+    mesh::{TerminalMeshRenderer, TerminalMeshSystems},
 };
 
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
@@ -60,4 +60,9 @@ impl Plugin for TerminalRendererPlugin {
             TerminalCameraPlugin,
         ));
     }
+}
+
+#[derive(Bundle)]
+pub struct TerminalRenderBundle {
+
 }

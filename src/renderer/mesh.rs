@@ -11,7 +11,7 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::{Query, Res, ResMut},
     },
-    math::{bounding::Aabb2d, IVec2, Vec2},
+    math::{bounding::Aabb2d, IRect, IVec2, Rect, Vec2},
     render::{
         color::Color,
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
@@ -64,7 +64,7 @@ pub struct UpdateMeshVerts;
 #[derive(Component)]
 pub struct TerminalMeshRenderer {
     pub mesh_pivot: Pivot,
-    tile_size_pixels: IVec2,
+    pixels_per_tile: IVec2,
     /// The size of a tile of the terminal mesh in world space, as read from
     /// previous mesh rebuild.
     tile_size_world: Vec2,
@@ -97,7 +97,7 @@ impl TerminalMeshRenderer {
     fn update_data(&mut self, term_size: IVec2, tile_size_pixels: IVec2, tile_size_world: Vec2) {
         self.term_grid_size = term_size;
         self.tile_size_world = tile_size_world;
-        self.tile_size_pixels = tile_size_pixels;
+        self.pixels_per_tile = tile_size_pixels;
 
         // Calculate mesh bounds
         let size = term_size.as_vec2() * tile_size_world;
@@ -113,7 +113,7 @@ impl TerminalMeshRenderer {
         self.mesh_bounds.min
     }
 
-    pub fn tile_size(&self) -> Vec2 {
+    pub fn tile_size_world(&self) -> Vec2 {
         self.tile_size_world
     }
 
@@ -133,6 +133,14 @@ impl TerminalMeshRenderer {
         let bl = world_pos + (size * self.mesh_pivot.normalized()).floor();
         GridRect::new(bl.as_ivec2(), size.as_ivec2())
     }
+
+    pub fn pixels_per_tile(&self) -> IVec2 {
+        self.pixels_per_tile
+    }
+
+    // pub fn pixel_bounds(&self, world_pos: Vec2) -> Rect {
+
+    // }
 }
 
 fn init_mesh(
@@ -185,9 +193,9 @@ fn on_image_load(
                     Some((renderer, term, image))
                 })
         {
-            let tile_size_pixels = (image.size() / 16).as_ivec2();
+            let pixels_per_tile = (image.size() / 16).as_ivec2();
             let tile_size_world = settings.tile_scaling.tile_size_world(image.size());
-            renderer.update_data(term.size(), tile_size_pixels, tile_size_world);
+            renderer.update_data(term.size(), pixels_per_tile, tile_size_world);
         }
     }
 }
@@ -255,7 +263,7 @@ fn on_renderer_change(
             .expect("Couldn't find terminal uv mapping");
 
         let origin = renderer.mesh_origin();
-        let tile_size = renderer.tile_size();
+        let tile_size = renderer.tile_size_world();
         VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
             for (p, _) in term.iter_xy() {
                 mesher.add_tile(p.x, p.y);
@@ -314,7 +322,7 @@ fn on_terminal_change(
         if let Some(border) = term.get_border() {
             if mesh_tile_count == term.tile_count() {
                 let origin = renderer.mesh_origin();
-                let tile_size = renderer.tile_size();
+                let tile_size = renderer.tile_size_world();
                 VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
                     for (p, _) in border.iter() {
                         mesher.add_tile(p.x, p.y);

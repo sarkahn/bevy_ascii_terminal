@@ -5,8 +5,8 @@ fn main() {
     App::new()
         .init_resource::<Images>()
         .add_plugins((DefaultPlugins, TerminalPlugin))
-        .add_systems(Startup, setup)
-        .add_systems(Update, (on_image_event, on_material_event, set_image))
+        //.add_systems(Startup, setup)
+        //.add_systems(Update, (on_image_event, on_material_event, set_image))
         .run();
 }
 

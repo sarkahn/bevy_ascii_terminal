@@ -242,6 +242,15 @@ fn update_viewport(
         return;
     }
 
+    let ppu = q_term.iter().map(|(_,_,_,renderer)| renderer.pixels_per_tile())
+        .reduce(IVec2::max)
+        .unwrap();
+
+
+
+    // For a tilescaling::world camera, every tile is 1 world
+    // unit vertically.
+
     // let grid_rect = q_term
     //     .iter()
     //     .map(|(t, term, _, renderer)| {
@@ -313,4 +322,19 @@ fn update_viewport(
     //     physical_size: vp_size.as_uvec2(),
     //     ..Default::default()
     // });
+}
+
+#[cfg(test)]
+mod tests {
+    fn round_to_step(value: f32, step: f32) -> f32 {
+        step * (value / step).round()
+    }
+
+    #[test]
+    fn step() {
+        let step = 1.75;
+
+        let res = round_to_step(-3.33, step);
+        println!("Res {}", res);
+    }
 }
