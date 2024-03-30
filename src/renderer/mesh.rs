@@ -35,6 +35,10 @@ pub const ATTRIBUTE_COLOR_FG: MeshVertexAttribute =
 
 pub struct TerminalMeshPlugin;
 
+/// Systems for building the terminal mesh and managing the renderer.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
+pub struct TerminalRenderSystems;
+
 impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
@@ -52,10 +56,6 @@ impl Plugin for TerminalMeshPlugin {
         );
     }
 }
-
-/// Systems for building the terminal mesh and managing the renderer.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalRenderSystems;
 
 #[derive(Component)]
 pub struct TerminalRenderer {
@@ -82,7 +82,7 @@ impl TerminalRenderer {
 
     /// The local 2d bounds of the rendered terminal mesh in local
     /// space, as derived from the most previous mesh rebuild.
-    pub fn mesh_bounds(&self) -> Rect {
+    pub fn mesh_local_bounds(&self) -> Rect {
         self.mesh_bounds
     }
 
@@ -144,7 +144,12 @@ fn init_mesh(
 }
 
 fn on_image_load(
-    mut q_term: Query<(&mut TerminalRenderer, &Mesh2dHandle, &Terminal, &Handle<TerminalMaterial>)>,
+    mut q_term: Query<(
+        &mut TerminalRenderer,
+        &Mesh2dHandle,
+        &Terminal,
+        &Handle<TerminalMaterial>,
+    )>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
     mut img_evt: EventReader<AssetEvent<Image>>,
@@ -179,7 +184,12 @@ fn on_image_load(
 }
 
 fn on_mat_change(
-    mut q_term: Query<(&mut TerminalRenderer, &Mesh2dHandle, &Terminal, &Handle<TerminalMaterial>)>,
+    mut q_term: Query<(
+        &mut TerminalRenderer,
+        &Mesh2dHandle,
+        &Terminal,
+        &Handle<TerminalMaterial>,
+    )>,
     mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
@@ -196,13 +206,21 @@ fn on_mat_change(
                 continue;
             }
 
-            let mat = materials.get(mat_handle.clone()).expect("Error getting terminal material");
+            let mat = materials
+                .get(mat_handle.clone())
+                .expect("Error getting terminal material");
             let Some(image_handle) = mat.texture.as_ref() else {
-                let mesh = meshes.get_mut(mesh_handle.0.clone()).expect("Error getting terminal mesh");
+                let mesh = meshes
+                    .get_mut(mesh_handle.0.clone())
+                    .expect("Error getting terminal mesh");
+                // TODO: This is pointless as on_renderer_change already clears
+                // mesh verts?
                 resize_mesh_data(mesh, 0);
                 continue;
             };
-            let image = images.get(image_handle.clone()).expect("Error getting terminal material image");
+            let image = images
+                .get(image_handle.clone())
+                .expect("Error getting terminal material image");
             let tile_size_pixels = (image.size() / 16).as_ivec2();
             let tile_size_world = settings.tile_scaling.tile_size_world(image.size());
 
@@ -307,6 +325,8 @@ fn on_terminal_change(
                     }
                 });
             } else if border.changed() {
+                // TODO: Need to clear all border tiles in case we have
+                // empty border edges?
                 let mut i = term.tile_count();
                 UVMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
                     for (_, t) in border.iter() {
@@ -316,6 +336,7 @@ fn on_terminal_change(
                 });
             }
         } else if mesh_tile_count != term.tile_count() {
+            // No border - clear border verts
             resize_mesh_data(mesh, term.tile_count());
         }
     }

@@ -10,7 +10,10 @@ use bevy::{
     transform::{components::Transform, TransformSystem},
 };
 
-use crate::{renderer::{TerminalRenderSystems, TerminalRenderer}, GridPoint};
+use crate::{
+    renderer::{TerminalRenderSystems, TerminalRenderer},
+    GridPoint,
+};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
 pub struct TerminalTransformSystems;
@@ -68,18 +71,17 @@ impl TerminalTransform {
     }
 }
 
-fn on_renderer_change(mut q_term: Query<(&TerminalRenderer, &mut TerminalTransform)>) {
+fn on_renderer_change(
+    mut q_term: Query<(&TerminalRenderer, &mut TerminalTransform), Changed<TerminalRenderer>>,
+) {
     for (renderer, mut transform) in &mut q_term {
-        transform.mesh_bl = renderer.mesh_bounds().min;
+        transform.mesh_bl = renderer.mesh_local_bounds().min;
         transform.world_tile_size = renderer.tile_size_world();
     }
 }
 
 fn update_transform(
-    mut q_term: Query<
-        (&mut Transform, &TerminalTransform),
-        Changed<TerminalTransform>,
-    >,
+    mut q_term: Query<(&mut Transform, &TerminalTransform), Changed<TerminalTransform>>,
 ) {
     for (mut transform, term_transform) in &mut q_term {
         let xy = term_transform.grid_pos.as_vec2() * term_transform.world_tile_size;
