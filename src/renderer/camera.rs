@@ -246,6 +246,16 @@ fn update_viewport(
         .reduce(IVec2::max)
         .unwrap();
 
+    /* Calculating proper grid dimensions:
+        Each terminal may have a different "grid position"
+        if any terminal can have any font size, then we need
+        to decide if each has it's own grid position or if there is
+        a universal "tile size" setting which determines a terminal's actual
+        position/size for the camera to work with.
+
+        How does "TileScaling" factor in? Different TileScaling means
+        a different world size for terminal - but TileScaling is universal
+    */
     // For a tilescaling::world camera, every tile is 1 world
     // unit vertically.
 

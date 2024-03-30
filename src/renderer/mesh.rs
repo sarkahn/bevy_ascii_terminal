@@ -11,7 +11,7 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::{Query, Res, ResMut},
     },
-    math::{bounding::Aabb2d, IRect, IVec2, Rect, Vec2},
+    math::{IVec2, Rect, Vec2},
     render::{
         color::Color,
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
@@ -22,7 +22,7 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::{transform::TerminalTransform, GridPoint, GridRect, Pivot, Terminal, TerminalGrid};
+use crate::{GridPoint, GridRect, Pivot, Terminal, TerminalGrid};
 
 use super::{material::TerminalMaterial, uv_mapping::UvMapping};
 
@@ -41,25 +41,21 @@ impl Plugin for TerminalMeshPlugin {
             PostUpdate,
             (
                 init_mesh,
+                on_mat_change,
                 on_image_load,
-                on_image_change,
                 on_renderer_change,
                 on_terminal_change,
                 reset_terminal_state,
             )
                 .chain()
-                .in_set(TerminalMeshSystems),
+                .in_set(TerminalRenderSystems),
         );
     }
 }
 
-/// System for tracking camera and cursor data.
+/// Systems for building the terminal mesh and managing the renderer.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalMeshSystems;
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct UpdateMeshVerts;
+pub struct TerminalRenderSystems;
 
 #[derive(Component)]
 pub struct TerminalRenderer {
@@ -127,10 +123,6 @@ impl TerminalRenderer {
     pub fn pixels_per_tile(&self) -> IVec2 {
         self.pixels_per_tile
     }
-
-    // pub fn pixel_bounds(&self, world_pos: Vec2) -> Rect {
-
-    // }
 }
 
 fn init_mesh(
@@ -152,7 +144,7 @@ fn init_mesh(
 }
 
 fn on_image_load(
-    mut q_term: Query<(&mut TerminalRenderer, &Terminal, &Handle<TerminalMaterial>)>,
+    mut q_term: Query<(&mut TerminalRenderer, &Mesh2dHandle, &Terminal, &Handle<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
     mut img_evt: EventReader<AssetEvent<Image>>,
@@ -166,7 +158,7 @@ fn on_image_load(
         for (mut renderer, term, image) in
             q_term
                 .iter_mut()
-                .filter_map(|(renderer, term, mat_handle)| {
+                .filter_map(|(renderer, mesh_handle, term, mat_handle)| {
                     let mat = materials
                         .get(mat_handle.clone())
                         .expect("Error getting terminal material");
@@ -186,36 +178,34 @@ fn on_image_load(
     }
 }
 
-fn on_image_change(
-    mut q_term: Query<(&mut TerminalRenderer, &Terminal, &Handle<TerminalMaterial>)>,
+fn on_mat_change(
+    mut q_term: Query<(&mut TerminalRenderer, &Mesh2dHandle, &Terminal, &Handle<TerminalMaterial>)>,
     mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
     settings: Res<TerminalGrid>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for evt in mat_evt.read() {
-        let event_id = match evt {
+        let material_id = match evt {
             AssetEvent::Modified { id } => id,
             _ => continue,
         };
-        for (mut renderer, term, image) in
-            q_term
-                .iter_mut()
-                .filter_map(|(renderer, term, mat_handle)| {
-                    let mat = (mat_handle.clone().id() == *event_id).then(|| {
-                        materials
-                            .get(mat_handle.clone())
-                            .expect("Error getting terminal material")
-                    })?;
-                    let image = mat
-                        .texture
-                        .clone()
-                        .and_then(|img_handle| images.get(img_handle.clone()))?;
-                    Some((renderer, term, image))
-                })
-        {
+        for (mut renderer, mesh_handle, term, mat_handle) in &mut q_term {
+            if mat_handle.id() != *material_id {
+                continue;
+            }
+
+            let mat = materials.get(mat_handle.clone()).expect("Error getting terminal material");
+            let Some(image_handle) = mat.texture.as_ref() else {
+                let mesh = meshes.get_mut(mesh_handle.0.clone()).expect("Error getting terminal mesh");
+                resize_mesh_data(mesh, 0);
+                continue;
+            };
+            let image = images.get(image_handle.clone()).expect("Error getting terminal material image");
             let tile_size_pixels = (image.size() / 16).as_ivec2();
             let tile_size_world = settings.tile_scaling.tile_size_world(image.size());
+
             renderer.update_data(term.size(), tile_size_pixels, tile_size_world);
         }
     }
@@ -374,27 +364,6 @@ impl VertMesher {
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, mesher.verts);
     }
 
-    // #[inline]
-    // pub fn set_tile(&mut self, x: i32, y: i32, index: usize) {
-    //     let p = (self.origin + Vec2::new(x as f32, y as f32) * self.tile_size).extend(0.0);
-    //     let right = (Vec2::X * self.tile_size).extend(0.0);
-    //     let up = (Vec2::Y * self.tile_size).extend(0.0);
-
-    //     let i = index * 4;
-    //     self.verts[i] = (p + up).into();
-    //     self.verts[i + 1] = p.into();
-    //     self.verts[i + 2] = (p + right + up).into();
-    //     self.verts[i + 3] = (p + right).into();
-
-    //     let vi = i as u32;
-    //     self.indices[i] = vi;
-    //     self.indices[i + 1] = vi + 1;
-    //     self.indices[i + 2] = vi + 2;
-    //     self.indices[i + 3] = vi + 3;
-    //     self.indices[i + 4] = vi + 2;
-    //     self.indices[i + 5] = vi + 1;
-    // }
-
     fn add_tile(&mut self, x: i32, y: i32) {
         let p = (self.origin + Vec2::new(x as f32, y as f32) * self.tile_size).extend(0.0);
         let right = (Vec2::X * self.tile_size).extend(0.0);
@@ -480,6 +449,7 @@ fn mesh_vertex_count(mesh: &Mesh) -> usize {
     verts.len()
 }
 
+/// The tile count of the mesh, based on mesh vertices.
 fn mesh_tile_count(mesh: &Mesh) -> usize {
     mesh_vertex_count(mesh) / 4
 }

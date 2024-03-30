@@ -1,5 +1,4 @@
 use bevy::{
-    ecs::schedule::SystemSet,
     prelude::{Asset, Assets, Color, Handle, Image, Mesh, Plugin, Shader},
     reflect::TypePath,
     render::{

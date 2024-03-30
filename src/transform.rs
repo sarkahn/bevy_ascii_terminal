@@ -6,11 +6,11 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::Query,
     },
-    math::{bounding::Aabb2d, IVec2, Vec2},
+    math::{IVec2, Rect, Vec2},
     transform::{components::Transform, TransformSystem},
 };
 
-use crate::{renderer::TerminalRenderer, GridPoint};
+use crate::{renderer::{TerminalRenderSystems, TerminalRenderer}, GridPoint};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
 pub struct TerminalTransformSystems;
@@ -20,9 +20,10 @@ impl Plugin for TerminalTransformPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
             PostUpdate,
-            update_transform
+            (on_renderer_change, update_transform)
                 .in_set(TerminalTransformSystems)
-                .before(TransformSystem::TransformPropagate),
+                .before(TransformSystem::TransformPropagate)
+                .after(TerminalRenderSystems),
         );
     }
 }
@@ -55,6 +56,16 @@ impl TerminalTransform {
         }
         Some(pos)
     }
+
+    pub fn world_bounds(&self) -> Rect {
+        let min = self.world_pos() + self.mesh_bl;
+        let max = min + self.term_size.as_vec2() * self.world_tile_size;
+        Rect::from_corners(min, max)
+    }
+
+    pub fn world_pos(&self) -> Vec2 {
+        self.grid_pos.as_vec2() * self.world_tile_size
+    }
 }
 
 fn on_renderer_change(mut q_term: Query<(&TerminalRenderer, &mut TerminalTransform)>) {
@@ -66,12 +77,12 @@ fn on_renderer_change(mut q_term: Query<(&TerminalRenderer, &mut TerminalTransfo
 
 fn update_transform(
     mut q_term: Query<
-        (&mut Transform, &TerminalRenderer, &TerminalTransform),
+        (&mut Transform, &TerminalTransform),
         Changed<TerminalTransform>,
     >,
 ) {
-    for (mut transform, renderer, term_transform) in &mut q_term {
-        let xy = term_transform.grid_pos.as_vec2() * renderer.tile_size_world();
+    for (mut transform, term_transform) in &mut q_term {
+        let xy = term_transform.grid_pos.as_vec2() * term_transform.world_tile_size;
         let z = transform.translation.z;
         transform.translation = xy.extend(z);
     }

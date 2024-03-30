@@ -16,7 +16,7 @@ pub use self::{
     camera::TerminalCameraSystems,
     font::{TerminalFont, TerminalFontSystems},
     material::TerminalMaterial,
-    mesh::{TerminalMeshSystems, TerminalRenderer},
+    mesh::{TerminalRenderSystems, TerminalRenderer},
     uv_mapping::UvMapping,
 };
 

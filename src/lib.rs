@@ -19,7 +19,7 @@ use renderer::TerminalRenderBundle;
 pub use string::{FormattedString, StringFormatter};
 pub use terminal::Terminal;
 pub use tile::Tile;
-use transform::TerminalTransform;
+pub use transform::TerminalTransform;
 
 #[derive(Default)]
 pub struct TerminalPlugin {
