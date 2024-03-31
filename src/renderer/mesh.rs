@@ -308,9 +308,9 @@ fn on_terminal_change(
             }
         });
 
-        let mesh_tile_count = mesh_tile_count(mesh);
         if let Some(border) = term.get_border() {
-            if mesh_tile_count == term.tile_count() {
+            if border.changed() {
+                resize_mesh_data(mesh, term.tile_count());
                 let origin = renderer.mesh_origin();
                 let tile_size = renderer.tile_size_world();
                 VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
@@ -324,18 +324,8 @@ fn on_terminal_change(
                         mesher.add_tile(t.glyph, t.fg_color, t.bg_color);
                     }
                 });
-            } else if border.changed() {
-                // TODO: Need to clear all border tiles in case we have
-                // empty border edges?
-                let mut i = term.tile_count();
-                UVMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
-                    for (_, t) in border.iter() {
-                        mesher.set_tile(t.glyph, t.fg_color, t.bg_color, i);
-                        i += 1;
-                    }
-                });
             }
-        } else if mesh_tile_count != term.tile_count() {
+        } else if mesh_tile_count(mesh) != term.tile_count() {
             // No border - clear border verts
             resize_mesh_data(mesh, term.tile_count());
         }

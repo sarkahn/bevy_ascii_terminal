@@ -38,7 +38,7 @@ impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(TerminalGrid {
             tile_scaling: self.tile_scaling,
-            //tile_size: self.tile_scaling.tile_size_world(self.pixels_per_tile),
+            ..Default::default() //tile_size: self.tile_scaling.tile_size_world(self.pixels_per_tile),
         });
         app.add_plugins(renderer::TerminalRendererPlugin);
     }
@@ -135,11 +135,17 @@ impl TileScaling {
 #[derive(Default, Resource)]
 pub struct TerminalGrid {
     tile_scaling: TileScaling,
-    // /// The size of a single grid tile in world space
-    //tile_size: Vec2,
+    /// The size of a single grid tile in world space
+    world_tile_size: Vec2,
 }
 
 impl TerminalGrid {
+    pub fn new(tile_scaling: TileScaling, pixels_per_tile: impl GridPoint) -> Self {
+        Self {
+            tile_scaling,
+            world_tile_size: tile_scaling.tile_size_world(pixels_per_tile.as_uvec2()),
+        }
+    }
     // pub fn world_to_tile(&self, world_pos: Vec2) -> IVec2 {
     //     (world_pos / self.tile_size).floor().as_ivec2()
     // }

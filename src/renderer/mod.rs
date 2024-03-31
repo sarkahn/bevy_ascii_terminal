@@ -1,4 +1,6 @@
-use bevy::{app::Plugin, asset::Handle, ecs::bundle::Bundle, sprite::MaterialMesh2dBundle};
+use bevy::{
+    app::Plugin, asset::Handle, ecs::bundle::Bundle, math::IVec2, sprite::MaterialMesh2dBundle,
+};
 
 mod camera;
 mod font;
