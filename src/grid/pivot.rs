@@ -123,6 +123,19 @@ impl PivotedPoint {
     pub fn pivot(&self) -> Option<Pivot> {
         self.pivot
     }
+
+    pub fn point_without_pivot(&self) -> IVec2 {
+        self.point
+    }
+
+    /// Returns a new PivotedPoint with this point's pivot or a default applied
+    /// to it if this point doesn't have one.
+    pub fn with_default_pivot(&self, default_pivot: Pivot) -> PivotedPoint {
+        Self {
+            point: self.point,
+            pivot: Some(self.pivot.unwrap_or(default_pivot)),
+        }
+    }
 }
 
 impl<T: GridPoint> From<T> for PivotedPoint {
@@ -131,6 +144,12 @@ impl<T: GridPoint> From<T> for PivotedPoint {
             point: value.as_ivec2(),
             pivot: None,
         }
+    }
+}
+
+impl From<PivotedPoint> for (IVec2, Option<Pivot>) {
+    fn from(value: PivotedPoint) -> Self {
+        (value.point, value.pivot)
     }
 }
 

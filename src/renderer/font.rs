@@ -3,15 +3,14 @@ use bevy::{
     asset::{embedded_asset, AssetPath, AssetServer, Assets, Handle},
     ecs::{
         component::Component,
-        entity::Entity,
+        query::Changed,
         schedule::SystemSet,
-        system::{Commands, Query, Res, ResMut},
+        system::{Query, Res, ResMut},
     },
     prelude::Plugin,
     reflect::Reflect,
-    render::texture::{ImageLoaderSettings, ImageSampler},
+    render::texture::{Image, ImageLoaderSettings, ImageSampler},
 };
-use enum_ordinalize::Ordinalize;
 
 use super::material::TerminalMaterial;
 
@@ -19,10 +18,15 @@ use super::material::TerminalMaterial;
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
 pub struct TerminalFontSystems;
 
-/// Allows for simple loading of built in terminal fonts.
+/// Allows for simple switching of terminal fonts.
 ///
-/// A [TerminalFont] component can be set during [TerminalBundle] creation or added
-/// to an existing terminal entity to change fonts.
+/// A [TerminalFont] component can be set during [TerminalBundle] creation or modified
+/// from an existing terminal entity to change fonts.
+///
+/// A custom font can be used by specifying the asset path with [TerminalFont::Custom].
+///
+/// Note that all [TerminalFont]'s will be loaded with [ImageSampler::nearest] filtering.
+/// To prevent this you can set the font manually on the [TerminalMaterial::texture] yourself.
 ///
 /// [TerminalBundle]: crate::TerminalBundle
 ///
@@ -33,10 +37,10 @@ pub struct TerminalFontSystems;
 /// use bevy_ascii_terminal::*;
 ///
 /// fn setup(mut commands: Commands) {
-///     commands.spawn(TerminalBundle::new([10,10]).with_builtin_font(TerminalFont::Rexpaint8x8));
+///     commands.spawn(TerminalBundle::new([10,10]).with_font(TerminalFont::Rexpaint8x8));
 /// }
 /// ```
-#[derive(Debug, Component, Ordinalize, Reflect, Default, Clone, Copy)]
+#[derive(Debug, Component, Reflect, Default, Clone)]
 pub enum TerminalFont {
     #[default]
     Px4378x8,
@@ -49,6 +53,7 @@ pub enum TerminalFont {
     TaritusCurses8x12,
     JtCurses12x12,
     SazaroteCurses12x12,
+    Custom(String),
 }
 
 macro_rules! embed_path {
@@ -72,6 +77,7 @@ impl TerminalFont {
             TerminalFont::ZxEvolution8x8 => concat!(embed_path!(), "zx_evolution_8x8.png"),
             TerminalFont::Pastiche8x8 => concat!(embed_path!(), "pastiche_8x8.png"),
             TerminalFont::Rexpaint8x8 => concat!(embed_path!(), "rexpaint_8x8.png"),
+            _ => panic!("Attempting to access embedded asset path for a custom terminal font"),
         }
     }
 }
@@ -103,34 +109,35 @@ impl Plugin for TerminalFontPlugin {
 
 #[allow(clippy::type_complexity)]
 fn update_font(
-    mut q_term: Query<(Entity, &mut Handle<TerminalMaterial>, &TerminalFont)>,
+    mut q_term: Query<(&mut Handle<TerminalMaterial>, &TerminalFont), Changed<TerminalFont>>,
     server: Res<AssetServer>,
-    mut commands: Commands,
     mut materials: ResMut<Assets<TerminalMaterial>>,
 ) {
-    for (e, mut mat_handle, font) in &mut q_term {
+    for (mut mat_handle, font) in &mut q_term {
+        let image: Handle<Image> = match font {
+            TerminalFont::Custom(path) => {
+                server.load_with_settings(path, move |settings: &mut ImageLoaderSettings| {
+                    settings.sampler = ImageSampler::nearest()
+                })
+            }
+            _ => server.load_with_settings(
+                font.asset_path(),
+                move |settings: &mut ImageLoaderSettings| {
+                    settings.sampler = ImageSampler::nearest()
+                },
+            ),
+        };
+        // Dont overwrite the default terminal material
         if mat_handle.id() == Handle::<TerminalMaterial>::default().id() {
             *mat_handle = materials.add(TerminalMaterial {
-                texture: Some(server.load_with_settings(
-                    font.asset_path(),
-                    move |settings: &mut ImageLoaderSettings| {
-                        settings.sampler = ImageSampler::nearest()
-                    },
-                )),
+                texture: Some(image),
                 ..Default::default()
             });
         } else {
             let mat = materials
                 .get_mut(mat_handle.clone())
                 .expect("Error getting terminal material");
-            mat.texture = Some(server.load_with_settings(
-                font.asset_path(),
-                move |settings: &mut ImageLoaderSettings| {
-                    settings.sampler = ImageSampler::nearest()
-                },
-            ));
+            mat.texture = Some(image);
         }
-
-        commands.entity(e).remove::<TerminalFont>();
     }
 }

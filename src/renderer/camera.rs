@@ -1,4 +1,4 @@
-use crate::{transform::TerminalTransform, GridRect, TerminalGrid};
+use crate::{transform::TerminalTransform, GridRect, TerminalGridSettings};
 use bevy::{
     app::PostStartup,
     ecs::{
@@ -19,7 +19,7 @@ use bevy::{
 
 use crate::Terminal;
 
-use super::{material::TerminalMaterial, mesh::TerminalRenderer};
+use super::{material::TerminalMaterial, mesh::TerminalMeshPivot};
 
 pub(crate) struct TerminalCameraPlugin;
 
@@ -203,7 +203,7 @@ fn on_window_resized(
 }
 
 fn on_renderer_change(
-    q_term: Query<&TerminalRenderer, Changed<TerminalRenderer>>,
+    q_term: Query<&TerminalMeshPivot, Changed<TerminalMeshPivot>>,
     mut vp_evt: EventWriter<UpdateViewportEvent>,
 ) {
     if !q_term.is_empty() {
@@ -217,7 +217,7 @@ fn update_viewport(
         &GlobalTransform,
         &Terminal,
         &Handle<TerminalMaterial>,
-        &TerminalRenderer,
+        &TerminalMeshPivot,
     )>,
     mut q_cam: Query<(
         &mut Camera,
@@ -228,7 +228,7 @@ fn update_viewport(
     q_window: Query<&Window, With<PrimaryWindow>>,
     images: Res<Assets<Image>>,
     materials: Res<Assets<TerminalMaterial>>,
-    render_settings: Res<TerminalGrid>,
+    render_settings: Res<TerminalGridSettings>,
 ) {
     if evt_vp_update.is_empty() || q_term.is_empty() || q_cam.is_empty() || q_window.is_empty() {
         return;
@@ -240,11 +240,11 @@ fn update_viewport(
         return;
     }
 
-    let ppu = q_term
-        .iter()
-        .map(|(_, _, _, renderer)| renderer.pixels_per_tile())
-        .reduce(IVec2::max)
-        .unwrap();
+    // let ppu = q_term
+    //     .iter()
+    //     .map(|(_, _, _, renderer)| renderer.pixels_per_tile())
+    //     .reduce(IVec2::max)
+    //     .unwrap();
 
     /* Calculating proper grid dimensions:
         Each terminal may have a different "grid position"

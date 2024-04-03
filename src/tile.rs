@@ -1,6 +1,6 @@
 use bevy::{reflect::Reflect, render::color::Color};
 
-#[derive(Debug, Default, PartialEq, Clone, Copy, Reflect)]
+#[derive(Debug, PartialEq, Clone, Copy, Reflect)]
 pub struct Tile {
     pub glyph: char,
     pub fg_color: Color,
@@ -30,5 +30,20 @@ impl Tile {
     pub fn bg(&mut self, color: Color) -> &mut Self {
         self.bg_color = color;
         self
+    }
+}
+
+impl Default for Tile {
+    fn default() -> Self {
+        Tile::DEFAULT
+    }
+}
+
+impl From<char> for Tile {
+    fn from(value: char) -> Self {
+        Tile {
+            glyph: value,
+            ..Default::default()
+        }
     }
 }

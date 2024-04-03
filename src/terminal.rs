@@ -8,7 +8,7 @@ use bevy::{ecs::component::Component, math::IVec2, render::color::Color};
 
 use crate::{
     border::{Border, TerminalBorderMut},
-    string::{NoWordWrapStringIter, StringFormatter, WrappedStringIter, XyStringIter},
+    string::StringFormatter,
     FormattedString, GridPoint, GridRect, Pivot, PivotedPoint, Tile,
 };
 
@@ -27,6 +27,15 @@ impl Terminal {
             size: size.as_ivec2(),
             border: None,
             clear_tile: Tile::DEFAULT,
+        }
+    }
+
+    pub fn with_clear_tile(size: impl GridPoint, clear_tile: Tile) -> Self {
+        Self {
+            tiles: vec![clear_tile; size.len()],
+            size: size.as_ivec2(),
+            border: None,
+            clear_tile,
         }
     }
 
@@ -75,8 +84,11 @@ impl Terminal {
     ///
     /// The [StringFormatter] trait can be used to customize the string before
     /// it gets written to the terminal. You can set a foreground or background
-    /// color, prevent word wrapping, or prevent colors from being written to
-    /// empty characters:
+    /// color, prevent word wrapping, or prevent writes on empty characters.
+    ///
+    /// Note that by default strings get written to the
+    /// top left of the terminal. You can manually set the pivot to override
+    /// this behavior.
     ///
     /// ```
     /// use bevy_ascii_terminal::*;
@@ -84,7 +96,7 @@ impl Terminal {
     /// let mut term = Terminal::new([8,4]);
     /// term.put_string([0,0], "Hello".fg(Color::BLUE));
     /// let string = "A looooong string".bg(Color::GREEN).no_word_wrap().ignore_spaces();
-    /// term.put_string([0,1].pivot(Pivot::TopLeft), string);
+    /// term.put_string([0,1], string);
     /// ```
     pub fn put_string<'a>(
         &'a mut self,
@@ -92,29 +104,23 @@ impl Terminal {
         string: impl Into<FormattedString<'a>>,
     ) {
         let fmt: FormattedString = string.into();
-        // TODO: Change to bottom left default?
-        let pivot = xy.into().pivot().unwrap_or(Pivot::TopLeft);
-        let iter = match fmt.wrapped {
-            true => XyStringIter::Wrapped(WrappedStringIter::new(fmt.string, self.bounds(), pivot)),
-            false => XyStringIter::NotWrapped(NoWordWrapStringIter::new(
-                fmt.string,
-                self.bounds(),
-                pivot,
-            )),
-        };
-        for (xy, ch) in iter {
-            if fmt.ignore_spaces && ch == ' ' {
-                continue;
-            }
-            let tile = self.tile_mut(xy);
-            tile.glyph = ch;
-            if let Some(fg) = fmt.fg_color {
-                tile.fg_color = fg;
-            }
-            if let Some(bg) = fmt.bg_color {
-                tile.bg_color = bg;
-            }
-        }
+
+        let mut xy: PivotedPoint = xy.into().with_default_pivot(Pivot::TopLeft);
+        // let iter = StringIter::new(fmt.string, fmt.word_wrapped, self.bounds(), xy);
+
+        // for (xy, ch) in iter {
+        //     if fmt.ignore_spaces && ch == ' ' {
+        //         continue;
+        //     }
+        //     let tile = self.tile_mut(xy);
+        //     tile.glyph = ch;
+        //     if let Some(fg) = fmt.fg_color {
+        //         tile.fg_color = fg;
+        //     }
+        //     if let Some(bg) = fmt.bg_color {
+        //         tile.bg_color = bg;
+        //     }
+        // }
     }
 
     pub fn clear(&mut self) {
@@ -126,35 +132,42 @@ impl Terminal {
         self.clear_tile = clear_tile;
     }
 
+    /// The terminal tiles as a slice
     pub fn tiles(&self) -> &[Tile] {
         self.tiles.as_slice()
     }
 
+    /// The terminal tiles as a slice
     pub fn tiles_mut(&mut self) -> &mut [Tile] {
         self.tiles.as_mut_slice()
     }
 
+    /// Iterate over a row of terminal tiles. Row indices start from 0 at the bottom.
     pub fn iter_row(&self, row: usize) -> impl DoubleEndedIterator<Item = &Tile> {
         let start = self.width() * row;
         let end = start + self.width();
         self.tiles[start..end].iter()
     }
 
+    /// Iterate over a row of terminal tiles. Row indices start from 0 at the bottom.
     pub fn iter_row_mut(&mut self, row: usize) -> impl DoubleEndedIterator<Item = &mut Tile> {
         let start = self.width() * row;
         let end = start + self.width();
         self.tiles[start..end].iter_mut()
     }
 
+    /// Iterate over a column of terminal tiles. Column indices start from 0 at the left.
     pub fn iter_column(&self, column: usize) -> impl DoubleEndedIterator<Item = &Tile> {
         self.tiles.iter().skip(column).step_by(self.width())
     }
 
+    /// Iterate over a column of terminal tiles. Column indices start from 0 at the left.
     pub fn iter_column_mut(&mut self, column: usize) -> impl DoubleEndedIterator<Item = &mut Tile> {
         let w = self.width();
         self.tiles.iter_mut().skip(column).step_by(w)
     }
 
+    /// Iterate over a rectangular section of terminal tiles.
     pub fn iter_rect(&self, rect: GridRect) -> impl DoubleEndedIterator<Item = &Tile> {
         let iter = self
             .tiles
@@ -165,6 +178,7 @@ impl Terminal {
         iter
     }
 
+    /// Iterate over a rectangular section of terminal tiles.
     pub fn iter_rect_mut(&mut self, rect: GridRect) -> impl DoubleEndedIterator<Item = &mut Tile> {
         let w = self.width();
         self.tiles
@@ -173,6 +187,7 @@ impl Terminal {
             .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter_mut())
     }
 
+    /// An iterator over all tiles that also yields each tile's 2d grid position
     pub fn iter_xy(&self) -> impl DoubleEndedIterator<Item = (IVec2, &Tile)> {
         self.tiles
             .iter()
@@ -180,15 +195,16 @@ impl Terminal {
             .map(|(i, t)| (self.index_to_xy(i), t))
     }
 
+    /// Set the terminal border
     pub fn put_border(&mut self, border: Border) -> TerminalBorderMut {
         self.set_border(Some(border));
         self.border_mut()
     }
 
     pub fn set_border(&mut self, border: Option<Border>) {
-        if let Some(mut border) = border {
-            border.build_edge_tiles(self.size, self.clear_tile);
+        if let Some(border) = border {
             self.border = Some(border);
+            self.border_mut().clear();
         } else {
             self.border = None
         }

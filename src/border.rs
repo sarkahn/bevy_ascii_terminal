@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{btree_map, BTreeMap};
 
 use bevy::math::IVec2;
 
@@ -42,65 +42,58 @@ impl Border {
         Self::from_string("╔═╗║║╚═╝")
     }
 
-    pub fn empty() -> Self {
-        Self::from_string("        ")
-    }
-
-    pub fn edge_glyph(&self, edge: Pivot) -> char {
-        match edge {
-            Pivot::TopLeft => self.edge_glyphs[0],
-            Pivot::TopCenter | Pivot::Center => self.edge_glyphs[1],
-            Pivot::TopRight => self.edge_glyphs[2],
-            Pivot::LeftCenter => self.edge_glyphs[3],
-            Pivot::RightCenter => self.edge_glyphs[4],
-            Pivot::BottomLeft => self.edge_glyphs[5],
-            Pivot::BottomCenter => self.edge_glyphs[6],
-            Pivot::BottomRight => self.edge_glyphs[7],
-        }
-    }
-
     pub fn changed(&self) -> bool {
         self.changed
     }
 
-    pub(crate) fn build_edge_tiles(&mut self, size: IVec2, mut clear_tile: Tile) {
+    /// Set the border's edge tiles from it's edge glyphs. This will override
+    /// any previously set border tiles.
+    fn set_edge_tiles(&mut self, size: IVec2, clear_tile: Tile) {
         let rect = GridRect::from_points([-1, -1], size);
-        clear_tile.glyph = self.edge_glyphs[0];
-        self.put_tile(rect.top_left(), clear_tile);
+        let mut tile = clear_tile;
+        self.set_edge(Pivot::TopLeft, rect, *tile.glyph(self.edge_glyphs[0]));
+        self.set_edge(Pivot::TopCenter, rect, *tile.glyph(self.edge_glyphs[1]));
+        self.set_edge(Pivot::TopRight, rect, *tile.glyph(self.edge_glyphs[2]));
+        self.set_edge(Pivot::LeftCenter, rect, *tile.glyph(self.edge_glyphs[3]));
+        self.set_edge(Pivot::RightCenter, rect, *tile.glyph(self.edge_glyphs[4]));
+        self.set_edge(Pivot::BottomLeft, rect, *tile.glyph(self.edge_glyphs[5]));
+        self.set_edge(Pivot::BottomCenter, rect, *tile.glyph(self.edge_glyphs[6]));
+        self.set_edge(Pivot::BottomRight, rect, *tile.glyph(self.edge_glyphs[7]));
+    }
 
-        clear_tile.glyph = self.edge_glyphs[1];
-        for x in 1..rect.right() {
-            self.put_tile([x, rect.top()], clear_tile);
+    fn set_edge(&mut self, edge: Pivot, border_rect: GridRect, tile: Tile) {
+        match edge {
+            Pivot::TopLeft => self.put_tile(border_rect.top_left(), tile),
+            Pivot::TopCenter => {
+                for x in 1..border_rect.right() {
+                    self.put_tile([x, border_rect.top()], tile);
+                }
+            }
+            Pivot::TopRight => self.put_tile(border_rect.top_right(), tile),
+            Pivot::LeftCenter => {
+                for y in 1..border_rect.top() {
+                    self.put_tile([border_rect.left(), y], tile);
+                }
+            }
+            Pivot::Center => {}
+            Pivot::RightCenter => {
+                for y in 1..border_rect.top() {
+                    self.put_tile([border_rect.right(), y], tile);
+                }
+            }
+            Pivot::BottomLeft => self.put_tile(border_rect.bottom_left(), tile),
+            Pivot::BottomCenter => {
+                for x in 1..border_rect.right() {
+                    self.put_tile([x, border_rect.bottom()], tile);
+                }
+            }
+            Pivot::BottomRight => self.put_tile(border_rect.bottom_right(), tile),
         }
-
-        clear_tile.glyph = self.edge_glyphs[2];
-        self.put_tile(rect.top_right(), clear_tile);
-
-        clear_tile.glyph = self.edge_glyphs[3];
-        for y in 1..rect.top() {
-            self.put_tile([rect.left(), y], clear_tile);
-        }
-
-        clear_tile.glyph = self.edge_glyphs[4];
-        for y in 1..rect.top() {
-            self.put_tile([rect.right(), y], clear_tile);
-        }
-
-        clear_tile.glyph = self.edge_glyphs[5];
-        self.put_tile(rect.bottom_left(), clear_tile);
-
-        clear_tile.glyph = self.edge_glyphs[6];
-        for x in 1..rect.right() {
-            self.put_tile([x, rect.bottom()], clear_tile);
-        }
-
-        clear_tile.glyph = self.edge_glyphs[7];
-        self.put_tile(rect.bottom_right(), clear_tile);
     }
 
     fn put_tile(&mut self, xy: impl GridPoint, value: Tile) {
         // Note tile positions are stored y-first for proper left-to-right,
-        // down-to-up sorting
+        // down-to-up ordering
         self.tiles.insert((xy.y(), xy.x()), value);
     }
 
@@ -111,34 +104,7 @@ impl Border {
     }
 }
 
-fn edge_from_point(rect: GridRect, xy: impl GridPoint) -> Option<Pivot> {
-    let [x, y] = xy.as_array();
-
-    if y == rect.top() {
-        if x == rect.left() {
-            Some(Pivot::TopLeft)
-        } else if x == rect.right() {
-            Some(Pivot::TopRight)
-        } else {
-            Some(Pivot::TopCenter)
-        }
-    } else if y == rect.bottom() {
-        if x == rect.left() {
-            Some(Pivot::BottomLeft)
-        } else if x == rect.right() {
-            Some(Pivot::BottomRight)
-        } else {
-            Some(Pivot::BottomCenter)
-        }
-    } else if x == rect.left() {
-        Some(Pivot::LeftCenter)
-    } else if x == rect.right() {
-        Some(Pivot::RightCenter)
-    } else {
-        None
-    }
-}
-
+/// A mutable reference to the terminal border
 pub struct TerminalBorderMut<'a> {
     border: &'a mut Border,
     term_size: IVec2,
@@ -146,13 +112,16 @@ pub struct TerminalBorderMut<'a> {
 }
 
 impl<'a> TerminalBorderMut<'a> {
-    pub fn new(border: &'a mut Border, term_size: IVec2, clear_tile: Tile) -> Self {
+    pub(crate) fn new(border: &'a mut Border, term_size: IVec2, clear_tile: Tile) -> Self {
         Self {
             border,
             term_size,
             clear_tile,
         }
     }
+
+    /// Insert a [FormattedString] into the terminal border. For simply setting
+    /// a "title" string you should use [Self::put_title] instead.
     pub fn put_string(
         &mut self,
         edge: Pivot,
@@ -200,7 +169,12 @@ impl<'a> TerminalBorderMut<'a> {
         self
     }
 
+    /// Set a "title" string for the terminal border. Note this will clear
+    /// any previously set strings from the top edge
     pub fn put_title(&mut self, string: impl Into<FormattedString<'a>>) -> &mut Self {
+        let clear_tile = *self.clear_tile.glyph(self.border.edge_glyphs[1]);
+        let rect = GridRect::from_points([-1, -1], self.term_size);
+        self.border.set_edge(Pivot::TopCenter, rect, clear_tile);
         self.put_string(Pivot::TopLeft, Dir4::Right, 1, string);
         self
     }
@@ -216,10 +190,14 @@ impl<'a> TerminalBorderMut<'a> {
         self
     }
 
-    /// Remove any text written to the border.
-    pub fn clear_strings(&'a mut self) -> &'a mut Self {
+    /// Reset all border tiles to the border's edge glyphs. This will override
+    /// any previously set border tiles.
+    ///
+    /// To instead completey remove the border you should use
+    /// `terminal.set_border(None)`.
+    pub fn clear(&'a mut self) -> &'a mut Self {
         self.border.changed = true;
-        self.border.tiles.clear();
+        self.border.set_edge_tiles(self.term_size, self.clear_tile);
         self
     }
 
@@ -232,10 +210,11 @@ impl<'a> TerminalBorderMut<'a> {
 mod tests {
     use bevy::{math::IVec2, render::color::Color};
 
-    use crate::{string::StringFormatter, GridPoint, GridRect, Tile};
+    use crate::{string::StringFormatter, GridRect, Tile};
 
     use super::{Border, TerminalBorderMut};
 
+    #[test]
     fn put_string() {
         let mut state = Border::default();
         let mut term_border = TerminalBorderMut {
