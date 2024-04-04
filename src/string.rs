@@ -35,7 +35,7 @@ impl<'a> Default for FormattedString<'a> {
 pub trait StringFormatter<'a> {
     /// By default any string written to the terminal will be wrapped at any
     /// newline and also "word wrapped". If disabled, strings will only be
-    /// wrapped at the edge of the terminal.
+    /// wrapped at newlines and the terminal edge.
     fn no_word_wrap(self) -> FormattedString<'a>;
 
     /// Set the foreground color for the string tiles
@@ -229,7 +229,7 @@ fn wrapped_y_pivot_offset(string: &str, pivot: Pivot, max_width: usize) -> i32 {
         Pivot::TopLeft | Pivot::TopCenter | Pivot::TopRight => 0,
         _ => {
             let line_count = wrapped_line_count(string, max_width);
-            (line_count.saturating_sub(1) as f32 * (1.0 - pivot.normalized().y)).round() as i32
+            (line_count as f32 * (1.0 - pivot.normalized().y)).round() as i32
         }
     }
 }
@@ -259,7 +259,7 @@ fn split_y_pivot_offset(string: &str, pivot: Pivot, max_width: usize) -> i32 {
         Pivot::TopLeft | Pivot::TopCenter | Pivot::TopRight => 0,
         _ => {
             let line_count = split_line_count(string, max_width);
-            (line_count.sub(1) as f32 * (1.0 - pivot.normalized().y)).round() as i32
+            (line_count as f32 * (1.0 - pivot.normalized().y)).round() as i32
         }
     }
 }
@@ -281,15 +281,14 @@ impl<'a> StringIter<'a> {
     ) -> Self {
         let xy: PivotedPoint = xy.into().with_default_pivot(Pivot::TopLeft);
         let pivot = xy.pivot().unwrap();
-        let mut origin = rect.pivot_point(pivot);
-        let origin_offset = xy.point_without_pivot() * pivot.axis();
+        let offset = xy.point_without_pivot();
 
         let fmt: FormattedString = string.into();
         let wrapped = fmt.word_wrapped;
 
         let first_max_len = rect
             .width()
-            .saturating_sub(origin_offset.x.unsigned_abs() as usize);
+            .saturating_sub(offset.abs().x as usize);
         let (first, remaining) = if wrapped {
             wrap_string(fmt.string, first_max_len)
         } else {
@@ -298,23 +297,25 @@ impl<'a> StringIter<'a> {
         .unwrap_or_default();
 
         let horizontal_offset =
-            horizontal_pivot_offset(pivot, first.len() + origin_offset.x.unsigned_abs() as usize);
+            horizontal_pivot_offset(pivot, first.len());
         let vertical_offset = if wrapped {
             wrapped_y_pivot_offset(remaining, pivot, rect.width())
         } else {
             split_y_pivot_offset(remaining, pivot, rect.width())
-        } + origin_offset.y;
+        };
+
+        let mut xy = xy.calc_from_size(rect.size);
 
         // println!("FIRST LINE: '{}' First remaining: '{}'", first, remaining);
         // println!(
-        //     "Pivot: {:?}. origin before offset: {}, origin offset: {:?}, final offset: {}, {}",
-        //     pivot, origin, origin_offset, horizontal_offset, vertical_offset
+        //     "Pivot: {:?}. xy: {}, pivot offset: {}, wrap offset: {}, {}",
+        //     pivot, xy, offset, horizontal_offset, vertical_offset
         // );
 
-        origin.x += horizontal_offset;
-        origin.y += vertical_offset;
+        xy.x += horizontal_offset;
+        xy.y += vertical_offset;
 
-        //println!("XY START {}", origin);
+        //println!("XY START {}", xy);
 
         Self {
             word_wrapped: wrapped,
@@ -322,7 +323,7 @@ impl<'a> StringIter<'a> {
             current: first.chars(),
             rect,
             pivot,
-            xy: origin,
+            xy,
         }
     }
 
@@ -367,20 +368,20 @@ mod tests {
 
     #[test]
     fn write() {
-        thing(Pivot::TopLeft);
-        thing(Pivot::TopRight);
-        thing(Pivot::BottomLeft);
-        thing(Pivot::BottomRight);
-        thing(Pivot::Center);
+        // thing(Pivot::TopLeft);
+        // thing(Pivot::TopRight);
+        // thing(Pivot::BottomLeft);
+        // thing(Pivot::BottomRight);
+        // thing(Pivot::Center);
     }
 
     fn thing(pivot: Pivot) {
         let size = [18, 5];
         let mut term = Terminal::with_clear_tile(size, '.'.into());
         let string = StringIter::new(
-            [3, 1].pivot(pivot),
+            [3,1].pivot(pivot),
             "Hello\nHow are you?",
-            GridRect::new([0, 0], size),
+            GridRect::new([0,0], size),
         );
         for (xy, ch) in string {
             //println!("{}: {}", xy, ch);

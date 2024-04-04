@@ -1,9 +1,3 @@
-use std::{
-    collections::BTreeMap,
-    iter,
-    slice::{self, IterMut},
-};
-
 use bevy::{ecs::component::Component, math::IVec2, render::color::Color};
 
 use crate::{
@@ -193,6 +187,16 @@ impl Terminal {
             .iter()
             .enumerate()
             .map(|(i, t)| (self.index_to_xy(i), t))
+    }
+
+    /// An iterator over all tiles that also yields each tile's 2d grid position
+    pub fn iter_xy_mut(&mut self) -> impl DoubleEndedIterator<Item = (IVec2, &mut Tile)> {
+        let w = self.width() as i32;
+        let index_to_xy = move |i: i32| IVec2::new(i % w, i / w);
+        self.tiles
+            .iter_mut()
+            .enumerate()
+            .map(move |(i, t)| (index_to_xy(i as i32), t))
     }
 
     /// Set the terminal border
