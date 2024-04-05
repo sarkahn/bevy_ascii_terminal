@@ -88,12 +88,6 @@ impl TerminalTransform {
         self.world_pos.truncate()
     }
 
-    pub fn world_mesh_bounds(&self) -> Rect {
-        let pos = self.world_pos();
-        let min = pos + self.local_mesh_bounds.min;
-        Rect::from_corners(min, min + self.local_mesh_bounds.size())
-    }
-
     pub fn world_tile_size(&self) -> Vec2 {
         self.world_tile_size
     }

@@ -235,7 +235,7 @@ fn rebuild_verts(
 
         resize_mesh_data(mesh, term.tile_count());
 
-        let origin = transform.world_mesh_bounds().min;
+        let origin = transform.world_bounds().min;
         let tile_size = transform.world_tile_size();
 
         // We only need to build our vertex data, uvs/colors will be updated

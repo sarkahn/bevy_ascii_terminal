@@ -1,5 +1,6 @@
 mod border;
 mod border_entity;
+mod camera;
 mod glyph;
 mod grid;
 pub mod renderer;

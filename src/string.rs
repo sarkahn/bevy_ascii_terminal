@@ -8,9 +8,6 @@ use bevy::{math::IVec2, render::color::Color};
 use crate::{GridPoint, GridRect, Pivot, PivotedPoint};
 
 /// A string for writing to a terminal with optional formatting applied.
-///
-/// Note most string types can convert directly into formatted strings with no
-/// allocations.
 pub struct FormattedString<'a> {
     pub(crate) string: &'a str,
     pub(crate) word_wrapped: bool,
@@ -286,9 +283,7 @@ impl<'a> StringIter<'a> {
         let fmt: FormattedString = string.into();
         let wrapped = fmt.word_wrapped;
 
-        let first_max_len = rect
-            .width()
-            .saturating_sub(offset.abs().x as usize);
+        let first_max_len = rect.width().saturating_sub(offset.abs().x as usize);
         let (first, remaining) = if wrapped {
             wrap_string(fmt.string, first_max_len)
         } else {
@@ -296,8 +291,7 @@ impl<'a> StringIter<'a> {
         }
         .unwrap_or_default();
 
-        let horizontal_offset =
-            horizontal_pivot_offset(pivot, first.len());
+        let horizontal_offset = horizontal_pivot_offset(pivot, first.len());
         let vertical_offset = if wrapped {
             wrapped_y_pivot_offset(remaining, pivot, rect.width())
         } else {
@@ -379,9 +373,9 @@ mod tests {
         let size = [18, 5];
         let mut term = Terminal::with_clear_tile(size, '.'.into());
         let string = StringIter::new(
-            [3,1].pivot(pivot),
+            [3, 1].pivot(pivot),
             "Hello\nHow are you?",
-            GridRect::new([0,0], size),
+            GridRect::new([0, 0], size),
         );
         for (xy, ch) in string {
             //println!("{}: {}", xy, ch);
