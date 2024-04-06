@@ -1,43 +1,49 @@
 use bevy::{
-    app::Plugin,
-    asset::{AssetEvent, Assets, Handle},
-    ecs::{
-        entity::Entity,
-        event::{Event, EventReader, EventWriter},
-        query::With,
-        system::{Query, Res},
-    },
-    render::texture::Image,
-    window::{PrimaryWindow, WindowResized},
+    app::{Last, Plugin}, asset::{AssetEvent, Assets, Handle}, core_pipeline::core_2d::Camera2dBundle, ecs::{
+        bundle::Bundle, component::Component, entity::Entity, event::{Event, EventReader, EventWriter}, query::With, schedule::IntoSystemConfigs, system::{Query, Res}
+    }, math::Vec2, render::texture::Image, window::{PrimaryWindow, WindowResized}
 };
 
-use crate::{renderer::TerminalMaterial, Terminal, TerminalTransform};
+use crate::{renderer::TerminalMaterial, GridRect, Terminal, TerminalGridSettings, TerminalTransform};
 
 pub struct TerminalCameraPlugin;
 
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        todo!()
+        app.add_systems(Last,
+        (on_window_resized,
+        on_font_changed,
+        update_viewport).chain());
     }
 }
 
 #[derive(Event)]
 pub struct UpdateViewportEvent;
 
-#[derive(Default)]
+#[derive(Default, Component)]
 pub struct TerminalCamera {
     track_cursor: bool,
     manage_viewport: bool,
 }
 
-impl TerminalCamera {
+#[derive(Default, Bundle)]
+pub struct TerminalCameraBundle {
+    cam_bundle: Camera2dBundle,
+    term_cam: TerminalCamera,
+}
+
+impl TerminalCameraBundle {
     pub fn auto() -> Self {
         Self {
-            manage_viewport: true,
+            term_cam: TerminalCamera {
+                manage_viewport: true,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
 }
+
 
 fn on_window_resized(
     q_win: Query<Entity, With<PrimaryWindow>>,
@@ -97,9 +103,21 @@ fn on_font_changed(
 fn update_viewport(
     q_term: Query<&TerminalTransform>,
     mut update_evt: EventReader<UpdateViewportEvent>,
+    grid: Res<TerminalGridSettings>,
 ) {
     if update_evt.is_empty() {
         return;
     }
     update_evt.clear();
+
+    for t in &q_term {
+        let tile_size = grid.world_grid_tile_size().unwrap_or(t.world_tile_size());
+        let round_to_tile = |p: Vec2| (p / tile_size).round() * tile_size;
+        let ceil_to_tile = |p: Vec2| (p / tile_size).floor() * tile_size;
+        let min = round_to_tile(t.world_bounds().min).as_ivec2();
+        let max = ceil_to_tile(t.world_bounds().max).as_ivec2();
+
+        let grid_rect = GridRect::from_points(min, max);
+        println!("GRID RECT: {:?}", grid_rect);
+    }
 }

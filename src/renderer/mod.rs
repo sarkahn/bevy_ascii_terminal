@@ -2,7 +2,6 @@ use bevy::{
     app::Plugin, asset::Handle, ecs::bundle::Bundle, math::IVec2, sprite::MaterialMesh2dBundle,
 };
 
-mod border_mesh;
 mod camera;
 mod font;
 mod material;

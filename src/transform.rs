@@ -113,7 +113,7 @@ fn update_transform(
     grid: Res<TerminalGridSettings>,
 ) {
     for (mut transform, mut term_transform) in &mut q_term {
-        let tile_size = grid.world_grid_tile_size();
+        let tile_size = grid.world_grid_tile_size().unwrap_or(term_transform.world_tile_size());
         let xyz = term_transform.grid_position.as_vec2() * tile_size;
         let z = transform.translation.z;
         transform.translation = xyz.extend(z);

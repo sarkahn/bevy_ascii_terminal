@@ -24,7 +24,7 @@ use bevy::{
 };
 
 use crate::{
-    border_entity::TerminalBorder, transform::TerminalTransformSystems, Pivot, Terminal,
+    transform::TerminalTransformSystems, Pivot, Terminal,
     TerminalFont, TerminalTransform,
 };
 
@@ -73,7 +73,7 @@ impl Plugin for TerminalMeshPlugin {
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-pub struct RebuildVerts;
+struct RebuildVerts;
 
 /// A component that will determine how/if terminal fonts are scaled on each
 /// axis when rendered. Defaults to `[1.0, 1.0]` (no scaling).

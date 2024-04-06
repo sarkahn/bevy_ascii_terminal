@@ -1,5 +1,4 @@
 mod border;
-mod border_entity;
 mod camera;
 mod glyph;
 mod grid;
@@ -24,16 +23,26 @@ pub use string::{FormattedString, StringFormatter};
 pub use terminal::Terminal;
 pub use tile::Tile;
 pub use transform::TerminalTransform;
+pub use camera::TerminalCameraBundle;
 
+
+
+// TODO: Change to TerminalPluginS Impl plugin group for universal grid settings
 #[derive(Default)]
 pub struct TerminalPlugin {
     tile_scaling: TileScaling,
-    //pixels_per_tile: Option<UVec2>,
+    pixels_per_tile: Option<Vec2>,
 }
+
 
 impl TerminalPlugin {
     pub fn with_tile_scaling(mut self, tile_scaling: TileScaling) -> Self {
         self.tile_scaling = tile_scaling;
+        self
+    }
+
+    pub fn with_pixels_per_tile(mut self, pixels_per_tile: impl GridPoint) -> Self {
+        self.pixels_per_tile = Some(pixels_per_tile.as_vec2());
         self
     }
 }
@@ -42,9 +51,13 @@ impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(TerminalGridSettings {
             tile_scaling: self.tile_scaling,
+            world_grid_pixels_per_tile: self.pixels_per_tile,
             ..Default::default() //tile_size: self.tile_scaling.tile_size_world(self.pixels_per_tile),
         });
-        app.add_plugins(renderer::TerminalRendererPlugin);
+        app.add_plugins((
+            transform::TerminalTransformPlugin,
+            renderer::TerminalRendererPlugin
+        ));
     }
 }
 
@@ -164,29 +177,32 @@ impl TileScaling {
 #[derive(Default, Resource)]
 pub struct TerminalGridSettings {
     tile_scaling: TileScaling,
-    world_grid_pixels_per_tile: Vec2,
+    world_grid_pixels_per_tile: Option<Vec2>,
 }
 
 impl TerminalGridSettings {
-    pub fn new(tile_scaling: TileScaling, pixels_per_tile: impl GridPoint) -> Self {
-        Self {
-            tile_scaling,
-            world_grid_pixels_per_tile: pixels_per_tile.as_vec2(),
-        }
-    }
+    // pub fn new(tile_scaling: TileScaling, pixels_per_tile: impl GridPoint) -> Self {
+    //     Self {
+    //         tile_scaling,
+    //         world_grid_pixels_per_tile: pixels_per_tile.as_vec2(),
+    //     }
+    // }
 
     /// The size of a world grid tile, based on the global [TerminalGridSettings].
     ///
     /// This value determines how terminals are positioned in world space using
     /// their [TerminalTransform] component.
-    pub fn world_grid_tile_size(&self) -> Vec2 {
-        let ppu = self.world_grid_pixels_per_tile;
-        match self.tile_scaling {
-            TileScaling::Pixels => ppu,
-            TileScaling::World => {
-                let aspect = ppu.x / ppu.y;
-                Vec2::new(1.0 / aspect, 1.0)
+    pub fn world_grid_tile_size(&self) -> Option<Vec2> {
+        self.world_grid_pixels_per_tile.map(
+            |ppu| {
+                match self.tile_scaling {
+                    TileScaling::Pixels => ppu,
+                    TileScaling::World => {
+                        let aspect = ppu.x / ppu.y;
+                        Vec2::new(1.0 / aspect, 1.0)
+                    }
+                }
             }
-        }
+        )
     }
 }
