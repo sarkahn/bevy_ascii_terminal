@@ -1,7 +1,7 @@
 use bevy::{
     app::{Last, Plugin}, asset::{AssetEvent, Assets, Handle}, core_pipeline::core_2d::Camera2dBundle, ecs::{
         bundle::Bundle, component::Component, entity::Entity, event::{Event, EventReader, EventWriter}, query::With, schedule::IntoSystemConfigs, system::{Query, Res}
-    }, math::Vec2, render::texture::Image, window::{PrimaryWindow, WindowResized}
+    }, math::{Rect, UVec2, Vec2}, render::{camera::Camera, texture::Image}, transform::components::Transform, window::{PrimaryWindow, Window, WindowResized}
 };
 
 use crate::{renderer::TerminalMaterial, GridRect, Terminal, TerminalGridSettings, TerminalTransform};
@@ -102,6 +102,8 @@ fn on_font_changed(
 
 fn update_viewport(
     q_term: Query<&TerminalTransform>,
+    mut q_cam: Query<&mut Transform, With<Camera>>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
     mut update_evt: EventReader<UpdateViewportEvent>,
     grid: Res<TerminalGridSettings>,
 ) {
@@ -110,14 +112,79 @@ fn update_viewport(
     }
     update_evt.clear();
 
-    for t in &q_term {
-        let tile_size = grid.world_grid_tile_size().unwrap_or(t.world_tile_size());
-        let round_to_tile = |p: Vec2| (p / tile_size).round() * tile_size;
-        let ceil_to_tile = |p: Vec2| (p / tile_size).floor() * tile_size;
-        let min = round_to_tile(t.world_bounds().min).as_ivec2();
-        let max = ceil_to_tile(t.world_bounds().max).as_ivec2();
+    let Ok(window) = q_window.get_single() else {
+        return;
+    };
 
-        let grid_rect = GridRect::from_points(min, max);
-        println!("GRID RECT: {:?}", grid_rect);
+    let Some(ppu) = q_term.iter().map(|t| t.pixels_per_unit()).reduce(UVec2::min) else {
+        return;
+    };
+
+    let tile_size = grid.tile_scaling().calculate_world_tile_size(ppu, None);
+
+    let intersect = |a: Rect, b: Rect| a.intersect(b);
+    let Some(bounds) = q_term.iter().map(|t|t.world_bounds()).reduce(intersect) else {
+        return;
+    };
+
+    let min = (bounds.min / tile_size).floor() * tile_size;
+    let max = (bounds.max / tile_size).ceil() * tile_size;
+
+    let total_grid = GridRect::from_points((min / tile_size).as_ivec2(), (max / tile_size).as_ivec2());
+
+    let Ok(mut cam) = q_cam.get_single_mut() else {
+        return;
+    };
+    
+    let z = cam.translation.z;
+    let cam_pos = bounds.center().extend(z);
+    *cam = Transform::from_translation(cam_pos);
+    
+
+    let target_res = bounds.size();
+    let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
+
+    // let zoom = (window_res / target_res).floor().min_element().max(1.0);
+
+    // let ortho_size = match render_settings.scaling {
+    //     TileScaling::WorldUnits => grid_rect.height() as f32,
+    //     TileScaling::Pixels => grid_rect.height() as f32 * ppu.y as f32,
+    // };
+
+    // proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
+
+    // let vp_size = target_res * zoom;
+    // let vp_pos = if window_res.cmple(target_res).any() {
+    //     Vec2::ZERO
+    // } else {
+    //     (window_res / 2.0) - (vp_size / 2.0)
+    // }
+    // .floor();
+
+    // cam.viewport = Some(Viewport {
+    //     physical_position: vp_pos.as_uvec2(),
+    //     physical_size: vp_size.as_uvec2(),
+    //     ..Default::default()
+    // });
+
+}
+
+
+fn gcd(mut a: u32, mut b: u32) -> u32 {
+    while b != 0 {
+        let temp = b;
+        b = a % b;
+        a = temp;
     }
+    a
+}
+
+fn lcm(a: u32, b: u32) -> u32 {
+    (a * b) / gcd(a, b)
+}
+
+fn lcm_vec(a: UVec2, b: UVec2) -> UVec2 {
+    let x = lcm(a.x, b.x);
+    let y = lcm(a.y, b.y);
+    UVec2::new(x,y)
 }

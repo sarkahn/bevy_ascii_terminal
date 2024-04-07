@@ -9,7 +9,7 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::{Query, Res, ResMut},
     },
-    math::{IVec2, Rect, Vec2, Vec3},
+    math::{IVec2, Rect, UVec2, Vec2, Vec3},
     render::{mesh::Mesh, texture::Image},
     sprite::Mesh2dHandle,
     transform::{components::Transform, TransformSystem},
@@ -54,6 +54,7 @@ pub struct TerminalTransform {
     term_size: IVec2,
     local_mesh_bounds: Rect,
     world_pos: Vec3,
+    pixels_per_tile: UVec2,
 }
 
 impl TerminalTransform {
@@ -93,9 +94,10 @@ impl TerminalTransform {
     }
 
     /// Update cached transform data.
-    fn updata_cached_data(&mut self, term_size: IVec2, world_tile_size: Vec2, mesh_pivot: Pivot) {
+    fn updata_cached_data(&mut self, term_size: IVec2, world_tile_size: Vec2, mesh_pivot: Pivot, pixels_per_tile: UVec2) {
         self.term_size = term_size;
         self.world_tile_size = world_tile_size;
+        self.pixels_per_tile = pixels_per_tile;
 
         // Calculate mesh bounds
         let bounds_size = term_size.as_vec2() * world_tile_size;
@@ -106,6 +108,10 @@ impl TerminalTransform {
         let max = min + bounds_size;
         self.local_mesh_bounds = Rect::from_corners(min, max);
     }
+
+    pub fn pixels_per_unit(&self) -> UVec2 {
+        self.pixels_per_tile
+    }
 }
 
 fn update_transform(
@@ -113,7 +119,8 @@ fn update_transform(
     grid: Res<TerminalGridSettings>,
 ) {
     for (mut transform, mut term_transform) in &mut q_term {
-        let tile_size = grid.world_grid_tile_size().unwrap_or(term_transform.world_tile_size());
+        // let tile_size = grid.world_grid_tile_size().unwrap_or(term_transform.world_tile_size());
+        let tile_size = term_transform.world_tile_size();
         let xyz = term_transform.grid_position.as_vec2() * tile_size;
         let z = transform.translation.z;
         transform.translation = xyz.extend(z);
@@ -152,10 +159,11 @@ fn on_image_load(
             else {
                 continue;
             };
+            let ppu = image.size() / 16;
             let world_tile_size = settings
                 .tile_scaling
                 .calculate_world_tile_size(image.size(), Some(scaling.0));
-            transform.updata_cached_data(term.size(), world_tile_size, pivot.0);
+            transform.updata_cached_data(term.size(), world_tile_size, pivot.0, ppu);
         }
     }
 }
@@ -192,7 +200,8 @@ fn on_mat_change(
                 let world_tile_size = settings
                     .tile_scaling
                     .calculate_world_tile_size(image.size(), Some(scaling.0));
-                transform.updata_cached_data(term.size(), world_tile_size, pivot.0);
+                let ppu = image.size() / 16;
+                transform.updata_cached_data(term.size(), world_tile_size, pivot.0, ppu);
             }
         }
     }

@@ -51,7 +51,7 @@ impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(TerminalGridSettings {
             tile_scaling: self.tile_scaling,
-            world_grid_pixels_per_tile: self.pixels_per_tile,
+            // world_grid_pixels_per_tile: self.pixels_per_tile,
             ..Default::default() //tile_size: self.tile_scaling.tile_size_world(self.pixels_per_tile),
         });
         app.add_plugins((
@@ -177,7 +177,7 @@ impl TileScaling {
 #[derive(Default, Resource)]
 pub struct TerminalGridSettings {
     tile_scaling: TileScaling,
-    world_grid_pixels_per_tile: Option<Vec2>,
+    // world_grid_pixels_per_tile: Option<Vec2>,
 }
 
 impl TerminalGridSettings {
@@ -188,21 +188,25 @@ impl TerminalGridSettings {
     //     }
     // }
 
-    /// The size of a world grid tile, based on the global [TerminalGridSettings].
-    ///
-    /// This value determines how terminals are positioned in world space using
-    /// their [TerminalTransform] component.
-    pub fn world_grid_tile_size(&self) -> Option<Vec2> {
-        self.world_grid_pixels_per_tile.map(
-            |ppu| {
-                match self.tile_scaling {
-                    TileScaling::Pixels => ppu,
-                    TileScaling::World => {
-                        let aspect = ppu.x / ppu.y;
-                        Vec2::new(1.0 / aspect, 1.0)
-                    }
-                }
-            }
-        )
+    // /// The size of a world grid tile, based on the global [TerminalGridSettings].
+    // ///
+    // /// This value determines how terminals are positioned in world space using
+    // /// their [TerminalTransform] component.
+    // pub fn world_grid_tile_size(&self) -> Option<Vec2> {
+    //     self.world_grid_pixels_per_tile.map(
+    //         |ppu| {
+    //             match self.tile_scaling {
+    //                 TileScaling::Pixels => ppu,
+    //                 TileScaling::World => {
+    //                     let aspect = ppu.x / ppu.y;
+    //                     Vec2::new(1.0 / aspect, 1.0)
+    //                 }
+    //             }
+    //         }
+    //     )
+    // }
+
+    pub fn tile_scaling(&self) -> TileScaling {
+        self.tile_scaling
     }
 }
