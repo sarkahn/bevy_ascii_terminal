@@ -10,7 +10,7 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::{Commands, Query, Res, ResMut},
     },
-    math::Vec2,
+    math::{IVec2, Vec2},
     render::{
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
         render_asset::RenderAssetUsages,
@@ -20,7 +20,7 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::{transform::TerminalTransformSystems, Pivot, Terminal, TerminalTransform, Tile};
+use crate::{direction::Dir4, transform::TerminalTransformSystems, Pivot, Terminal, TerminalTransform, Tile};
 
 use super::{
     material::TerminalMaterial,
@@ -207,45 +207,27 @@ fn rebuild_verts(
         let origin = transform.world_bounds().min;
         let tile_size = transform.world_tile_size();
 
+        let border_offset:IVec2 = if let Some(border) = term.get_border() {
+            let edges = border.edge_opacity(term.clear_tile(), term.size());
+            let x = edges[Dir4::Left.as_index()] as i32;
+            let y = edges[Dir4::Down.as_index()] as i32;
+            [x,y]
+        } else {
+            [0,0]
+        }.into();
+
         bevy::log::info!("Rebuilding mesh verts");
-        // We only need to build our vertex data, uvs/colors will be updated
+        // We only need to update our vertex data, uvs/colors will be updated
         // in "tile_mesh_update"
         VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
             for (i, (p, _)) in term.iter_xy().enumerate() {
+                let p = p + border_offset;
                 mesher.set_tile(p.x, p.y, i);
             }
         });
 
         // Force tile mesh update
         term.set_changed();
-
-        // let origin = renderer.mesh_origin();
-        // let tile_size = renderer.tile_size_world();
-        // let origin = transform.world_mesh_bounds().min;
-        // let tile_size = transform.world_tile_size();
-        // VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
-        //     for (p, _) in term.iter_xy() {
-        //         mesher.add_tile(p.x, p.y);
-        //     }
-        // });
-        // UVMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
-        //     for t in term.tiles().iter() {
-        //         mesher.add_tile(t.glyph, t.fg_color, t.bg_color);
-        //     }
-        // });
-        // if let Some(border) = term.get_border() {
-        //     VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
-        //         for (p, _) in border.iter() {
-        //             mesher.add_tile(p.x, p.y);
-        //         }
-        //     });
-
-        //     UVMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
-        //         for (_, t) in border.iter() {
-        //             mesher.add_tile(t.glyph, t.fg_color, t.bg_color);
-        //         }
-        //     });
-        // }
     }
 }
 
@@ -273,9 +255,6 @@ fn tile_mesh_update(
 
         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
             for (i, t) in term.tiles().iter().enumerate() {
-                if *t != Tile::DEFAULT {
-                    bevy::log::info!("Adding tile data for {:?}", t);
-                }
                 mesher.set_tile(t.glyph, t.fg_color, t.bg_color, i);
             }
         });
@@ -320,10 +299,6 @@ fn mesh_vertex_count(mesh: &Mesh) -> usize {
     verts.len()
 }
 
-/// The tile count of the mesh, based on mesh vertices.
-fn mesh_tile_count(mesh: &Mesh) -> usize {
-    mesh_vertex_count(mesh) / 4
-}
 
 /// Resize all mesh attributes to accomodate the given tile count.
 fn resize_mesh_data(mesh: &mut Mesh, tile_count: usize) {

@@ -22,7 +22,8 @@ fn setup(mut commands: Commands) {
     commands.spawn(
         TerminalBundle::new([10, 10])
             .put_string([1, 1], "Hello")
-            .put_char([2, 2], 'a'),
+            .put_char([2, 2], 'a')
+            .with_border(Border::single_line()),
     );
     commands.spawn(SpriteBundle {
         sprite: Sprite {

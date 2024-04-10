@@ -14,7 +14,7 @@ use bevy::{
     ecs::{bundle::Bundle, system::Resource},
     math::Vec2,
 };
-use border::Border;
+pub use border::Border;
 pub use grid::{direction, GridPoint, GridRect, Pivot, PivotedPoint};
 use renderer::TerminalRenderBundle;
 pub use renderer::{TerminalCameraBundle, TerminalFont, TerminalFontScaling};

@@ -106,7 +106,7 @@ impl TerminalTransform {
     ) {
         let mut term_rect = GridRect::new([0, 0], term_size);
         if let Some((border, clear_tile)) = border {
-            let mut border_rect = GridRect::from_points([-1, -1], term_size);
+            let border_rect = GridRect::from_points([-1, -1], term_size);
             let sides = [
                 // Left
                 GridRect::from_points(border_rect.bottom_left(), border_rect.top_left()),
@@ -130,18 +130,17 @@ impl TerminalTransform {
                 }
             }
 
-            // TODO: I'm not accounting for the terminal mesh pivot when determining the bounds
             if extend_side[0] {
                 term_rect.envelope_point([border_rect.left(), 0]);
             }
             if extend_side[1] {
-                border_rect.envelope_point([0, border_rect.top()]);
+                term_rect.envelope_point([0, border_rect.top()]);
             }
             if extend_side[2] {
-                border_rect.envelope_point([border_rect.right(), 0]);
+                term_rect.envelope_point([border_rect.right(), 0]);
             }
             if extend_side[3] {
-                border_rect.envelope_point([0, border_rect.bottom()]);
+                term_rect.envelope_point([0, border_rect.bottom()]);
             }
         }
 
@@ -150,10 +149,8 @@ impl TerminalTransform {
         self.pixels_per_tile = pixels_per_tile;
 
         // Calculate mesh bounds
-        let bounds_size = self.term_size.as_vec2() * world_tile_size;
+        let bounds_size = term_rect.size.as_vec2() * world_tile_size;
         let normalized_pivot = mesh_pivot.normalized();
-        //let round_to_grid = |v: Vec2, step: Vec2| (v / step).round() * step;
-        //let min = round_to_grid(-world_size * normalized_pivot, world_tile_size);
         let min = -bounds_size * normalized_pivot;
         let max = min + bounds_size;
         self.local_mesh_bounds = Rect::from_corners(min, max);

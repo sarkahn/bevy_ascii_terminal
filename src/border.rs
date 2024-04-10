@@ -1,4 +1,4 @@
-use std::collections::{btree_map, BTreeMap};
+use std::collections::{BTreeMap};
 
 use bevy::math::IVec2;
 
@@ -101,6 +101,38 @@ impl Border {
             .iter()
             .map(|((y, x), t)| (IVec2::new(*x, *y), *t))
     }
+
+    /// Determines whether or not a given edge of the terminal border should be
+    /// rendered.
+    /// 
+    /// This is based on whether or not a border tile on any given edge matches 
+    /// the terminal's clear tile.
+    pub(crate) fn edge_opacity(&self, clear_tile: Tile, term_size: IVec2) -> [bool;4] {
+        let border_rect = GridRect::from_points([-1, -1], term_size);
+        let sides = [
+            // Top
+            GridRect::from_points(border_rect.top_left(), border_rect.top_right()),
+            // Bottom
+            GridRect::from_points(border_rect.bottom_right(), border_rect.bottom_left()),
+            // Left
+            GridRect::from_points(border_rect.bottom_left(), border_rect.top_left()),
+            // Right
+            GridRect::from_points(border_rect.top_right(), border_rect.bottom_right()),
+        ];
+        let mut should_render = [false, false, false, false];
+
+        for (p, tile) in self.iter() {
+            if tile == clear_tile {
+                continue;
+            }
+            for (i, side) in sides.iter().enumerate() {
+                if side.contains_point(p) {
+                    should_render[i] = true;
+                }
+            }
+        }
+        should_render
+    }
 }
 
 /// A mutable reference to the terminal border
@@ -139,13 +171,13 @@ impl<'a> TerminalBorderMut<'a> {
         let mut xy = border_rect.pivot_point(edge);
         let dir = direction.as_ivec2();
         xy += dir * offset;
-        println!(
-            "Putting string {} at {}, dir {}, len {}",
-            fmt.string,
-            xy,
-            dir,
-            fmt.string.len()
-        );
+        // println!(
+        //     "Putting string {} at {}, dir {}, len {}",
+        //     fmt.string,
+        //     xy,
+        //     dir,
+        //     fmt.string.len()
+        // );
         for ch in fmt.string.chars() {
             if !border_rect.contains_point(xy) || term_rect.contains_point(xy) {
                 break;
