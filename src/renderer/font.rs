@@ -26,7 +26,7 @@ pub struct TerminalFontSystems;
 /// A custom font can be used by specifying the asset path with [TerminalFont::Custom].
 ///
 /// Note that all [TerminalFont]'s will be loaded with [ImageSampler::nearest] filtering.
-/// To prevent this you can set the font manually on the [TerminalMaterial::texture] yourself.
+/// To prevent this you can set the font manually on the [TerminalMaterial::texture].
 ///
 /// [TerminalBundle]: crate::TerminalBundle
 ///

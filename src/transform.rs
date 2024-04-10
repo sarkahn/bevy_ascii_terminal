@@ -16,8 +16,9 @@ use bevy::{
 };
 
 use crate::{
-    renderer::{TerminalFontScaling, TerminalMaterial, TerminalMeshPivot, TerminalRenderSystems},
-    GridPoint, Pivot, Terminal, TerminalGridSettings,
+    border::Border,
+    renderer::{TerminalFontScaling, TerminalMaterial, TerminalMeshPivot, TerminalMeshSystems},
+    GridPoint, GridRect, Pivot, Terminal, TerminalGridSettings, Tile,
 };
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
@@ -40,7 +41,8 @@ impl Plugin for TerminalTransformPlugin {
 /// Component for transforming between terminal and world space.
 ///
 /// Setting the `grid_position` of this component will alter the terminal's position
-/// in world space, based on the global [TerminalGridSettings]
+/// in world space during the next transform update, based on terminal's font size
+/// and the global [TerminalGridSettings]
 #[derive(Default, Component)]
 pub struct TerminalTransform {
     /// The grid position for the terminal. Setting this value will override the
@@ -94,13 +96,61 @@ impl TerminalTransform {
     }
 
     /// Update cached transform data.
-    fn updata_cached_data(&mut self, term_size: IVec2, world_tile_size: Vec2, mesh_pivot: Pivot, pixels_per_tile: UVec2) {
+    fn updata_cached_data(
+        &mut self,
+        term_size: IVec2,
+        world_tile_size: Vec2,
+        mesh_pivot: Pivot,
+        pixels_per_tile: UVec2,
+        border: Option<(&Border, Tile)>,
+    ) {
+        let mut term_rect = GridRect::new([0, 0], term_size);
+        if let Some((border, clear_tile)) = border {
+            let mut border_rect = GridRect::from_points([-1, -1], term_size);
+            let sides = [
+                // Left
+                GridRect::from_points(border_rect.bottom_left(), border_rect.top_left()),
+                // Top
+                GridRect::from_points(border_rect.top_left(), border_rect.top_right()),
+                // Right
+                GridRect::from_points(border_rect.top_right(), border_rect.bottom_right()),
+                // Bottom
+                GridRect::from_points(border_rect.bottom_right(), border_rect.bottom_left()),
+            ];
+            let mut extend_side = [false, false, false, false];
+
+            for (p, tile) in border.iter() {
+                if tile == clear_tile {
+                    continue;
+                }
+                for (i, side) in sides.iter().enumerate() {
+                    if side.contains_point(p) {
+                        extend_side[i] = true;
+                    }
+                }
+            }
+
+            // TODO: I'm not accounting for the terminal mesh pivot when determining the bounds
+            if extend_side[0] {
+                term_rect.envelope_point([border_rect.left(), 0]);
+            }
+            if extend_side[1] {
+                border_rect.envelope_point([0, border_rect.top()]);
+            }
+            if extend_side[2] {
+                border_rect.envelope_point([border_rect.right(), 0]);
+            }
+            if extend_side[3] {
+                border_rect.envelope_point([0, border_rect.bottom()]);
+            }
+        }
+
         self.term_size = term_size;
         self.world_tile_size = world_tile_size;
         self.pixels_per_tile = pixels_per_tile;
 
         // Calculate mesh bounds
-        let bounds_size = term_size.as_vec2() * world_tile_size;
+        let bounds_size = self.term_size.as_vec2() * world_tile_size;
         let normalized_pivot = mesh_pivot.normalized();
         //let round_to_grid = |v: Vec2, step: Vec2| (v / step).round() * step;
         //let min = round_to_grid(-world_size * normalized_pivot, world_tile_size);
@@ -116,7 +166,6 @@ impl TerminalTransform {
 
 fn update_transform(
     mut q_term: Query<(&mut Transform, &mut TerminalTransform), Changed<TerminalTransform>>,
-    grid: Res<TerminalGridSettings>,
 ) {
     for (mut transform, mut term_transform) in &mut q_term {
         // let tile_size = grid.world_grid_tile_size().unwrap_or(term_transform.world_tile_size());
@@ -162,8 +211,14 @@ fn on_image_load(
             let ppu = image.size() / 16;
             let world_tile_size = settings
                 .tile_scaling
-                .calculate_world_tile_size(image.size(), Some(scaling.0));
-            transform.updata_cached_data(term.size(), world_tile_size, pivot.0, ppu);
+                .calculate_world_tile_size(ppu, Some(scaling.0));
+            transform.updata_cached_data(
+                term.size(),
+                world_tile_size,
+                pivot.0,
+                ppu,
+                term.get_border().map(|b| (b, term.clear_tile())),
+            );
         }
     }
 }
@@ -197,11 +252,17 @@ fn on_mat_change(
                 .expect("Error getting terminal material");
 
             if let Some(image) = mat.texture.as_ref().and_then(|image| images.get(image)) {
+                let ppu = image.size() / 16;
                 let world_tile_size = settings
                     .tile_scaling
-                    .calculate_world_tile_size(image.size(), Some(scaling.0));
-                let ppu = image.size() / 16;
-                transform.updata_cached_data(term.size(), world_tile_size, pivot.0, ppu);
+                    .calculate_world_tile_size(ppu, Some(scaling.0));
+                transform.updata_cached_data(
+                    term.size(),
+                    world_tile_size,
+                    pivot.0,
+                    ppu,
+                    term.get_border().map(|b| (b, term.clear_tile())),
+                );
             }
         }
     }

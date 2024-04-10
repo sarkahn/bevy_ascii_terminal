@@ -9,18 +9,16 @@ mod mesh;
 mod mesher;
 mod uv_mapping;
 
-use crate::{GridPoint, Pivot};
-
-use self::{
-    camera::TerminalCameraPlugin, font::TerminalFontPlugin, material::TerminalMaterialPlugin,
-    mesh::TerminalMeshPlugin, uv_mapping::UvMappingPlugin,
-};
 pub use self::{
-    camera::TerminalCameraSystems,
+    camera::TerminalCameraBundle,
     font::{TerminalFont, TerminalFontSystems},
     material::TerminalMaterial,
-    mesh::{TerminalFontScaling, TerminalMeshPivot, TerminalRenderSystems},
+    mesh::{TerminalFontScaling, TerminalMeshPivot, TerminalMeshSystems},
     uv_mapping::UvMapping,
+};
+use self::{
+    camera::TerminalCameraPlugin, font::TerminalFontPlugin, material::TerminalMaterialPlugin,
+    mesh::TerminalMeshPlugin, uv_mapping::TerminalUvMappingPlugin,
 };
 
 pub struct TerminalRendererPlugin;
@@ -28,7 +26,7 @@ pub struct TerminalRendererPlugin;
 impl Plugin for TerminalRendererPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins((
-            UvMappingPlugin,
+            TerminalUvMappingPlugin,
             TerminalMaterialPlugin,
             TerminalMeshPlugin,
             TerminalFontPlugin,
@@ -45,15 +43,3 @@ pub struct TerminalRenderBundle {
     pub mapping: Handle<UvMapping>,
     pub mesh_bundle: MaterialMesh2dBundle<TerminalMaterial>,
 }
-
-// impl TerminalRenderBundle {
-//     pub fn new() -> Self {
-//         Self {
-//             mesh_pivot: TerminalMeshPivot::default(),
-//             font: Default::default(),
-//             scaling: Default::default(),
-//             mapping: Default::default(),
-//             mesh_bundle: Default::default(),
-//         }
-//     }
-// }

@@ -7,9 +7,9 @@ use bevy::{
     utils::HashMap,
 };
 
-pub struct UvMappingPlugin;
+pub struct TerminalUvMappingPlugin;
 
-impl Plugin for UvMappingPlugin {
+impl Plugin for TerminalUvMappingPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.init_asset::<UvMapping>();
         let mut mappings = app.world.resource_mut::<Assets<UvMapping>>();

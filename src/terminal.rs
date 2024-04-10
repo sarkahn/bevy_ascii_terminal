@@ -126,6 +126,10 @@ impl Terminal {
         self.clear_tile = clear_tile;
     }
 
+    pub fn clear_tile(&self) -> Tile {
+        self.clear_tile
+    }
+
     /// The terminal tiles as a slice
     pub fn tiles(&self) -> &[Tile] {
         self.tiles.as_slice()

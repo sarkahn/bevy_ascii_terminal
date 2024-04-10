@@ -1,5 +1,3 @@
-use std::iter::repeat;
-
 use bevy::{
     app::{Last, Plugin, PostUpdate},
     asset::{AssetEvent, Assets, Handle},
@@ -14,7 +12,6 @@ use bevy::{
     },
     math::Vec2,
     render::{
-        color::Color,
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
         render_asset::RenderAssetUsages,
         render_resource::{PrimitiveTopology, VertexFormat},
@@ -23,10 +20,7 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::{
-    transform::TerminalTransformSystems, Pivot, Terminal,
-    TerminalFont, TerminalTransform,
-};
+use crate::{transform::TerminalTransformSystems, Pivot, Terminal, TerminalTransform, Tile};
 
 use super::{
     material::TerminalMaterial,
@@ -45,7 +39,7 @@ pub struct TerminalMeshPlugin;
 
 /// Systems for building the terminal mesh.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalRenderSystems;
+pub struct TerminalMeshSystems;
 
 impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
@@ -58,7 +52,7 @@ impl Plugin for TerminalMeshPlugin {
                 //on_pivot_font_size_change,
             )
                 .chain()
-                .in_set(TerminalRenderSystems)
+                .in_set(TerminalMeshSystems)
                 .after(TerminalTransformSystems),
         );
 
@@ -66,7 +60,7 @@ impl Plugin for TerminalMeshPlugin {
             Last,
             (rebuild_verts, tile_mesh_update, reset_terminal_state)
                 .chain()
-                .in_set(TerminalRenderSystems),
+                .in_set(TerminalMeshSystems),
         );
     }
 }
@@ -106,6 +100,7 @@ fn init_mesh(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for mesh_handle in &q_term {
+        bevy::log::info!("Initializing terminal mesh");
         let mut mesh = Mesh::new(
             PrimitiveTopology::TriangleList,
             RenderAssetUsages::default(),
@@ -139,6 +134,7 @@ fn on_image_load(
                 .as_ref()
                 .is_some_and(|image| image.id() == *image_id)
             {
+                bevy::log::info!("Image loaded, initializing vert rebuild");
                 commands.entity(entity).insert(RebuildVerts);
             }
         }
@@ -148,9 +144,6 @@ fn on_image_load(
 fn on_mat_change(
     mut q_term: Query<(Entity, &Handle<TerminalMaterial>)>,
     mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
-    // mut meshes: ResMut<Assets<Mesh>>,
-    // images: Res<Assets<Image>>,
-    // materials: Res<Assets<TerminalMaterial>>,
     mut commands: Commands,
 ) {
     for evt in mat_evt.read() {
@@ -163,35 +156,11 @@ fn on_mat_change(
                 continue;
             }
 
+            bevy::log::info!("Material changed, initializing vert rebuild");
             commands.entity(entity).insert(RebuildVerts);
-            // if materials
-            //     .get(mat_handle)
-            //     .and_then(|mat| mat.texture.as_ref())
-            //     .and_then(|image| images.get(image.clone()))
-            //     .is_some()
-            // {
-            //     commands.entity(entity).insert(RebuildVerts);
-            //     continue;
-            // }
-
-            // let mesh = meshes
-            //     .get_mut(mesh_handle.0.clone())
-            //     .expect("Error getting terminal mesh");
-            // resize_mesh_data(mesh, 0);
         }
     }
 }
-
-// fn on_pivot_font_size_change(
-//     q_term: Query<(Entity, Ref<TerminalMeshPivot>, Ref<TerminalFontScaling>)>,
-//     mut commands: Commands,
-// ) {
-//     for (entity, pivot, scaling) in &q_term {
-//         if pivot.is_changed() || scaling.is_changed() {
-//             commands.entity(entity).insert(RebuildVerts);
-//         }
-//     }
-// }
 
 #[allow(clippy::type_complexity)]
 fn rebuild_verts(
@@ -238,6 +207,7 @@ fn rebuild_verts(
         let origin = transform.world_bounds().min;
         let tile_size = transform.world_tile_size();
 
+        bevy::log::info!("Rebuilding mesh verts");
         // We only need to build our vertex data, uvs/colors will be updated
         // in "tile_mesh_update"
         VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
@@ -281,24 +251,17 @@ fn rebuild_verts(
 
 #[allow(clippy::type_complexity)]
 fn tile_mesh_update(
-    q_term: Query<
-        (
-            &Terminal,
-            &Mesh2dHandle,
-            &Handle<UvMapping>,
-            &TerminalTransform,
-        ),
-        Changed<Terminal>,
-    >,
+    q_term: Query<(&Terminal, &Mesh2dHandle, &Handle<UvMapping>), Changed<Terminal>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mappings: Res<Assets<UvMapping>>,
 ) {
-    for (term, mesh_handle, mapping, transform) in &q_term {
+    for (term, mesh_handle, mapping) in &q_term {
         let mesh = meshes
             .get_mut(mesh_handle.0.clone())
             .expect("Couldn't find terminal mesh");
 
         if mesh_vertex_count(mesh) == 0 {
+            bevy::log::info!("Aborting mesh tile data update since our mesh is empty");
             continue;
         }
 
@@ -306,8 +269,13 @@ fn tile_mesh_update(
             .get(mapping.clone())
             .expect("Couldn't find terminal uv mapping");
 
+        bevy::log::info!("Rebuilding mesh tile data!");
+
         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
             for (i, t) in term.tiles().iter().enumerate() {
+                if *t != Tile::DEFAULT {
+                    bevy::log::info!("Adding tile data for {:?}", t);
+                }
                 mesher.set_tile(t.glyph, t.fg_color, t.bg_color, i);
             }
         });

@@ -1,140 +1,86 @@
-use crate::{transform::TerminalTransform, GridRect, TerminalGridSettings};
+use std::ops::Sub;
+
 use bevy::{
-    app::PostStartup,
+    app::{Last, Plugin, PostUpdate},
+    asset::{AssetEvent, Assets, Handle},
+    core_pipeline::core_2d::Camera2dBundle,
     ecs::{
         bundle::Bundle,
-        query::Changed,
+        component::Component,
+        entity::Entity,
+        event::{Event, EventReader, EventWriter},
+        query::{Changed, Or, With},
         schedule::{IntoSystemConfigs, SystemSet},
+        system::{Query, Res},
     },
-    math::{bounding::BoundingVolume, IVec2, Mat4},
-    prelude::{
-        AssetEvent, Assets, Camera, Camera2dBundle, Commands, Component, Entity, Event,
-        EventReader, EventWriter, First, Handle, Image, Last, OrthographicProjection, Plugin,
-        PostUpdate, PreUpdate, Query, Res, UVec2, Vec2, With, Without,
+    math::{IVec2, Mat4, Rect, UVec2, Vec2},
+    render::{
+        camera::{Camera, OrthographicProjection, ScalingMode, Viewport},
+        texture::Image,
     },
-    render::camera::{CameraUpdateSystem, ScalingMode, Viewport},
     transform::components::{GlobalTransform, Transform},
     window::{PrimaryWindow, Window, WindowResized},
 };
 
-use crate::Terminal;
+use crate::{
+    renderer::TerminalMaterial, terminal, transform::TerminalTransformSystems, GridRect, Terminal,
+    TerminalGridSettings, TerminalTransform, TileScaling,
+};
 
-use super::{material::TerminalMaterial, mesh::TerminalMeshPivot};
-
-pub(crate) struct TerminalCameraPlugin;
+pub struct TerminalCameraPlugin;
 
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_event::<UpdateViewportEvent>()
             .add_systems(
-                PostStartup,
-                cache_camera_data
-                    .in_set(TerminalCameraSystems)
-                    .after(CameraUpdateSystem),
+                Last,
+                (on_window_resized, on_font_changed, update_viewport)
+                    .chain()
+                    .in_set(TerminalViewportSystems)
+                    .after(TerminalTransformSystems),
             )
             .add_systems(
                 PostUpdate,
-                (cache_camera_data, on_renderer_change, on_window_resized)
+                (cache_camera_data, cache_cursor_data)
                     .chain()
-                    .in_set(TerminalCameraSystems)
-                    .after(CameraUpdateSystem),
-            )
-            .add_systems(Last, update_viewport);
+                    .in_set(TerminalCameraSystems),
+            );
     }
 }
 
-/// System for tracking camera and cursor data.
+/// Systems for building the terminal mesh.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
+pub struct TerminalViewportSystems;
+
+/// Systems for building the terminal mesh.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
 pub struct TerminalCameraSystems;
 
-#[derive(Bundle)]
-pub struct TerminalCameraBundle {
-    term_cam: TerminalCamera,
-    cam_2d: Camera2dBundle,
-}
+#[derive(Event)]
+pub struct UpdateViewportEvent;
 
-impl Default for TerminalCameraBundle {
-    fn default() -> Self {
-        Self::auto()
-    }
-}
-
-impl TerminalCameraBundle {
-    /// Set up an auto terminal camera. The viewport will be automatically
-    /// adjusted any time the window changes to try and render all existing
-    /// terminals without any artifacts.
-    pub fn auto() -> Self {
-        Self {
-            term_cam: TerminalCamera {
-                auto_resize_viewport: true,
-                ..Default::default()
-            },
-            cam_2d: Default::default(),
-        }
-    }
-
-    /// Enable cursor tracking for the [TerminalCamera].
-    ///
-    /// If cursor tracking is enabled the Terminal camera will cache viewport
-    /// and cursor data every frame so cursor positions can easily be
-    /// transformed to World/Terminal space.
-    pub fn with_cursor_tracking(mut self) -> Self {
-        self.term_cam.track_cursor = true;
-        self
-    }
-}
-
-#[derive(Default, Debug, Clone)]
-struct CachedCameraData {
-    cam_transform: GlobalTransform,
-    proj_matrix: Mat4,
-    target_size: Option<Vec2>,
-    cursor: Option<Vec2>,
-    vp_offset: Option<Vec2>,
-}
-
-/// A component for easy terminal rendering.
-#[derive(Default, Debug, Clone, Component)]
+#[derive(Default, Component)]
 pub struct TerminalCamera {
-    /// If set to true, the Terminal camera will cache viewport and cursor
-    /// data every frame so the cursor position can easily be transformed to
-    /// Terminal tile coordinates via the camera's `cursor_to_tile` function.
+    pub manage_viewport: bool,
     pub track_cursor: bool,
-    /// If set to true the camera viewport will be adjusted automatically
-    /// any time the window or a terminal is resized to try and render
-    /// all terminals correctly with no artifacts.
-    pub auto_resize_viewport: bool,
     cam_data: Option<CachedCameraData>,
+    cursor_data: Option<CachedCursorData>,
 }
 
 impl TerminalCamera {
     /// Returns the tile position of the main window cursor using the last
     /// cached camera data.
     ///
-    /// Will return [None] if the camera data has not been initialized or if the
-    /// cursor is out of the bounds of the given terminal.
+    /// Will return [None] if the camera data has not been initialized.
     ///
     /// For accurate results this should be called in [PostUpdate] after
-    /// [TerminalCameraSystem].
-    pub fn cursor_to_tile(&self, transform: &TerminalTransform) -> Option<IVec2> {
-        self.cam_data
-            .as_ref()
-            .and_then(|d| d.cursor)
-            .and_then(|p| self.viewport_to_tile(p, transform))
+    /// [TerminalCameraSystems].
+    pub fn cursor_world_pos(&self) -> Option<Vec2> {
+        self.cursor_data.as_ref().map(|v| v.world_pos)
     }
 
-    /// Converts a window viewport position (IE: the cursor) to it's
-    /// corresponding tile position in the given terminal.
-    ///
-    /// Will return [None] if the position is outside the bounds of the
-    /// terminal.
-    pub fn viewport_to_tile(
-        &self,
-        viewport_position: Vec2,
-        transform: &TerminalTransform,
-    ) -> Option<IVec2> {
-        self.viewport_to_world(viewport_position)
-            .and_then(|p| transform.world_to_tile(p))
+    pub fn cursor_viewport_pos(&self) -> Option<Vec2> {
+        self.cursor_data.as_ref().map(|v| v.viewport_pos)
     }
 
     /// Transform a viewport position to it's corresponding world position using
@@ -157,16 +103,59 @@ impl TerminalCamera {
     }
 }
 
-#[derive(Event)]
-pub struct UpdateViewportEvent;
+#[derive(Default, Debug, Clone)]
+struct CachedCameraData {
+    cam_transform: GlobalTransform,
+    proj_matrix: Mat4,
+    target_size: Option<Vec2>,
+    vp_offset: Option<Vec2>,
+}
+
+#[derive(Default, Debug, Clone)]
+struct CachedCursorData {
+    viewport_pos: Vec2,
+    world_pos: Vec2,
+}
+
+#[derive(Default, Bundle)]
+pub struct TerminalCameraBundle {
+    cam_bundle: Camera2dBundle,
+    term_cam: TerminalCamera,
+}
+
+impl TerminalCameraBundle {
+    /// A terminal camera will be created and will automatically manage
+    /// the viewport to try and render any terminal entities.
+    pub fn auto() -> Self {
+        Self {
+            term_cam: TerminalCamera {
+                manage_viewport: true,
+                track_cursor: false,
+                cam_data: None,
+                cursor_data: None,
+            },
+            ..Default::default()
+        }
+    }
+
+    /// Enable cursor tracking for the [TerminalCamera].
+    ///
+    /// If cursor tracking is enabled the Terminal camera will cache viewport
+    /// and cursor data every frame so cursor positions can easily be
+    /// transformed to World/Terminal space.
+    pub fn with_cursor_tracking(&mut self) -> &mut Self {
+        self.term_cam.track_cursor = true;
+        self
+    }
+}
 
 #[allow(clippy::type_complexity)]
 fn cache_camera_data(
-    mut q_cam: Query<(&mut TerminalCamera, &GlobalTransform, &Camera)>,
-    window: Query<&Window, With<PrimaryWindow>>,
+    mut q_cam: Query<
+        (&mut TerminalCamera, &GlobalTransform, &Camera),
+        Or<(Changed<Camera>, Changed<GlobalTransform>)>,
+    >,
 ) {
-    let cursor = window.get_single().ok().and_then(|w| w.cursor_position());
-
     for (mut terminal_cam, transform, cam) in &mut q_cam {
         if !terminal_cam.track_cursor {
             if terminal_cam.cam_data.is_some() {
@@ -178,8 +167,33 @@ fn cache_camera_data(
             cam_transform: *transform,
             proj_matrix: cam.projection_matrix(),
             target_size: cam.logical_viewport_size(),
-            cursor,
             vp_offset: cam.logical_viewport_rect().map(|vp| vp.min),
+        });
+    }
+}
+
+fn cache_cursor_data(
+    mut q_cam: Query<&mut TerminalCamera>,
+    window: Query<&Window, With<PrimaryWindow>>,
+) {
+    let cursor_viewport_pos = window.get_single().ok().and_then(|w| w.cursor_position());
+    for mut terminal_cam in &mut q_cam {
+        if !terminal_cam.track_cursor {
+            if terminal_cam.cursor_data.is_some() {
+                terminal_cam.cursor_data = None;
+            }
+            continue;
+        };
+
+        let Some((viewport_pos, world_pos)) = cursor_viewport_pos
+            .and_then(|vp| terminal_cam.viewport_to_world(vp).map(|wp| (vp, wp)))
+        else {
+            terminal_cam.cursor_data = None;
+            continue;
+        };
+        terminal_cam.cursor_data = Some(CachedCursorData {
+            viewport_pos,
+            world_pos,
         });
     }
 }
@@ -192,9 +206,9 @@ fn on_window_resized(
     if q_win.is_empty() || resize_events.is_empty() {
         return;
     }
-    let window_entity = q_win.single();
+    let ewin = q_win.single();
     for evt in resize_events.read() {
-        if evt.window != window_entity {
+        if evt.window != ewin {
             continue;
         }
         vp_evt.send(UpdateViewportEvent);
@@ -202,147 +216,142 @@ fn on_window_resized(
     }
 }
 
-fn on_renderer_change(
-    q_term: Query<&TerminalMeshPivot, Changed<TerminalMeshPivot>>,
+fn on_font_changed(
+    mut img_evt: EventReader<AssetEvent<Image>>,
+    mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
     mut vp_evt: EventWriter<UpdateViewportEvent>,
+    q_term: Query<&Handle<TerminalMaterial>, With<Terminal>>,
+    mats: Res<Assets<TerminalMaterial>>,
 ) {
-    if !q_term.is_empty() {
-        vp_evt.send(UpdateViewportEvent);
+    if q_term.is_empty() || (img_evt.is_empty() && mat_evt.is_empty()) {
+        return;
+    }
+
+    for evt in mat_evt.read() {
+        let material_id = match evt {
+            AssetEvent::Modified { id } => id,
+            _ => continue,
+        };
+        if q_term.iter().any(|mat| mat.id() == *material_id) {
+            vp_evt.send(UpdateViewportEvent);
+            return;
+        }
+    }
+    for evt in img_evt.read() {
+        let image_id = match evt {
+            AssetEvent::LoadedWithDependencies { id } => id,
+            _ => continue,
+        };
+        if q_term
+            .iter()
+            .filter_map(|mat| mats.get(mat).and_then(|mat| mat.texture.as_ref()))
+            .any(|image| image.id() == *image_id)
+        {
+            vp_evt.send(UpdateViewportEvent);
+            return;
+        }
     }
 }
 
 fn update_viewport(
-    mut evt_vp_update: EventReader<UpdateViewportEvent>,
-    q_term: Query<(
-        &GlobalTransform,
-        &Terminal,
-        &Handle<TerminalMaterial>,
-        &TerminalMeshPivot,
-    )>,
+    q_term: Query<&TerminalTransform>,
     mut q_cam: Query<(
+        &TerminalCamera,
         &mut Camera,
         &mut Transform,
         &mut OrthographicProjection,
-        &mut TerminalCamera,
     )>,
     q_window: Query<&Window, With<PrimaryWindow>>,
-    images: Res<Assets<Image>>,
-    materials: Res<Assets<TerminalMaterial>>,
-    render_settings: Res<TerminalGridSettings>,
+    mut update_evt: EventReader<UpdateViewportEvent>,
+    grid: Res<TerminalGridSettings>,
 ) {
-    if evt_vp_update.is_empty() || q_term.is_empty() || q_cam.is_empty() || q_window.is_empty() {
+    if update_evt.is_empty() {
         return;
     }
-    evt_vp_update.read();
+    update_evt.clear();
 
-    let (mut cam, mut cam_transform, mut proj, term_cam) = q_cam.single_mut();
-    if !term_cam.auto_resize_viewport {
+    let Ok((term_cam, mut cam, mut cam_transform, mut proj)) = q_cam.get_single_mut() else {
+        return;
+    };
+
+    if !term_cam.manage_viewport {
         return;
     }
 
-    // let ppu = q_term
-    //     .iter()
-    //     .map(|(_, _, _, renderer)| renderer.pixels_per_tile())
-    //     .reduce(IVec2::max)
-    //     .unwrap();
+    let Ok(window) = q_window.get_single() else {
+        return;
+    };
+    let Some(ppu) = q_term
+        .iter()
+        .map(|t| t.pixels_per_unit())
+        .reduce(UVec2::min)
+    else {
+        return;
+    };
 
-    /* Calculating proper grid dimensions:
-        Each terminal may have a different "grid position"
-        if any terminal can have any font size, then we need
-        to decide if each has it's own grid position or if there is
-        a universal "tile size" setting which determines a terminal's actual
-        position/size for the camera to work with.
-
-        How does "TileScaling" factor in? Different TileScaling means
-        a different world size for terminal - but TileScaling is universal
-    */
-    // For a tilescaling::world camera, every tile is 1 world
-    // unit vertically.
-
-    // let grid_rect = q_term
-    //     .iter()
-    //     .map(|(t, term, _, renderer)| {
-    //         let p = t.translation().truncate();
-    //         let size = term.size().as_vec2();
-    //         let bl = p - (size * renderer.pivot.normalized()).floor();
-    //         GridRect::new(bl.as_ivec2(), size.as_ivec2())
-    //     })
-    //     .reduce(|a, b| a.merged(b))
-    //     .unwrap();
-
-    // // We'll use the largest PPU from all terminals as our baseline.
-    // //
-    // // TODO: Handle different font sizes with multiple terminals.
-    // let ppu = q_term
-    //     .iter()
-    //     .filter_map(|(_, _, handle, _)| {
-    //         materials
-    //             .get(handle)
-    //             .and_then(|m| m.texture.clone())
-    //             .and_then(|i| images.get(i))
-    //             .map(|i| i.size().as_ivec2() / 16)
-    //     })
-    //     .reduce(IVec2::max);
-
-    // // Check if no terminals have an image.
-    // let Some(ppu) = ppu else {
-    //     return;
-    // };
-
-    // // Bounds encompassing all terminal meshes in world space.
-    // let mesh_bounds = q_term
-    //     .iter()
-    //     .map(|(_, _, _, renderer)| renderer.bounds())
-    //     .reduce(|a, b| a.merge(&b));
-    // let Some(mesh_bounds) = mesh_bounds else {
-    //     return;
-    // };
-
-    // evt_vp_update.clear();
-
-    // let window = q_window.single();
-
-    // *cam_transform =
-    //     Transform::from_translation(mesh_bounds.center().extend(cam_transform.translation.z));
-
-    // let target_res = (grid_rect.size * ppu).as_vec2();
-    // let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
-
-    // let zoom = (window_res / target_res).floor().min_element().max(1.0);
-
-    // let ortho_size = match render_settings.scaling {
-    //     TileScaling::WorldUnits => grid_rect.height() as f32,
-    //     TileScaling::Pixels => grid_rect.height() as f32 * ppu.y as f32,
-    // };
-
-    // proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
-
-    // let vp_size = target_res * zoom;
-    // let vp_pos = if window_res.cmple(target_res).any() {
-    //     Vec2::ZERO
-    // } else {
-    //     (window_res / 2.0) - (vp_size / 2.0)
-    // }
-    // .floor();
-
-    // cam.viewport = Some(Viewport {
-    //     physical_position: vp_pos.as_uvec2(),
-    //     physical_size: vp_size.as_uvec2(),
-    //     ..Default::default()
-    // });
-}
-
-#[cfg(test)]
-mod tests {
-    fn round_to_step(value: f32, step: f32) -> f32 {
-        step * (value / step).round()
+    // Transforms not updated yet, terminal images could still be loading.
+    if ppu.cmpeq(UVec2::ZERO).any() {
+        return;
     }
 
-    #[test]
-    fn step() {
-        let step = 1.75;
+    let tile_size = grid.tile_scaling().calculate_world_tile_size(ppu, None);
 
-        let res = round_to_step(-3.33, step);
-        println!("Res {}", res);
+    let intersect = |a: Rect, b: Rect| a.intersect(b);
+    let Some(bounds) = q_term.iter().map(|t| t.world_bounds()).reduce(intersect) else {
+        return;
+    };
+
+    let min = (bounds.min / tile_size).round().as_ivec2();
+    let max = (bounds.max / tile_size).round().as_ivec2().sub(1);
+
+    let rect = GridRect::from_points(min, max);
+
+    let z = cam_transform.translation.z;
+    let cam_pos = bounds.center().extend(z);
+    *cam_transform = Transform::from_translation(cam_pos);
+
+    let target_res = ppu.as_vec2() * rect.size.as_vec2();
+    let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
+
+    let zoom = (window_res / target_res).floor().min_element().max(1.0);
+
+    let ortho_size = match grid.tile_scaling() {
+        TileScaling::World => rect.height() as f32,
+        TileScaling::Pixels => rect.height() as f32 * ppu.y as f32,
+    };
+
+    proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
+
+    let vp_size = target_res * zoom;
+    let vp_pos = if window_res.cmple(target_res).any() {
+        Vec2::ZERO
+    } else {
+        (window_res / 2.0) - (vp_size / 2.0)
     }
+    .floor();
+
+    cam.viewport = Some(Viewport {
+        physical_position: vp_pos.as_uvec2(),
+        physical_size: vp_size.as_uvec2(),
+        ..Default::default()
+    });
 }
+
+// fn gcd(mut a: u32, mut b: u32) -> u32 {
+//     while b != 0 {
+//         let temp = b;
+//         b = a % b;
+//         a = temp;
+//     }
+//     a
+// }
+
+// fn lcm(a: u32, b: u32) -> u32 {
+//     (a * b) / gcd(a, b)
+// }
+
+// fn lcm_vec(a: UVec2, b: UVec2) -> UVec2 {
+//     let x = lcm(a.x, b.x);
+//     let y = lcm(a.y, b.y);
+//     UVec2::new(x, y)
+// }

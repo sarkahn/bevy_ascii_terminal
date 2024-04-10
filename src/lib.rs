@@ -1,5 +1,4 @@
 mod border;
-mod camera;
 mod glyph;
 mod grid;
 pub mod renderer;
@@ -13,27 +12,35 @@ use std::ops::Mul;
 use bevy::{
     app::Plugin,
     ecs::{bundle::Bundle, system::Resource},
-    math::{IVec2, UVec2, Vec2},
+    math::Vec2,
 };
 use border::Border;
 pub use grid::{direction, GridPoint, GridRect, Pivot, PivotedPoint};
-pub use renderer::TerminalFont;
-use renderer::{TerminalFontScaling, TerminalRenderBundle};
+use renderer::TerminalRenderBundle;
+pub use renderer::{TerminalCameraBundle, TerminalFont, TerminalFontScaling};
 pub use string::{FormattedString, StringFormatter};
 pub use terminal::Terminal;
 pub use tile::Tile;
 pub use transform::TerminalTransform;
-pub use camera::TerminalCameraBundle;
-
-
 
 // TODO: Change to TerminalPluginS Impl plugin group for universal grid settings
 #[derive(Default)]
 pub struct TerminalPlugin {
     tile_scaling: TileScaling,
-    pixels_per_tile: Option<Vec2>,
+    //pixels_per_tile: Option<Vec2>,
 }
 
+impl Plugin for TerminalPlugin {
+    fn build(&self, app: &mut bevy::prelude::App) {
+        app.insert_resource(TerminalGridSettings {
+            tile_scaling: self.tile_scaling,
+        });
+        app.add_plugins((
+            transform::TerminalTransformPlugin,
+            renderer::TerminalRendererPlugin,
+        ));
+    }
+}
 
 impl TerminalPlugin {
     pub fn with_tile_scaling(mut self, tile_scaling: TileScaling) -> Self {
@@ -41,24 +48,10 @@ impl TerminalPlugin {
         self
     }
 
-    pub fn with_pixels_per_tile(mut self, pixels_per_tile: impl GridPoint) -> Self {
-        self.pixels_per_tile = Some(pixels_per_tile.as_vec2());
-        self
-    }
-}
-
-impl Plugin for TerminalPlugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app.insert_resource(TerminalGridSettings {
-            tile_scaling: self.tile_scaling,
-            // world_grid_pixels_per_tile: self.pixels_per_tile,
-            ..Default::default() //tile_size: self.tile_scaling.tile_size_world(self.pixels_per_tile),
-        });
-        app.add_plugins((
-            transform::TerminalTransformPlugin,
-            renderer::TerminalRendererPlugin
-        ));
-    }
+    // pub fn with_pixels_per_tile(mut self, pixels_per_tile: impl GridPoint) -> Self {
+    //     self.pixels_per_tile = Some(pixels_per_tile.as_vec2());
+    //     self
+    // }
 }
 
 #[derive(Bundle)]
@@ -84,13 +77,19 @@ impl TerminalBundle {
     }
 
     /// Write a [FormattedString] to the terminal.
-    pub fn with_string<'a>(
+    pub fn put_string<'a>(
         mut self,
         xy: impl GridPoint,
         string: impl Into<FormattedString<'a>>,
     ) -> Self {
         let string = string.into();
         self.terminal.put_string(xy, string);
+        self
+    }
+
+    /// Write a [FormattedString] to the terminal.
+    pub fn put_char(mut self, xy: impl GridPoint, ch: char) -> Self {
+        self.terminal.put_char(xy, ch);
         self
     }
 
@@ -126,8 +125,9 @@ impl TerminalBundle {
         self
     }
 
-    /// Set the initial grid position for the terminal. The final world position
-    /// of the terminal will be based on [TerminalGridSettings].
+    /// Set the initial grid position for the terminal. The final grid position
+    /// in world space is based on the size of the terminal font as well as the
+    /// [TerminalGridSettings] resource.
     pub fn with_grid_position(mut self, grid_pos: impl GridPoint) -> Self {
         self.terminal_transform.grid_position = grid_pos.as_ivec2();
         self
@@ -156,16 +156,16 @@ impl TileScaling {
     /// based on the tile scaling.
     pub(crate) fn calculate_world_tile_size(
         &self,
-        font_image_size: UVec2,
+        ppu: impl GridPoint,
         font_scaling: Option<Vec2>,
     ) -> Vec2 {
         let scaling = font_scaling.unwrap_or(Vec2::ONE);
         match self {
             TileScaling::World => {
-                let aspect = font_image_size.x as f32 / font_image_size.y as f32;
+                let aspect = ppu.x() as f32 / ppu.y() as f32;
                 Vec2::new(1.0 / aspect, 1.0)
             }
-            TileScaling::Pixels => (font_image_size / 16).as_vec2(),
+            TileScaling::Pixels => ppu.as_vec2(),
         }
         .mul(scaling)
     }

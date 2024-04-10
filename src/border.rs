@@ -64,7 +64,7 @@ impl Border {
     fn set_edge(&mut self, edge: Pivot, border_rect: GridRect, tile: Tile) {
         match edge {
             Pivot::TopLeft => self.put_tile(border_rect.top_left(), tile),
-            Pivot::TopCenter => {
+            Pivot::Center | Pivot::TopCenter => {
                 for x in 1..border_rect.right() {
                     self.put_tile([x, border_rect.top()], tile);
                 }
@@ -75,7 +75,6 @@ impl Border {
                     self.put_tile([border_rect.left(), y], tile);
                 }
             }
-            Pivot::Center => {}
             Pivot::RightCenter => {
                 for y in 1..border_rect.top() {
                     self.put_tile([border_rect.right(), y], tile);
