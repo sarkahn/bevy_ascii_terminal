@@ -46,6 +46,10 @@ impl Border {
         self.changed
     }
 
+    pub fn tile_count(&self) -> usize {
+        self.tiles.len()
+    }
+
     /// Set the border's edge tiles from it's edge glyphs. This will override
     /// any previously set border tiles.
     fn set_edge_tiles(&mut self, size: IVec2, clear_tile: Tile) {
@@ -230,6 +234,11 @@ impl<'a> TerminalBorderMut<'a> {
         self.border.changed = true;
         self.border.set_edge_tiles(self.term_size, self.clear_tile);
         self
+    }
+
+    /// Mark the border as changed to force the mesh to update
+    pub(crate) fn set_changed(&mut self) {
+        self.border.changed = true;
     }
 
     pub(crate) fn reset_changed_state(&mut self) {

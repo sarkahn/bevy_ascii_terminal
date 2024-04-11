@@ -20,7 +20,8 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::{direction::Dir4, transform::TerminalTransformSystems, Pivot, Terminal, TerminalTransform, Tile};
+use crate::{direction::Dir4, transform::TerminalTransformSystems, Pivot, Terminal,
+    TerminalTransform, Tile};
 
 use super::{
     material::TerminalMaterial,
@@ -58,7 +59,7 @@ impl Plugin for TerminalMeshPlugin {
 
         app.add_systems(
             Last,
-            (rebuild_verts, tile_mesh_update, reset_terminal_state)
+            (rebuild_verts, tile_mesh_update, border_mesh_update)
                 .chain()
                 .in_set(TerminalMeshSystems),
         );
@@ -243,7 +244,7 @@ fn tile_mesh_update(
             .expect("Couldn't find terminal mesh");
 
         if mesh_vertex_count(mesh) == 0 {
-            bevy::log::info!("Aborting mesh tile data update since our mesh is empty");
+//            bevy::log::info!("Aborting mesh tile data update since our mesh is empty");
             continue;
         }
 
@@ -251,45 +252,75 @@ fn tile_mesh_update(
             .get(mapping.clone())
             .expect("Couldn't find terminal uv mapping");
 
-        bevy::log::info!("Rebuilding mesh tile data!");
+        // bevy::log::info!("Rebuilding mesh tile data!");
 
         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
             for (i, t) in term.tiles().iter().enumerate() {
                 mesher.set_tile(t.glyph, t.fg_color, t.bg_color, i);
             }
         });
-
-        // if let Some(border) = term.get_border() {
-        //     if border.changed() {
-        //         resize_mesh_data(mesh, term.tile_count());
-        //         let origin = transform.world_mesh_bounds().min;
-        //         let tile_size = transform.world_tile_size();
-        //         VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
-        //             for (p, _) in border.iter() {
-        //                 mesher.add_tile(p.x, p.y);
-        //             }
-        //         });
-
-        //         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
-        //             for (_, t) in border.iter() {
-        //                 mesher.add_tile(t.glyph, t.fg_color, t.bg_color);
-        //             }
-        //         });
-        //     }
-        // } else if mesh_tile_count(mesh) != term.tile_count() {
-        //     // No border - clear border verts
-        //     resize_mesh_data(mesh, term.tile_count());
-        // }
     }
 }
 
-fn reset_terminal_state(mut q_term: Query<&mut Terminal>) {
-    for mut term in &mut q_term {
-        if let Some(mut border) = term.bypass_change_detection().get_border_mut() {
-            border.reset_changed_state();
+fn border_mesh_update(
+    mut q_term: Query<(&mut Terminal, &TerminalTransform, &Mesh2dHandle, &Handle<UvMapping>), Changed<Terminal>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mappings: Res<Assets<UvMapping>>,
+) {
+    for (mut term, transform, mesh_handle, mapping_handle) in &mut q_term {
+        let Some(border) = term.get_border() else {
+            continue;
+        };
+        if !border.changed() {
+            continue;
+        };
+
+        let mesh = meshes
+            .get_mut(mesh_handle.0.clone())
+            .expect("Error getting terminal mesh");
+        
+        let vert_count = mesh_vertex_count(mesh);
+        if vert_count == 0 {
+            continue;
         }
+        if vert_count == term.tile_count() * 4 {
+            resize_mesh_data(mesh, term.tile_count() + border.tile_count());
+        }
+        
+        let mapping = mappings
+            .get(mapping_handle.clone())
+            .expect("Couldn't find terminal uv mapping");
+
+        println!("Updating border mesh!");
+
+        let origin = transform.world_bounds().min;
+        let tile_size = transform.world_tile_size();
+        
+        VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
+            for (i, (p, _)) in border.iter().enumerate() {
+                let i = i + term.tile_count();
+                mesher.set_tile(p.x, p.y, i);
+            }
+        });
+        UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
+            for (i, (_, t)) in border.iter().enumerate() {
+                let i = i + term.tile_count();
+                mesher.set_tile(t.glyph, t.fg_color, t.bg_color, i);
+            }
+        });
+
+        term.bypass_change_detection().border_mut().reset_changed_state();
     }
 }
+
+// fn reset_terminal_state(mut q_term: Query<&mut Terminal>) {
+//     for mut term in &mut q_term {
+//         if let Some(mut border) = term.bypass_change_detection().get_border_mut() {
+//             border.reset_changed_state();
+//         }
+//     }
+// }
+
 
 fn mesh_vertex_count(mesh: &Mesh) -> usize {
     let Some(VertexAttributeValues::Float32x3(verts)) = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
