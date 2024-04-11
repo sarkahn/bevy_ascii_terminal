@@ -17,6 +17,7 @@ use bevy::{
 
 use crate::{
     border::Border,
+    direction::Dir4,
     renderer::{TerminalFontScaling, TerminalMaterial, TerminalMeshPivot, TerminalMeshSystems},
     GridPoint, GridRect, Pivot, Terminal, TerminalGridSettings, Tile,
 };
@@ -106,40 +107,19 @@ impl TerminalTransform {
     ) {
         let mut term_rect = GridRect::new([0, 0], term_size);
         if let Some((border, clear_tile)) = border {
+            let edges = border.edge_opacity(clear_tile, term_size);
             let border_rect = GridRect::from_points([-1, -1], term_size);
-            let sides = [
-                // Left
-                GridRect::from_points(border_rect.bottom_left(), border_rect.top_left()),
-                // Top
-                GridRect::from_points(border_rect.top_left(), border_rect.top_right()),
-                // Right
-                GridRect::from_points(border_rect.top_right(), border_rect.bottom_right()),
-                // Bottom
-                GridRect::from_points(border_rect.bottom_right(), border_rect.bottom_left()),
-            ];
-            let mut extend_side = [false, false, false, false];
 
-            for (p, tile) in border.iter() {
-                if tile == clear_tile {
-                    continue;
-                }
-                for (i, side) in sides.iter().enumerate() {
-                    if side.contains_point(p) {
-                        extend_side[i] = true;
-                    }
-                }
-            }
-
-            if extend_side[0] {
+            if edges[Dir4::Left.as_index()] {
                 term_rect.envelope_point([border_rect.left(), 0]);
             }
-            if extend_side[1] {
+            if edges[Dir4::Up.as_index()] {
                 term_rect.envelope_point([0, border_rect.top()]);
             }
-            if extend_side[2] {
+            if edges[Dir4::Right.as_index()] {
                 term_rect.envelope_point([border_rect.right(), 0]);
             }
-            if extend_side[3] {
+            if edges[Dir4::Down.as_index()] {
                 term_rect.envelope_point([0, border_rect.bottom()]);
             }
         }

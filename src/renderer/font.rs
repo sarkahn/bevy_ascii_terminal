@@ -129,6 +129,7 @@ fn update_font(
         };
         // Dont overwrite the default terminal material
         if mat_handle.id() == Handle::<TerminalMaterial>::default().id() {
+            println!("Adding new terminal material");
             *mat_handle = materials.add(TerminalMaterial {
                 texture: Some(image),
                 ..Default::default()

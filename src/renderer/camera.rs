@@ -206,9 +206,9 @@ fn on_window_resized(
     if q_win.is_empty() || resize_events.is_empty() {
         return;
     }
-    let ewin = q_win.single();
-    for evt in resize_events.read() {
-        if evt.window != ewin {
+    let primary_window = q_win.single();
+    for resize_event in resize_events.read() {
+        if resize_event.window != primary_window {
             continue;
         }
         vp_evt.send(UpdateViewportEvent);
@@ -228,24 +228,24 @@ fn on_font_changed(
     }
 
     for evt in mat_evt.read() {
-        let material_id = match evt {
+        let changed_mat_id = match evt {
             AssetEvent::Modified { id } => id,
             _ => continue,
         };
-        if q_term.iter().any(|mat| mat.id() == *material_id) {
+        if q_term.iter().any(|mat| mat.id() == *changed_mat_id) {
             vp_evt.send(UpdateViewportEvent);
             return;
         }
     }
     for evt in img_evt.read() {
-        let image_id = match evt {
+        let loaded_image_id = match evt {
             AssetEvent::LoadedWithDependencies { id } => id,
             _ => continue,
         };
         if q_term
             .iter()
             .filter_map(|mat| mats.get(mat).and_then(|mat| mat.texture.as_ref()))
-            .any(|image| image.id() == *image_id)
+            .any(|image| image.id() == *loaded_image_id)
         {
             vp_evt.send(UpdateViewportEvent);
             return;
@@ -296,34 +296,42 @@ fn update_viewport(
 
     let tile_size = grid.tile_scaling().calculate_world_tile_size(ppu, None);
 
-    let intersect = |a: Rect, b: Rect| a.intersect(b);
-    let Some(bounds) = q_term.iter().map(|t| t.world_bounds()).reduce(intersect) else {
-        return;
-    };
+    println!("Camera found ppu {}, tile size {}", ppu, tile_size);
 
-    let min = (bounds.min / tile_size).round().as_ivec2();
-    let max = (bounds.max / tile_size).round().as_ivec2().sub(1);
+    let min = q_term
+        .iter()
+        .map(|t| t.world_bounds().min)
+        .reduce(Vec2::min)
+        .unwrap()
+        * tile_size;
 
-    let rect = GridRect::from_points(min, max);
+    let max = q_term
+        .iter()
+        .map(|t| t.world_bounds().max)
+        .reduce(Vec2::max)
+        .unwrap()
+        * tile_size;
 
+    let pixel_rect = Rect::from_corners(min, max);
     let z = cam_transform.translation.z;
-    let cam_pos = bounds.center().extend(z);
+    let cam_pos = pixel_rect.center().extend(z);
     *cam_transform = Transform::from_translation(cam_pos);
 
-    let target_res = ppu.as_vec2() * rect.size.as_vec2();
     let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
-
-    let zoom = (window_res / target_res).floor().min_element().max(1.0);
+    let zoom = (window_res / pixel_rect.size())
+        .floor()
+        .min_element()
+        .max(1.0);
 
     let ortho_size = match grid.tile_scaling() {
-        TileScaling::World => rect.height() as f32,
-        TileScaling::Pixels => rect.height() as f32 * ppu.y as f32,
+        TileScaling::World => pixel_rect.height(),
+        TileScaling::Pixels => pixel_rect.height() * ppu.y as f32,
     };
 
     proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
 
-    let vp_size = target_res * zoom;
-    let vp_pos = if window_res.cmple(target_res).any() {
+    let vp_size = pixel_rect.size() * zoom;
+    let vp_pos = if window_res.cmple(pixel_rect.size()).any() {
         Vec2::ZERO
     } else {
         (window_res / 2.0) - (vp_size / 2.0)
@@ -335,6 +343,51 @@ fn update_viewport(
         physical_size: vp_size.as_uvec2(),
         ..Default::default()
     });
+
+    println!(
+        "PixelRect {:?}, Cam viewport: {:?}. Ortho size {}",
+        pixel_rect, cam.viewport, ortho_size
+    );
+
+    // let intersect = |a: Rect, b: Rect| a.intersect(b);
+    // let Some(bounds) = q_term.iter().map(|t| t.world_bounds()).reduce(intersect) else {
+    //     return;
+    // };
+
+    // let min = (bounds.min / tile_size).round().as_ivec2();
+    // let max = (bounds.max / tile_size).round().as_ivec2().sub(1);
+
+    // let rect = GridRect::from_points(min, max);
+
+    // let z = cam_transform.translation.z;
+    // let cam_pos = bounds.center().extend(z);
+    // *cam_transform = Transform::from_translation(cam_pos);
+
+    // let target_res = ppu.as_vec2() * rect.size.as_vec2();
+    // let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
+
+    // let zoom = (window_res / target_res).floor().min_element().max(1.0);
+
+    // let ortho_size = match grid.tile_scaling() {
+    //     TileScaling::World => rect.height() as f32,
+    //     TileScaling::Pixels => rect.height() as f32 * ppu.y as f32,
+    // };
+
+    // proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
+
+    // let vp_size = target_res * zoom;
+    // let vp_pos = if window_res.cmple(target_res).any() {
+    //     Vec2::ZERO
+    // } else {
+    //     (window_res / 2.0) - (vp_size / 2.0)
+    // }
+    // .floor();
+
+    // cam.viewport = Some(Viewport {
+    //     physical_position: vp_pos.as_uvec2(),
+    //     physical_size: vp_size.as_uvec2(),
+    //     ..Default::default()
+    // });
 }
 
 // fn gcd(mut a: u32, mut b: u32) -> u32 {

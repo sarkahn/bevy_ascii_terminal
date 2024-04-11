@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap};
+use std::collections::BTreeMap;
 
 use bevy::math::IVec2;
 
@@ -69,24 +69,24 @@ impl Border {
         match edge {
             Pivot::TopLeft => self.put_tile(border_rect.top_left(), tile),
             Pivot::Center | Pivot::TopCenter => {
-                for x in 1..border_rect.right() {
+                for x in 0..border_rect.right() {
                     self.put_tile([x, border_rect.top()], tile);
                 }
             }
             Pivot::TopRight => self.put_tile(border_rect.top_right(), tile),
             Pivot::LeftCenter => {
-                for y in 1..border_rect.top() {
+                for y in 0..border_rect.top() {
                     self.put_tile([border_rect.left(), y], tile);
                 }
             }
             Pivot::RightCenter => {
-                for y in 1..border_rect.top() {
+                for y in 0..border_rect.top() {
                     self.put_tile([border_rect.right(), y], tile);
                 }
             }
             Pivot::BottomLeft => self.put_tile(border_rect.bottom_left(), tile),
             Pivot::BottomCenter => {
-                for x in 1..border_rect.right() {
+                for x in 0..border_rect.right() {
                     self.put_tile([x, border_rect.bottom()], tile);
                 }
             }
@@ -108,10 +108,10 @@ impl Border {
 
     /// Determines whether or not a given edge of the terminal border should be
     /// rendered.
-    /// 
-    /// This is based on whether or not a border tile on any given edge matches 
+    ///
+    /// This is based on whether or not a border tile on any given edge matches
     /// the terminal's clear tile.
-    pub(crate) fn edge_opacity(&self, clear_tile: Tile, term_size: IVec2) -> [bool;4] {
+    pub(crate) fn edge_opacity(&self, clear_tile: Tile, term_size: IVec2) -> [bool; 4] {
         let border_rect = GridRect::from_points([-1, -1], term_size);
         let sides = [
             // Top
@@ -278,5 +278,14 @@ mod tests {
         assert!(!border_contains([0, 0]));
         assert!(!border_contains([9, 9]));
         assert!(border_contains([10, 10]));
+    }
+
+    #[test]
+    fn iter() {
+        let mut border = Border::single_line();
+        border.set_edge_tiles(IVec2::splat(10), Tile::DEFAULT);
+        for (p, t) in border.iter() {
+            println!("P {}", p);
+        }
     }
 }

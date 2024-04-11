@@ -20,8 +20,9 @@ use bevy::{
     sprite::Mesh2dHandle,
 };
 
-use crate::{direction::Dir4, transform::TerminalTransformSystems, Pivot, Terminal,
-    TerminalTransform, Tile};
+use crate::{
+    direction::Dir4, transform::TerminalTransformSystems, Pivot, Terminal, TerminalTransform, Tile,
+};
 
 use super::{
     material::TerminalMaterial,
@@ -46,12 +47,7 @@ impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
             PostUpdate,
-            (
-                init_mesh,
-                on_mat_change,
-                on_image_load,
-                //on_pivot_font_size_change,
-            )
+            (init_mesh, on_mat_change, on_image_load)
                 .chain()
                 .in_set(TerminalMeshSystems)
                 .after(TerminalTransformSystems),
@@ -97,11 +93,11 @@ impl Default for TerminalMeshPivot {
 }
 
 fn init_mesh(
-    q_term: Query<&Mesh2dHandle, (Added<Mesh2dHandle>, With<Handle<TerminalMaterial>>)>,
+    mut q_term: Query<&mut Mesh2dHandle, (Added<Mesh2dHandle>, With<Handle<TerminalMaterial>>)>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    for mesh_handle in &q_term {
-        bevy::log::info!("Initializing terminal mesh");
+    for mut mesh_handle in &mut q_term {
+        //bevy::log::info!("Initializing terminal mesh");
         let mut mesh = Mesh::new(
             PrimitiveTopology::TriangleList,
             RenderAssetUsages::default(),
@@ -111,7 +107,7 @@ fn init_mesh(
         mesh.insert_attribute(ATTRIBUTE_UV, Vec::<[f32; 2]>::new());
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, Vec::<[f32; 4]>::new());
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, Vec::<[f32; 4]>::new());
-        meshes.insert(mesh_handle.0.clone(), mesh);
+        mesh_handle.0 = meshes.add(mesh);
     }
 }
 
@@ -135,7 +131,7 @@ fn on_image_load(
                 .as_ref()
                 .is_some_and(|image| image.id() == *image_id)
             {
-                bevy::log::info!("Image loaded, initializing vert rebuild");
+                //bevy::log::info!("Image loaded, initializing vert rebuild");
                 commands.entity(entity).insert(RebuildVerts);
             }
         }
@@ -157,12 +153,14 @@ fn on_mat_change(
                 continue;
             }
 
-            bevy::log::info!("Material changed, initializing vert rebuild");
+            //bevy::log::info!("Material changed, initializing vert rebuild");
             commands.entity(entity).insert(RebuildVerts);
         }
     }
 }
 
+// Updating verts is a more expensive and complicated operation, and only needs
+// to be done rarely, hence the seperation from uv/color updates
 #[allow(clippy::type_complexity)]
 fn rebuild_verts(
     mut q_term: Query<
@@ -208,16 +206,17 @@ fn rebuild_verts(
         let origin = transform.world_bounds().min;
         let tile_size = transform.world_tile_size();
 
-        let border_offset:IVec2 = if let Some(border) = term.get_border() {
+        let border_offset: IVec2 = if let Some(border) = term.get_border() {
             let edges = border.edge_opacity(term.clear_tile(), term.size());
             let x = edges[Dir4::Left.as_index()] as i32;
             let y = edges[Dir4::Down.as_index()] as i32;
-            [x,y]
+            [x, y]
         } else {
-            [0,0]
-        }.into();
+            [0, 0]
+        }
+        .into();
 
-        bevy::log::info!("Rebuilding mesh verts");
+        //bevy::log::info!("Rebuilding mesh verts");
         // We only need to update our vertex data, uvs/colors will be updated
         // in "tile_mesh_update"
         VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
@@ -232,6 +231,7 @@ fn rebuild_verts(
     }
 }
 
+// Expect this to be called nearly every frame
 #[allow(clippy::type_complexity)]
 fn tile_mesh_update(
     q_term: Query<(&Terminal, &Mesh2dHandle, &Handle<UvMapping>), Changed<Terminal>>,
@@ -244,15 +244,13 @@ fn tile_mesh_update(
             .expect("Couldn't find terminal mesh");
 
         if mesh_vertex_count(mesh) == 0 {
-//            bevy::log::info!("Aborting mesh tile data update since our mesh is empty");
+            //bevy::log::info!("Aborting mesh tile data update since our mesh is empty");
             continue;
         }
 
         let mapping = mappings
             .get(mapping.clone())
             .expect("Couldn't find terminal uv mapping");
-
-        // bevy::log::info!("Rebuilding mesh tile data!");
 
         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
             for (i, t) in term.tiles().iter().enumerate() {
@@ -263,7 +261,16 @@ fn tile_mesh_update(
 }
 
 fn border_mesh_update(
-    mut q_term: Query<(&mut Terminal, &TerminalTransform, &Mesh2dHandle, &Handle<UvMapping>), Changed<Terminal>>,
+    mut q_term: Query<
+        (
+            // Only mutable to reset border state - bypasses change detection
+            &mut Terminal,
+            &TerminalTransform,
+            &Mesh2dHandle,
+            &Handle<UvMapping>,
+        ),
+        Changed<Terminal>,
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
     mappings: Res<Assets<UvMapping>>,
 ) {
@@ -278,7 +285,7 @@ fn border_mesh_update(
         let mesh = meshes
             .get_mut(mesh_handle.0.clone())
             .expect("Error getting terminal mesh");
-        
+
         let vert_count = mesh_vertex_count(mesh);
         if vert_count == 0 {
             continue;
@@ -286,19 +293,26 @@ fn border_mesh_update(
         if vert_count == term.tile_count() * 4 {
             resize_mesh_data(mesh, term.tile_count() + border.tile_count());
         }
-        
+
         let mapping = mappings
             .get(mapping_handle.clone())
             .expect("Couldn't find terminal uv mapping");
 
-        println!("Updating border mesh!");
+        //println!("Updating border mesh");
 
         let origin = transform.world_bounds().min;
         let tile_size = transform.world_tile_size();
-        
+
+        let edges = border.edge_opacity(term.clear_tile(), term.size());
+        let x = edges[Dir4::Left.as_index()] as i32;
+        let y = edges[Dir4::Down.as_index()] as i32;
+        let border_offset = IVec2::new(x, y);
+
         VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
             for (i, (p, _)) in border.iter().enumerate() {
                 let i = i + term.tile_count();
+                // Border offset
+                let p = p + border_offset;
                 mesher.set_tile(p.x, p.y, i);
             }
         });
@@ -309,18 +323,11 @@ fn border_mesh_update(
             }
         });
 
-        term.bypass_change_detection().border_mut().reset_changed_state();
+        term.bypass_change_detection()
+            .border_mut()
+            .reset_changed_state();
     }
 }
-
-// fn reset_terminal_state(mut q_term: Query<&mut Terminal>) {
-//     for mut term in &mut q_term {
-//         if let Some(mut border) = term.bypass_change_detection().get_border_mut() {
-//             border.reset_changed_state();
-//         }
-//     }
-// }
-
 
 fn mesh_vertex_count(mesh: &Mesh) -> usize {
     let Some(VertexAttributeValues::Float32x3(verts)) = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
@@ -329,7 +336,6 @@ fn mesh_vertex_count(mesh: &Mesh) -> usize {
     };
     verts.len()
 }
-
 
 /// Resize all mesh attributes to accomodate the given tile count.
 fn resize_mesh_data(mesh: &mut Mesh, tile_count: usize) {
