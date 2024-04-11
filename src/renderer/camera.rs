@@ -284,7 +284,7 @@ fn update_viewport(
     let Some(ppu) = q_term
         .iter()
         .map(|t| t.pixels_per_unit())
-        .reduce(UVec2::min)
+        .reduce(UVec2::max)
     else {
         return;
     };
@@ -303,16 +303,17 @@ fn update_viewport(
         .map(|t| t.world_bounds().min)
         .reduce(Vec2::min)
         .unwrap()
-        * tile_size;
+        / tile_size;
 
     let max = q_term
         .iter()
         .map(|t| t.world_bounds().max)
         .reduce(Vec2::max)
         .unwrap()
-        * tile_size;
+        / tile_size;
 
-    let pixel_rect = Rect::from_corners(min, max);
+    let grid_rect = GridRect::from_points(min.as_ivec2(), max.as_ivec2());
+    let pixel_rect = Rect::from_corners(min * ppu.as_vec2(), max * ppu.as_vec2());
     let z = cam_transform.translation.z;
     let cam_pos = pixel_rect.center().extend(z);
     *cam_transform = Transform::from_translation(cam_pos);
@@ -324,8 +325,8 @@ fn update_viewport(
         .max(1.0);
 
     let ortho_size = match grid.tile_scaling() {
-        TileScaling::World => pixel_rect.height(),
-        TileScaling::Pixels => pixel_rect.height() * ppu.y as f32,
+        TileScaling::World => grid_rect.height() as f32,
+        TileScaling::Pixels => pixel_rect.height(),
     };
 
     proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
@@ -345,8 +346,8 @@ fn update_viewport(
     });
 
     println!(
-        "PixelRect {:?}, Cam viewport: {:?}. Ortho size {}",
-        pixel_rect, cam.viewport, ortho_size
+        "Grid Rect: {}, PixelRect {:?}, Cam viewport: {:?}. Ortho size {}",
+        grid_rect, pixel_rect, cam.viewport, ortho_size
     );
 
     // let intersect = |a: Rect, b: Rect| a.intersect(b);
