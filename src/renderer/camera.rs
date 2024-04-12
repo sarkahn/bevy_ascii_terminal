@@ -296,116 +296,51 @@ fn update_viewport(
 
     let tile_size = grid.tile_scaling().calculate_world_tile_size(ppu, None);
 
-    println!("Camera found ppu {}, tile size {}", ppu, tile_size);
-
     let min = q_term
         .iter()
         .map(|t| t.world_bounds().min)
         .reduce(Vec2::min)
-        .unwrap()
-        / tile_size;
+        .unwrap();
 
     let max = q_term
         .iter()
         .map(|t| t.world_bounds().max)
         .reduce(Vec2::max)
-        .unwrap()
-        / tile_size;
+        .unwrap();
 
-    let grid_rect = GridRect::from_points(min.as_ivec2(), max.as_ivec2());
-    let pixel_rect = Rect::from_corners(min * ppu.as_vec2(), max * ppu.as_vec2());
     let z = cam_transform.translation.z;
-    let cam_pos = pixel_rect.center().extend(z);
-    *cam_transform = Transform::from_translation(cam_pos);
+    cam_transform.translation = Rect::from_corners(min, max).center().extend(z);
 
+    let tile_rect = GridRect::from_points(
+        (min / tile_size).as_ivec2(),
+        (max / tile_size).as_ivec2().saturating_sub(IVec2::ONE),
+    );
+
+    let target_res = tile_rect.size.as_vec2() * ppu.as_vec2();
     let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
-    let zoom = (window_res / pixel_rect.size())
-        .floor()
-        .min_element()
-        .max(1.0);
+    let zoom = (window_res / target_res).floor().min_element().max(1.0);
 
-    let ortho_size = match grid.tile_scaling() {
-        TileScaling::World => grid_rect.height() as f32,
-        TileScaling::Pixels => pixel_rect.height(),
-    };
-
-    proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
-
-    let vp_size = pixel_rect.size() * zoom;
-    let vp_pos = if window_res.cmple(pixel_rect.size()).any() {
+    let vp_size = target_res * zoom;
+    let vp_pos = if window_res.cmple(target_res).any() {
         Vec2::ZERO
     } else {
         (window_res / 2.0) - (vp_size / 2.0)
     }
     .floor();
 
-    cam.viewport = Some(Viewport {
-        physical_position: vp_pos.as_uvec2(),
-        physical_size: vp_size.as_uvec2(),
-        ..Default::default()
-    });
+    if vp_size.cmpgt(window_res).any() {
+        cam.viewport = None;
+    } else {
+        cam.viewport = Some(Viewport {
+            physical_position: vp_pos.as_uvec2(),
+            physical_size: vp_size.as_uvec2(),
+            ..Default::default()
+        });
+    }
 
-    println!(
-        "Grid Rect: {}, PixelRect {:?}, Cam viewport: {:?}. Ortho size {}",
-        grid_rect, pixel_rect, cam.viewport, ortho_size
-    );
-
-    // let intersect = |a: Rect, b: Rect| a.intersect(b);
-    // let Some(bounds) = q_term.iter().map(|t| t.world_bounds()).reduce(intersect) else {
-    //     return;
-    // };
-
-    // let min = (bounds.min / tile_size).round().as_ivec2();
-    // let max = (bounds.max / tile_size).round().as_ivec2().sub(1);
-
-    // let rect = GridRect::from_points(min, max);
-
-    // let z = cam_transform.translation.z;
-    // let cam_pos = bounds.center().extend(z);
-    // *cam_transform = Transform::from_translation(cam_pos);
-
-    // let target_res = ppu.as_vec2() * rect.size.as_vec2();
-    // let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
-
-    // let zoom = (window_res / target_res).floor().min_element().max(1.0);
-
-    // let ortho_size = match grid.tile_scaling() {
-    //     TileScaling::World => rect.height() as f32,
-    //     TileScaling::Pixels => rect.height() as f32 * ppu.y as f32,
-    // };
-
-    // proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
-
-    // let vp_size = target_res * zoom;
-    // let vp_pos = if window_res.cmple(target_res).any() {
-    //     Vec2::ZERO
-    // } else {
-    //     (window_res / 2.0) - (vp_size / 2.0)
-    // }
-    // .floor();
-
-    // cam.viewport = Some(Viewport {
-    //     physical_position: vp_pos.as_uvec2(),
-    //     physical_size: vp_size.as_uvec2(),
-    //     ..Default::default()
-    // });
+    let ortho_size = match grid.tile_scaling() {
+        TileScaling::Pixels => tile_rect.height() as f32 * ppu.y as f32,
+        TileScaling::World => tile_rect.height() as f32,
+    };
+    proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
 }
-
-// fn gcd(mut a: u32, mut b: u32) -> u32 {
-//     while b != 0 {
-//         let temp = b;
-//         b = a % b;
-//         a = temp;
-//     }
-//     a
-// }
-
-// fn lcm(a: u32, b: u32) -> u32 {
-//     (a * b) / gcd(a, b)
-// }
-
-// fn lcm_vec(a: UVec2, b: UVec2) -> UVec2 {
-//     let x = lcm(a.x, b.x);
-//     let y = lcm(a.y, b.y);
-//     UVec2::new(x, y)
-// }
