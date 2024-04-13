@@ -2,23 +2,22 @@ use bevy::{
     app::{Plugin, PostUpdate},
     asset::{AssetEvent, Assets, Handle},
     ecs::{
-        change_detection::{DetectChanges, DetectChangesMut},
+        change_detection::DetectChangesMut,
         component::Component,
         event::EventReader,
         query::Changed,
         schedule::{IntoSystemConfigs, SystemSet},
-        system::{Query, Res, ResMut},
+        system::{Query, Res},
     },
     math::{IVec2, Rect, UVec2, Vec2, Vec3},
-    render::{mesh::Mesh, texture::Image},
-    sprite::Mesh2dHandle,
+    render::texture::Image,
     transform::{components::Transform, TransformSystem},
 };
 
 use crate::{
     border::Border,
     direction::Dir4,
-    renderer::{TerminalFontScaling, TerminalMaterial, TerminalMeshPivot, TerminalMeshSystems},
+    renderer::{TerminalFontScaling, TerminalMaterial, TerminalMeshPivot},
     GridPoint, GridRect, Pivot, Terminal, TerminalGridSettings, Tile,
 };
 

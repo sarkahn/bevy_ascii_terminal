@@ -2,8 +2,8 @@ use bevy::{ecs::component::Component, math::IVec2, render::color::Color};
 
 use crate::{
     border::{Border, TerminalBorderMut},
-    string::{StringFormatter, StringIter},
-    FormattedString, GridPoint, GridRect, Pivot, PivotedPoint, Tile,
+    string::StringIter,
+    FormattedString, GridPoint, GridRect, PivotedPoint, Tile,
 };
 
 #[derive(Debug, Default, Clone, Component)]

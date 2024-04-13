@@ -1,6 +1,4 @@
-use bevy::{
-    app::Plugin, asset::Handle, ecs::bundle::Bundle, math::IVec2, sprite::MaterialMesh2dBundle,
-};
+use bevy::{app::Plugin, asset::Handle, ecs::bundle::Bundle, sprite::MaterialMesh2dBundle};
 
 mod camera;
 mod font;
@@ -10,7 +8,7 @@ mod mesher;
 mod uv_mapping;
 
 pub use self::{
-    camera::TerminalCameraBundle,
+    camera::{TerminalCameraBundle, TerminalCamera},
     font::{TerminalFont, TerminalFontSystems},
     material::TerminalMaterial,
     mesh::{TerminalFontScaling, TerminalMeshPivot, TerminalMeshSystems},

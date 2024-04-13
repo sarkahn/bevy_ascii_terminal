@@ -236,10 +236,6 @@ impl<'a> TerminalBorderMut<'a> {
         self
     }
 
-    /// Mark the border as changed to force the mesh to update
-    pub(crate) fn set_changed(&mut self) {
-        self.border.changed = true;
-    }
 
     pub(crate) fn reset_changed_state(&mut self) {
         self.border.changed = false;
@@ -284,7 +280,7 @@ mod tests {
     fn iter() {
         let mut border = Border::single_line();
         border.set_edge_tiles(IVec2::splat(10), Tile::DEFAULT);
-        for (p, t) in border.iter() {
+        for (p, _) in border.iter() {
             println!("P {}", p);
         }
     }

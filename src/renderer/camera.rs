@@ -1,5 +1,3 @@
-use std::ops::Sub;
-
 use bevy::{
     app::{Last, Plugin, PostUpdate},
     asset::{AssetEvent, Assets, Handle},
@@ -23,7 +21,7 @@ use bevy::{
 };
 
 use crate::{
-    renderer::TerminalMaterial, terminal, transform::TerminalTransformSystems, GridRect, Terminal,
+    renderer::TerminalMaterial, transform::TerminalTransformSystems, GridRect, Terminal,
     TerminalGridSettings, TerminalTransform, TileScaling,
 };
 

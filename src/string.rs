@@ -1,11 +1,8 @@
-use std::{
-    ops::{Add, Sub},
-    str::{Chars, Lines},
-};
+use std::{ops::Sub, str::Chars};
 
 use bevy::{math::IVec2, render::color::Color};
 
-use crate::{GridPoint, GridRect, Pivot, PivotedPoint};
+use crate::{GridRect, Pivot, PivotedPoint};
 
 /// A string for writing to a terminal with optional formatting applied.
 pub struct FormattedString<'a> {
@@ -351,44 +348,5 @@ impl<'a> Iterator for StringIter<'a> {
         let ret = Some((self.xy, ch));
         self.xy.x += 1;
         ret
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Terminal;
-
-    use super::*;
-
-    #[test]
-    fn write() {
-        // thing(Pivot::TopLeft);
-        // thing(Pivot::TopRight);
-        // thing(Pivot::BottomLeft);
-        // thing(Pivot::BottomRight);
-        // thing(Pivot::Center);
-    }
-
-    fn thing(pivot: Pivot) {
-        let size = [18, 5];
-        let mut term = Terminal::with_clear_tile(size, '.'.into());
-        let string = StringIter::new(
-            [3, 1].pivot(pivot),
-            "Hello\nHow are you?",
-            GridRect::new([0, 0], size),
-        );
-        for (xy, ch) in string {
-            //println!("{}: {}", xy, ch);
-            term.put_char(xy, ch);
-        }
-        print_terminal(&term);
-        println!("----");
-    }
-
-    fn print_terminal(term: &Terminal) {
-        for row in (0..term.height()).rev() {
-            let row = String::from_iter(term.iter_row(row).map(|t| t.glyph));
-            println!("{}", row);
-        }
     }
 }

@@ -21,7 +21,7 @@ use bevy::{
 };
 
 use crate::{
-    direction::Dir4, transform::TerminalTransformSystems, Pivot, Terminal, TerminalTransform, Tile,
+    direction::Dir4, transform::TerminalTransformSystems, Pivot, Terminal, TerminalTransform,
 };
 
 use super::{
