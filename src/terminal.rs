@@ -2,7 +2,7 @@ use bevy::{ecs::component::Component, math::IVec2, render::color::Color};
 
 use crate::{
     border::{Border, TerminalBorderMut},
-    string::StringFormatter,
+    string::{StringFormatter, StringIter},
     FormattedString, GridPoint, GridRect, Pivot, PivotedPoint, Tile,
 };
 
@@ -97,23 +97,25 @@ impl Terminal {
         xy: impl Into<PivotedPoint>,
         string: impl Into<FormattedString<'a>>,
     ) {
-        let fmt: FormattedString = string.into();
-
-        let mut xy: PivotedPoint = xy.into().with_default_pivot(Pivot::TopLeft);
-        // let iter = StringIter::new(fmt.string, fmt.word_wrapped, self.bounds(), xy);
-
+        let string: FormattedString = string.into();
+        let ignore_spaces = string.ignore_spaces;
+        let fg = string.fg_color;
+        let bg = string.bg_color;
+        for (xy, ch) in StringIter::new(xy, string, self.bounds()) {
+            if ignore_spaces && ch == ' ' {
+                continue;
+            }
+            let tile = self.tile_mut(xy);
+            tile.glyph = ch;
+            if let Some(fg) = fg {
+                tile.fg_color = fg;
+            }
+            if let Some(bg) = bg {
+                tile.bg_color = bg;
+            }
+        }
         // for (xy, ch) in iter {
-        //     if fmt.ignore_spaces && ch == ' ' {
-        //         continue;
-        //     }
-        //     let tile = self.tile_mut(xy);
-        //     tile.glyph = ch;
-        //     if let Some(fg) = fmt.fg_color {
-        //         tile.fg_color = fg;
-        //     }
-        //     if let Some(bg) = fmt.bg_color {
-        //         tile.bg_color = bg;
-        //     }
+
         // }
     }
 
