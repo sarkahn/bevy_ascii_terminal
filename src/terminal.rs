@@ -114,9 +114,6 @@ impl Terminal {
                 tile.bg_color = bg;
             }
         }
-        // for (xy, ch) in iter {
-
-        // }
     }
 
     pub fn clear(&mut self) {

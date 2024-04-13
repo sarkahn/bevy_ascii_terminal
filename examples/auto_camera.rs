@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::camera::ScalingMode, sprite::Anchor};
+use bevy::prelude::*;
 use bevy_ascii_terminal::*;
 
 fn main() {
@@ -10,15 +10,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn(TerminalCameraBundle::auto());
-    // commands.spawn(Camera2dBundle {
-    //     projection: OrthographicProjection {
-    //         scaling_mode: ScalingMode::FixedVertical(40.0),
-    //         far: 1000.,
-    //         near: -1000.,
-    //         ..Default::default()
-    //     },
-    //     ..Default::default()
-    // });
+
     commands
         .spawn(TerminalBundle::from(make_terminal([10, 10])).with_mesh_pivot(Pivot::BottomLeft));
     commands.spawn(TerminalBundle::from(make_terminal([10, 10])).with_mesh_pivot(Pivot::TopLeft));
@@ -30,12 +22,15 @@ fn setup(mut commands: Commands) {
 fn make_terminal(size: impl GridPoint) -> Terminal {
     let mut term = Terminal::new(size);
     term.put_border(Border::single_line());
-    for (p, t) in term.iter_xy_mut() {
+    for (i, (p, t)) in term.iter_xy_mut().enumerate() {
+        let ch = char::from_u32((i as u32 % 26) + 97).unwrap();
+
         if (p.x + p.y) % 2 == 0 {
             t.bg_color = Color::rgb(0.0, 0.15, 0.55);
         } else {
             t.bg_color = Color::rgb(0.25, 0.0, 0.0);
         }
+        t.glyph = ch;
     }
     term
 }

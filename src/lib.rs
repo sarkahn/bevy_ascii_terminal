@@ -79,7 +79,7 @@ impl TerminalBundle {
     /// Write a [FormattedString] to the terminal.
     pub fn put_string<'a>(
         mut self,
-        xy: impl GridPoint,
+        xy: impl Into<PivotedPoint>,
         string: impl Into<FormattedString<'a>>,
     ) -> Self {
         let string = string.into();
