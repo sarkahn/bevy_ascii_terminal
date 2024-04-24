@@ -31,3 +31,7 @@ opt-level = 1
 
 [profile.dev.package."*"]
 opt-level = 3
+
+[dev-dependencies]
+fastnoise-lite = "1.1.1"
+enum-ordinalize = "4.3.0"

@@ -3,7 +3,7 @@ use bevy::{ecs::component::Component, math::IVec2, render::color::Color};
 use crate::{
     border::{Border, TerminalBorderMut},
     string::StringIter,
-    FormattedString, GridPoint, GridRect, PivotedPoint, Tile,
+    GridPoint, GridRect, PivotedPoint, StringFormatter, Tile,
 };
 
 #[derive(Debug, Default, Clone, Component)]
@@ -80,28 +80,31 @@ impl Terminal {
     /// it gets written to the terminal. You can set a foreground or background
     /// color, prevent word wrapping, or prevent writes on empty characters.
     ///
-    /// Note that by default strings get written to the
-    /// top left of the terminal. You can manually set the pivot to override
-    /// this behavior.
+    /// Note that unlike [Terminal::put_char], strings are by default justified
+    /// to the top left of the terminal. You can manually set the pivot to
+    /// override this behavior.
     ///
     /// ```
     /// use bevy_ascii_terminal::*;
     ///
-    /// let mut term = Terminal::new([8,4]);
-    /// term.put_string([0,0], "Hello".fg(Color::BLUE));
-    /// let string = "A looooong string".bg(Color::GREEN).no_word_wrap().ignore_spaces();
-    /// term.put_string([0,1], string);
+    /// let mut term = Terminal::new([13,10]);
+    /// // Note that the foreground color of the empty space character is still
+    /// // modified, since 'ignore_spaces' was not used.
+    /// term.put_string([0,0], "Hello joe".fg(Color::BLUE));
+    /// let string = "A looooooooooong string".bg(Color::GREEN).no_word_wrap().ignore_spaces();
+    /// term.put_string([0,1].pivot(Pivot::BottomLeft), string);
+    /// term.put_string([0,4].pivot(Pivot::Center), "A string\nOver multiple\nlines.");
     /// ```
     pub fn put_string<'a>(
-        &'a mut self,
+        &mut self,
         xy: impl Into<PivotedPoint>,
-        string: impl Into<FormattedString<'a>>,
+        string: impl StringFormatter<'a>,
     ) {
-        let string: FormattedString = string.into();
-        let ignore_spaces = string.ignore_spaces;
-        let fg = string.fg_color;
-        let bg = string.bg_color;
-        for (xy, ch) in StringIter::new(xy, string, self.bounds()) {
+        let fmt = string.formatting();
+        let ignore_spaces = fmt.ignore_spaces;
+        let fg = fmt.fg_color;
+        let bg = fmt.bg_color;
+        for (xy, ch) in StringIter::new(xy, string.string(), self.bounds(), fmt.word_wrapped) {
             if ignore_spaces && ch == ' ' {
                 continue;
             }
@@ -116,6 +119,7 @@ impl Terminal {
         }
     }
 
+    /// Set every tile in the terminal to it's `clear_tile`.
     pub fn clear(&mut self) {
         self.tiles.fill(self.clear_tile)
     }
@@ -125,16 +129,32 @@ impl Terminal {
         self.clear_tile = clear_tile;
     }
 
+    /// Get the terminal's current clear tile.
     pub fn clear_tile(&self) -> Tile {
         self.clear_tile
     }
 
-    /// The terminal tiles as a slice
+    /// Resize the terminal. This will clear the terminal.
+    pub fn resize(&mut self, size: impl GridPoint) {
+        debug_assert!(
+            size.as_ivec2().cmpge(IVec2::ONE).all(),
+            "Attempting to set terminal size to a value below 1"
+        );
+        self.size = size.as_ivec2();
+        self.tiles.resize(size.len(), Default::default());
+        self.clear();
+        self.tiles = vec![self.clear_tile; size.len()];
+        if let Some(mut border) = self.get_border_mut() {
+            border.clear();
+        }
+    }
+
+    /// The terminal tiles as a slice.
     pub fn tiles(&self) -> &[Tile] {
         self.tiles.as_slice()
     }
 
-    /// The terminal tiles as a slice
+    /// The terminal tiles as a slice.
     pub fn tiles_mut(&mut self) -> &mut [Tile] {
         self.tiles.as_mut_slice()
     }
@@ -208,6 +228,8 @@ impl Terminal {
         self.border_mut()
     }
 
+    /// Set the terminal border. If `None` is passed then the border will be
+    /// removed.
     pub fn set_border(&mut self, border: Option<Border>) {
         if let Some(border) = border {
             self.border = Some(border);
@@ -217,18 +239,22 @@ impl Terminal {
         }
     }
 
+    /// Get the terminal border. Panics if no border was set.
     pub fn border(&self) -> &Border {
         self.border.as_ref().unwrap()
     }
 
+    /// Get the terminal border. Panics if no border was set.
     pub fn border_mut(&mut self) -> TerminalBorderMut {
         self.get_border_mut().unwrap()
     }
 
+    /// Attempt to retrieve the terminal border.
     pub fn get_border(&self) -> Option<&Border> {
         self.border.as_ref()
     }
 
+    /// Attempt to retrieve the terminal border.
     pub fn get_border_mut(&mut self) -> Option<TerminalBorderMut> {
         let clear_tile = self.clear_tile;
         let term_size = self.size;
@@ -237,14 +263,20 @@ impl Terminal {
             .map(|state| TerminalBorderMut::new(state, term_size, clear_tile))
     }
 
+    /// The grid bounds of the terminal.
+    ///
+    /// This has no relation to world space, for world space you can use the
+    /// [crate::TerminalTransform].
     pub fn bounds(&self) -> GridRect {
         GridRect::new([0, 0], self.size())
     }
 
+    /// Transform a 2d grid position to it's corresponding 1d index.
     pub fn xy_to_index(&self, xy: IVec2) -> usize {
         xy.as_index(self.width())
     }
 
+    /// Transform a 1d index to it's corresponding 2d grid position.
     pub fn index_to_xy(&self, i: usize) -> IVec2 {
         let x = (i % self.width()) as i32;
         let y = (i / self.width()) as i32;
@@ -274,6 +306,12 @@ mod tests {
         assert_eq!('i', term.tile([9, 9]).glyph);
     }
 
+    #[allow(dead_code)]
+    fn non_static_string_write(string: &str) {
+        let mut term = Terminal::new([10, 10]);
+        term.put_string([0, 0], string);
+    }
+
     #[test]
     fn string() {
         let mut term = Terminal::new([15, 15]);
@@ -286,6 +324,9 @@ mod tests {
         );
 
         term.put_string([1, 1], "Hello");
+
+        let allocated_string = "Hello".to_string();
+        term.put_string([1, 1], &allocated_string);
     }
 
     #[test]

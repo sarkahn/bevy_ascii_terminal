@@ -74,20 +74,6 @@ impl VertMesher {
         self.indices[i + 4] = vi + 2;
         self.indices[i + 5] = vi + 1;
     }
-
-    // /// Add a vertex at the end of our existing data.
-    // #[inline]
-    // pub fn add_tile(&mut self, x: i32, y: i32) {
-    //     let p = (self.origin + Vec2::new(x as f32, y as f32) * self.tile_size).extend(0.0);
-    //     let right = (Vec2::X * self.tile_size).extend(0.0);
-    //     let up = (Vec2::Y * self.tile_size).extend(0.0);
-
-    //     let i = self.verts.len() as u32;
-    //     self.verts
-    //         .extend([p + up, p, p + right + up, p + right].map(|v| v.to_array()));
-
-    //     self.indices.extend([i, i + 1, i + 2, i + 3, i + 2, i + 1]);
-    // }
 }
 
 /// Utility for updating terminal mesh vertex data
@@ -140,7 +126,8 @@ impl<'a> UvMesher<'a> {
     /// Sets tile data at the given tile index
     #[inline]
     pub fn set_tile(&mut self, glyph: impl Into<char>, fg: Color, bg: Color, index: usize) {
-        let uvs = self.mapping.uvs_from_glyph(glyph.into());
+        let glyph = glyph.into();
+        let uvs = self.mapping.uvs_from_char(glyph);
         let i = index * 4;
 
         self.uvs[i..i + 4]
@@ -151,11 +138,4 @@ impl<'a> UvMesher<'a> {
         self.fg[i..i + 4].fill(fg.as_linear_rgba_f32());
         self.bg[i..i + 4].fill(bg.as_linear_rgba_f32());
     }
-
-    // pub fn add_tile(&mut self, glyph: impl Into<char>, fg: Color, bg: Color) {
-    //     let uvs = self.mapping.uvs_from_glyph(glyph.into());
-    //     self.uvs.extend(uvs);
-    //     self.fg.extend(repeat(fg.as_linear_rgba_f32()).take(4));
-    //     self.bg.extend(repeat(bg.as_linear_rgba_f32()).take(4));
-    // }
 }

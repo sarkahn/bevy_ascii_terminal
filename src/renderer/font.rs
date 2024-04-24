@@ -4,7 +4,7 @@ use bevy::{
     ecs::{
         component::Component,
         query::Changed,
-        schedule::SystemSet,
+        schedule::{IntoSystemConfigs, SystemSet},
         system::{Query, Res, ResMut},
     },
     prelude::Plugin,
@@ -14,10 +14,6 @@ use bevy::{
 
 use super::material::TerminalMaterial;
 
-/// System for tracking camera and cursor data.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalFontSystems;
-
 /// Allows for simple switching of terminal fonts.
 ///
 /// A [TerminalFont] component can be set during [TerminalBundle] creation or modified
@@ -25,7 +21,7 @@ pub struct TerminalFontSystems;
 ///
 /// A custom font can be used by specifying the asset path with [TerminalFont::Custom].
 ///
-/// Note that all [TerminalFont]'s will be loaded with [ImageSampler::nearest] filtering.
+/// Note that all [TerminalFont]s will be loaded with [ImageSampler::nearest] filtering.
 /// To prevent this you can set the font manually on the [TerminalMaterial::texture].
 ///
 /// [TerminalBundle]: crate::TerminalBundle
@@ -88,7 +84,11 @@ impl From<TerminalFont> for AssetPath<'_> {
     }
 }
 
-pub(crate) struct TerminalFontPlugin;
+pub struct TerminalFontPlugin;
+
+/// System for tracking camera and cursor data.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
+pub struct TerminalFontSystem;
 
 impl Plugin for TerminalFontPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
@@ -103,7 +103,7 @@ impl Plugin for TerminalFontPlugin {
         embedded_asset!(app, "built_in_fonts/pastiche_8x8.png");
         embedded_asset!(app, "built_in_fonts/rexpaint_8x8.png");
 
-        app.add_systems(PostUpdate, update_font);
+        app.add_systems(PostUpdate, update_font.in_set(TerminalFontSystem));
     }
 }
 
@@ -129,7 +129,6 @@ fn update_font(
         };
         // Dont overwrite the default terminal material
         if mat_handle.id() == Handle::<TerminalMaterial>::default().id() {
-            println!("Adding new terminal material");
             *mat_handle = materials.add(TerminalMaterial {
                 texture: Some(image),
                 ..Default::default()

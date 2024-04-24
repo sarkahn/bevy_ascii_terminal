@@ -1,12 +1,12 @@
-//! Code page 437 glyphs.
+//! Extended ascii used as the default for terminal writing functions.
 use enum_ordinalize::Ordinalize;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-#[error("Unable to convert from char to code page 437 glyph")]
+#[error("Unable to convert from char to terminal glyph")]
 pub struct GlyphFromCharError;
 
-/// A utility struct for managing glyphs from code page 437.
+/// An ascii glyph that can be drawn to a terminal.
 ///
 /// Can be converted directly into a [char].
 #[repr(u8)]
@@ -536,12 +536,12 @@ pub enum Glyph {
     SuperscriptTwo = 253,
     /// ■
     SquareSmall = 254,
-    /// □ _(Note this is not actually a code page 437 glyph. It was added
-    /// manually to all built in fonts for decorative purposes)_
+    /// □ (Note this is not actually a code page 437 glyph. It was added
+    /// manually to all built in fonts for decorative purposes)
     SquareSmallEmpty = 255,
 }
 
-/// Array containing, in order, all the chars from Code Page 437.
+/// Array of the default ascii glyphs supported by the terminal.
 #[rustfmt::skip]
 pub(crate) const CP_437_ARRAY: [char; 256] = [
 '\0', '☺', '☻', '♥', '♦', '♣', '♠', '•', '◘', '○', '◙', '♂', '♀', '♪', '♫', '☼', 
@@ -577,19 +577,19 @@ impl TryFrom<char> for Glyph {
 }
 
 impl Glyph {
-    /// Convert a code page 437 glyph to it's corresponding char.
+    /// Convert an ascii glyph to it's corresponding char.
     pub const fn to_char(self) -> char {
         CP_437_ARRAY[self as usize]
     }
 
-    /// Convert from a char to a code page 437 glyph. Returns [None] if the char
-    /// is not a valid code page 437 glyph.
+    /// Convert from a char to a terminal ascii glyph. Returns [None] if the char
+    /// is not a valid terminal glyph.
     pub fn from_char(ch: char) -> Option<Self> {
         char_to_index(ch).and_then(Self::from_ordinal)
     }
 }
 
-/// Convert a cp437 glyph to an index (0..256)
+/// Convert an ascii glyph to it's corresponding index (0..256)
 const fn char_to_index(c: char) -> Option<u8> {
     let value = match c {
         '\0' => 0,
@@ -862,6 +862,7 @@ const fn char_to_index(c: char) -> Option<u8> {
         'ⁿ' => 252,
         '²' => 253,
         '■' => 254,
+        '□' => 255,
 
         _ => return None,
     };

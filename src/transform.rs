@@ -4,10 +4,11 @@ use bevy::{
     ecs::{
         change_detection::DetectChangesMut,
         component::Component,
-        event::EventReader,
-        query::Changed,
+        entity::Entity,
+        event::{EventReader, EventWriter},
+        query::{Changed, With},
         schedule::{IntoSystemConfigs, SystemSet},
-        system::{Query, Res},
+        system::{Commands, Query, Res},
     },
     math::{IVec2, Rect, UVec2, Vec2, Vec3},
     render::texture::Image,
@@ -17,26 +18,49 @@ use bevy::{
 use crate::{
     border::Border,
     direction::Dir4,
-    renderer::{TerminalFontScaling, TerminalMaterial, TerminalMeshPivot},
+    renderer::{
+        RebuildTerminalMeshVerts, TerminalCamera, TerminalFontScaling, TerminalMaterial,
+        TerminalMeshPivot, TerminalMeshSystems, UpdateTerminalViewportEvent,
+    },
     GridPoint, GridRect, Pivot, Terminal, TerminalGridSettings, Tile,
 };
+pub struct TerminalTransformPlugin;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
-pub struct TerminalTransformSystems;
+pub struct UpdateTransformPositionSystem;
 
-pub struct TerminalTransformPlugin;
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
+pub struct UpdateTransformSizeSystems;
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
+pub struct UpdateTransformMeshDataSystems;
 
 impl Plugin for TerminalTransformPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
             PostUpdate,
-            (on_image_load, on_mat_change, update_transform)
-                .chain()
-                .in_set(TerminalTransformSystems)
+            update_transform_position
+                .in_set(UpdateTransformPositionSystem)
                 .before(TransformSystem::TransformPropagate),
+        )
+        .add_systems(
+            PostUpdate,
+            (
+                update_transform_size
+                    .in_set(UpdateTransformSizeSystems)
+                    .before(TerminalMeshSystems),
+                (on_image_load, on_mat_change, update_transform_mesh_data)
+                    .chain()
+                    .in_set(UpdateTransformMeshDataSystems)
+                    .after(TerminalMeshSystems),
+            ),
         );
     }
 }
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct UpdateTerminalTransformSize;
 
 /// Component for transforming between terminal and world space.
 ///
@@ -57,6 +81,7 @@ pub struct TerminalTransform {
     local_mesh_bounds: Rect,
     world_pos: Vec3,
     pixels_per_tile: UVec2,
+    has_border: bool,
 }
 
 impl TerminalTransform {
@@ -95,8 +120,8 @@ impl TerminalTransform {
         self.world_tile_size
     }
 
-    /// Update cached transform data.
-    fn updata_cached_data(
+    /// Update cached mesh data.
+    fn update_mesh_data(
         &mut self,
         term_size: IVec2,
         world_tile_size: Vec2,
@@ -140,43 +165,35 @@ impl TerminalTransform {
     }
 }
 
-fn update_transform(
+fn update_transform_position(
     mut q_term: Query<(&mut Transform, &mut TerminalTransform), Changed<TerminalTransform>>,
 ) {
     for (mut transform, mut term_transform) in &mut q_term {
-        // let tile_size = grid.world_grid_tile_size().unwrap_or(term_transform.world_tile_size());
         let tile_size = term_transform.world_tile_size();
-        let xyz = term_transform.grid_position.as_vec2() * tile_size;
+        let xy = term_transform.grid_position.as_vec2() * tile_size;
         let z = transform.translation.z;
-        transform.translation = xyz.extend(z);
-        term_transform.bypass_change_detection().world_pos = xyz.extend(z);
+        transform.translation = xy.extend(z);
+        term_transform.bypass_change_detection().world_pos = xy.extend(z);
     }
 }
 
-#[allow(clippy::type_complexity)]
 fn on_image_load(
-    mut q_term: Query<(
-        &mut TerminalTransform,
-        &Terminal,
-        &TerminalMeshPivot,
-        &Handle<TerminalMaterial>,
-        &TerminalFontScaling,
-    )>,
+    mut q_term: Query<(Entity, &Handle<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
     mut img_evt: EventReader<AssetEvent<Image>>,
-    settings: Res<TerminalGridSettings>,
+    mut commands: Commands,
 ) {
     for evt in img_evt.read() {
         let loaded_image_id = match evt {
             AssetEvent::LoadedWithDependencies { id } => id,
             _ => continue,
         };
-        for (mut transform, term, pivot, mat_handle, scaling) in q_term.iter_mut() {
+        for (entity, mat_handle) in q_term.iter_mut() {
             let mat = materials
                 .get(mat_handle)
                 .expect("Error getting terminal material");
-            let Some(image) = mat
+            let Some(_) = mat
                 .texture
                 .as_ref()
                 .filter(|image| image.id() == *loaded_image_id)
@@ -184,62 +201,91 @@ fn on_image_load(
             else {
                 continue;
             };
-            let ppu = image.size() / 16;
-            let world_tile_size = settings
-                .tile_scaling
-                .calculate_world_tile_size(ppu, Some(scaling.0));
-            transform.updata_cached_data(
-                term.size(),
-                world_tile_size,
-                pivot.0,
-                ppu,
-                term.get_border().map(|b| (b, term.clear_tile())),
-            );
+            commands.entity(entity).insert(UpdateTerminalTransformSize);
         }
     }
 }
 
-#[allow(clippy::type_complexity)]
 fn on_mat_change(
-    mut q_term: Query<(
-        &mut TerminalTransform,
-        &TerminalMeshPivot,
-        &Terminal,
-        &Handle<TerminalMaterial>,
-        &TerminalFontScaling,
-    )>,
+    mut q_term: Query<(Entity, &Handle<TerminalMaterial>)>,
     mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
-    materials: Res<Assets<TerminalMaterial>>,
-    images: Res<Assets<Image>>,
-    settings: Res<TerminalGridSettings>,
+    mut commands: Commands,
 ) {
     for evt in mat_evt.read() {
         let changed_material_id = match evt {
             AssetEvent::Modified { id } => id,
             _ => continue,
         };
-        for (mut transform, pivot, term, mat_handle, scaling) in &mut q_term {
-            if mat_handle.id() != *changed_material_id {
-                continue;
-            }
-
-            let mat = materials
-                .get(mat_handle.clone())
-                .expect("Error getting terminal material");
-
-            if let Some(image) = mat.texture.as_ref().and_then(|image| images.get(image)) {
-                let ppu = image.size() / 16;
-                let world_tile_size = settings
-                    .tile_scaling
-                    .calculate_world_tile_size(ppu, Some(scaling.0));
-                transform.updata_cached_data(
-                    term.size(),
-                    world_tile_size,
-                    pivot.0,
-                    ppu,
-                    term.get_border().map(|b| (b, term.clear_tile())),
-                );
+        for (entity, mat_handle) in &mut q_term {
+            if mat_handle.id() == *changed_material_id {
+                commands.entity(entity).insert(UpdateTerminalTransformSize);
             }
         }
+    }
+}
+
+fn update_transform_size(
+    mut q_term: Query<(Entity, &Terminal, &mut TerminalTransform)>,
+    q_cam: Query<&TerminalCamera>,
+    mut vp_evt: EventWriter<UpdateTerminalViewportEvent>,
+    mut commands: Commands,
+) {
+    for (e, term, mut term_transform) in &mut q_term {
+        if term_transform.term_size != term.size()
+            || term.get_border().is_some() != term_transform.has_border
+        {
+            term_transform.term_size = term.size();
+            term_transform.has_border = term.get_border().is_some();
+            commands.entity(e).insert(RebuildTerminalMeshVerts);
+            commands.entity(e).insert(UpdateTerminalTransformSize);
+            for cam in q_cam.iter() {
+                if cam.manage_viewport {
+                    vp_evt.send(UpdateTerminalViewportEvent);
+                }
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn update_transform_mesh_data(
+    mut q_term: Query<
+        (
+            Entity,
+            &mut TerminalTransform,
+            &TerminalMeshPivot,
+            &Terminal,
+            &Handle<TerminalMaterial>,
+            &TerminalFontScaling,
+        ),
+        With<UpdateTerminalTransformSize>,
+    >,
+    materials: Res<Assets<TerminalMaterial>>,
+    images: Res<Assets<Image>>,
+    settings: Res<TerminalGridSettings>,
+    mut commands: Commands,
+) {
+    for (entity, mut transform, pivot, term, mat_handle, scaling) in &mut q_term {
+        commands
+            .entity(entity)
+            .remove::<UpdateTerminalTransformSize>();
+
+        let Some(mat) = materials.get(mat_handle) else {
+            continue;
+        };
+        let Some(image) = mat.texture.as_ref().and_then(|image| images.get(image)) else {
+            continue;
+        };
+        let ppu = image.size() / 16;
+        let world_tile_size = settings
+            .tile_scaling
+            .calculate_world_tile_size(ppu, Some(scaling.0));
+        transform.update_mesh_data(
+            term.size(),
+            world_tile_size,
+            pivot.0,
+            ppu,
+            term.get_border().map(|b| (b, term.clear_tile())),
+        );
     }
 }

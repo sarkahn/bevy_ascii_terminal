@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use bevy::math::IVec2;
 
-use crate::{direction::Dir4, FormattedString, GridPoint, GridRect, Pivot, Tile};
+use crate::{direction::Dir4, GridPoint, GridRect, Pivot, StringFormatter, Tile};
 
 #[derive(Debug, Clone)]
 pub struct Border {
@@ -162,10 +162,10 @@ impl<'a> TerminalBorderMut<'a> {
         edge: Pivot,
         direction: Dir4,
         offset: i32,
-        string: impl Into<FormattedString<'a>>,
+        string: impl StringFormatter<'a>,
     ) -> &mut Self {
         self.border.changed = true;
-        let fmt: FormattedString = string.into();
+        let fmt = string.formatting();
         let fg_color = fmt.fg_color.unwrap_or(self.clear_tile.fg_color);
         let bg_color = fmt.bg_color.unwrap_or(self.clear_tile.bg_color);
 
@@ -182,7 +182,7 @@ impl<'a> TerminalBorderMut<'a> {
         //     dir,
         //     fmt.string.len()
         // );
-        for ch in fmt.string.chars() {
+        for ch in string.string().chars() {
             if !border_rect.contains_point(xy) || term_rect.contains_point(xy) {
                 break;
             }
@@ -206,7 +206,7 @@ impl<'a> TerminalBorderMut<'a> {
 
     /// Set a "title" string for the terminal border. Note this will clear
     /// any previously set strings from the top edge
-    pub fn put_title(&mut self, string: impl Into<FormattedString<'a>>) -> &mut Self {
+    pub fn put_title(&mut self, string: impl StringFormatter<'a>) -> &mut Self {
         let clear_tile = *self.clear_tile.glyph(self.border.edge_glyphs[1]);
         let rect = GridRect::from_points([-1, -1], self.term_size);
         self.border.set_edge(Pivot::TopCenter, rect, clear_tile);
@@ -232,10 +232,10 @@ impl<'a> TerminalBorderMut<'a> {
     /// `terminal.set_border(None)`.
     pub fn clear(&'a mut self) -> &'a mut Self {
         self.border.changed = true;
+        self.border.tiles.clear();
         self.border.set_edge_tiles(self.term_size, self.clear_tile);
         self
     }
-
 
     pub(crate) fn reset_changed_state(&mut self) {
         self.border.changed = false;
@@ -244,22 +244,11 @@ impl<'a> TerminalBorderMut<'a> {
 
 #[cfg(test)]
 mod tests {
-    use bevy::{math::IVec2, render::color::Color};
+    use bevy::math::IVec2;
 
-    use crate::{string::StringFormatter, GridRect, Tile};
+    use crate::{GridRect, Tile};
 
-    use super::{Border, TerminalBorderMut};
-
-    #[test]
-    fn put_string() {
-        let mut state = Border::default();
-        let mut term_border = TerminalBorderMut {
-            border: &mut state,
-            term_size: IVec2::splat(20),
-            clear_tile: Tile::DEFAULT,
-        };
-        term_border.put_title("Hello".fg(Color::BLUE).bg(Color::RED));
-    }
+    use super::Border;
 
     #[test]
     fn contains() {

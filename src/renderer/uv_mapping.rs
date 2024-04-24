@@ -1,7 +1,7 @@
 //! A terminal component which determines how glyphs are mapped to their
 //! corresponding uvs on the tile sheet.
 use bevy::{
-    math::Vec2,
+    math::{Rect, Vec2},
     prelude::{Asset, AssetApp, Assets, Handle, Plugin},
     reflect::TypePath,
     utils::HashMap,
@@ -24,25 +24,25 @@ pub struct UvMapping {
 
 impl UvMapping {
     pub fn code_page_437() -> Self {
-        UvMapping::from_grid([16, 16], crate::glyph::CP_437_ARRAY.iter().cloned())
+        UvMapping::from_grid([16, 16], crate::ascii::CP_437_ARRAY.iter().cloned())
     }
 
     /// Create a uv mapping where the keys from the iterator are mapped to their corresponding
-    /// uvs on a 2d tile sheet in sequential order.
+    /// uvs on a 2d tile sheet in sequential order, from top left increasing right and down.
     pub fn from_grid(tile_count: [u32; 2], iter: impl Iterator<Item = char>) -> Self {
         let mut uv_map = HashMap::default();
 
         for (i, ch) in iter.enumerate() {
             let x = i as u32 % tile_count[0];
             let y = i as u32 / tile_count[0];
-            let uvs = Self::get_grid_uvs([x, y], tile_count);
+            let uvs = Self::calc_grid_uvs([x, y], tile_count);
             uv_map.insert(ch, uvs);
         }
 
         Self { uv_map }
     }
 
-    pub fn get_grid_uvs(xy: [u32; 2], tile_count: [u32; 2]) -> [[f32; 2]; 4] {
+    pub fn calc_grid_uvs(xy: [u32; 2], tile_count: [u32; 2]) -> [[f32; 2]; 4] {
         let xy = Vec2::new(xy[0] as f32, xy[1] as f32);
         let uv_size = Vec2::new(1.0 / tile_count[0] as f32, 1.0 / tile_count[1] as f32);
         let right = Vec2::new(uv_size.x, 0.0);
@@ -56,9 +56,9 @@ impl UvMapping {
         ]
     }
 
-    /// Retrieve the uv data for a terminal font tile from it's corresponding
-    /// glyph.
-    pub fn uvs_from_glyph(&self, ch: char) -> &[[f32; 2]; 4] {
+    /// Retrieve the uv data for a terminal mesh tile from it's corresponding
+    /// char. Will panic if no uvs have been set for the char.
+    pub fn uvs_from_char(&self, ch: char) -> &[[f32; 2]; 4] {
         self.uv_map.get(&ch).unwrap_or_else(|| {
             panic!(
                 "Error retrieving uv mapping, '{}' was not present in map",
@@ -67,9 +67,16 @@ impl UvMapping {
         })
     }
 
-    pub fn uvs_from_index(&self, index: u8) -> &[[f32; 2]; 4] {
-        let char = crate::glyph::CP_437_ARRAY[index as usize];
-        self.uvs_from_glyph(char)
+    pub fn get_uvs_from_char(&self, ch: char) -> Option<&[[f32; 2]; 4]> {
+        self.uv_map.get(&ch)
+    }
+
+    /// Insert a set of uvs for a given char.
+    pub fn add_uvs(&mut self, key: char, rect: Rect) {
+        let [xmin, ymin] = rect.min.to_array();
+        let [xmax, ymax] = rect.max.to_array();
+        let uvs = [[xmin, ymin], [xmin, ymax], [xmax, ymin], [xmax, ymax]];
+        self.uv_map.insert(key, uvs);
     }
 }
 

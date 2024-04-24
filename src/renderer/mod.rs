@@ -7,16 +7,16 @@ mod mesh;
 mod mesher;
 mod uv_mapping;
 
-pub use self::{
-    camera::{TerminalCameraBundle, TerminalCamera},
-    font::{TerminalFont, TerminalFontSystems},
-    material::TerminalMaterial,
-    mesh::{TerminalFontScaling, TerminalMeshPivot, TerminalMeshSystems},
-    uv_mapping::UvMapping,
-};
 use self::{
     camera::TerminalCameraPlugin, font::TerminalFontPlugin, material::TerminalMaterialPlugin,
     mesh::TerminalMeshPlugin, uv_mapping::TerminalUvMappingPlugin,
+};
+pub use self::{
+    camera::{TerminalCamera, TerminalCameraBundle, UpdateTerminalViewportEvent},
+    font::TerminalFont,
+    material::TerminalMaterial,
+    mesh::{RebuildTerminalMeshVerts, TerminalFontScaling, TerminalMeshPivot, TerminalMeshSystems},
+    uv_mapping::UvMapping,
 };
 
 pub struct TerminalRendererPlugin;

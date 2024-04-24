@@ -1,5 +1,5 @@
+mod ascii;
 mod border;
-mod glyph;
 mod grid;
 pub mod renderer;
 mod string;
@@ -9,6 +9,7 @@ mod transform;
 
 use std::ops::Mul;
 
+pub use ascii::Glyph;
 use bevy::{
     app::Plugin,
     ecs::{bundle::Bundle, system::Resource},
@@ -22,13 +23,20 @@ pub use string::{FormattedString, StringFormatter};
 pub use terminal::Terminal;
 pub use tile::Tile;
 pub use transform::TerminalTransform;
+/*
+    Update loop:
+    LateUpdate:
+        TerminalTransformPositionSystem (before TransformPropogate)
+        TerminalMeshSystem (after TerminalTransformPositionSystem)
+        UpdateTransformSizeSystem (before TerminalMeshSystems)
+        UpdateTransformMeshDataSystems (after TerminalMeshSystems)
 
-// TODO: Change to TerminalPluginS Impl plugin group for universal grid settings
-#[derive(Default)]
-pub struct TerminalPlugin {
-    tile_scaling: TileScaling,
-    //pixels_per_tile: Option<Vec2>,
-}
+        TerminalCameraSystems (cache camera data, no before/after)
+
+    Last:
+        TerminalViewportSystems (after TerminalTransformPositionSystem)
+        TerminalMeshSystem (rebuild verts, update tile data, build border)
+*/
 
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
@@ -42,23 +50,24 @@ impl Plugin for TerminalPlugin {
     }
 }
 
+// TODO: Change to TerminalPluginS Impl plugin group for universal grid settings
+#[derive(Default)]
+pub struct TerminalPlugin {
+    tile_scaling: TileScaling,
+}
+
 impl TerminalPlugin {
     pub fn with_tile_scaling(mut self, tile_scaling: TileScaling) -> Self {
         self.tile_scaling = tile_scaling;
         self
     }
-
-    // pub fn with_pixels_per_tile(mut self, pixels_per_tile: impl GridPoint) -> Self {
-    //     self.pixels_per_tile = Some(pixels_per_tile.as_vec2());
-    //     self
-    // }
 }
 
 #[derive(Bundle)]
 pub struct TerminalBundle {
-    terminal: Terminal,
-    terminal_transform: TerminalTransform,
-    render_bundle: TerminalRenderBundle,
+    pub terminal: Terminal,
+    pub terminal_transform: TerminalTransform,
+    pub render_bundle: TerminalRenderBundle,
 }
 
 impl TerminalBundle {
@@ -80,16 +89,20 @@ impl TerminalBundle {
     pub fn put_string<'a>(
         mut self,
         xy: impl Into<PivotedPoint>,
-        string: impl Into<FormattedString<'a>>,
+        string: impl StringFormatter<'a>,
     ) -> Self {
-        let string = string.into();
         self.terminal.put_string(xy, string);
         self
     }
 
-    /// Write a [FormattedString] to the terminal.
+    /// Write a char to the terminal.
     pub fn put_char(mut self, xy: impl GridPoint, ch: char) -> Self {
         self.terminal.put_char(xy, ch);
+        self
+    }
+
+    pub fn with_clear_tile(mut self, clear_tile: impl Into<Tile>) -> Self {
+        self.terminal.set_clear_tile(clear_tile.into());
         self
     }
 
@@ -103,10 +116,9 @@ impl TerminalBundle {
     pub fn with_border_title<'a>(
         mut self,
         border: Border,
-        title: impl Into<FormattedString<'a>>,
+        title: impl StringFormatter<'a>,
     ) -> Self {
-        let title = title.into();
-        self.terminal.put_border(border).put_title(title);
+        self.terminal.border_mut().put_title(title);
         self
     }
 
@@ -177,35 +189,9 @@ impl TileScaling {
 #[derive(Default, Resource)]
 pub struct TerminalGridSettings {
     tile_scaling: TileScaling,
-    // world_grid_pixels_per_tile: Option<Vec2>,
 }
 
 impl TerminalGridSettings {
-    // pub fn new(tile_scaling: TileScaling, pixels_per_tile: impl GridPoint) -> Self {
-    //     Self {
-    //         tile_scaling,
-    //         world_grid_pixels_per_tile: pixels_per_tile.as_vec2(),
-    //     }
-    // }
-
-    // /// The size of a world grid tile, based on the global [TerminalGridSettings].
-    // ///
-    // /// This value determines how terminals are positioned in world space using
-    // /// their [TerminalTransform] component.
-    // pub fn world_grid_tile_size(&self) -> Option<Vec2> {
-    //     self.world_grid_pixels_per_tile.map(
-    //         |ppu| {
-    //             match self.tile_scaling {
-    //                 TileScaling::Pixels => ppu,
-    //                 TileScaling::World => {
-    //                     let aspect = ppu.x / ppu.y;
-    //                     Vec2::new(1.0 / aspect, 1.0)
-    //                 }
-    //             }
-    //         }
-    //     )
-    // }
-
     pub fn tile_scaling(&self) -> TileScaling {
         self.tile_scaling
     }

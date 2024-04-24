@@ -11,7 +11,7 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::{Query, Res},
     },
-    math::{IVec2, Mat4, Rect, UVec2, Vec2},
+    math::{Mat4, Rect, UVec2, Vec2},
     render::{
         camera::{Camera, OrthographicProjection, ScalingMode, Viewport},
         texture::Image,
@@ -21,41 +21,40 @@ use bevy::{
 };
 
 use crate::{
-    renderer::TerminalMaterial, transform::TerminalTransformSystems, GridRect, Terminal,
-    TerminalGridSettings, TerminalTransform, TileScaling,
+    renderer::TerminalMaterial, GridRect, Terminal, TerminalGridSettings, TerminalTransform,
+    TileScaling,
 };
 
 pub struct TerminalCameraPlugin;
-
-impl Plugin for TerminalCameraPlugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_event::<UpdateViewportEvent>()
-            .add_systems(
-                Last,
-                (on_window_resized, on_font_changed, update_viewport)
-                    .chain()
-                    .in_set(TerminalViewportSystems)
-                    .after(TerminalTransformSystems),
-            )
-            .add_systems(
-                PostUpdate,
-                (cache_camera_data, cache_cursor_data)
-                    .chain()
-                    .in_set(TerminalCameraSystems),
-            );
-    }
-}
-
-/// Systems for building the terminal mesh.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalViewportSystems;
 
 /// Systems for building the terminal mesh.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
 pub struct TerminalCameraSystems;
 
+/// Systems for building the terminal mesh.
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
+pub struct TerminalViewportSystems;
+
+impl Plugin for TerminalCameraPlugin {
+    fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_event::<UpdateTerminalViewportEvent>()
+            .add_systems(
+                PostUpdate,
+                (cache_camera_data, cache_cursor_data)
+                    .chain()
+                    .in_set(TerminalCameraSystems),
+            )
+            .add_systems(
+                Last,
+                (on_window_resized, on_font_changed, update_viewport)
+                    .chain()
+                    .in_set(TerminalViewportSystems),
+            );
+    }
+}
+
 #[derive(Event)]
-pub struct UpdateViewportEvent;
+pub struct UpdateTerminalViewportEvent;
 
 #[derive(Default, Component)]
 pub struct TerminalCamera {
@@ -199,7 +198,7 @@ fn cache_cursor_data(
 fn on_window_resized(
     q_win: Query<Entity, With<PrimaryWindow>>,
     mut resize_events: EventReader<WindowResized>,
-    mut vp_evt: EventWriter<UpdateViewportEvent>,
+    mut vp_evt: EventWriter<UpdateTerminalViewportEvent>,
 ) {
     if q_win.is_empty() || resize_events.is_empty() {
         return;
@@ -209,7 +208,7 @@ fn on_window_resized(
         if resize_event.window != primary_window {
             continue;
         }
-        vp_evt.send(UpdateViewportEvent);
+        vp_evt.send(UpdateTerminalViewportEvent);
         return;
     }
 }
@@ -217,7 +216,7 @@ fn on_window_resized(
 fn on_font_changed(
     mut img_evt: EventReader<AssetEvent<Image>>,
     mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
-    mut vp_evt: EventWriter<UpdateViewportEvent>,
+    mut vp_evt: EventWriter<UpdateTerminalViewportEvent>,
     q_term: Query<&Handle<TerminalMaterial>, With<Terminal>>,
     mats: Res<Assets<TerminalMaterial>>,
 ) {
@@ -231,7 +230,7 @@ fn on_font_changed(
             _ => continue,
         };
         if q_term.iter().any(|mat| mat.id() == *changed_mat_id) {
-            vp_evt.send(UpdateViewportEvent);
+            vp_evt.send(UpdateTerminalViewportEvent);
             return;
         }
     }
@@ -245,7 +244,7 @@ fn on_font_changed(
             .filter_map(|mat| mats.get(mat).and_then(|mat| mat.texture.as_ref()))
             .any(|image| image.id() == *loaded_image_id)
         {
-            vp_evt.send(UpdateViewportEvent);
+            vp_evt.send(UpdateTerminalViewportEvent);
             return;
         }
     }
@@ -260,7 +259,7 @@ fn update_viewport(
         &mut OrthographicProjection,
     )>,
     q_window: Query<&Window, With<PrimaryWindow>>,
-    mut update_evt: EventReader<UpdateViewportEvent>,
+    mut update_evt: EventReader<UpdateTerminalViewportEvent>,
     grid: Res<TerminalGridSettings>,
 ) {
     if update_evt.is_empty() {
@@ -309,9 +308,10 @@ fn update_viewport(
     let z = cam_transform.translation.z;
     cam_transform.translation = Rect::from_corners(min, max).center().extend(z);
 
-    let tile_rect = GridRect::from_points(
-        (min / tile_size).as_ivec2(),
-        (max / tile_size).as_ivec2().saturating_sub(IVec2::ONE),
+    let rect = Rect::from_corners(min, max);
+    let tile_rect = GridRect::new(
+        (rect.min / tile_size).floor().as_ivec2(),
+        rect.size().as_ivec2(),
     );
 
     let target_res = tile_rect.size.as_vec2() * ppu.as_vec2();

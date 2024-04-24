@@ -4,25 +4,30 @@ use bevy::{math::IVec2, render::color::Color};
 
 use crate::{GridRect, Pivot, PivotedPoint};
 
-/// A string for writing to a terminal with optional formatting applied.
-pub struct FormattedString<'a> {
-    pub(crate) string: &'a str,
+#[derive(Debug, Clone, Copy)]
+pub struct Formatting {
     pub(crate) word_wrapped: bool,
     pub(crate) ignore_spaces: bool,
     pub(crate) fg_color: Option<Color>,
     pub(crate) bg_color: Option<Color>,
 }
 
-impl<'a> Default for FormattedString<'a> {
+impl Default for Formatting {
     fn default() -> Self {
         Self {
-            string: Default::default(),
             word_wrapped: true,
-            ignore_spaces: false,
+            ignore_spaces: Default::default(),
             fg_color: Default::default(),
             bg_color: Default::default(),
         }
     }
+}
+
+#[derive(Default)]
+/// A string for writing to a terminal with optional formatting applied.
+pub struct FormattedString<'a> {
+    pub(crate) string: &'a str,
+    pub(crate) formatting: Formatting,
 }
 
 /// Allows you to customize a string before it gets written to the terminal.
@@ -41,95 +46,138 @@ pub trait StringFormatter<'a> {
     /// If set then no colors or glyphs will be written for space (' ')
     /// characters.
     fn ignore_spaces(self) -> FormattedString<'a>;
+
+    fn string(&self) -> &'a str;
+    fn formatting(&self) -> Formatting;
 }
 
-impl<'a> StringFormatter<'a> for &'static str {
+impl<'a> StringFormatter<'a> for &'a str {
     fn no_word_wrap(self) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            word_wrapped: false,
-            ..Default::default()
+            formatting: Formatting {
+                word_wrapped: false,
+                ..Default::default()
+            },
         }
     }
 
     fn fg(self, color: Color) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            fg_color: Some(color),
-            ..Default::default()
+            formatting: Formatting {
+                fg_color: Some(color),
+                ..Default::default()
+            },
         }
     }
 
     fn bg(self, color: Color) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            bg_color: Some(color),
-            ..Default::default()
+            formatting: Formatting {
+                bg_color: Some(color),
+                ..Default::default()
+            },
         }
     }
 
     fn ignore_spaces(self) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            ignore_spaces: true,
-            ..Default::default()
+            formatting: Formatting {
+                ignore_spaces: true,
+                ..Default::default()
+            },
         }
+    }
+
+    fn string(&self) -> &'a str {
+        self
+    }
+
+    fn formatting(&self) -> Formatting {
+        Formatting::default()
     }
 }
 
-impl<'a> StringFormatter<'a> for &'static String {
+impl<'a> StringFormatter<'a> for &'a String {
     fn no_word_wrap(self) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            word_wrapped: false,
-            ..Default::default()
+            formatting: Formatting {
+                word_wrapped: false,
+                ..Default::default()
+            },
         }
     }
 
     fn fg(self, color: Color) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            fg_color: Some(color),
-            ..Default::default()
+            formatting: Formatting {
+                fg_color: Some(color),
+                ..Default::default()
+            },
         }
     }
 
     fn bg(self, color: Color) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            bg_color: Some(color),
-            ..Default::default()
+            formatting: Formatting {
+                bg_color: Some(color),
+                ..Default::default()
+            },
         }
     }
 
     fn ignore_spaces(self) -> FormattedString<'a> {
         FormattedString {
             string: self,
-            ignore_spaces: true,
-            ..Default::default()
+            formatting: Formatting {
+                ignore_spaces: true,
+                ..Default::default()
+            },
         }
+    }
+
+    fn string(&self) -> &'a str {
+        self
+    }
+
+    fn formatting(&self) -> Formatting {
+        Formatting::default()
     }
 }
 
 impl<'a> StringFormatter<'a> for FormattedString<'a> {
     fn no_word_wrap(mut self) -> FormattedString<'a> {
-        self.word_wrapped = false;
+        self.formatting.word_wrapped = false;
         self
     }
 
     fn fg(mut self, color: Color) -> FormattedString<'a> {
-        self.fg_color = Some(color);
+        self.formatting.fg_color = Some(color);
         self
     }
 
     fn bg(mut self, color: Color) -> FormattedString<'a> {
-        self.bg_color = Some(color);
+        self.formatting.bg_color = Some(color);
         self
     }
 
     fn ignore_spaces(mut self) -> FormattedString<'a> {
-        self.ignore_spaces = true;
+        self.formatting.ignore_spaces = true;
         self
+    }
+
+    fn string(&self) -> &'a str {
+        self.string
+    }
+
+    fn formatting(&self) -> Formatting {
+        self.formatting
     }
 }
 
@@ -148,6 +196,12 @@ impl<'a> From<&'static String> for FormattedString<'a> {
             string: value,
             ..Default::default()
         }
+    }
+}
+
+impl<'a> AsRef<str> for FormattedString<'a> {
+    fn as_ref(&self) -> &str {
+        self.string
     }
 }
 
@@ -205,7 +259,7 @@ fn split_string(string: &str, max_len: usize) -> Option<(&str, &str)> {
         return Some((string.trim_end(), ""));
     };
 
-    Some(string.split_at(max_len + 1))
+    Some(string.split_at(max_len))
 }
 
 /// Calculate the number of tiles to offset a string by horizontally based
@@ -238,6 +292,7 @@ fn wrapped_line_count(mut input: &str, max_len: usize) -> usize {
     line_count
 }
 
+/// Calculate the number of vertical lines a split string will occupy.
 fn split_line_count(mut input: &str, max_len: usize) -> usize {
     let mut line_count = 0;
     while let Some((_, rem)) = split_string(input, max_len) {
@@ -258,6 +313,9 @@ fn split_y_pivot_offset(string: &str, pivot: Pivot, max_width: usize) -> i32 {
     }
 }
 
+/// An iterator for writing wrapped strings to the terminal. Will attempt
+/// to respect formatting and the size of the terminal while yielding
+/// each string character and 2d position.
 pub struct StringIter<'a> {
     word_wrapped: bool,
     remaining: &'a str,
@@ -270,21 +328,19 @@ pub struct StringIter<'a> {
 impl<'a> StringIter<'a> {
     pub fn new(
         xy: impl Into<PivotedPoint>,
-        string: impl Into<FormattedString<'a>>,
+        string: &'a str,
         rect: GridRect,
+        wrapped: bool,
     ) -> Self {
         let xy: PivotedPoint = xy.into().with_default_pivot(Pivot::TopLeft);
         let pivot = xy.pivot().unwrap();
         let offset = xy.point_without_pivot();
 
-        let fmt: FormattedString = string.into();
-        let wrapped = fmt.word_wrapped;
-
         let first_max_len = rect.width().saturating_sub(offset.abs().x as usize);
         let (first, remaining) = if wrapped {
-            wrap_string(fmt.string, first_max_len)
+            wrap_string(string, first_max_len)
         } else {
-            split_string(fmt.string, first_max_len)
+            split_string(string, first_max_len)
         }
         .unwrap_or_default();
 
@@ -297,16 +353,8 @@ impl<'a> StringIter<'a> {
 
         let mut xy = xy.calc_from_size(rect.size);
 
-        // println!("FIRST LINE: '{}' First remaining: '{}'", first, remaining);
-        // println!(
-        //     "Pivot: {:?}. xy: {}, pivot offset: {}, wrap offset: {}, {}",
-        //     pivot, xy, offset, horizontal_offset, vertical_offset
-        // );
-
         xy.x += horizontal_offset;
         xy.y += vertical_offset;
-
-        //println!("XY START {}", xy);
 
         Self {
             word_wrapped: wrapped,
@@ -348,5 +396,81 @@ impl<'a> Iterator for StringIter<'a> {
         let ret = Some((self.xy, ch));
         self.xy.x += 1;
         ret
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn newline() {
+        let area = GridRect::new([0, 0], [40, 40]);
+        let mut iter = StringIter::new([0, 0], "A simple string\nWith a newline", area, true);
+        let (p, ch) = iter.nth(14).unwrap();
+        assert_eq!('g', ch);
+        assert_eq!([14, 39], p.to_array());
+        let (p, ch) = iter.next().unwrap();
+        assert_eq!('W', ch);
+        assert_eq!([0, 38], p.to_array());
+    }
+
+    #[test]
+    fn split() {
+        let (split, remaining) = split_string("A simple string\nWith a newline", 12).unwrap();
+        assert_eq!("A simple str", split);
+        assert_eq!("ing\nWith a newline", remaining);
+        let (split, remaining) = split_string(remaining, 12).unwrap();
+        assert_eq!("ing", split);
+        assert_eq!("With a newline", remaining);
+        let (split, remaining) = split_string(remaining, 12).unwrap();
+        assert_eq!("With a newli", split);
+        assert_eq!("ne", remaining);
+        let (split, remaining) = split_string(remaining, 12).unwrap();
+        assert_eq!("ne", split);
+        assert_eq!("", remaining);
+    }
+
+    #[test]
+    fn wrap() {
+        let (wrapped, remaining) = wrap_string("A simple string\nWith a newline", 12).unwrap();
+        assert_eq!("A simple", wrapped);
+        assert_eq!("string\nWith a newline", remaining);
+        let (wrapped, remaining) = wrap_string(remaining, 12).unwrap();
+        assert_eq!("string", wrapped);
+        assert_eq!("With a newline", remaining);
+        let (wrapped, remaining) = wrap_string(remaining, 12).unwrap();
+        assert_eq!("With a", wrapped);
+        assert_eq!("newline", remaining);
+        let (wrapped, remaining) = wrap_string(remaining, 12).unwrap();
+        assert_eq!("newline", wrapped);
+        assert_eq!("", remaining);
+    }
+
+    #[test]
+    fn iter_split() {
+        let area = GridRect::new([0, 0], [12, 20]);
+        let mut iter = StringIter::new([0, 0], "A simple string\nWith a newline", area, false);
+        let (p, ch) = iter.nth(11).unwrap();
+        assert_eq!('r', ch);
+        assert_eq!([11, 19], p.to_array());
+        let (p, ch) = iter.next().unwrap();
+        assert_eq!('i', ch);
+        assert_eq!([0, 18], p.to_array());
+    }
+
+    #[test]
+    fn iter_wrap() {
+        let area = GridRect::new([0, 0], [12, 20]);
+        let mut iter = StringIter::new([0, 0], "A simple string\nWith a newline", area, true);
+        let (p, ch) = iter.nth(7).unwrap();
+        assert_eq!('e', ch);
+        assert_eq!([7, 19], p.to_array());
+        let (p, ch) = iter.next().unwrap();
+        assert_eq!('s', ch);
+        assert_eq!([0, 18], p.to_array());
+        let (p, ch) = iter.nth(4).unwrap();
+        assert_eq!('g', ch);
+        assert_eq!([5, 18], p.to_array());
     }
 }
