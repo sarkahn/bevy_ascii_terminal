@@ -9,7 +9,7 @@ fn spawn_terminal(mut commands: Commands) {
     let font_name = font.variant_name().to_uppercase().to_owned();
     let clear_tile = *Tile::default().fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE);
     let term = TerminalBundle::new(size)
-        .with_border_title(Border::single_line(), &font_name)
+        //.with_border_title(Border::single_line(), &font_name)
         .with_clear_tile(clear_tile);
     // let mut term = Terminal::new(size)
     //     .with_clear_tile(' '.fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE))

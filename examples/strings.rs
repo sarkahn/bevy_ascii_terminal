@@ -32,8 +32,7 @@ fn setup(mut commands: Commands) {
             .put_string(
                 [0, 0].pivot(Pivot::BottomRight),
                 "Bottom Right Pivot\nAnd here's a newline",
-            )
-            .with_border_title(Border::single_line(), "[Strings]".fg(Color::BLUE)),
+            ), //.with_border_title(Border::single_line(), "[Strings]".fg(Color::BLUE)),
     );
 }
 

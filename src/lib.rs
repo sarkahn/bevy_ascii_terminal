@@ -1,6 +1,8 @@
 mod ascii;
 mod border;
+mod border2;
 mod grid;
+mod layer;
 pub mod renderer;
 mod string;
 mod terminal;
@@ -112,15 +114,18 @@ impl TerminalBundle {
         self
     }
 
-    /// Set a border with a title for the terminal.
-    pub fn with_border_title<'a>(
-        mut self,
-        border: Border,
-        title: impl StringFormatter<'a>,
-    ) -> Self {
-        self.terminal.border_mut().put_title(title);
-        self
-    }
+    // /// Set a border with a title for the terminal.
+    // pub fn with_border_title<'a>(
+    //     mut self,
+    //     border: Border,
+    //     title: impl StringFormatter<'a>,
+    // ) -> Self {
+    //     let mut border = self.terminal.border_mut();
+    //     border.put_title(title);
+    //     //self.terminal.border_mut().put_title(title);
+
+    //     self
+    // }
 
     /// Set the mesh pivot for the terminal.
     ///
