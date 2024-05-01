@@ -3,16 +3,17 @@ use bevy::{
     asset::{embedded_asset, AssetPath, AssetServer, Assets, Handle},
     ecs::{
         component::Component,
+        entity::Entity,
         query::Changed,
         schedule::{IntoSystemConfigs, SystemSet},
-        system::{Query, Res, ResMut},
+        system::{Commands, Query, Res, ResMut},
     },
     prelude::Plugin,
     reflect::Reflect,
     render::texture::{Image, ImageLoaderSettings, ImageSampler},
 };
 
-use super::material::TerminalMaterial;
+use super::{material::TerminalMaterial, RebuildTerminalMeshVerts};
 
 /// Allows for simple switching of terminal fonts.
 ///
@@ -109,11 +110,15 @@ impl Plugin for TerminalFontPlugin {
 
 #[allow(clippy::type_complexity)]
 fn update_font(
-    mut q_term: Query<(&mut Handle<TerminalMaterial>, &TerminalFont), Changed<TerminalFont>>,
+    mut q_term: Query<
+        (Entity, &mut Handle<TerminalMaterial>, &TerminalFont),
+        Changed<TerminalFont>,
+    >,
     server: Res<AssetServer>,
     mut materials: ResMut<Assets<TerminalMaterial>>,
+    mut commands: Commands,
 ) {
-    for (mut mat_handle, font) in &mut q_term {
+    for (entity, mut mat_handle, font) in &mut q_term {
         let image: Handle<Image> = match font {
             TerminalFont::Custom(path) => {
                 server.load_with_settings(path, move |settings: &mut ImageLoaderSettings| {
@@ -139,5 +144,6 @@ fn update_font(
                 .expect("Error getting terminal material");
             mat.texture = Some(image);
         }
+        commands.entity(entity).insert(RebuildTerminalMeshVerts);
     }
 }

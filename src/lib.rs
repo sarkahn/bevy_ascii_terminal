@@ -65,6 +65,8 @@ impl TerminalPlugin {
     }
 }
 
+/// The set of components for a default terminal. Contains a variety of builder
+/// functions to help with initial terminal setup.
 #[derive(Bundle)]
 pub struct TerminalBundle {
     pub terminal: Terminal,
@@ -105,31 +107,33 @@ impl TerminalBundle {
 
     pub fn with_clear_tile(mut self, clear_tile: impl Into<Tile>) -> Self {
         self.terminal.set_clear_tile(clear_tile.into());
+        self.terminal.clear();
         self
     }
 
-    /// Set a border for the terminal.
+    /// Set a [Border] for the terminal.
     pub fn with_border(mut self, border: Border) -> Self {
         self.terminal.set_border(Some(border));
         self
     }
 
-    // /// Set a border with a title for the terminal.
-    // pub fn with_border_title<'a>(
-    //     mut self,
-    //     border: Border,
-    //     title: impl StringFormatter<'a>,
-    // ) -> Self {
-    //     let mut border = self.terminal.border_mut();
-    //     border.put_title(title);
-    //     //self.terminal.border_mut().put_title(title);
-
-    //     self
-    // }
+    /// Set a border with a title for the terminal.
+    pub fn with_border_title(
+        mut self,
+        border: Border,
+        title: impl AsRef<str>,
+        // TODO: How to make this work? Some real lifetime woes happening here
+        //title: impl StringFormatter<'a>,
+    ) -> Self {
+        self.terminal.put_border(border).put_title(title.as_ref());
+        self
+    }
 
     /// Set the mesh pivot for the terminal.
     ///
-    /// Note this only affects how the terminal is rendered in world space.
+    /// Note this only affects how the terminal is rendered in world space. A
+    /// separate pivot can be applied directly to positions when writing to the
+    /// terminal, see [Terminal::put_char]
     pub fn with_mesh_pivot(mut self, pivot: Pivot) -> Self {
         self.render_bundle.mesh_pivot = pivot.into();
         self
@@ -180,7 +184,7 @@ impl TileScaling {
         match self {
             TileScaling::World => {
                 let aspect = ppu.x() as f32 / ppu.y() as f32;
-                Vec2::new(1.0 / aspect, 1.0)
+                Vec2::new(aspect / 1.0, 1.0)
             }
             TileScaling::Pixels => ppu.as_vec2(),
         }

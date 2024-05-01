@@ -34,6 +34,8 @@ impl Plugin for TerminalMaterialPlugin {
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, PartialEq, Clone)]
 pub struct TerminalMaterial {
+    /// The color which defines the "background" of the terminal texture. Defaults
+    /// to black, which is used by all the built in terminal fonts.
     #[uniform(0)]
     pub clip_color: Color,
     #[texture(1)]

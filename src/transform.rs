@@ -239,7 +239,7 @@ fn update_transform_size(
             commands.entity(e).insert(RebuildTerminalMeshVerts);
             commands.entity(e).insert(UpdateTerminalTransformSize);
             for cam in q_cam.iter() {
-                if cam.manage_viewport {
+                if cam.is_managing_viewport() {
                     vp_evt.send(UpdateTerminalViewportEvent);
                 }
             }
@@ -266,10 +266,6 @@ fn update_transform_mesh_data(
     mut commands: Commands,
 ) {
     for (entity, mut transform, pivot, term, mat_handle, scaling) in &mut q_term {
-        commands
-            .entity(entity)
-            .remove::<UpdateTerminalTransformSize>();
-
         let Some(mat) = materials.get(mat_handle) else {
             continue;
         };
@@ -287,5 +283,8 @@ fn update_transform_mesh_data(
             ppu,
             term.get_border().map(|b| (b, term.clear_tile())),
         );
+        commands
+            .entity(entity)
+            .remove::<UpdateTerminalTransformSize>();
     }
 }

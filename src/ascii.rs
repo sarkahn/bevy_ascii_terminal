@@ -1,4 +1,6 @@
-//! Extended ascii used as the default for terminal writing functions.
+//! Extended ascii used as the default for mapping chars to terminal glyphs.
+//! Note this is simple the default, a custom mapping can be defined via
+//! [crate::renderer::UvMapping]
 use enum_ordinalize::Ordinalize;
 use thiserror::Error;
 
@@ -589,7 +591,7 @@ impl Glyph {
     }
 }
 
-/// Convert an ascii glyph to it's corresponding index (0..256)
+/// Convert a char to it's corresponding ascii glyph index (0..256)
 const fn char_to_index(c: char) -> Option<u8> {
     let value = match c {
         '\0' => 0,

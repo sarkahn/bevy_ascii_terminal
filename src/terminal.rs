@@ -62,6 +62,19 @@ impl Terminal {
         &mut self.tiles[i]
     }
 
+    /// Insert a character at the given position.
+    ///
+    /// A pivot can be applied to the position, changing how the coordinates are
+    /// interpreted.
+    ///
+    /// # Example:
+    /// ```
+    /// let mut term = Terminal::new([10,5]);
+    /// // Insert at the bottom left corner.
+    /// term.put_char([0,0], 'a');
+    /// // Insert at the top right corner.
+    /// term.put_char([0,0].pivot(Pivot::TopRight), 'b');
+    /// ```
     pub fn put_char(&mut self, xy: impl Into<PivotedPoint>, ch: char) -> &mut Tile {
         self.tile_mut(xy).glyph(ch)
     }

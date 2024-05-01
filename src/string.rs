@@ -219,21 +219,24 @@ fn wrap_string(string: &str, max_len: usize) -> Option<(&str, &str)> {
     }
 
     // Handle newlines first
-    if let Some(newline_index) = string[..max_len.min(string.len())]
-        .chars()
-        .position(|c| c == '\n')
+    if let Some(newline_index) = //string[0..max_len.min(string.len())]
+        //.chars()
+        string.chars().take(max_len).position(|c| c == '\n')
     {
         let (a, b) = string.split_at(newline_index + 1);
         return Some((a.trim_end(), b));
     };
 
-    if string.len() <= max_len {
+    let len = string.chars().count();
+
+    if len <= max_len {
         return Some((string.trim_end(), ""));
     };
 
-    let move_back = string[..max_len]
+    let move_back = string
         .chars()
         .rev()
+        .skip(len - max_len)
         .position(|c| c.is_whitespace())
         .unwrap_or_default();
 
@@ -247,10 +250,7 @@ fn split_string(string: &str, max_len: usize) -> Option<(&str, &str)> {
     if string.trim_end().is_empty() {
         return None;
     }
-    if let Some(newline_index) = string[..max_len.min(string.len())]
-        .chars()
-        .position(|c| c == '\n')
-    {
+    if let Some(newline_index) = string.chars().take(max_len).position(|c| c == '\n') {
         let (a, b) = string.split_at(newline_index + 1);
         return Some((a.trim_end(), b));
     };

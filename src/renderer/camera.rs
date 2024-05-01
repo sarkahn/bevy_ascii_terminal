@@ -56,9 +56,25 @@ impl Plugin for TerminalCameraPlugin {
 #[derive(Event)]
 pub struct UpdateTerminalViewportEvent;
 
+#[derive(Debug, PartialEq, Default)]
+pub enum TerminalCameraViewport {
+    #[default]
+    Auto,
+    Resolution {
+        target_resolution: UVec2,
+        pixels_per_tile: UVec2,
+    },
+    Tiles {
+        tile_count: UVec2,
+        pixels_per_tile: UVec2,
+    },
+    DontModify,
+}
+
 #[derive(Default, Component)]
 pub struct TerminalCamera {
-    pub manage_viewport: bool,
+    //pub manage_viewport: bool,
+    pub viewport_type: TerminalCameraViewport,
     pub track_cursor: bool,
     cam_data: Option<CachedCameraData>,
     cursor_data: Option<CachedCursorData>,
@@ -98,6 +114,10 @@ impl TerminalCamera {
         let world_space_coords = ndc_to_world.project_point3(ndc.extend(1.));
         (!world_space_coords.is_nan()).then_some(world_space_coords.truncate())
     }
+
+    pub fn is_managing_viewport(&self) -> bool {
+        self.viewport_type != TerminalCameraViewport::DontModify
+    }
 }
 
 #[derive(Default, Debug, Clone)]
@@ -126,7 +146,7 @@ impl TerminalCameraBundle {
     pub fn auto() -> Self {
         Self {
             term_cam: TerminalCamera {
-                manage_viewport: true,
+                viewport_type: TerminalCameraViewport::Auto,
                 track_cursor: false,
                 cam_data: None,
                 cursor_data: None,
@@ -271,18 +291,28 @@ fn update_viewport(
         return;
     };
 
-    if !term_cam.manage_viewport {
+    if term_cam.viewport_type == TerminalCameraViewport::DontModify {
         return;
     }
 
     let Ok(window) = q_window.get_single() else {
         return;
     };
-    let Some(ppu) = q_term
-        .iter()
-        .map(|t| t.pixels_per_unit())
-        .reduce(UVec2::max)
-    else {
+    let Some(ppu) = (match term_cam.viewport_type {
+        TerminalCameraViewport::Auto => q_term
+            .iter()
+            .map(|t| t.pixels_per_unit())
+            .reduce(UVec2::max),
+        TerminalCameraViewport::Resolution {
+            target_resolution: _,
+            pixels_per_tile,
+        } => Some(pixels_per_tile),
+        TerminalCameraViewport::Tiles {
+            tile_count: _,
+            pixels_per_tile,
+        } => Some(pixels_per_tile),
+        _ => unreachable!(),
+    }) else {
         return;
     };
 
@@ -290,8 +320,6 @@ fn update_viewport(
     if ppu.cmpeq(UVec2::ZERO).any() {
         return;
     }
-
-    let tile_size = grid.tile_scaling().calculate_world_tile_size(ppu, None);
 
     let min = q_term
         .iter()
@@ -308,6 +336,7 @@ fn update_viewport(
     let z = cam_transform.translation.z;
     cam_transform.translation = Rect::from_corners(min, max).center().extend(z);
 
+    let tile_size = grid.tile_scaling().calculate_world_tile_size(ppu, None);
     let rect = Rect::from_corners(min, max);
     let tile_rect = GridRect::new(
         (rect.min / tile_size).floor().as_ivec2(),
@@ -315,6 +344,7 @@ fn update_viewport(
     );
 
     let target_res = tile_rect.size.as_vec2() * ppu.as_vec2();
+
     let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
     let zoom = (window_res / target_res).floor().min_element().max(1.0);
 

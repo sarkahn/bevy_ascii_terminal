@@ -17,6 +17,8 @@ impl Plugin for TerminalUvMappingPlugin {
     }
 }
 
+/// An asset that defines how a rust [char] is converted into uvs for rendering
+/// in terminal tiles.
 #[derive(Asset, Debug, Clone, TypePath)]
 pub struct UvMapping {
     uv_map: HashMap<char, [[f32; 2]; 4]>,
