@@ -206,10 +206,6 @@ fn make_some_noise(
             Glyph::BlockFull
         };
         t.glyph = glyph.to_char();
-        t.bg_color = Hsla {
-            lightness: noise,
-            ..Hsla::from(t.bg_color)
-        }
-        .into();
+        t.bg_color = Hsla::from(t.bg_color).with_lightness(noise).into();
     }
 }

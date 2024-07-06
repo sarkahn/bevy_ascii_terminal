@@ -51,11 +51,9 @@ fn make_terminal(size: impl GridPoint, lightness: f32) -> Terminal {
 fn set_brightness(term: &mut Terminal, lightness: f32) {
     for (p, t) in term.iter_xy_mut() {
         let grid_color = if (p.x + p.y) % 2 == 0 {
-            Hsla {
-                lightness: lightness - 0.5,
-                saturation: 0.5,
-                ..basic::BLUE.into()
-            }
+            Hsla::from(basic::BLUE)
+                .with_lightness(lightness - 0.5)
+                .with_saturation(0.5)
         } else {
             Hsla {
                 lightness: lightness - 0.5,
@@ -63,11 +61,7 @@ fn set_brightness(term: &mut Terminal, lightness: f32) {
                 ..basic::RED.into()
             }
         };
-        t.fg_color = Hsla {
-            lightness: lightness,
-            ..t.fg_color.into()
-        }
-        .into();
+        t.fg_color = Hsla::from(t.fg_color).with_lightness(lightness).into();
         t.bg_color = grid_color.into();
     }
 }
