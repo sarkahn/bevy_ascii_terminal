@@ -1,6 +1,7 @@
 use bevy::{
     app::{Last, Plugin, PostUpdate},
     asset::{AssetEvent, Assets, Handle},
+    color::Color,
     ecs::{
         change_detection::DetectChangesMut,
         component::Component,
@@ -12,7 +13,6 @@ use bevy::{
     },
     math::{IVec2, Vec2},
     render::{
-        color::Color,
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
         render_asset::RenderAssetUsages,
         render_resource::{PrimitiveTopology, VertexFormat},
@@ -123,7 +123,7 @@ fn on_image_load(
         };
         for (entity, mat_handle) in &mut q_term {
             let mat = materials
-                .get(mat_handle.clone())
+                .get(&mat_handle.clone())
                 .expect("Error getting terminal material");
             if mat
                 .texture
@@ -183,7 +183,7 @@ fn rebuild_verts(
         commands.entity(entity).remove::<RebuildTerminalMeshVerts>();
 
         let mesh = meshes
-            .get_mut(mesh_handle.0.clone())
+            .get_mut(&mesh_handle.0.clone())
             .expect("Error getting terminal mesh");
 
         let mat = materials
@@ -236,7 +236,7 @@ fn tile_mesh_update(
 ) {
     for (term, mesh_handle, mapping_handle) in &q_term {
         let mesh = meshes
-            .get_mut(mesh_handle.0.clone())
+            .get_mut(&mesh_handle.0.clone())
             .expect("Couldn't find terminal mesh");
 
         if mesh_vertex_count(mesh) == 0 {
@@ -244,7 +244,7 @@ fn tile_mesh_update(
         }
 
         let mapping = mappings
-            .get(mapping_handle.clone())
+            .get(&mapping_handle.clone())
             .expect("Couldn't find terminal uv mapping");
 
         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
@@ -278,7 +278,7 @@ fn border_mesh_update(
         };
 
         let mesh = meshes
-            .get_mut(mesh_handle.0.clone())
+            .get_mut(&mesh_handle.0.clone())
             .expect("Error getting terminal mesh");
 
         let vert_count = mesh_vertex_count(mesh);
@@ -290,7 +290,7 @@ fn border_mesh_update(
         }
 
         let mapping = mappings
-            .get(mapping_handle.clone())
+            .get(&mapping_handle.clone())
             .expect("Couldn't find terminal uv mapping");
 
         let origin = transform.world_bounds().min;
@@ -314,7 +314,7 @@ fn border_mesh_update(
         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
             for (i, (_, t)) in border.iter().enumerate() {
                 let i = i + term.tile_count();
-                let transparent = Color::rgba_u8(0, 0, 0, 0);
+                let transparent = Color::srgba_u8(0, 0, 0, 0);
                 let (fg, bg) = if t.glyph == ' ' {
                     (transparent, transparent)
                 } else {

@@ -1,9 +1,7 @@
 use bevy::{
+    color::{Color, ColorToComponents},
     math::Vec2,
-    render::{
-        color::Color,
-        mesh::{Indices, Mesh, VertexAttributeValues},
-    },
+    render::mesh::{Indices, Mesh, VertexAttributeValues},
 };
 
 use super::{
@@ -135,7 +133,7 @@ impl<'a> UvMesher<'a> {
             .zip(uvs)
             .for_each(|(tuv, uv)| *tuv = *uv);
 
-        self.fg[i..i + 4].fill(fg.as_linear_rgba_f32());
-        self.bg[i..i + 4].fill(bg.as_linear_rgba_f32());
+        self.fg[i..i + 4].fill(fg.to_linear().to_f32_array());
+        self.bg[i..i + 4].fill(bg.to_linear().to_f32_array());
     }
 }

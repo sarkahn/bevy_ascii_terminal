@@ -182,7 +182,7 @@ fn cache_camera_data(
         }
         terminal_cam.cam_data = Some(CachedCameraData {
             cam_transform: *transform,
-            proj_matrix: cam.projection_matrix(),
+            proj_matrix: cam.clip_from_view(),
             target_size: cam.logical_viewport_size(),
             vp_offset: cam.logical_viewport_rect().map(|vp| vp.min),
         });

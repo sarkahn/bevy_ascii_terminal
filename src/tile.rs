@@ -1,4 +1,4 @@
-use bevy::{reflect::Reflect, render::color::Color};
+use bevy::{reflect::Reflect, color::Color};
 
 #[derive(Debug, PartialEq, Clone, Copy, Reflect)]
 pub struct Tile {

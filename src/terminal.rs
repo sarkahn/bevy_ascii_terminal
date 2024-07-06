@@ -1,4 +1,4 @@
-use bevy::{ecs::component::Component, math::IVec2, render::color::Color};
+use bevy::{color::Color, ecs::component::Component, math::IVec2};
 
 use crate::{
     border::{Border, TerminalBorderMut},
@@ -300,7 +300,7 @@ impl Terminal {
 #[cfg(test)]
 mod tests {
 
-    use bevy::render::color::Color;
+    use bevy::color::palettes::basic;
 
     use crate::{border::Border, string::StringFormatter, GridPoint, GridRect, Pivot};
 
@@ -328,12 +328,12 @@ mod tests {
     #[test]
     fn string() {
         let mut term = Terminal::new([15, 15]);
-        let string = "Hello".no_word_wrap().fg(Color::BLUE);
+        let string = "Hello".no_word_wrap().fg(basic::BLUE.into());
         term.put_string([1, 1].pivot(Pivot::TopLeft), string);
 
         term.put_string(
             [1, 1].pivot(Pivot::TopLeft),
-            "hi".no_word_wrap().fg(Color::RED),
+            "hi".no_word_wrap().fg(basic::RED.into()),
         );
 
         term.put_string([1, 1], "Hello");
@@ -346,7 +346,7 @@ mod tests {
     fn border() {
         let mut term = Terminal::new([15, 15]);
         term.put_border(Border::single_line())
-            .put_title("Hello".fg(Color::BLUE));
+            .put_title("Hello".fg(basic::BLUE.into()));
         for (_, t) in term.border().iter() {
             println!("{}", t.glyph);
         }

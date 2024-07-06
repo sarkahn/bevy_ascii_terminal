@@ -1,6 +1,6 @@
 use std::{ops::Sub, str::Chars};
 
-use bevy::{math::IVec2, render::color::Color};
+use bevy::{color::Color, math::IVec2};
 
 use crate::{GridRect, Pivot, PivotedPoint};
 

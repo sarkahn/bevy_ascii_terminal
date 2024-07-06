@@ -1,5 +1,5 @@
 #import bevy_sprite::{
-    mesh2d_functions::{mesh2d_position_local_to_clip, get_model_matrix},
+    mesh2d_functions::{mesh2d_position_local_to_clip, get_world_from_local},
 }
 
 struct TerminalMaterial {
@@ -28,7 +28,7 @@ struct VertexOutput {
 @vertex
 fn vertex(v_in: Vertex) -> VertexOutput {
     var v_out: VertexOutput;
-    var model = get_model_matrix(v_in.instance_index);
+    var model = get_world_from_local(v_in.instance_index);
     v_out.clip_position = mesh2d_position_local_to_clip(model, vec4<f32>(v_in.position, 1.0));
     v_out.uv = v_in.uv;
     v_out.fg_color = v_in.fg_color;

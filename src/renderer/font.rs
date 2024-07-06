@@ -140,7 +140,7 @@ fn update_font(
             });
         } else {
             let mat = materials
-                .get_mut(mat_handle.clone())
+                .get_mut(&mat_handle.clone())
                 .expect("Error getting terminal material");
             mat.texture = Some(image);
         }

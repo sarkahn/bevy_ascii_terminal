@@ -17,12 +17,12 @@ enum-ordinalize = "4.3.0"
 thiserror = "1.0.56"
 
 [dependencies.bevy]
-version = "0.13"
+version = "0.14"
 default-features = false
 features = ["png", "bevy_render", "bevy_asset", "bevy_sprite"]
 
 [dev-dependencies.bevy]
-version = "0.13"
+version = "0.14"
 default-features = false
 features = ["png", "bevy_winit", "bevy_render", "dynamic_linking", "x11"]
 

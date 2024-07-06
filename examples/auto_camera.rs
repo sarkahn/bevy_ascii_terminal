@@ -1,4 +1,4 @@
-use bevy::{app::AppExit, prelude::*};
+use bevy::{app::AppExit, color::palettes::basic, prelude::*};
 use bevy_ascii_terminal::*;
 
 const FADED: f32 = 0.65;
@@ -10,7 +10,7 @@ fn main() {
         .init_resource::<Terminals>()
         .add_systems(Startup, setup)
         .add_systems(Update, (input, on_update))
-        .run()
+        .run();
 }
 
 #[derive(Resource, Default)]
@@ -51,12 +51,24 @@ fn make_terminal(size: impl GridPoint, lightness: f32) -> Terminal {
 fn set_brightness(term: &mut Terminal, lightness: f32) {
     for (p, t) in term.iter_xy_mut() {
         let grid_color = if (p.x + p.y) % 2 == 0 {
-            Color::BLUE.with_l(lightness - 0.5).with_s(0.5)
+            Hsla {
+                lightness: lightness - 0.5,
+                saturation: 0.5,
+                ..basic::BLUE.into()
+            }
         } else {
-            Color::RED.with_l(lightness - 0.5).with_s(0.5)
+            Hsla {
+                lightness: lightness - 0.5,
+                saturation: 0.5,
+                ..basic::RED.into()
+            }
         };
-        t.fg_color.set_l(lightness);
-        t.bg_color = grid_color;
+        t.fg_color = Hsla {
+            lightness: lightness,
+            ..t.fg_color.into()
+        }
+        .into();
+        t.bg_color = grid_color.into();
     }
 }
 
@@ -104,6 +116,6 @@ fn on_update(
 
 fn input(input: Res<ButtonInput<KeyCode>>, mut evt_quit: EventWriter<AppExit>) {
     if input.just_pressed(KeyCode::Escape) {
-        evt_quit.send(AppExit);
+        evt_quit.send(AppExit::Success);
     }
 }

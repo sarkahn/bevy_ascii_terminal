@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::component::Component, math::IVec2, reflect::Reflect, render::color::Color, utils::HashMap,
+    color::Color, ecs::component::Component, math::IVec2, reflect::Reflect, utils::HashMap,
 };
 
 use crate::{GridPoint, PivotedPoint, Tile};

@@ -6,7 +6,7 @@ fn main() {
         .add_plugins((DefaultPlugins, TerminalPlugin::default()))
         .add_systems(Update, input)
         .add_systems(Startup, setup)
-        .run()
+        .run();
 }
 
 fn setup(mut commands: Commands) {
@@ -31,6 +31,6 @@ fn setup(mut commands: Commands) {
 
 fn input(input: Res<ButtonInput<KeyCode>>, mut evt_quit: EventWriter<AppExit>) {
     if input.just_pressed(KeyCode::Escape) {
-        evt_quit.send(AppExit);
+        evt_quit.send(AppExit::Success);
     }
 }

@@ -1,4 +1,4 @@
-use bevy::{app::AppExit, prelude::*, time::common_conditions::on_timer};
+use bevy::{app::AppExit, color::palettes::css, prelude::*, time::common_conditions::on_timer};
 use bevy_ascii_terminal::*;
 use fastnoise_lite::*;
 
@@ -55,7 +55,7 @@ fn main() {
             )
                 .chain(),
         )
-        .run()
+        .run();
 }
 
 #[derive(Component)]
@@ -106,7 +106,7 @@ fn handle_other_input(
     mut evt_quit: EventWriter<AppExit>,
 ) {
     if input.just_pressed(KeyCode::Escape) {
-        evt_quit.send(AppExit);
+        evt_quit.send(AppExit::Success);
     }
     let ver = input.just_pressed(KeyCode::KeyS) as i32 - input.just_pressed(KeyCode::KeyW) as i32;
     if ver != 0 {
@@ -178,8 +178,8 @@ fn make_some_noise(
             "Noise:{:?}---Fractal:{:?}",
             controls.noise_type, controls.fractal_type
         )
-        .fg(Color::ANTIQUE_WHITE)
-        .bg(Color::GRAY)
+        .fg(css::ANTIQUE_WHITE.into())
+        .bg(css::GRAY.into())
         .ignore_spaces(),
     );
     let mut noise = FastNoiseLite::new();
@@ -206,6 +206,10 @@ fn make_some_noise(
             Glyph::BlockFull
         };
         t.glyph = glyph.to_char();
-        t.bg_color.set_l(noise);
+        t.bg_color = Hsla {
+            lightness: noise,
+            ..Hsla::from(t.bg_color)
+        }
+        .into();
     }
 }

@@ -1,6 +1,7 @@
 use std::ops::Sub;
 
 use bevy::{
+    color::palettes::css,
     prelude::*,
     reflect::{DynamicVariant, Enum},
 };
@@ -11,12 +12,14 @@ fn main() {
         .add_plugins((DefaultPlugins, TerminalPlugin::default()))
         .add_systems(Startup, setup)
         .add_systems(Update, (input, update))
-        .run()
+        .run();
 }
 
 fn setup(mut commands: Commands) {
     let size = [47, 13];
-    let clear_tile = *Tile::default().fg(Color::WHITE).bg(Color::MIDNIGHT_BLUE);
+    let clear_tile = *Tile::default()
+        .fg(Color::WHITE)
+        .bg(css::MIDNIGHT_BLUE.into());
     let term = TerminalBundle::new(size)
         .with_clear_tile(clear_tile)
         // Unlike put_char, put_string defaults to a top left pivot
@@ -53,6 +56,6 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
 fn update(mut q_term: Query<(&mut Terminal, &TerminalFont), Changed<TerminalFont>>) {
     if let Ok((mut term, font)) = q_term.get_single_mut() {
         term.border_mut()
-            .put_title(format!("[{}]", font.variant_name()).fg(Color::MAROON));
+            .put_title(format!("[{}]", font.variant_name()).fg(css::MAROON.into()));
     }
 }
