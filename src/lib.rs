@@ -1,8 +1,6 @@
 mod ascii;
-mod border;
-mod border2;
+pub mod border;
 mod grid;
-mod layer;
 pub mod renderer;
 mod string;
 mod terminal;
@@ -14,16 +12,16 @@ use std::ops::Mul;
 pub use ascii::Glyph;
 use bevy::{
     app::Plugin,
+    asset::Handle,
     ecs::{bundle::Bundle, system::Resource},
     math::Vec2,
+    sprite::MaterialMesh2dBundle,
 };
-pub use border::Border;
 pub use grid::{direction, GridPoint, GridRect, Pivot, PivotedPoint};
-use renderer::TerminalRenderBundle;
-pub use renderer::{TerminalCameraBundle, TerminalFont, TerminalFontScaling};
-pub use string::{FormattedString, StringFormatter};
+pub use renderer::{TerminalCameraBundle, TerminalFont};
+use string::DecoratedFormattedText;
 pub use terminal::Terminal;
-pub use tile::Tile;
+pub use tile::{ColorWriter, Tile, TileFormatter};
 pub use transform::TerminalTransform;
 /*
     Update loop:
@@ -67,35 +65,39 @@ impl TerminalPlugin {
 
 /// The set of components for a default terminal. Contains a variety of builder
 /// functions to help with initial terminal setup.
-#[derive(Bundle)]
+#[derive(Bundle, Default)]
 pub struct TerminalBundle {
     pub terminal: Terminal,
     pub terminal_transform: TerminalTransform,
-    pub render_bundle: TerminalRenderBundle,
+    pub mesh_pivot: renderer::mesh::TerminalMeshPivot,
+    pub font: renderer::TerminalFont,
+    pub scaling: renderer::TerminalFontScaling,
+    pub mapping: Handle<renderer::uv_mapping::UvMapping>,
+    pub mesh_bundle: MaterialMesh2dBundle<renderer::material::TerminalMaterial>,
 }
 
 impl TerminalBundle {
     pub fn new(size: impl GridPoint) -> Self {
         Self {
             terminal: Terminal::new(size),
-            terminal_transform: TerminalTransform::new(size),
-            render_bundle: Default::default(),
+            terminal_transform: transform::TerminalTransform::new(size),
+            ..Default::default()
         }
     }
 
     /// Set the [TerminalFont] for the terminal.
     pub fn with_font(mut self, font: TerminalFont) -> Self {
-        self.render_bundle.font = font;
+        self.font = font;
         self
     }
 
     /// Write a [FormattedString] to the terminal.
-    pub fn put_string<'a>(
+    pub fn put_string<T: AsRef<str>>(
         mut self,
         xy: impl Into<PivotedPoint>,
-        string: impl StringFormatter<'a>,
+        string: impl Into<DecoratedFormattedText<T>>,
     ) -> Self {
-        self.terminal.put_string(xy, string);
+        //self.terminal.put_string(xy, string);
         self
     }
 
@@ -111,23 +113,21 @@ impl TerminalBundle {
         self
     }
 
-    /// Set a [Border] for the terminal.
-    pub fn with_border(mut self, border: Border) -> Self {
-        self.terminal.set_border(Some(border));
-        self
-    }
+    // /// Set a [Border] for the terminal.
+    // pub fn with_border(mut self, border: Border) -> Self {
+    //     self.terminal.put_border(border);
+    //     self
+    // }
 
-    /// Set a border with a title for the terminal.
-    pub fn with_border_title(
-        mut self,
-        border: Border,
-        title: impl AsRef<str>,
-        // TODO: How to make this work? Some real lifetime woes happening here
-        //title: impl StringFormatter<'a>,
-    ) -> Self {
-        self.terminal.put_border(border).put_title(title.as_ref());
-        self
-    }
+    // /// Set a border with a title for the terminal.
+    // pub fn with_border_title<'a>(
+    //     mut self,
+    //     border: Border,
+    //     title: impl StringFormatter<'a>,
+    // ) -> Self {
+    //     self.terminal.put_string([1, 0], title);
+    //     self
+    // }
 
     /// Set the mesh pivot for the terminal.
     ///
@@ -135,14 +135,14 @@ impl TerminalBundle {
     /// separate pivot can be applied directly to positions when writing to the
     /// terminal, see [Terminal::put_char]
     pub fn with_mesh_pivot(mut self, pivot: Pivot) -> Self {
-        self.render_bundle.mesh_pivot = pivot.into();
+        self.mesh_pivot = pivot.into();
         self
     }
 
     /// Set the terminal font scaling. Each tile of the terminal will be scaled
     /// by this amount.
     pub fn with_font_scaling(mut self, scaling: Vec2) -> Self {
-        self.render_bundle.scaling.0 = scaling;
+        self.scaling.0 = scaling;
         self
     }
 
@@ -184,7 +184,7 @@ impl TileScaling {
         match self {
             TileScaling::World => {
                 let aspect = ppu.x() as f32 / ppu.y() as f32;
-                Vec2::new(aspect / 1.0, 1.0)
+                Vec2::new(aspect, 1.0)
             }
             TileScaling::Pixels => ppu.as_vec2(),
         }

@@ -27,7 +27,7 @@ use super::{
     uv_mapping::UvMapping,
 };
 use crate::{
-    direction::Dir4, transform::UpdateTransformPositionSystem, Pivot, Terminal, TerminalTransform,
+    transform::UpdateTransformPositionSystem, GridPoint, Pivot, Terminal, TerminalTransform,
 };
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
@@ -55,7 +55,7 @@ impl Plugin for TerminalMeshPlugin {
 
         app.add_systems(
             Last,
-            (rebuild_verts, tile_mesh_update, border_mesh_update)
+            (rebuild_verts, tile_mesh_update)
                 .chain()
                 .in_set(TerminalMeshSystems),
         );
@@ -203,15 +203,14 @@ fn rebuild_verts(
         let origin = transform.world_bounds().min;
         let tile_size = transform.world_tile_size();
 
-        let border_offset: IVec2 = if let Some(border) = term.get_border() {
-            let edges = border.edge_opacity(term.clear_tile(), term.size());
-            let x = edges[Dir4::Left.as_index()] as i32;
-            let y = edges[Dir4::Down.as_index()] as i32;
+        let border_offset = if let Some(border) = term.border() {
+            let x = if border.has_left_side() { 1 } else { 0 };
+            let y = if border.has_bottom_side() { 1 } else { 0 };
             [x, y]
         } else {
             [0, 0]
         }
-        .into();
+        .as_ivec2();
 
         // We only need to update our vertex data, uvs/colors will be updated
         // in "tile_mesh_update"
@@ -252,81 +251,6 @@ fn tile_mesh_update(
                 mesher.set_tile(t.glyph, t.fg_color, t.bg_color, i);
             }
         });
-    }
-}
-
-fn border_mesh_update(
-    mut q_term: Query<
-        (
-            // Only mutable to reset border state - bypasses change detection
-            &mut Terminal,
-            &TerminalTransform,
-            &Mesh2dHandle,
-            &Handle<UvMapping>,
-        ),
-        Changed<Terminal>,
-    >,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mappings: Res<Assets<UvMapping>>,
-) {
-    for (mut term, transform, mesh_handle, mapping_handle) in &mut q_term {
-        let Some(border) = term.get_border() else {
-            continue;
-        };
-        if !border.changed() {
-            continue;
-        };
-
-        let mesh = meshes
-            .get_mut(&mesh_handle.0.clone())
-            .expect("Error getting terminal mesh");
-
-        let vert_count = mesh_vertex_count(mesh);
-        if vert_count == 0 {
-            continue;
-        }
-        if vert_count == term.tile_count() * 4 {
-            resize_mesh_data(mesh, term.tile_count() + border.tile_count());
-        }
-
-        let mapping = mappings
-            .get(&mapping_handle.clone())
-            .expect("Couldn't find terminal uv mapping");
-
-        let origin = transform.world_bounds().min;
-        let tile_size = transform.world_tile_size();
-
-        // Our mesh needs to be offset by one tile if the left or bottom sides
-        // of the border are not blank.
-        let edges = border.edge_opacity(term.clear_tile(), term.size());
-        let x = edges[Dir4::Left.as_index()] as i32;
-        let y = edges[Dir4::Down.as_index()] as i32;
-        let border_offset = IVec2::new(x, y);
-
-        VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
-            for (i, (p, _)) in border.iter().enumerate() {
-                let i = i + term.tile_count();
-                // Border offset
-                let p = p + border_offset;
-                mesher.set_tile(p.x, p.y, i);
-            }
-        });
-        UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
-            for (i, (_, t)) in border.iter().enumerate() {
-                let i = i + term.tile_count();
-                let transparent = Color::srgba_u8(0, 0, 0, 0);
-                let (fg, bg) = if t.glyph == ' ' {
-                    (transparent, transparent)
-                } else {
-                    (t.fg_color, t.bg_color)
-                };
-                mesher.set_tile(t.glyph, fg, bg, i);
-            }
-        });
-
-        term.bypass_change_detection()
-            .border_mut()
-            .reset_changed_state();
     }
 }
 

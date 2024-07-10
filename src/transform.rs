@@ -16,8 +16,6 @@ use bevy::{
 };
 
 use crate::{
-    border::Border,
-    direction::Dir4,
     renderer::{
         RebuildTerminalMeshVerts, TerminalCamera, TerminalFontScaling, TerminalMaterial,
         TerminalMeshPivot, TerminalMeshSystems, UpdateTerminalViewportEvent,
@@ -65,8 +63,8 @@ pub struct UpdateTerminalTransformSize;
 /// Component for transforming between terminal and world space.
 ///
 /// Setting the `grid_position` of this component will alter the terminal's position
-/// in world space during the next transform update, based on terminal's font size
-/// and the global [TerminalGridSettings]
+/// in world space during the next transform update, based on the terminal's font
+/// size and the global [TerminalGridSettings]
 #[derive(Default, Component)]
 pub struct TerminalTransform {
     /// The grid position for the terminal. Setting this value will override the
@@ -127,26 +125,26 @@ impl TerminalTransform {
         world_tile_size: Vec2,
         mesh_pivot: Pivot,
         pixels_per_tile: UVec2,
-        border: Option<(&Border, Tile)>,
+        //border: Option<(&Border, Tile)>,
     ) {
         let mut term_rect = GridRect::new([0, 0], term_size);
-        if let Some((border, clear_tile)) = border {
-            let edges = border.edge_opacity(clear_tile, term_size);
-            let border_rect = GridRect::from_points([-1, -1], term_size);
+        // if let Some((border, clear_tile)) = border {
+        //     let edges = border.edge_opacity(clear_tile, term_size);
+        //     let border_rect = GridRect::from_points([-1, -1], term_size);
 
-            if edges[Dir4::Left.as_index()] {
-                term_rect.envelope_point([border_rect.left(), 0]);
-            }
-            if edges[Dir4::Up.as_index()] {
-                term_rect.envelope_point([0, border_rect.top()]);
-            }
-            if edges[Dir4::Right.as_index()] {
-                term_rect.envelope_point([border_rect.right(), 0]);
-            }
-            if edges[Dir4::Down.as_index()] {
-                term_rect.envelope_point([0, border_rect.bottom()]);
-            }
-        }
+        //     if edges[Dir4::Left.as_index()] {
+        //         term_rect.envelope_point([border_rect.left(), 0]);
+        //     }
+        //     if edges[Dir4::Up.as_index()] {
+        //         term_rect.envelope_point([0, border_rect.top()]);
+        //     }
+        //     if edges[Dir4::Right.as_index()] {
+        //         term_rect.envelope_point([border_rect.right(), 0]);
+        //     }
+        //     if edges[Dir4::Down.as_index()] {
+        //         term_rect.envelope_point([0, border_rect.bottom()]);
+        //     }
+        // }
 
         self.term_size = term_size;
         self.world_tile_size = world_tile_size;
@@ -232,10 +230,10 @@ fn update_transform_size(
 ) {
     for (e, term, mut term_transform) in &mut q_term {
         if term_transform.term_size != term.size()
-            || term.get_border().is_some() != term_transform.has_border
+        // || term.get_border().is_some() != term_transform.has_border
         {
             term_transform.term_size = term.size();
-            term_transform.has_border = term.get_border().is_some();
+            // term_transform.has_border = term.get_border().is_some();
             commands.entity(e).insert(RebuildTerminalMeshVerts);
             commands.entity(e).insert(UpdateTerminalTransformSize);
             for cam in q_cam.iter() {
@@ -281,7 +279,7 @@ fn update_transform_mesh_data(
             world_tile_size,
             pivot.0,
             ppu,
-            term.get_border().map(|b| (b, term.clear_tile())),
+            // term.get_border().map(|b| (b, term.clear_tile())),
         );
         commands
             .entity(entity)

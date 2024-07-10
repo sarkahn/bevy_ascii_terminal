@@ -1,11 +1,11 @@
-use bevy::{app::Plugin, asset::Handle, ecs::bundle::Bundle, sprite::MaterialMesh2dBundle};
+use bevy::app::Plugin;
 
-mod camera;
-mod font;
-mod material;
-mod mesh;
-mod mesher;
-mod uv_mapping;
+pub mod camera;
+pub mod font;
+pub mod material;
+pub mod mesh;
+pub mod mesher;
+pub mod uv_mapping;
 
 use self::{
     camera::TerminalCameraPlugin, font::TerminalFontPlugin, material::TerminalMaterialPlugin,
@@ -31,13 +31,4 @@ impl Plugin for TerminalRendererPlugin {
             TerminalCameraPlugin,
         ));
     }
-}
-
-#[derive(Bundle, Default)]
-pub struct TerminalRenderBundle {
-    pub mesh_pivot: TerminalMeshPivot,
-    pub font: TerminalFont,
-    pub scaling: TerminalFontScaling,
-    pub mapping: Handle<UvMapping>,
-    pub mesh_bundle: MaterialMesh2dBundle<TerminalMaterial>,
 }

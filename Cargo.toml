@@ -12,7 +12,6 @@ repository = "https://github.com/sarkahn/bevy_ascii_terminal"
 version = "0.16.0"
 
 [dependencies]
-bitflags = "2.3"
 enum-ordinalize = "4.3.0"
 thiserror = "1.0.56"
 
@@ -24,14 +23,7 @@ features = ["png", "bevy_render", "bevy_asset", "bevy_sprite"]
 [dev-dependencies.bevy]
 version = "0.14"
 default-features = false
-features = ["png", "bevy_winit", "bevy_render", "dynamic_linking", "x11"]
-
-[profile.dev]
-opt-level = 1
-
-[profile.dev.package."*"]
-opt-level = 3
+features = ["png", "bevy_winit", "bevy_render", "x11"]
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"
-enum-ordinalize = "4.3.0"

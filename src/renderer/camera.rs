@@ -58,16 +58,10 @@ pub struct UpdateTerminalViewportEvent;
 
 #[derive(Debug, PartialEq, Default)]
 pub enum TerminalCameraViewport {
+    /// The [TerminalCamera] component will manage the camera's viewport,
+    /// changing it to try and render any active terminals.
     #[default]
     Auto,
-    Resolution {
-        target_resolution: UVec2,
-        pixels_per_tile: UVec2,
-    },
-    Tiles {
-        tile_count: UVec2,
-        pixels_per_tile: UVec2,
-    },
     DontModify,
 }
 
@@ -303,15 +297,7 @@ fn update_viewport(
             .iter()
             .map(|t| t.pixels_per_unit())
             .reduce(UVec2::max),
-        TerminalCameraViewport::Resolution {
-            target_resolution: _,
-            pixels_per_tile,
-        } => Some(pixels_per_tile),
-        TerminalCameraViewport::Tiles {
-            tile_count: _,
-            pixels_per_tile,
-        } => Some(pixels_per_tile),
-        _ => unreachable!(),
+        _ => return,
     }) else {
         return;
     };
@@ -333,17 +319,20 @@ fn update_viewport(
         .reduce(Vec2::max)
         .unwrap();
 
+    let mesh_bounds = Rect::from_corners(min, max);
+
     let z = cam_transform.translation.z;
-    cam_transform.translation = Rect::from_corners(min, max).center().extend(z);
+    cam_transform.translation = mesh_bounds.center().extend(z);
 
-    let tile_size = grid.tile_scaling().calculate_world_tile_size(ppu, None);
-    let rect = Rect::from_corners(min, max);
-    let tile_rect = GridRect::new(
-        (rect.min / tile_size).floor().as_ivec2(),
-        rect.size().as_ivec2(),
-    );
+    let tile_size = q_term
+        .iter()
+        .map(|t| t.world_tile_size())
+        .reduce(Vec2::max)
+        .unwrap();
 
-    let target_res = tile_rect.size.as_vec2() * ppu.as_vec2();
+    let tile_count = (mesh_bounds.size() / tile_size).as_ivec2();
+
+    let target_res = tile_count.as_vec2() * ppu.as_vec2();
 
     let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
     let zoom = (window_res / target_res).floor().min_element().max(1.0);
@@ -367,8 +356,8 @@ fn update_viewport(
     }
 
     let ortho_size = match grid.tile_scaling() {
-        TileScaling::Pixels => tile_rect.height() as f32 * ppu.y as f32,
-        TileScaling::World => tile_rect.height() as f32,
+        TileScaling::Pixels => tile_count.y as f32 * ppu.y as f32,
+        TileScaling::World => tile_count.y as f32,
     };
     proj.scaling_mode = ScalingMode::FixedVertical(ortho_size);
 }

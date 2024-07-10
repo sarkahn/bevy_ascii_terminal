@@ -1,17 +1,24 @@
-use bevy::{color::Color, ecs::component::Component, math::IVec2};
-
-use crate::{
-    border::{Border, TerminalBorderMut},
-    string::StringIter,
-    GridPoint, GridRect, PivotedPoint, StringFormatter, Tile,
+use bevy::{
+    color::{Color, LinearRgba},
+    ecs::component::Component,
+    math::IVec2,
 };
 
+use crate::{
+    border::Border,
+    string::{DecoratedFormattedText, StringIter},
+    tile::{FormattedTile, TileFormatter},
+    GridPoint, GridRect, Pivot, PivotedPoint, Tile,
+};
+
+/// A terminal represented as a 2d grid of [Tile]s.
 #[derive(Debug, Default, Clone, Component)]
 pub struct Terminal {
     tiles: Vec<Tile>,
     size: IVec2,
-    border: Option<Border>,
+    /// This tile is used by various functions to represent an "empty" terminal tile.
     clear_tile: Tile,
+    border: Option<Border>,
 }
 
 impl Terminal {
@@ -19,8 +26,7 @@ impl Terminal {
         Self {
             tiles: vec![Tile::DEFAULT; size.len()],
             size: size.as_ivec2(),
-            border: None,
-            clear_tile: Tile::DEFAULT,
+            ..Default::default()
         }
     }
 
@@ -28,8 +34,8 @@ impl Terminal {
         Self {
             tiles: vec![clear_tile; size.len()],
             size: size.as_ivec2(),
-            border: None,
             clear_tile,
+            ..Default::default()
         }
     }
 
@@ -49,23 +55,22 @@ impl Terminal {
         self.tiles.len()
     }
 
+    /// A referebce to a single tile of the [Terminal].
     pub fn tile(&self, xy: impl Into<PivotedPoint>) -> &Tile {
         let xy: IVec2 = xy.into().calc_from_size(self.size());
-        let i = xy.as_index(self.width());
+        let i = xy.as_index(self.size);
         &self.tiles[i]
     }
 
+    /// A mutable reference to a single tile of the [Terminal].
     #[inline]
     pub fn tile_mut(&mut self, xy: impl Into<PivotedPoint>) -> &mut Tile {
         let xy: IVec2 = xy.into().calc_from_size(self.size());
-        let i = xy.as_index(self.width());
+        let i = xy.as_index(self.size);
         &mut self.tiles[i]
     }
 
     /// Insert a character at the given position.
-    ///
-    /// A pivot can be applied to the position, changing how the coordinates are
-    /// interpreted.
     ///
     /// # Example:
     /// ```
@@ -74,17 +79,55 @@ impl Terminal {
     /// term.put_char([0,0], 'a');
     /// // Insert at the top right corner.
     /// term.put_char([0,0].pivot(Pivot::TopRight), 'b');
+    /// // Insert at the bottom left corner.
+    /// term.put_char([0,0], 'a'.fg_color(css));
     /// ```
-    pub fn put_char(&mut self, xy: impl Into<PivotedPoint>, ch: char) -> &mut Tile {
-        self.tile_mut(xy).glyph(ch)
+    pub fn put_char(&mut self, xy: impl Into<PivotedPoint>, ch: char) {
+        self.tile_mut(xy).glyph = ch;
     }
 
-    pub fn put_fg_color(&mut self, xy: impl Into<PivotedPoint>, color: Color) -> &mut Tile {
-        self.tile_mut(xy).fg(color)
+    pub fn put_fg_color(&mut self, xy: impl Into<PivotedPoint>, color: impl Into<LinearRgba>) {
+        self.tile_mut(xy).fg_color = color.into();
     }
 
-    pub fn put_bg_color(&mut self, xy: impl Into<PivotedPoint>, color: Color) -> &mut Tile {
-        self.tile_mut(xy).bg(color)
+    pub fn put_bg_color(&mut self, xy: impl Into<PivotedPoint>, color: impl Into<LinearRgba>) {
+        self.tile_mut(xy).bg_color = color.into();
+    }
+
+    pub fn put_tile(&mut self, xy: impl Into<PivotedPoint>, tile: Tile) {
+        *self.tile_mut(xy) = tile;
+    }
+
+    pub fn border(&self) -> Option<&Border> {
+        self.border.as_ref()
+    }
+
+    /// Apply selective formatting to a single tile. This can be used to set multiple
+    /// properties of a tile at once.
+    ///
+    /// # Example:
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// use bevy::{prelude::*, color::palettes::css};
+    ///
+    /// let mut term = Terminal::new([5,5]);
+    /// // Write a yellow smiley face without affecting the background color.
+    /// term.format_tile([1,1], '☺'.fg_color(css::YELLOW.into()));
+    /// // Set the background color of the smiley to blue
+    /// term.format_tile([1,1], css::BLUE.into().bg());
+    /// ```
+    pub fn format_tile(&mut self, xy: impl Into<PivotedPoint>, fmt: impl Into<FormattedTile>) {
+        let tile = self.tile_mut(xy);
+        let fmt = fmt.into();
+        if let Some(glyph) = fmt.glyph {
+            tile.glyph = glyph;
+        }
+        if let Some(fg) = fmt.fg_color {
+            tile.fg_color = fg;
+        }
+        if let Some(bg) = fmt.bg_color {
+            tile.bg_color = bg;
+        }
     }
 
     /// Write a string to the terminal.
@@ -93,31 +136,33 @@ impl Terminal {
     /// it gets written to the terminal. You can set a foreground or background
     /// color, prevent word wrapping, or prevent writes on empty characters.
     ///
-    /// Note that unlike [Terminal::put_char], strings are by default justified
-    /// to the top left of the terminal. You can manually set the pivot to
-    /// override this behavior.
+    /// Note that strings are by default justified to the top left of the terminal.
+    /// You can manually set the pivot to override this behavior.
     ///
     /// ```
     /// use bevy_ascii_terminal::*;
+    /// use bevy::color::palettes::css;
     ///
     /// let mut term = Terminal::new([13,10]);
     /// // Note that the foreground color of the empty space character is still
     /// // modified, since 'ignore_spaces' was not used.
     /// term.put_string([0,0], "Hello joe".fg(Color::BLUE));
-    /// let string = "A looooooooooong string".bg(Color::GREEN).no_word_wrap().ignore_spaces();
+    /// let string = "A looooooooooong string".bg(Color::GREEN.into()).no_word_wrap().ignore_spaces();
     /// term.put_string([0,1].pivot(Pivot::BottomLeft), string);
     /// term.put_string([0,4].pivot(Pivot::Center), "A string\nOver multiple\nlines.");
     /// ```
-    pub fn put_string<'a>(
+    pub fn put_string<T: AsRef<str>>(
         &mut self,
         xy: impl Into<PivotedPoint>,
-        string: impl StringFormatter<'a>,
+        string: impl Into<DecoratedFormattedText<T>>,
     ) {
-        let fmt = string.formatting();
-        let ignore_spaces = fmt.ignore_spaces;
-        let fg = fmt.fg_color;
-        let bg = fmt.bg_color;
-        for (xy, ch) in StringIter::new(xy, string.string(), self.bounds(), fmt.word_wrapped) {
+        let text: DecoratedFormattedText<T> = string.into();
+        let ignore_spaces = text.formatting.ignore_spaces;
+        let fg = text.decoration.fg_color;
+        let bg = text.decoration.bg_color;
+        let wrapped = text.formatting.word_wrap;
+        let bounds = self.bounds();
+        for (xy, ch) in StringIter::new(xy, text.string.as_ref(), bounds, wrapped) {
             if ignore_spaces && ch == ' ' {
                 continue;
             }
@@ -132,17 +177,21 @@ impl Terminal {
         }
     }
 
-    /// Set every tile in the terminal to it's `clear_tile`.
+    /// Set every tile in the terminal to it's [Terminal::clear_tile].
     pub fn clear(&mut self) {
         self.tiles.fill(self.clear_tile)
     }
 
     /// Change the terminal's `clear_tile`. This will not clear the terminal.
+    ///
+    /// This tile is used by various functions to represent an "empty" terminal tile.
     pub fn set_clear_tile(&mut self, clear_tile: Tile) {
         self.clear_tile = clear_tile;
     }
 
     /// Get the terminal's current clear tile.
+    ///
+    /// This tile is used by various functions to represent an "empty" terminal tile.
     pub fn clear_tile(&self) -> Tile {
         self.clear_tile
     }
@@ -157,9 +206,6 @@ impl Terminal {
         self.tiles.resize(size.len(), Default::default());
         self.clear();
         self.tiles = vec![self.clear_tile; size.len()];
-        if let Some(mut border) = self.get_border_mut() {
-            border.clear();
-        }
     }
 
     /// The terminal tiles as a slice.
@@ -235,58 +281,113 @@ impl Terminal {
             .map(move |(i, t)| (index_to_xy(i as i32), t))
     }
 
-    /// Set the terminal border
-    pub fn put_border(&mut self, border: Border) -> TerminalBorderMut {
-        self.set_border(Some(border));
-        self.border_mut()
-    }
+    // /// Set the terminal border
+    // pub fn put_border(&mut self, border: Border) {
+    //     self.draw_box(self.bounds(), border);
+    // }
 
-    /// Set the terminal border. If `None` is passed then the border will be
-    /// removed.
-    pub fn set_border(&mut self, border: Option<Border>) {
-        if let Some(border) = border {
-            self.border = Some(border);
-            self.border_mut().clear();
-        } else {
-            self.border = None
-        }
-    }
+    // pub fn draw_box(&mut self, bounds: GridRect, border: Border) {
+    //     let mut chars = border.edge_glyphs.iter().cloned();
+    //     let mut tile = self.clear_tile;
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         self.put_tile(bounds.top_left(), *tile.glyph(ch));
+    //     }
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         for t in self
+    //             .iter_row_mut(bounds.top_index())
+    //             .skip(1)
+    //             .take(bounds.width() - 2)
+    //         {
+    //             *t = *tile.glyph(ch);
+    //         }
+    //     }
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         self.put_tile(bounds.top_right(), *tile.glyph(ch));
+    //     }
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         for t in self
+    //             .iter_column_mut(bounds.left_index())
+    //             .skip(1)
+    //             .take(bounds.height() - 2)
+    //         {
+    //             *t = *tile.glyph(ch);
+    //         }
+    //     }
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         for t in self
+    //             .iter_column_mut(bounds.right_index())
+    //             .skip(1)
+    //             .take(bounds.height() - 2)
+    //         {
+    //             *t = *tile.glyph(ch);
+    //         }
+    //     }
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         self.put_tile(bounds.bottom_left(), *tile.glyph(ch));
+    //     }
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         for t in self
+    //             .iter_row_mut(bounds.bottom_index())
+    //             .skip(1)
+    //             .take(bounds.width() - 2)
+    //         {
+    //             *t = *tile.glyph(ch);
+    //         }
+    //     }
+    //     if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
+    //         self.put_tile(bounds.bottom_right(), *tile.glyph(ch));
+    //     }
+    // }
 
-    /// Get the terminal border. Panics if no border was set.
-    pub fn border(&self) -> &Border {
-        self.border.as_ref().unwrap()
-    }
+    // pub fn draw_filled_box(
+    //     &mut self,
+    //     bounds: GridRect,
+    //     border: Border,
+    //     fill: impl Into<FormattedTile>,
+    // ) {
+    //     self.draw_box(bounds, border);
+    // }
 
-    /// Get the terminal border. Panics if no border was set.
-    pub fn border_mut(&mut self) -> TerminalBorderMut {
-        self.get_border_mut().unwrap()
-    }
-
-    /// Attempt to retrieve the terminal border.
-    pub fn get_border(&self) -> Option<&Border> {
-        self.border.as_ref()
-    }
-
-    /// Attempt to retrieve the terminal border.
-    pub fn get_border_mut(&mut self) -> Option<TerminalBorderMut> {
-        let clear_tile = self.clear_tile;
-        let term_size = self.size;
-        self.border
-            .as_mut()
-            .map(|state| TerminalBorderMut::new(state, term_size, clear_tile))
-    }
-
-    /// The grid bounds of the terminal.
+    /// Write a title string to the terminal with some optional formatting.
     ///
-    /// This has no relation to world space, for world space you can use the
-    /// [crate::TerminalTransform].
+    /// # Example:
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// use bevy::color::palettes::css;
+    /// let mut term = Terminal::new([20,5]);
+    /// term.put_title(" The Terminal ".fg(css::BLUE.into()).delimiters("[]"));
+    /// ```
+    pub fn put_title<T: AsRef<str>>(&mut self, string: impl AsRef<str>) {
+        // let title: TitleString<T> = string.into();
+        // let string = title.string.as_ref();
+        // let mut x = 1;
+        // if let Some(delimiters) = title.delimiters.as_ref() {
+        //     let mut t = self.clear_tile;
+        //     let mut delimiters = delimiters.as_ref().chars();
+        //     if let Some(c) = delimiters.next() {
+        //         self.format_tile([1, 0].pivot(Pivot::TopLeft), *t.glyph(c));
+        //         x += 1;
+        //     }
+        //     if let Some(c) = delimiters.next() {
+        //         self.format_tile(
+        //             [2 + string.chars().count(), 0].pivot(Pivot::TopLeft),
+        //             *t.glyph(c),
+        //         );
+        //     }
+        // }
+        // self.put_string([x, 0], DecoratedText::from(title));
+    }
+
+    /// The local grid bounds of the terminal.
+    ///
+    /// For world space sizes and positions you can use the [crate::TerminalTransform].
     pub fn bounds(&self) -> GridRect {
         GridRect::new([0, 0], self.size())
     }
 
     /// Transform a 2d grid position to it's corresponding 1d index.
     pub fn xy_to_index(&self, xy: IVec2) -> usize {
-        xy.as_index(self.width())
+        xy.as_index(self.size)
     }
 
     /// Transform a 1d index to it's corresponding 2d grid position.
@@ -297,12 +398,48 @@ impl Terminal {
     }
 }
 
+// #[derive(Debug, Clone)]
+// pub struct Border {
+//     pub edge_glyphs: [char; 8],
+// }
+
+// impl Default for Border {
+//     fn default() -> Self {
+//         Self {
+//             edge_glyphs: [' '; 8],
+//         }
+//     }
+// }
+
+// impl Border {
+//     pub fn from_string(string: impl AsRef<str>) -> Self {
+//         let mut glyphs = [' '; 8];
+//         for (ch, glyph) in string.as_ref().chars().zip(glyphs.iter_mut()) {
+//             *glyph = ch;
+//         }
+//         Self {
+//             edge_glyphs: glyphs,
+//         }
+//     }
+
+//     pub fn single_line() -> Self {
+//         Self::from_string("┌─┐││└─┘")
+//     }
+
+//     pub fn double_line() -> Self {
+//         Self::from_string("╔═╗║║╚═╝")
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
 
     use bevy::color::palettes::basic;
 
-    use crate::{border::Border, string::StringFormatter, GridPoint, GridRect, Pivot};
+    use crate::{
+        string::{StringDecorator, StringFormatter},
+        GridPoint, GridRect, Pivot,
+    };
 
     use super::Terminal;
 
@@ -328,12 +465,12 @@ mod tests {
     #[test]
     fn string() {
         let mut term = Terminal::new([15, 15]);
-        let string = "Hello".no_word_wrap().fg(basic::BLUE.into());
+        let string = "Hello".word_wrap(false).bg(basic::BLUE);
         term.put_string([1, 1].pivot(Pivot::TopLeft), string);
 
         term.put_string(
             [1, 1].pivot(Pivot::TopLeft),
-            "hi".no_word_wrap().fg(basic::RED.into()),
+            "hi".word_wrap(false).fg(basic::RED),
         );
 
         term.put_string([1, 1], "Hello");
@@ -342,13 +479,21 @@ mod tests {
         term.put_string([1, 1], &allocated_string);
     }
 
+    fn title() {
+        let mut term = Terminal::new([10, 10]);
+        // term.put_title("Hello");
+        // let string = String::from("Hi");
+        // term.put_title(&string);
+        // term.put_string([0, 0], &string);
+    }
+
     #[test]
     fn border() {
-        let mut term = Terminal::new([15, 15]);
-        term.put_border(Border::single_line())
-            .put_title("Hello".fg(basic::BLUE.into()));
-        for (_, t) in term.border().iter() {
-            println!("{}", t.glyph);
-        }
+        // let mut term = Terminal::new([15, 15]);
+        // term.put_border(Border::single_line())
+        //     .put_title("Hello".fg(basic::BLUE.into()));
+        // for (_, t) in term.border().iter() {
+        //     println!("{}", t.glyph);
+        // }
     }
 }

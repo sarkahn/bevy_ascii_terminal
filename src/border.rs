@@ -1,276 +1,126 @@
-use std::collections::BTreeMap;
+use bevy::color::LinearRgba;
+use enum_ordinalize::Ordinalize;
 
-use bevy::math::IVec2;
+use crate::string::{DecoratedString, StringDecoration};
 
-use crate::{direction::Dir4, GridPoint, GridRect, Pivot, StringFormatter, Tile};
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Border {
-    edge_glyphs: [char; 8],
-    tiles: BTreeMap<(i32, i32), Tile>,
-    changed: bool,
-}
-
-impl Default for Border {
-    fn default() -> Self {
-        Self {
-            edge_glyphs: [' '; 8],
-            tiles: Default::default(),
-            changed: true,
-        }
-    }
+    pub edge_glyphs: [Option<char>; 8],
+    pub edge_strings: [EdgeString; 4],
 }
 
 impl Border {
-    pub fn from_string(string: impl AsRef<str>) -> Self {
-        let mut glyphs = [' '; 8];
-        for (ch, glyph) in string.as_ref().chars().zip(glyphs.iter_mut()) {
-            *glyph = ch;
-        }
-        Self {
-            edge_glyphs: glyphs,
-            tiles: BTreeMap::new(),
-            changed: true,
-        }
+    // pub fn from_string(string: impl AsRef<str>) -> Self {
+    //     let mut chars = string.as_ref().chars();
+    // }
+
+    pub fn top_left_glyph(&self) -> Option<char> {
+        self.edge_glyphs[0]
     }
 
-    pub fn single_line() -> Self {
-        Self::from_string("┌─┐││└─┘")
+    pub fn top_glyph(&self) -> Option<char> {
+        self.edge_glyphs[1]
     }
 
-    pub fn double_line() -> Self {
-        Self::from_string("╔═╗║║╚═╝")
+    pub fn top_right_glyph(&self) -> Option<char> {
+        self.edge_glyphs[2]
     }
 
-    pub fn changed(&self) -> bool {
-        self.changed
+    pub fn left_glyph(&self) -> Option<char> {
+        self.edge_glyphs[3]
     }
 
-    pub fn tile_count(&self) -> usize {
-        self.tiles.len()
+    pub fn right_glyph(&self) -> Option<char> {
+        self.edge_glyphs[4]
     }
 
-    /// Set the border's edge tiles from it's edge glyphs. This will override
-    /// any previously set border tiles.
-    fn set_edge_tiles(&mut self, size: IVec2, clear_tile: Tile) {
-        let rect = GridRect::from_points([-1, -1], size);
-        let mut tile = clear_tile;
-        self.set_edge(Pivot::TopLeft, rect, *tile.glyph(self.edge_glyphs[0]));
-        self.set_edge(Pivot::TopCenter, rect, *tile.glyph(self.edge_glyphs[1]));
-        self.set_edge(Pivot::TopRight, rect, *tile.glyph(self.edge_glyphs[2]));
-        self.set_edge(Pivot::LeftCenter, rect, *tile.glyph(self.edge_glyphs[3]));
-        self.set_edge(Pivot::RightCenter, rect, *tile.glyph(self.edge_glyphs[4]));
-        self.set_edge(Pivot::BottomLeft, rect, *tile.glyph(self.edge_glyphs[5]));
-        self.set_edge(Pivot::BottomCenter, rect, *tile.glyph(self.edge_glyphs[6]));
-        self.set_edge(Pivot::BottomRight, rect, *tile.glyph(self.edge_glyphs[7]));
+    pub fn bottom_left_glyph(&self) -> Option<char> {
+        self.edge_glyphs[5]
     }
 
-    fn set_edge(&mut self, edge: Pivot, border_rect: GridRect, tile: Tile) {
-        match edge {
-            Pivot::TopLeft => self.put_tile(border_rect.top_left(), tile),
-            Pivot::Center | Pivot::TopCenter => {
-                for x in 0..border_rect.right() {
-                    self.put_tile([x, border_rect.top()], tile);
-                }
-            }
-            Pivot::TopRight => self.put_tile(border_rect.top_right(), tile),
-            Pivot::LeftCenter => {
-                for y in 0..border_rect.top() {
-                    self.put_tile([border_rect.left(), y], tile);
-                }
-            }
-            Pivot::RightCenter => {
-                for y in 0..border_rect.top() {
-                    self.put_tile([border_rect.right(), y], tile);
-                }
-            }
-            Pivot::BottomLeft => self.put_tile(border_rect.bottom_left(), tile),
-            Pivot::BottomCenter => {
-                for x in 0..border_rect.right() {
-                    self.put_tile([x, border_rect.bottom()], tile);
-                }
-            }
-            Pivot::BottomRight => self.put_tile(border_rect.bottom_right(), tile),
-        }
+    pub fn bottom_glyph(&self) -> Option<char> {
+        self.edge_glyphs[6]
     }
 
-    fn put_tile(&mut self, xy: impl GridPoint, value: Tile) {
-        // Note tile positions are stored y-first for proper left-to-right,
-        // down-to-up ordering
-        self.tiles.insert((xy.y(), xy.x()), value);
+    pub fn bottom_right_glyph(&self) -> Option<char> {
+        self.edge_glyphs[7]
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (IVec2, Tile)> + '_ {
-        self.tiles
-            .iter()
-            .map(|((y, x), t)| (IVec2::new(*x, *y), *t))
+    pub fn has_left_side(&self) -> bool {
+        self.left_glyph().is_some()
+            || self.top_left_glyph().is_some()
+            || self.bottom_left_glyph().is_some()
     }
 
-    /// Determines whether or not a given edge of the terminal border should be
-    /// rendered.
-    ///
-    /// This is based on whether or not a border tile on any given edge matches
-    /// the terminal's clear tile.
-    pub(crate) fn edge_opacity(&self, clear_tile: Tile, term_size: IVec2) -> [bool; 4] {
-        let border_rect = GridRect::from_points([-1, -1], term_size);
-        let sides = [
-            // Top
-            GridRect::from_points(border_rect.top_left(), border_rect.top_right()),
-            // Bottom
-            GridRect::from_points(border_rect.bottom_right(), border_rect.bottom_left()),
-            // Left
-            GridRect::from_points(border_rect.bottom_left(), border_rect.top_left()),
-            // Right
-            GridRect::from_points(border_rect.top_right(), border_rect.bottom_right()),
-        ];
-        let mut should_render = [false, false, false, false];
+    pub fn has_bottom_side(&self) -> bool {
+        self.bottom_left_glyph().is_some()
+            || self.bottom_glyph().is_some()
+            || self.bottom_right_glyph().is_some()
+    }
 
-        for (p, tile) in self.iter() {
-            if tile == clear_tile {
-                continue;
-            }
-            for (i, side) in sides.iter().enumerate() {
-                if side.contains_point(p) {
-                    should_render[i] = true;
-                }
-            }
-        }
-        should_render
+    pub fn has_top_side(&self) -> bool {
+        self.top_left_glyph().is_some()
+            || self.top_glyph().is_some()
+            || self.top_right_glyph().is_some()
     }
 }
 
-/// A mutable reference to the terminal border
-pub struct TerminalBorderMut<'a> {
-    border: &'a mut Border,
-    term_size: IVec2,
-    clear_tile: Tile,
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Ordinalize)]
+pub enum BorderEdge {
+    Top,
+    Left,
+    Right,
+    Bottom,
 }
 
-impl<'a> TerminalBorderMut<'a> {
-    pub(crate) fn new(border: &'a mut Border, term_size: IVec2, clear_tile: Tile) -> Self {
-        Self {
-            border,
-            term_size,
-            clear_tile,
-        }
-    }
+#[derive(Debug, Default, Clone)]
+pub struct EdgeString {
+    pub string: String,
+    pub decoration: StringDecoration,
+    pub offset: i32,
+    pub alignment: f32,
+}
 
-    /// Insert a [FormattedString] into the terminal border. For simply setting
-    /// a "title" string you should use [Self::put_title] instead.
-    pub fn put_string(
+pub trait BorderStringWriter {
+    fn delimiters(self, delimiters: impl AsRef<str>) -> EdgeString;
+    fn fg(self, color: impl Into<LinearRgba>) -> EdgeString;
+}
+
+impl Border {
+    pub fn put_string<T: AsRef<str>>(
         &mut self,
-        edge: Pivot,
-        direction: Dir4,
+        edge: BorderEdge,
+        // The string alignment, where 0.0 is the bottom/left and 1.0 is the top/right.
+        alignment: f32,
+        // Offset the string by the given number of tiles from it's the aligned position.
         offset: i32,
-        string: impl StringFormatter<'a>,
-    ) -> &mut Self {
-        self.border.changed = true;
-        let fmt = string.formatting();
-        let fg_color = fmt.fg_color.unwrap_or(self.clear_tile.fg_color);
-        let bg_color = fmt.bg_color.unwrap_or(self.clear_tile.bg_color);
-
-        let border_rect = GridRect::from_points([-1, -1], self.term_size);
-        let term_rect = GridRect::new([0, 0], self.term_size);
-
-        let mut xy = border_rect.pivot_point(edge);
-        let dir = direction.as_ivec2();
-        xy += dir * offset;
-        // println!(
-        //     "Putting string {} at {}, dir {}, len {}",
-        //     fmt.string,
-        //     xy,
-        //     dir,
-        //     fmt.string.len()
-        // );
-        for ch in string.string().chars() {
-            if !border_rect.contains_point(xy) || term_rect.contains_point(xy) {
-                break;
-            }
-            if fmt.ignore_spaces && ch == ' ' {
-                xy += dir;
-                continue;
-            }
-            let [x, y] = xy.as_array();
-            self.border.put_tile(
-                [x, y],
-                Tile {
-                    glyph: ch,
-                    fg_color,
-                    bg_color,
-                },
-            );
-            xy += dir;
-        }
-        self
-    }
-
-    /// Set a "title" string for the terminal border. Note this will clear
-    /// any previously set strings from the top edge
-    pub fn put_title(&mut self, string: impl StringFormatter<'a>) -> &mut Self {
-        let clear_tile = *self.clear_tile.glyph(self.border.edge_glyphs[1]);
-        let rect = GridRect::from_points([-1, -1], self.term_size);
-        self.border.set_edge(Pivot::TopCenter, rect, clear_tile);
-        self.put_string(Pivot::TopLeft, Dir4::Right, 1, string);
-        self
-    }
-
-    /// Set all the border tile colors to match the terminal's clear tile
-    pub fn clear_colors(&'a mut self) -> &'a mut Self {
-        self.border.changed = true;
-        let clear = self.clear_tile;
-        for tile in self.border.tiles.values_mut() {
-            tile.fg_color = clear.fg_color;
-            tile.bg_color = clear.bg_color;
-        }
-        self
-    }
-
-    /// Reset all border tiles to the border's edge glyphs. This will override
-    /// any previously set border tiles.
-    ///
-    /// To instead completey remove the border you should use
-    /// `terminal.set_border(None)`.
-    pub fn clear(&'a mut self) -> &'a mut Self {
-        self.border.changed = true;
-        self.border.tiles.clear();
-        self.border.set_edge_tiles(self.term_size, self.clear_tile);
-        self
-    }
-
-    pub(crate) fn reset_changed_state(&mut self) {
-        self.border.changed = false;
+        string: impl Into<DecoratedString<T>>,
+    ) {
+        let ds: DecoratedString<T> = string.into();
+        let es = EdgeString {
+            string: String::from(ds.string.as_ref()),
+            decoration: ds.decoration,
+            offset,
+            alignment,
+        };
+        self.edge_strings[edge.ordinal() as usize] = es;
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use bevy::math::IVec2;
+    use bevy::color::palettes::{basic, css};
 
-    use crate::{GridRect, Tile};
+    use crate::string::StringDecorator;
 
-    use super::Border;
+    use super::*;
 
-    #[test]
-    fn contains() {
-        let size = IVec2::splat(10);
-        let border_rect = GridRect::from_points([-1, -1], size);
-        let term_rect = GridRect::new([0, 0], size);
-
-        let border_contains =
-            |p: [i32; 2]| -> bool { border_rect.contains_point(p) && !term_rect.contains_point(p) };
-
-        assert!(border_contains([-1, -1]));
-        assert!(!border_contains([0, 0]));
-        assert!(!border_contains([9, 9]));
-        assert!(border_contains([10, 10]));
-    }
+    fn put_color(color: impl Into<LinearRgba>) {}
 
     #[test]
-    fn iter() {
-        let mut border = Border::single_line();
-        border.set_edge_tiles(IVec2::splat(10), Tile::DEFAULT);
-        for (p, _) in border.iter() {
-            println!("P {}", p);
-        }
+    fn a() {
+        put_color(css::ALICE_BLUE);
+        let mut border = Border::default();
+        border.put_string(BorderEdge::Bottom, 0.0, 1, "hi".fg(basic::BLACK));
     }
 }

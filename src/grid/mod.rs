@@ -1,7 +1,7 @@
 pub mod direction;
-mod grid_rect;
-mod pivot;
-mod point;
+pub mod grid_rect;
+pub mod pivot;
+pub mod point;
 
 pub use self::{
     grid_rect::GridRect,

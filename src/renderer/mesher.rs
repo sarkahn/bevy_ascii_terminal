@@ -1,5 +1,5 @@
 use bevy::{
-    color::{Color, ColorToComponents},
+    color::{Color, ColorToComponents, LinearRgba},
     math::Vec2,
     render::mesh::{Indices, Mesh, VertexAttributeValues},
 };
@@ -123,7 +123,13 @@ impl<'a> UvMesher<'a> {
 
     /// Sets tile data at the given tile index
     #[inline]
-    pub fn set_tile(&mut self, glyph: impl Into<char>, fg: Color, bg: Color, index: usize) {
+    pub fn set_tile(
+        &mut self,
+        glyph: impl Into<char>,
+        fg: LinearRgba,
+        bg: LinearRgba,
+        index: usize,
+    ) {
         let glyph = glyph.into();
         let uvs = self.mapping.uvs_from_char(glyph);
         let i = index * 4;
@@ -133,7 +139,7 @@ impl<'a> UvMesher<'a> {
             .zip(uvs)
             .for_each(|(tuv, uv)| *tuv = *uv);
 
-        self.fg[i..i + 4].fill(fg.to_linear().to_f32_array());
-        self.bg[i..i + 4].fill(bg.to_linear().to_f32_array());
+        self.fg[i..i + 4].fill(fg.to_f32_array());
+        self.bg[i..i + 4].fill(bg.to_f32_array());
     }
 }

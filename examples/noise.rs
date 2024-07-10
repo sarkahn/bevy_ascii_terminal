@@ -173,15 +173,6 @@ fn make_some_noise(
     }
 
     let mut term = q_term.single_mut();
-    term.border_mut().put_title(
-        format!(
-            "Noise:{:?}---Fractal:{:?}",
-            controls.noise_type, controls.fractal_type
-        )
-        .fg(css::ANTIQUE_WHITE.into())
-        .bg(css::GRAY.into())
-        .ignore_spaces(),
-    );
     let mut noise = FastNoiseLite::new();
     noise.set_noise_type(Some(controls.noise_type));
     noise.set_fractal_type(Some(controls.fractal_type));
@@ -208,4 +199,12 @@ fn make_some_noise(
         t.glyph = glyph.to_char();
         t.bg_color = Hsla::from(t.bg_color).with_lightness(noise).into();
     }
+    // term.put_title(
+    //     format!(
+    //         "Noise:{:?}---Fractal:{:?}",
+    //         controls.noise_type, controls.fractal_type
+    //     )
+    //     .title_fg(css::ANTIQUE_WHITE.into())
+    //     .title_bg(css::GRAY.into()),
+    // );
 }

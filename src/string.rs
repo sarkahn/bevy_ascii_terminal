@@ -1,209 +1,358 @@
 use std::{ops::Sub, str::Chars};
 
-use bevy::{color::Color, math::IVec2};
+use bevy::{color::LinearRgba, math::IVec2};
 
 use crate::{GridRect, Pivot, PivotedPoint};
 
-#[derive(Debug, Clone, Copy)]
-pub struct Formatting {
-    pub(crate) word_wrapped: bool,
-    pub(crate) ignore_spaces: bool,
-    pub(crate) fg_color: Option<Color>,
-    pub(crate) bg_color: Option<Color>,
+/// Optional decoration for a string being written to a terminal.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct StringDecoration {
+    /// Sets the foreground color for string tiles.
+    pub fg_color: Option<LinearRgba>,
+    /// Sets the background color for string tiles.
+    pub bg_color: Option<LinearRgba>,
+    pub delimiters: [Option<char>; 2],
 }
 
-impl Default for Formatting {
-    fn default() -> Self {
-        Self {
-            word_wrapped: true,
-            ignore_spaces: Default::default(),
-            fg_color: Default::default(),
-            bg_color: Default::default(),
-        }
+/// A trait for creating a [DecoratedString].
+pub trait StringDecorator<T: AsRef<str>> {
+    /// Sets the foreground color for string tiles.
+    fn fg(self, color: impl Into<LinearRgba>) -> DecoratedString<T>;
+    /// Sets the background color for string tiles.
+    fn bg(self, color: impl Into<LinearRgba>) -> DecoratedString<T>;
+    /// Adds delimiter characters to the front and back of a string.
+    ///
+    /// The string is expected to be one or two characters.
+    fn delimiters(self, delimiters: impl AsRef<str>) -> DecoratedString<T>;
+
+    fn get_decorated_string(self) -> DecoratedString<T>;
+    fn parse_delimiters(&self, string: impl AsRef<str>) -> [Option<char>; 2] {
+        let mut chars = string.as_ref().chars();
+        [chars.next(), chars.next()]
     }
 }
 
+/// A string with optional [StringDecoration].
 #[derive(Default)]
-/// A string for writing to a terminal with optional formatting applied.
-pub struct FormattedString<'a> {
-    pub(crate) string: &'a str,
-    pub(crate) formatting: Formatting,
+pub struct DecoratedString<T: AsRef<str>> {
+    pub string: T,
+    pub decoration: StringDecoration,
 }
 
-/// Allows you to customize a string before it gets written to the terminal.
-pub trait StringFormatter<'a> {
-    /// By default any string written to the terminal will be wrapped at any
-    /// newline and also "word wrapped". If disabled, strings will only be
-    /// wrapped at newlines and the terminal edge.
-    fn no_word_wrap(self) -> FormattedString<'a>;
-
-    /// Set the foreground color for the string tiles
-    fn fg(self, color: Color) -> FormattedString<'a>;
-
-    /// Set the background color for the string tiles
-    fn bg(self, color: Color) -> FormattedString<'a>;
-
-    /// If set then no colors or glyphs will be written for space (' ')
-    /// characters.
-    fn ignore_spaces(self) -> FormattedString<'a>;
-
-    fn string(&self) -> &'a str;
-    fn formatting(&self) -> Formatting;
-}
-
-impl<'a> StringFormatter<'a> for &'a str {
-    fn no_word_wrap(self) -> FormattedString<'a> {
-        FormattedString {
-            string: self,
-            formatting: Formatting {
-                word_wrapped: false,
-                ..Default::default()
-            },
-        }
+impl<T: AsRef<str>> DecoratedString<T> {
+    /// Define [StringFormatting::word_wrap] for the string.
+    pub fn word_wrap(self, word_wrap: bool) -> DecoratedFormattedText<T> {
+        let mut dft: DecoratedFormattedText<T> = self.into();
+        dft.formatting.word_wrap = word_wrap;
+        dft
     }
 
-    fn fg(self, color: Color) -> FormattedString<'a> {
-        FormattedString {
-            string: self,
-            formatting: Formatting {
-                fg_color: Some(color),
-                ..Default::default()
-            },
-        }
-    }
-
-    fn bg(self, color: Color) -> FormattedString<'a> {
-        FormattedString {
-            string: self,
-            formatting: Formatting {
-                bg_color: Some(color),
-                ..Default::default()
-            },
-        }
-    }
-
-    fn ignore_spaces(self) -> FormattedString<'a> {
-        FormattedString {
-            string: self,
-            formatting: Formatting {
-                ignore_spaces: true,
-                ..Default::default()
-            },
-        }
-    }
-
-    fn string(&self) -> &'a str {
-        self
-    }
-
-    fn formatting(&self) -> Formatting {
-        Formatting::default()
+    /// Define [StringFormatting::ignore_spaces] for the string.
+    pub fn ignore_spaces(self, ignore_spaces: bool) -> DecoratedFormattedText<T> {
+        let mut dft: DecoratedFormattedText<T> = self.into();
+        dft.formatting.ignore_spaces = ignore_spaces;
+        dft
     }
 }
 
-impl<'a> StringFormatter<'a> for &'a String {
-    fn no_word_wrap(self) -> FormattedString<'a> {
-        FormattedString {
+impl<T: AsRef<str>> StringDecorator<T> for T {
+    fn fg(self, color: impl Into<LinearRgba>) -> DecoratedString<T> {
+        DecoratedString {
             string: self,
-            formatting: Formatting {
-                word_wrapped: false,
+            decoration: StringDecoration {
+                fg_color: Some(color.into()),
                 ..Default::default()
             },
         }
     }
 
-    fn fg(self, color: Color) -> FormattedString<'a> {
-        FormattedString {
+    fn bg(self, color: impl Into<LinearRgba>) -> DecoratedString<T> {
+        DecoratedString {
             string: self,
-            formatting: Formatting {
-                fg_color: Some(color),
+            decoration: StringDecoration {
+                bg_color: Some(color.into()),
                 ..Default::default()
             },
         }
     }
 
-    fn bg(self, color: Color) -> FormattedString<'a> {
-        FormattedString {
+    fn delimiters(self, delimiters: impl AsRef<str>) -> DecoratedString<T> {
+        let delimiters = self.parse_delimiters(delimiters);
+        DecoratedString {
             string: self,
-            formatting: Formatting {
-                bg_color: Some(color),
+            decoration: StringDecoration {
+                delimiters,
                 ..Default::default()
             },
         }
     }
 
-    fn ignore_spaces(self) -> FormattedString<'a> {
-        FormattedString {
+    fn get_decorated_string(self) -> DecoratedString<T> {
+        DecoratedString {
             string: self,
-            formatting: Formatting {
-                ignore_spaces: true,
-                ..Default::default()
-            },
+            decoration: Default::default(),
         }
-    }
-
-    fn string(&self) -> &'a str {
-        self
-    }
-
-    fn formatting(&self) -> Formatting {
-        Formatting::default()
     }
 }
 
-impl<'a> StringFormatter<'a> for FormattedString<'a> {
-    fn no_word_wrap(mut self) -> FormattedString<'a> {
-        self.formatting.word_wrapped = false;
+impl<T: AsRef<str>> StringDecorator<T> for DecoratedString<T> {
+    fn fg(mut self, color: impl Into<LinearRgba>) -> DecoratedString<T> {
+        self.decoration.fg_color = Some(color.into());
         self
     }
 
-    fn fg(mut self, color: Color) -> FormattedString<'a> {
-        self.formatting.fg_color = Some(color);
+    fn bg(mut self, color: impl Into<LinearRgba>) -> DecoratedString<T> {
+        self.decoration.bg_color = Some(color.into());
         self
     }
 
-    fn bg(mut self, color: Color) -> FormattedString<'a> {
-        self.formatting.bg_color = Some(color);
+    fn delimiters(mut self, delimiters: impl AsRef<str>) -> DecoratedString<T> {
+        self.decoration.delimiters = self.parse_delimiters(delimiters);
         self
     }
 
-    fn ignore_spaces(mut self) -> FormattedString<'a> {
-        self.formatting.ignore_spaces = true;
+    fn get_decorated_string(self) -> DecoratedString<T> {
         self
-    }
-
-    fn string(&self) -> &'a str {
-        self.string
-    }
-
-    fn formatting(&self) -> Formatting {
-        self.formatting
     }
 }
 
-impl<'a> From<&'static str> for FormattedString<'a> {
-    fn from(value: &'static str) -> Self {
+#[derive(Debug, Clone, Copy, Default)]
+pub struct StringFormatting {
+    /// Defines whether or not strings written to the terminal will be word wrapped.
+    ///
+    /// Defaults to true.
+    pub word_wrap: bool,
+
+    /// Defines whether or not 'empty' tiles will be modified when writing strings
+    /// to the terminal. If set to true, then empty tiles will be ignored
+    /// when writing strings to the terminal. Otherwise, decorations will be
+    /// applied even to empty tiles.
+    ///
+    /// Defaults to false.
+    pub ignore_spaces: bool,
+}
+
+pub struct FormattedString<T: AsRef<str>> {
+    pub string: T,
+    pub formatting: StringFormatting,
+}
+
+impl<T: AsRef<str>> FormattedString<T> {
+    pub fn bg(self, color: impl Into<LinearRgba>) -> DecoratedFormattedText<T> {
+        let mut dft = DecoratedFormattedText::from(self);
+        dft.decoration.bg_color = Some(color.into());
+        dft
+    }
+
+    pub fn fg(self, color: impl Into<LinearRgba>) -> DecoratedFormattedText<T> {
+        let mut dft = DecoratedFormattedText::from(self);
+        dft.decoration.fg_color = Some(color.into());
+        dft
+    }
+}
+
+pub trait StringFormatter<T: AsRef<str>> {
+    fn word_wrap(self, wrap: bool) -> FormattedString<T>;
+    fn ignore_spaces(self, ignore_spaces: bool) -> FormattedString<T>;
+    fn get_formatted_string(self) -> FormattedString<T>;
+}
+
+impl<T: AsRef<str>> StringFormatter<T> for T {
+    fn word_wrap(self, word_wrap: bool) -> FormattedString<T> {
         FormattedString {
+            string: self,
+            formatting: StringFormatting {
+                word_wrap,
+                ..Default::default()
+            },
+        }
+    }
+
+    fn ignore_spaces(self, ignore_spaces: bool) -> FormattedString<T> {
+        FormattedString {
+            string: self,
+            formatting: StringFormatting {
+                ignore_spaces,
+                ..Default::default()
+            },
+        }
+    }
+
+    fn get_formatted_string(self) -> FormattedString<T> {
+        FormattedString {
+            string: self,
+            formatting: Default::default(),
+        }
+    }
+}
+
+impl<T: AsRef<str>> StringFormatter<T> for FormattedString<T> {
+    fn word_wrap(mut self, wrap: bool) -> FormattedString<T> {
+        self.formatting.word_wrap = wrap;
+        self
+    }
+
+    fn ignore_spaces(mut self, ignore_spaces: bool) -> FormattedString<T> {
+        self.formatting.ignore_spaces = ignore_spaces;
+        self
+    }
+
+    fn get_formatted_string(self) -> FormattedString<T> {
+        self
+    }
+}
+
+/// Text to be written to the terminal with optional formatting and/or decorations.
+pub struct DecoratedFormattedText<T: AsRef<str>> {
+    pub string: T,
+    pub decoration: StringDecoration,
+    pub formatting: StringFormatting,
+}
+
+impl<T: AsRef<str>> From<DecoratedString<T>> for DecoratedFormattedText<T> {
+    fn from(value: DecoratedString<T>) -> Self {
+        DecoratedFormattedText {
+            string: value.string,
+            decoration: value.decoration,
+            formatting: Default::default(),
+        }
+    }
+}
+
+impl<T: AsRef<str>> From<FormattedString<T>> for DecoratedFormattedText<T> {
+    fn from(value: FormattedString<T>) -> Self {
+        DecoratedFormattedText {
+            string: value.string,
+            formatting: value.formatting,
+            decoration: Default::default(),
+        }
+    }
+}
+
+impl<T: AsRef<str>> From<T> for DecoratedFormattedText<T> {
+    fn from(value: T) -> Self {
+        DecoratedFormattedText {
             string: value,
-            ..Default::default()
+            formatting: Default::default(),
+            decoration: Default::default(),
         }
     }
 }
 
-impl<'a> From<&'static String> for FormattedString<'a> {
-    fn from(value: &'static String) -> Self {
-        FormattedString {
-            string: value,
-            ..Default::default()
-        }
-    }
-}
+// impl<T: AsRef<str>> TextFormatter<T> for DecoratedText<T> {
+//     fn no_word_wrap(mut self) -> DecoratedText<T> {
+//         self.formatting.word_wrap = false;
+//         self
+//     }
 
-impl<'a> AsRef<str> for FormattedString<'a> {
-    fn as_ref(&self) -> &str {
-        self.string
-    }
-}
+//     fn fg(mut self, color: impl Into<LinearRgba>) -> DecoratedText<T> {
+//         self.decoration.fg_color = Some(color.into());
+//         self
+//     }
+
+//     fn bg(mut self, color: impl Into<LinearRgba>) -> DecoratedText<T> {
+//         self.decoration.bg_color = Some(color.into());
+//         self
+//     }
+
+//     fn ignore_spaces(mut self) -> DecoratedText<T> {
+//         self.formatting.ignore_spaces = true;
+//         self
+//     }
+
+//     fn string(self) -> T {
+//         self.text
+//     }
+
+//     fn formatting(self) -> TextFormatting {
+//         self.formatting
+//     }
+// }
+
+// /// Allows you to customize text before it gets written to the terminal.
+// pub trait TextFormatter<T: AsRef<str>> {
+//     /// By default any string written to the terminal will be wrapped at any
+//     /// newline and also "word wrapped". If disabled, strings will only be
+//     /// wrapped at newlines and the terminal edge.
+//     fn no_word_wrap(self) -> DecoratedText<T>;
+
+//     /// Set the foreground color for the string tiles
+//     fn fg(self, color: Color) -> DecoratedText<T>;
+
+//     /// Set the background color for the string tiles
+//     fn bg(self, color: Color) -> DecoratedText<T>;
+
+//     /// If set then no colors or glyphs will be written for space (' ')
+//     /// characters.
+//     fn ignore_spaces(self) -> DecoratedText<T>;
+
+//     fn string(self) -> T;
+//     fn formatting(self) -> TextFormatting;
+// }
+
+// impl<T: AsRef<str>> TextFormatter<T> for T {
+//     fn no_word_wrap(self) -> DecoratedText<T> {
+//         DecoratedText {
+//             text: self,
+//             formatting: TextFormatting {
+//                 word_wrap: false,
+//                 ..Default::default()
+//             },
+//             decoration: Default::default(),
+//         }
+//     }
+
+//     fn fg(self, color: Color) -> DecoratedText<T> {
+//         DecoratedText {
+//             text: self,
+//             decoration: StringDecoration {
+//                 fg_color: Some(color),
+//                 ..Default::default()
+//             },
+//             formatting: Default::default(),
+//         }
+//     }
+
+//     fn bg(self, color: Color) -> DecoratedText<T> {
+//         DecoratedText {
+//             text: self,
+//             decoration: StringDecoration {
+//                 bg_color: Some(color),
+//                 ..Default::default()
+//             },
+//             formatting: Default::default(),
+//         }
+//     }
+
+//     fn ignore_spaces(self) -> DecoratedText<T> {
+//         DecoratedText {
+//             text: self,
+//             formatting: TextFormatting {
+//                 ignore_spaces: true,
+//                 ..Default::default()
+//             },
+//             decoration: Default::default(),
+//         }
+//     }
+
+//     fn string(self) -> T {
+//         self
+//     }
+
+//     fn formatting(self) -> TextFormatting {
+//         TextFormatting::default()
+//     }
+// }
+
+// impl<T: AsRef<str>> From<T> for DecoratedText<T> {
+//     fn from(value: T) -> Self {
+//         DecoratedText {
+//             text: value,
+//             decoration: Default::default(),
+//             formatting: Default::default(),
+//         }
+//     }
+// }
 
 /// Attempts to wrap a string at either the first newline before `max_len` or the
 /// next available whitespace back from `max_len`. Returns None from an empty string.
@@ -402,6 +551,11 @@ impl<'a> Iterator for StringIter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // fn title_writer<T: AsRef<str>>(string: impl Into<TitleString<T>>) {
+    //     let string: TitleString<T> = string.into();
+    //     println!("{}", string.string.as_ref());
+    // }
 
     #[test]
     fn newline() {

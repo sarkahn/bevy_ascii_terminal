@@ -16,21 +16,29 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let size = [47, 13];
-    let clear_tile = *Tile::default()
-        .fg(Color::WHITE)
-        .bg(css::MIDNIGHT_BLUE.into());
+    let size = [47, 14];
+    let clear_tile = *Tile::default().fg(Color::WHITE).bg(css::MIDNIGHT_BLUE);
     let term = TerminalBundle::new(size)
         .with_clear_tile(clear_tile)
         // Unlike put_char, put_string defaults to a top left pivot
-        .put_string([0, 1], "Press spacebar to change fonts")
-        .put_string([0, 3], "!@#$%^&*()_+=-`~")
-        .put_string([0, 5], "The quick brown fox jumps over the lazy dog.")
-        .put_string([0, 7], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼")
-        .put_string([0, 9], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞")
+        .put_string([1, 2], "Press spacebar to change fonts")
+        .put_string([1, 4], "!@#$%^&*()_+=-`~")
+        .put_string([1, 6], "The quick brown fox jumps over the lazy dog.")
+        .put_string([1, 8], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼")
+        .put_string([1, 10], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞")
         .with_border(Border::single_line());
     commands.spawn(term);
     commands.spawn(TerminalCameraBundle::auto());
+    // let projection = OrthographicProjection {
+    //     far: 1000.,
+    //     near: -1000.,
+    //     scale: 1.0 / 20.0,
+    //     ..Default::default()
+    // };
+    // commands.spawn(Camera2dBundle {
+    //     projection,
+    //     ..Default::default()
+    // });
 }
 
 fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>) {
@@ -55,7 +63,11 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
 
 fn update(mut q_term: Query<(&mut Terminal, &TerminalFont), Changed<TerminalFont>>) {
     if let Ok((mut term, font)) = q_term.get_single_mut() {
-        term.border_mut()
-            .put_title(format!("[{}]", font.variant_name()).fg(css::MAROON.into()));
+        term.put_border(Border::single_line());
+        // term.put_title(
+        //     font.variant_name()
+        //         .title_fg(css::MAROON.into())
+        //         .delimiters("[]"),
+        // );
     }
 }

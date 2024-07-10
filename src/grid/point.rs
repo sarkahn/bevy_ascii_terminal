@@ -53,8 +53,13 @@ pub trait GridPoint: Clone + Copy {
 
     /// Get the grid point's corresponding 1d index.
     #[inline]
-    fn as_index(&self, grid_width: usize) -> usize {
-        self.y() as usize * grid_width + self.x() as usize
+    fn as_index(&self, size: impl GridPoint) -> usize {
+        let p = self.as_ivec2();
+        debug_assert!(
+            p.cmpge(IVec2::ZERO).all() && p.cmplt(size.as_ivec2()).all(),
+            "Attemting to convert an out of bounds grid position {:?} into a grid index from a grid size of {}", self.as_array(), size.as_ivec2()
+        );
+        self.y() as usize * size.width() + self.x() as usize
     }
 
     /// Returns the grid point the given number of spaces above this one.

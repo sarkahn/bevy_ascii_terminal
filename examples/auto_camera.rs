@@ -26,17 +26,17 @@ fn setup(mut commands: Commands, mut terminals: ResMut<Terminals>) {
     commands.spawn(TerminalCameraBundle::auto());
 
     let v = vec![
-        TerminalBundle::from(make_terminal([10, 10], BRIGHT))
+        TerminalBundle::from(make_terminal([TERM_STRINGS[0].len() + 4, 5], BRIGHT))
             .with_mesh_pivot(Pivot::BottomRight)
-            .put_string([0, 0], TERM_STRINGS[0])
+            .put_string([1, 1], TERM_STRINGS[0])
             .with_border(Border::single_line()),
-        TerminalBundle::from(make_terminal([10, 10], FADED))
+        TerminalBundle::from(make_terminal([TERM_STRINGS[1].len() + 4, 7], FADED))
             .with_mesh_pivot(Pivot::BottomLeft)
-            .put_string([0, 0], TERM_STRINGS[1])
+            .put_string([1, 1], TERM_STRINGS[1])
             .with_border(Border::single_line()),
-        TerminalBundle::from(make_terminal([12, 12], FADED))
+        TerminalBundle::from(make_terminal([TERM_STRINGS[2].len() + 4, 6], FADED))
             .with_mesh_pivot(Pivot::TopCenter)
-            .put_string([0, 0].pivot(Pivot::TopCenter), TERM_STRINGS[2])
+            .put_string([0, 1].pivot(Pivot::TopCenter), TERM_STRINGS[2])
             .with_border(Border::single_line()),
     ];
     terminals.0 = Vec::from_iter(v.into_iter().map(|t| commands.spawn(t).id()));
@@ -86,12 +86,12 @@ fn on_update(
     let ver = input.just_pressed(KeyCode::KeyW) as i32 - input.just_pressed(KeyCode::KeyS) as i32;
 
     if input.just_pressed(KeyCode::Space) {
-        match term.get_border() {
-            Some(_) => term.set_border(None),
-            None => {
-                term.put_border(Border::single_line());
-            }
-        };
+        // match term.get_border() {
+        //     Some(_) => term.set_border(None),
+        //     None => {
+        //         term.put_border(Border::single_line());
+        //     }
+        // };
     }
 
     let size = IVec2::new(hor, ver);
@@ -103,8 +103,9 @@ fn on_update(
         } else {
             Pivot::TopLeft
         };
-        term.put_string([0, 0].pivot(pivot), TERM_STRINGS[*current]);
+        term.put_string([1, 1].pivot(pivot), TERM_STRINGS[*current]);
         set_brightness(&mut term, BRIGHT);
+        term.put_border(Border::single_line());
     }
 }
 

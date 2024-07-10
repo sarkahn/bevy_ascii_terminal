@@ -57,6 +57,11 @@ impl GridRect {
         GridRect::new(self.xy + xy.as_ivec2(), self.size)
     }
 
+    /// Returns a [GridRect] with each side adjusted by the given delta.
+    pub fn resized(&self, delta: impl GridPoint) -> GridRect {
+        GridRect::from_points(self.min() - delta.as_ivec2(), self.max() + delta.as_ivec2())
+    }
+
     /// Returns a [GridRect] with both rects contained in it.
     pub fn merged(&self, mut other: GridRect) -> GridRect {
         other.envelope_point(self.min());
@@ -248,21 +253,17 @@ impl GridRect {
 
     /// Returns true if the given rect is entirely contained within this one.
     #[inline]
-    pub fn contains_rect(&self, rect: GridRect) -> bool {
-        let [amin, amax] = [self.min(), self.max()];
-        let [bmin, bmax] = [rect.min(), rect.max()];
-        bmin.cmpge(amin).all() && bmax.cmple(amax).all()
+    pub fn contains_rect(&self, other: GridRect) -> bool {
+        other.min().cmpge(self.min()).all() && other.max().cmple(self.max()).all()
     }
 
     /// Check if any part of a rect overlaps another.
     #[inline]
     pub fn overlaps_rect(&self, other: GridRect) -> bool {
-        let ac = self.center().as_vec2();
-        let bc = other.center().as_vec2();
-        let ae = self.size.as_vec2() / 2.0;
-        let be = other.size.as_vec2() / 2.0;
-
-        ac.sub(bc).abs().cmple(ae.add(be)).all()
+        self.left() <= other.right()
+            && other.left() <= self.right()
+            && self.bottom() <= other.top()
+            && other.bottom() <= self.top()
     }
 }
 
@@ -283,38 +284,42 @@ impl GridRectIter {
             tail: rect.size.sub(1),
         }
     }
+
+    pub fn can_iterate(&self) -> bool {
+        self.head.y < self.tail.y || (self.head.y == self.tail.y && self.head.x <= self.tail.x)
+    }
 }
 
 impl Iterator for GridRectIter {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if !self.can_iterate() {
+            return None;
+        }
         let size = self.size;
         let head = &mut self.head;
-        let tail = self.tail;
 
-        if head.y > tail.y || (head.y == tail.y && head.x > tail.x) {
-            None
-        } else {
-            let ret = self.origin + *head;
-            head.x += 1;
-            if head.x >= size.x {
-                head.x = 0;
-                head.y += 1;
-            }
-
-            Some(ret)
+        let ret = self.origin + *head;
+        head.x += 1;
+        if head.x >= size.x {
+            head.x = 0;
+            head.y += 1;
         }
+
+        Some(ret)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let size = self.size;
-        let head = self.head;
-        let tail = size.sub(1) - self.tail;
-        let head_count = size.x * head.y + head.x;
-        let tail_count = size.x * tail.y + tail.x;
-        let rem = (size.x * size.y - (head_count + tail_count)) as usize;
-        (rem, Some(rem))
+        if !self.can_iterate() {
+            return (0, Some(0));
+        }
+        let count = self
+            .tail
+            .as_index(self.size)
+            .saturating_sub(self.head.as_index(self.size))
+            + 1;
+        (count, Some(count))
     }
 }
 
