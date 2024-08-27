@@ -17,8 +17,8 @@ impl Plugin for TerminalUvMappingPlugin {
     }
 }
 
-/// An asset that defines how a rust [char] is converted into uvs for rendering
-/// in terminal tiles.
+/// An asset that defines how a rust [char] is converted into uv data for rendering
+/// terminal tiles.
 #[derive(Asset, Debug, Clone, TypePath)]
 pub struct UvMapping {
     uv_map: HashMap<char, [[f32; 2]; 4]>,
@@ -44,6 +44,7 @@ impl UvMapping {
         Self { uv_map }
     }
 
+    /// Calculate the uvs for a given tile based solely on grid size and position.
     pub fn calc_grid_uvs(xy: [u32; 2], tile_count: [u32; 2]) -> [[f32; 2]; 4] {
         let xy = Vec2::new(xy[0] as f32, xy[1] as f32);
         let uv_size = Vec2::new(1.0 / tile_count[0] as f32, 1.0 / tile_count[1] as f32);
@@ -59,7 +60,7 @@ impl UvMapping {
     }
 
     /// Retrieve the uv data for a terminal mesh tile from it's corresponding
-    /// char. Will panic if no uvs have been set for the char.
+    /// [char]. Will panic if no uvs have been set for the char.
     pub fn uvs_from_char(&self, ch: char) -> &[[f32; 2]; 4] {
         self.uv_map.get(&ch).unwrap_or_else(|| {
             panic!(
@@ -69,6 +70,8 @@ impl UvMapping {
         })
     }
 
+    /// Retrieve the uv data for a terminal mesh tile from it's corresponding
+    /// [char].
     pub fn get_uvs_from_char(&self, ch: char) -> Option<&[[f32; 2]; 4]> {
         self.uv_map.get(&ch)
     }

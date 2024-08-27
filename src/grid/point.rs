@@ -1,5 +1,5 @@
 //! Traits for dealing with 2d points on a grid.
-use super::{IVec2, UVec2, Vec2};
+use super::{GridSize, IVec2, UVec2, Vec2};
 
 use super::{
     direction::{DIR_4, DIR_8},
@@ -9,7 +9,6 @@ use super::{
 /// A trait for types representing an integer point on a 2d grid.
 ///
 /// This trait is implemented for most 2d types, such as [IVec2], [UVec2], [i32;2], etc
-#[allow(clippy::len_without_is_empty)]
 pub trait GridPoint: Clone + Copy {
     fn xy(&self) -> IVec2;
 
@@ -26,10 +25,6 @@ pub trait GridPoint: Clone + Copy {
 
     fn height(&self) -> usize {
         self.y() as usize
-    }
-
-    fn len(&self) -> usize {
-        (self.x() * self.y()) as usize
     }
 
     fn as_ivec2(&self) -> IVec2 {
@@ -53,11 +48,11 @@ pub trait GridPoint: Clone + Copy {
 
     /// Get the grid point's corresponding 1d index.
     #[inline]
-    fn as_index(&self, size: impl GridPoint) -> usize {
+    fn as_index(&self, size: impl GridSize) -> usize {
         let p = self.as_ivec2();
         debug_assert!(
             p.cmpge(IVec2::ZERO).all() && p.cmplt(size.as_ivec2()).all(),
-            "Attemting to convert an out of bounds grid position {:?} into a grid index from a grid size of {}", self.as_array(), size.as_ivec2()
+            "Attemting to convert an out of bounds grid position {:?} into a 1d index from a grid size of {}", self.as_array(), size.as_ivec2()
         );
         self.y() as usize * size.width() + self.x() as usize
     }

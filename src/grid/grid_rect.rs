@@ -3,27 +3,29 @@ use std::{
     ops::{Add, Deref, Sub},
 };
 
-use super::{GridPoint, IVec2, Pivot};
+use bevy::math::UVec2;
+
+use super::{GridPoint, GridSize, IVec2, Pivot};
 
 /// A rectangle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridRect {
     /// The bottom-left most position of the rect.
     pub xy: IVec2,
-    pub size: IVec2,
+    pub size: UVec2,
 }
 
 impl GridRect {
     /// Create a [GridRect] from a position (bottom left tile) and a size.
-    pub fn new(xy: impl GridPoint, size: impl GridPoint) -> Self {
+    pub fn new(xy: impl GridPoint, size: impl GridSize) -> Self {
         GridRect {
             xy: xy.as_ivec2(),
-            size: size.as_ivec2(),
+            size: size.as_uvec2(),
         }
     }
 
     /// Create a [GridRect] with it's center at origin (`[0,0]`).
-    pub fn center_origin(size: impl GridPoint) -> Self {
+    pub fn center_origin(size: impl GridSize) -> Self {
         Self::from_center_size([0, 0], size)
     }
 
@@ -33,14 +35,16 @@ impl GridRect {
         let max = a.max(b);
 
         let size = (max - min) + 1;
-        GridRect { xy: min, size }
+        GridRect {
+            xy: min,
+            size: size.as_uvec2(),
+        }
     }
 
     /// Create a [GridRect] from a center position and rect size.
-    pub fn from_center_size(center: impl GridPoint, size: impl GridPoint) -> Self {
-        let size = size.as_ivec2();
-        let bl = center.as_ivec2() - size / 2;
-        Self::new(bl, size)
+    pub fn from_center_size(center: impl GridPoint, size: impl GridSize) -> Self {
+        let bl = center.as_ivec2() - size.as_ivec2() / 2;
+        Self::new(bl, size.as_uvec2())
     }
 
     /// Returns a [GridRect] clipped by the bounds of the given [GridRect]
@@ -86,7 +90,7 @@ impl GridRect {
 
     /// The center position of the rect.
     pub fn center(&self) -> IVec2 {
-        self.xy + self.size / 2
+        self.xy + self.size.as_ivec2() / 2
     }
 
     /// The y position of the top row of the rect.
@@ -109,22 +113,22 @@ impl GridRect {
         self.max().x
     }
 
-    /// The top left position of the rect.
+    /// The 2d position of the top left tile of the rect.
     pub fn top_left(&self) -> IVec2 {
         [self.left(), self.top()].into()
     }
 
-    /// The top right position of the rect.
+    /// The 2d position of the top right tile of the rect.
     pub fn top_right(&self) -> IVec2 {
         self.max()
     }
 
-    /// The bottom-left position of the rect.
+    /// The 2d position of the bottom left tile of the rect.
     pub fn bottom_left(&self) -> IVec2 {
         self.xy
     }
 
-    /// The bottom right position of the rect.
+    /// The 2d position of the bottom right tile of the rect.
     pub fn bottom_right(&self) -> IVec2 {
         [self.right(), self.bottom()].into()
     }
@@ -144,7 +148,7 @@ impl GridRect {
 
     /// Top right position of the rect.
     pub fn max(&self) -> IVec2 {
-        self.xy + self.size.sub(1)
+        self.xy + self.size.as_ivec2().sub(1)
     }
 
     /// Index of the bottom row of the rect.
@@ -198,7 +202,7 @@ impl GridRect {
         GridRectIter::new(*self)
     }
 
-    /// Iterate over a single column of the rect.
+    /// Iterate over the tile positions of a single column of the rect.
     pub fn iter_column(
         &self,
         col: usize,
@@ -206,7 +210,7 @@ impl GridRect {
         self.iter_points().skip(col).step_by(self.width())
     }
 
-    /// Iterate over a single row of the rect.
+    /// Iterate over the tile positions of a single row of the rect.
     pub fn iter_row(
         &self,
         row: usize,
@@ -216,8 +220,8 @@ impl GridRect {
             .take(self.width())
     }
 
-    /// Iterate over all the border tiles of the rect in clockwise order,
-    /// starting from the bottom left.
+    /// Iterate over all the tile positions of the border of the rect in clockwise
+    /// order, starting from the bottom left.
     pub fn iter_border(&self) -> impl DoubleEndedIterator<Item = IVec2> {
         let left = self.iter_column(0);
         let top = self
@@ -270,7 +274,7 @@ impl GridRect {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridRectIter {
     origin: IVec2,
-    size: IVec2,
+    size: UVec2,
     head: IVec2,
     tail: IVec2,
 }
@@ -281,7 +285,7 @@ impl GridRectIter {
             origin: rect.xy,
             size: rect.size,
             head: IVec2::ZERO,
-            tail: rect.size.sub(1),
+            tail: rect.size.as_ivec2().sub(1),
         }
     }
 
@@ -297,7 +301,7 @@ impl Iterator for GridRectIter {
         if !self.can_iterate() {
             return None;
         }
-        let size = self.size;
+        let size = self.size.as_ivec2();
         let head = &mut self.head;
 
         let ret = self.origin + *head;
@@ -325,7 +329,7 @@ impl Iterator for GridRectIter {
 
 impl DoubleEndedIterator for GridRectIter {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let size = self.size;
+        let size = self.size.as_ivec2();
         let tail = &mut self.tail;
         let head = self.head;
 

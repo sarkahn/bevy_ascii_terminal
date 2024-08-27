@@ -1,5 +1,5 @@
 use bevy::{
-    color::{Color, Gray, LinearRgba},
+    color::{Color, LinearRgba},
     reflect::Reflect,
 };
 

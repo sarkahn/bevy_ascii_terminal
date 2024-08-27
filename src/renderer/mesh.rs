@@ -1,7 +1,6 @@
 use bevy::{
-    app::{Last, Plugin, PostUpdate},
+    app::{Last, Plugin},
     asset::{AssetEvent, Assets, Handle},
-    color::Color,
     ecs::{
         change_detection::DetectChangesMut,
         component::Component,
@@ -11,7 +10,8 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::{Commands, Query, Res, ResMut},
     },
-    math::{IVec2, Vec2},
+    math::Vec2,
+    prelude::Without,
     render::{
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
         render_asset::RenderAssetUsages,
@@ -26,9 +26,7 @@ use super::{
     mesher::{UvMesher, VertMesher},
     uv_mapping::UvMapping,
 };
-use crate::{
-    transform::UpdateTransformPositionSystem, GridPoint, Pivot, Terminal, TerminalTransform,
-};
+use crate::{GridPoint, Pivot, Terminal, TerminalBorder, TerminalTransform};
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Uv", 1123131, VertexFormat::Float32x2);
@@ -39,25 +37,23 @@ pub const ATTRIBUTE_COLOR_FG: MeshVertexAttribute =
 
 pub struct TerminalMeshPlugin;
 
-/// Systems for building the terminal mesh.
+/// Systems for rebuilding/updating the terminal mesh. Runs in [Last].
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalMeshSystems;
+pub struct TerminalSystemMeshRebuild;
 
 impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(
-            PostUpdate,
-            (init_mesh, on_mat_change, on_image_load)
-                .chain()
-                .in_set(TerminalMeshSystems)
-                .after(UpdateTransformPositionSystem),
-        );
-
-        app.add_systems(
             Last,
-            (rebuild_verts, tile_mesh_update)
+            (
+                init_mesh,
+                on_mat_change,
+                on_image_load,
+                rebuild_verts,
+                tile_mesh_update,
+            )
                 .chain()
-                .in_set(TerminalMeshSystems),
+                .in_set(TerminalSystemMeshRebuild),
         );
     }
 }
@@ -77,6 +73,8 @@ impl Default for TerminalFontScaling {
     }
 }
 
+/// Pivot applied to the terminal mesh. This only affects how the terminal is
+/// positioned in world space.
 #[derive(Component)]
 pub struct TerminalMeshPivot(pub Pivot);
 
@@ -164,9 +162,11 @@ fn rebuild_verts(
         (
             Entity,
             &mut Terminal,
+            Option<&TerminalBorder>,
             &Mesh2dHandle,
             &TerminalTransform,
             &Handle<TerminalMaterial>,
+            &TerminalMeshPivot,
         ),
         Or<(
             Changed<TerminalMeshPivot>,
@@ -179,9 +179,7 @@ fn rebuild_verts(
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
 ) {
-    for (entity, mut term, mesh_handle, transform, mat_handle) in &mut q_term {
-        commands.entity(entity).remove::<RebuildTerminalMeshVerts>();
-
+    for (entity, mut term, border, mesh_handle, transform, mat_handle, pivot) in &mut q_term {
         let mesh = meshes
             .get_mut(&mesh_handle.0.clone())
             .expect("Error getting terminal mesh");
@@ -200,29 +198,136 @@ fn rebuild_verts(
 
         resize_mesh_data(mesh, term.tile_count());
 
-        let origin = transform.world_bounds().min;
-        let tile_size = transform.world_tile_size();
+        let Some(transform_data) = transform.transform_data() else {
+            // Transform has not yet been updated.
+            continue;
+        };
+        commands.entity(entity).remove::<RebuildTerminalMeshVerts>();
+        let origin = transform_data.local_mesh_bounds.min;
+        let tile_size = transform_data.world_tile_size;
 
-        let border_offset = if let Some(border) = term.border() {
-            let x = if border.has_left_side() { 1 } else { 0 };
-            let y = if border.has_bottom_side() { 1 } else { 0 };
-            [x, y]
+        // Adjust the mesh position based on the the terminal border and
+        // the mesh pivot.
+        let border_offset = if let Some(border) = border {
+            let left = border.has_left_side() as i32;
+            let right = border.has_right_side() as i32;
+            let top = border.has_top_side() as i32;
+            let bottom = border.has_bottom_side() as i32;
+            match pivot.0 {
+                Pivot::TopLeft => [left, -top],
+                Pivot::TopCenter => [0, -top],
+                Pivot::TopRight => [-right, -top],
+                Pivot::LeftCenter => [left, 0],
+                Pivot::RightCenter => [-right, 0],
+                Pivot::BottomLeft => [left, bottom],
+                Pivot::BottomCenter => [0, bottom],
+                Pivot::BottomRight => [-right, bottom],
+                Pivot::Center => [0, 0],
+            }
         } else {
             [0, 0]
         }
         .as_ivec2();
 
-        // We only need to update our vertex data, uvs/colors will be updated
-        // in "tile_mesh_update"
+        // We're only updating vertex data, uvs/colors will be updated in
+        // "tile_mesh_update"
         VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
             for (i, (p, _)) in term.iter_xy().enumerate() {
                 let p = p + border_offset;
-                mesher.set_tile(p.x, p.y, i);
+                mesher.set_tile_verts(p, i);
             }
         });
 
         // Force tile mesh update
         term.set_changed();
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn rebuild_verts_border(
+    q_term: Query<
+        (
+            Entity,
+            &TerminalBorder,
+            Option<&Terminal>,
+            &Mesh2dHandle,
+            &TerminalTransform,
+            &Handle<TerminalMaterial>,
+            &TerminalMeshPivot,
+        ),
+        Or<(
+            Changed<TerminalMeshPivot>,
+            Changed<TerminalFontScaling>,
+            With<RebuildTerminalMeshVerts>,
+        )>,
+    >,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    materials: Res<Assets<TerminalMaterial>>,
+    images: Res<Assets<Image>>,
+) {
+    for (entity, border, term, mesh_handle, transform, mat_handle, pivot) in &q_term {
+        // let mesh = meshes
+        //     .get_mut(&mesh_handle.0.clone())
+        //     .expect("Error getting terminal mesh");
+
+        // let mat = materials
+        //     .get(mat_handle)
+        //     .expect("Error getting terminal material");
+
+        // // If the material texture is set to none, or if it's not loaded yet,
+        // // clear the mesh. This function will be called again when a valid image
+        // // is loaded
+        // if mat.texture.is_none() || images.get(mat.texture.as_ref().unwrap()).is_none() {
+        //     resize_mesh_data(mesh, 0);
+        //     continue;
+        // }
+
+        // let mut mesh_index = term.map_or(0, |t| t.tile_count());
+        // let tile_count = mesh_index + border.tile_count();
+        // resize_mesh_data(mesh, tile_count);
+
+        // let Some(transform_data) = transform.transform_data() else {
+        //     // Transform has not yet been updated
+        //     continue;
+        // };
+        // commands.entity(entity).remove::<RebuildTerminalMeshVerts>();
+
+        // // The bottom-left position of the terminal in world space.
+        // let origin = transform.world_mesh_bounds().min;
+        // let tile_size = transform.world_tile_size();
+
+        // let area = border.bounds();
+        // VertMesher::build_mesh_verts(origin, tile_size, mesh, |mesher| {
+        //     if border.bottom_left_glyph().is_some() {
+        //         mesher.set_tile_verts(area.bottom_left(), mesh_index);
+        //         mesh_index += 1;
+        //     }
+        //     if border.top_left_glyph().is_some() {
+        //         mesher.set_tile_verts(area.top_left(), mesh_index);
+        //         mesh_index += 1;
+        //     }
+        //     if border.top_right_glyph().is_some() {
+        //         mesher.set_tile_verts(area.top_right(), mesh_index);
+        //         mesh_index += 1;
+        //     }
+        //     if border.bottom_right_glyph().is_some() {
+        //         mesher.set_tile_verts(area.bottom_right(), mesh_index);
+        //         mesh_index += 1;
+        //     }
+
+        //     // for _ in 0..border.pivot_tile_count(Pivot::LeftCenter) {
+        //     //     for p in area.iter_column(0).skip(1).take(area.height() - 2) {
+        //     //         mesher.set_tile_verts(p, mesh_index);
+        //     //         mesh_index += 1;
+        //     //     }
+        //     // }
+        // });
+
+        // //if let Some(border) = term.border() {}
+
+        // // Force tile mesh update
+        // //term.set_changed();
     }
 }
 
@@ -238,6 +343,8 @@ fn tile_mesh_update(
             .get_mut(&mesh_handle.0.clone())
             .expect("Couldn't find terminal mesh");
 
+        // Mesh vertices not yet updated - this function will be called again
+        // once the vertex update is completed.
         if mesh_vertex_count(mesh) == 0 {
             continue;
         }
@@ -248,7 +355,7 @@ fn tile_mesh_update(
 
         UvMesher::build_mesh_tile_data(mapping, mesh, |mesher| {
             for (i, t) in term.tiles().iter().enumerate() {
-                mesher.set_tile(t.glyph, t.fg_color, t.bg_color, i);
+                mesher.set_tile_data(t.glyph, t.fg_color, t.bg_color, i);
             }
         });
     }

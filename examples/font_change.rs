@@ -26,9 +26,9 @@ fn setup(mut commands: Commands) {
         .put_string([1, 6], "The quick brown fox jumps over the lazy dog.")
         .put_string([1, 8], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼")
         .put_string([1, 10], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞")
-        .with_border(Border::single_line());
+        .with_border(TerminalBorder::single_line());
     commands.spawn(term);
-    commands.spawn(TerminalCameraBundle::auto());
+    commands.spawn(TerminalCameraBundle::with_auto_resolution());
     // let projection = OrthographicProjection {
     //     far: 1000.,
     //     near: -1000.,
@@ -63,7 +63,7 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
 
 fn update(mut q_term: Query<(&mut Terminal, &TerminalFont), Changed<TerminalFont>>) {
     if let Ok((mut term, font)) = q_term.get_single_mut() {
-        term.put_border(Border::single_line());
+        term.put_border(TerminalBorder::single_line());
         // term.put_title(
         //     font.variant_name()
         //         .title_fg(css::MAROON.into())

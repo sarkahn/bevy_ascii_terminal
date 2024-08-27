@@ -9,8 +9,6 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(TerminalCameraBundle::with_auto_resolution());
-    commands.spawn(
-        TerminalBundle::new([14, 3]).put_string([1, 1], "Hello world!"), //.with_border(Border::single_line())
-    );
+    commands.spawn(TerminalBundle::new([20, 20]).put_string([0, 0], "Hello"));
+    commands.spawn(TerminalCameraBundle::with_tile_resolution([22, 22], [8, 8]));
 }

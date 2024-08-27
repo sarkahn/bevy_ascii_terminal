@@ -2,13 +2,14 @@
 use std::ops::Sub;
 
 use bevy::reflect::Reflect;
+use enum_ordinalize::Ordinalize;
 
 use super::{IVec2, Vec2};
 
 use crate::GridPoint;
 
 /// A pivot point on a 2d grid rect.
-#[derive(Eq, PartialEq, Clone, Copy, Debug, Reflect)]
+#[derive(Eq, PartialEq, Clone, Copy, Debug, Reflect, Ordinalize)]
 pub enum Pivot {
     /// X axis increases to the right, Y axis increases downwards.
     TopLeft,
@@ -18,8 +19,6 @@ pub enum Pivot {
     TopRight,
     /// X axis increases to the right, Y axis increases upwards.
     LeftCenter,
-    /// X axis increases to the right, Y axis increases upwards.
-    Center,
     /// X axis increases to the left, Y axis increases upwards.
     RightCenter,
     /// X axis increases to the right, Y axis increases upwards.
@@ -28,6 +27,8 @@ pub enum Pivot {
     BottomCenter,
     /// X axis increases to the left, Y axis increases upwards.
     BottomRight,
+    /// X axis increases to the right, Y axis increases upwards.
+    Center,
 }
 
 impl Pivot {

@@ -1,45 +1,44 @@
 use bevy::{
     color::{Color, LinearRgba},
     ecs::component::Component,
-    math::IVec2,
+    math::{IVec2, UVec2},
+    prelude::{Deref, DerefMut},
 };
 
 use crate::{
-    border::Border,
+    border::TerminalBorder,
     string::{DecoratedFormattedText, StringIter},
     tile::{FormattedTile, TileFormatter},
-    GridPoint, GridRect, Pivot, PivotedPoint, Tile,
+    GridPoint, GridRect, GridSize, Pivot, PivotedPoint, Tile,
 };
 
 /// A terminal represented as a 2d grid of [Tile]s.
 #[derive(Debug, Default, Clone, Component)]
 pub struct Terminal {
     tiles: Vec<Tile>,
-    size: IVec2,
+    size: UVec2,
     /// This tile is used by various functions to represent an "empty" terminal tile.
     clear_tile: Tile,
-    border: Option<Border>,
 }
 
 impl Terminal {
-    pub fn new(size: impl GridPoint) -> Self {
+    pub fn new(size: impl GridSize) -> Self {
         Self {
-            tiles: vec![Tile::DEFAULT; size.len()],
-            size: size.as_ivec2(),
+            tiles: vec![Tile::DEFAULT; size.tile_count()],
+            size: size.as_uvec2(),
             ..Default::default()
         }
     }
 
-    pub fn with_clear_tile(size: impl GridPoint, clear_tile: Tile) -> Self {
+    pub fn with_clear_tile(size: impl GridSize, clear_tile: Tile) -> Self {
         Self {
-            tiles: vec![clear_tile; size.len()],
-            size: size.as_ivec2(),
+            tiles: vec![clear_tile; size.tile_count()],
+            size: size.as_uvec2(),
             clear_tile,
-            ..Default::default()
         }
     }
 
-    pub fn size(&self) -> IVec2 {
+    pub fn size(&self) -> UVec2 {
         self.size
     }
 
@@ -96,10 +95,6 @@ impl Terminal {
 
     pub fn put_tile(&mut self, xy: impl Into<PivotedPoint>, tile: Tile) {
         *self.tile_mut(xy) = tile;
-    }
-
-    pub fn border(&self) -> Option<&Border> {
-        self.border.as_ref()
     }
 
     /// Apply selective formatting to a single tile. This can be used to set multiple
@@ -160,8 +155,10 @@ impl Terminal {
         let ignore_spaces = text.formatting.ignore_spaces;
         let fg = text.decoration.fg_color;
         let bg = text.decoration.bg_color;
+        let clear_colors = text.decoration.clear_colors;
         let wrapped = text.formatting.word_wrap;
         let bounds = self.bounds();
+        let clear_tile = self.clear_tile;
         for (xy, ch) in StringIter::new(xy, text.string.as_ref(), bounds, wrapped) {
             if ignore_spaces && ch == ' ' {
                 continue;
@@ -173,6 +170,10 @@ impl Terminal {
             }
             if let Some(bg) = bg {
                 tile.bg_color = bg;
+            }
+            if clear_colors {
+                tile.fg_color = clear_tile.fg_color;
+                tile.bg_color = clear_tile.bg_color;
             }
         }
     }
@@ -197,15 +198,15 @@ impl Terminal {
     }
 
     /// Resize the terminal. This will clear the terminal.
-    pub fn resize(&mut self, size: impl GridPoint) {
+    pub fn resize(&mut self, size: impl GridSize) {
         debug_assert!(
             size.as_ivec2().cmpge(IVec2::ONE).all(),
             "Attempting to set terminal size to a value below 1"
         );
-        self.size = size.as_ivec2();
-        self.tiles.resize(size.len(), Default::default());
+        self.size = size.as_uvec2();
+        self.tiles.resize(size.tile_count(), Default::default());
         self.clear();
-        self.tiles = vec![self.clear_tile; size.len()];
+        self.tiles = vec![self.clear_tile; size.tile_count()];
     }
 
     /// The terminal tiles as a slice.
@@ -281,10 +282,10 @@ impl Terminal {
             .map(move |(i, t)| (index_to_xy(i as i32), t))
     }
 
-    // /// Set the terminal border
-    // pub fn put_border(&mut self, border: Border) {
-    //     self.draw_box(self.bounds(), border);
-    // }
+    /// Set the terminal border
+    pub fn put_border(&mut self, border: TerminalBorder) {
+        //self.draw_box(self.bounds(), border);
+    }
 
     // pub fn draw_box(&mut self, bounds: GridRect, border: Border) {
     //     let mut chars = border.edge_glyphs.iter().cloned();
@@ -398,6 +399,9 @@ impl Terminal {
     }
 }
 
+#[derive(Debug, Clone, Component, Deref, DerefMut)]
+pub struct TerminalSize(pub UVec2);
+
 // #[derive(Debug, Clone)]
 // pub struct Border {
 //     pub edge_glyphs: [char; 8],
@@ -438,7 +442,7 @@ mod tests {
 
     use crate::{
         string::{StringDecorator, StringFormatter},
-        GridPoint, GridRect, Pivot,
+        GridPoint, GridRect, GridSize, Pivot,
     };
 
     use super::Terminal;

@@ -1,3 +1,5 @@
+//! Components and systems related to terminal rendering.
+
 use bevy::app::Plugin;
 
 pub mod camera;
@@ -15,7 +17,7 @@ pub use self::{
     camera::{TerminalCamera, TerminalCameraBundle, UpdateTerminalViewportEvent},
     font::TerminalFont,
     material::TerminalMaterial,
-    mesh::{RebuildTerminalMeshVerts, TerminalFontScaling, TerminalMeshPivot, TerminalMeshSystems},
+    mesh::{TerminalFontScaling, TerminalMeshPivot, TerminalSystemMeshRebuild},
     uv_mapping::UvMapping,
 };
 

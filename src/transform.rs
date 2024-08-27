@@ -1,5 +1,8 @@
+//! Terminal component for translating between world positions and terminal
+//! grid coordinates.
+
 use bevy::{
-    app::{Plugin, PostUpdate},
+    app::{Plugin, PostStartup, PostUpdate},
     asset::{AssetEvent, Assets, Handle},
     ecs::{
         change_detection::DetectChangesMut,
@@ -10,170 +13,202 @@ use bevy::{
         schedule::{IntoSystemConfigs, SystemSet},
         system::{Commands, Query, Res},
     },
-    math::{IVec2, Rect, UVec2, Vec2, Vec3},
+    math::{IVec2, Rect, UVec2, Vec2, Vec3, Vec3Swizzles},
+    prelude::{Added, Or},
     render::texture::Image,
     transform::{components::Transform, TransformSystem},
 };
 
 use crate::{
+    grid::size::GridSize,
     renderer::{
-        RebuildTerminalMeshVerts, TerminalCamera, TerminalFontScaling, TerminalMaterial,
-        TerminalMeshPivot, TerminalMeshSystems, UpdateTerminalViewportEvent,
+        mesh::RebuildTerminalMeshVerts, TerminalCamera, TerminalFontScaling, TerminalMaterial,
+        TerminalMeshPivot, TerminalSystemMeshRebuild, UpdateTerminalViewportEvent,
     },
     GridPoint, GridRect, Pivot, Terminal, TerminalGridSettings, Tile,
 };
 pub struct TerminalTransformPlugin;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
-pub struct UpdateTransformPositionSystem;
+// /// [TerminalTransform] system for updating the entity transform based on [TerminalTransform].
+// /// Runs in [PostUpdate].
+// #[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
+// pub struct TerminalSystemTransformPositionUpdate;
 
+/// [TerminalTransform] system for caching terminal mesh and size data. Runs in [PostUpdate].
 #[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
-pub struct UpdateTransformSizeSystems;
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq, SystemSet)]
-pub struct UpdateTransformMeshDataSystems;
+pub struct TerminalSystemTransformCacheData;
 
 impl Plugin for TerminalTransformPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_systems(
-            PostUpdate,
-            update_transform_position
-                .in_set(UpdateTransformPositionSystem)
-                .before(TransformSystem::TransformPropagate),
-        )
-        .add_systems(
-            PostUpdate,
-            (
-                update_transform_size
-                    .in_set(UpdateTransformSizeSystems)
-                    .before(TerminalMeshSystems),
-                (on_image_load, on_mat_change, update_transform_mesh_data)
+        app
+            //.add_systems(
+            //     PostUpdate,
+            //     update_transform_position
+            //         .in_set(TerminalSystemTransformPositionUpdate)
+            //         .before(TransformSystem::TransformPropagate),
+            // )
+            .add_systems(
+                PostUpdate,
+                (
+                    on_image_load,
+                    on_mat_change,
+                    on_terminal_resize,
+                    cache_transform_data,
+                )
                     .chain()
-                    .in_set(UpdateTransformMeshDataSystems)
-                    .after(TerminalMeshSystems),
-            ),
-        );
+                    .in_set(TerminalSystemTransformCacheData)
+                    .before(TransformSystem::TransformPropagate),
+            )
+            .add_systems(
+                PostStartup,
+                cache_transform_data.after(TransformSystem::TransformPropagate),
+            );
     }
 }
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-pub struct UpdateTerminalTransformSize;
+struct CacheTransformData;
 
-/// Component for transforming between terminal and world space.
+/// Component for transforming between world positions and terminal grid
+/// coordinates.
 ///
 /// Setting the `grid_position` of this component will alter the terminal's position
-/// in world space during the next transform update, based on the terminal's font
-/// size and the global [TerminalGridSettings]
-#[derive(Default, Component)]
+/// in world space during the next transform update, based the global [crate::TileScaling]
+/// and [TerminalGridSettings].
+#[derive(Debug, Component)]
 pub struct TerminalTransform {
     /// The grid position for the terminal. Setting this value will override the
     /// entity [Transform] during the next [PostUpdate].
     ///
-    /// The final world position of the terminal is determined by the global [TerminalGridSettings]
+    /// The final world position of the terminal is determined by the global
+    /// [TerminalGridSettings] and [crate::TileScaling].
     pub grid_position: IVec2,
-    /// The world size of a terminal tile, based on the global [crate::TileScaling],
-    /// the terminal's [crate::TerminalFont] and the terminal's [TerminalFontScaling]
-    world_tile_size: Vec2,
-    term_size: IVec2,
-    local_mesh_bounds: Rect,
-    world_pos: Vec3,
-    pixels_per_tile: UVec2,
+    /// Snap the terminal mesh to the 'tile grid' based on the world size
+    /// of the terminal's tiles. This ensures terminal tiles from different terminals
+    /// will always align regardless of mesh pivot and terminal size.
+    ///
+    /// Defaults to true.
+    pub snap_to_grid: bool,
+    cached_data: Option<CachedTransformData>,
     has_border: bool,
 }
 
-impl TerminalTransform {
-    pub fn new(size: impl GridPoint) -> Self {
+#[derive(Debug, Default)]
+pub(crate) struct CachedTransformData {
+    /// The world size of a terminal tile, based on the global [crate::TileScaling],
+    /// the terminal's [crate::TerminalFont] and the terminal's [TerminalFontScaling].
+    pub world_tile_size: Vec2,
+    /// The number of tiles on each axis excluding the terminal border
+    pub terminal_size: UVec2,
+    /// The number of tiles on each axis including the terminal border
+    pub terminal_size_with_border: UVec2,
+    /// The local bounds of the terminal mesh, accounting for the [TerminalMeshPivot].
+    pub local_mesh_bounds: Rect,
+    /// The world position of the terminal as of the last [TerminalTransform] update.
+    pub world_pos: Vec3,
+    /// The pixels per tile for the terminal based on the terminal's current font.
+    pub pixels_per_tile: UVec2,
+}
+
+impl CachedTransformData {
+    pub fn world_mesh_bounds(&self) -> Rect {
+        let r = self.local_mesh_bounds;
+        Rect::from_corners(r.min + self.world_pos.truncate(), r.size())
+    }
+}
+
+impl Default for TerminalTransform {
+    fn default() -> Self {
         Self {
-            term_size: size.as_ivec2(),
+            grid_position: Default::default(),
+            snap_to_grid: true,
+            cached_data: Default::default(),
+            has_border: Default::default(),
+        }
+    }
+}
+
+impl TerminalTransform {
+    pub fn new(size: impl GridSize) -> Self {
+        Self {
+            cached_data: Some(CachedTransformData {
+                terminal_size: size.as_uvec2(),
+                ..Default::default()
+            }),
             ..Default::default()
         }
     }
 
-    /// Convert a world position into a local 2d tile index
+    /// Convert a world position into a local 2d tile index.
+    ///
+    /// For accurate results this should be called after
+    /// [TerminalSystemTransformCacheData] which runs in [PostUpdate].
     pub fn world_to_tile(&self, world_pos: Vec2) -> Option<IVec2> {
-        let min = self.world_pos() + self.local_mesh_bounds.min;
-        let pos = ((world_pos - min) / self.world_tile_size)
+        let Some(data) = &self.cached_data else {
+            return None;
+        };
+        let min = data.world_pos.truncate() + data.local_mesh_bounds.min;
+        let pos = ((world_pos - min) / data.world_tile_size)
             .floor()
             .as_ivec2();
-        if pos.cmplt(IVec2::ZERO).any() || pos.cmpge(self.term_size).any() {
+        if pos.cmplt(IVec2::ZERO).any() || pos.cmpge(data.terminal_size.as_ivec2()).any() {
             return None;
         }
         Some(pos)
     }
 
-    /// The world bounds of the terminal.
-    pub fn world_bounds(&self) -> Rect {
-        let min = self.world_pos() + self.local_mesh_bounds.min;
-        let max = min + self.local_mesh_bounds.size();
-        Rect::from_corners(min, max)
+    pub fn transform_data(&self) -> Option<&CachedTransformData> {
+        self.cached_data.as_ref()
     }
 
-    /// World position, as calculated from the last transform update
-    pub fn world_pos(&self) -> Vec2 {
-        self.world_pos.truncate()
-    }
+    // /// The world bounds of the terminal as of the last [TerminalTransform] update.
+    // pub fn world_mesh_bounds(&self) -> Option<Rect> {
+    //     let Some(data) = &self.cached_data else {
+    //         return None;
+    //     };
+    //     let min = data.world_pos.truncate() + data.local_mesh_bounds.min;
+    //     let max = min + data.local_mesh_bounds.size();
+    //     Some(Rect::from_corners(min, max))
+    // }
 
-    pub fn world_tile_size(&self) -> Vec2 {
-        self.world_tile_size
-    }
+    // /// The local bounds of the terminal mesh as of the last [TerminalTransform]
+    // /// update.
+    // pub fn local_mesh_bounds(&self) -> Option<Rect> {
+    //     self.cached_data.as_ref().map(|data| data.local_mesh_bounds)
+    // }
 
-    /// Update cached mesh data.
-    fn update_mesh_data(
-        &mut self,
-        term_size: IVec2,
-        world_tile_size: Vec2,
-        mesh_pivot: Pivot,
-        pixels_per_tile: UVec2,
-        //border: Option<(&Border, Tile)>,
-    ) {
-        let mut term_rect = GridRect::new([0, 0], term_size);
-        // if let Some((border, clear_tile)) = border {
-        //     let edges = border.edge_opacity(clear_tile, term_size);
-        //     let border_rect = GridRect::from_points([-1, -1], term_size);
+    // /// World position of the terminal entity, as of the last [TerminalTransform]
+    // /// update.
+    // pub fn world_pos(&self) -> Option<Vec2> {
+    //     self.cached_data
+    //         .as_ref()
+    //         .map(|data| data.world_pos.truncate())
+    // }
 
-        //     if edges[Dir4::Left.as_index()] {
-        //         term_rect.envelope_point([border_rect.left(), 0]);
-        //     }
-        //     if edges[Dir4::Up.as_index()] {
-        //         term_rect.envelope_point([0, border_rect.top()]);
-        //     }
-        //     if edges[Dir4::Right.as_index()] {
-        //         term_rect.envelope_point([border_rect.right(), 0]);
-        //     }
-        //     if edges[Dir4::Down.as_index()] {
-        //         term_rect.envelope_point([0, border_rect.bottom()]);
-        //     }
-        // }
+    // /// The size of a single tile of the terminal in world space, as calculated
+    // /// during the last transform update.
+    // pub fn world_tile_size(&self) -> Option<Vec2> {
+    //     self.cached_data.as_ref().map(|data| data.world_tile_size)
+    // }
 
-        self.term_size = term_size;
-        self.world_tile_size = world_tile_size;
-        self.pixels_per_tile = pixels_per_tile;
-
-        // Calculate mesh bounds
-        let bounds_size = term_rect.size.as_vec2() * world_tile_size;
-        let normalized_pivot = mesh_pivot.normalized();
-        let min = -bounds_size * normalized_pivot;
-        let max = min + bounds_size;
-        self.local_mesh_bounds = Rect::from_corners(min, max);
-    }
-
-    pub fn pixels_per_unit(&self) -> UVec2 {
-        self.pixels_per_tile
-    }
+    // /// The pixels per tile of the terminal based on the terminal's current font,
+    // /// as calculated during the last transform update.
+    // pub fn pixels_per_tile(&self) -> Option<UVec2> {
+    //     self.cached_data.as_ref().map(|data| data.pixels_per_tile)
+    // }
 }
 
-fn update_transform_position(
-    mut q_term: Query<(&mut Transform, &mut TerminalTransform), Changed<TerminalTransform>>,
-) {
-    for (mut transform, mut term_transform) in &mut q_term {
-        let tile_size = term_transform.world_tile_size();
-        let xy = term_transform.grid_position.as_vec2() * tile_size;
-        let z = transform.translation.z;
-        transform.translation = xy.extend(z);
-        term_transform.bypass_change_detection().world_pos = xy.extend(z);
-    }
-}
+// fn update_transform_position(
+//     mut q_term: Query<(&mut Transform, &mut TerminalTransform), Changed<TerminalTransform>>,
+// ) {
+//     for (mut transform, mut term_transform) in &mut q_term {
+//         let tile_size = term_transform.world_tile_size();
+//         let p = term_transform.grid_position.as_vec2() * tile_size;
+//         transform.translation = p.extend(transform.translation.z);
+//         term_transform.bypass_change_detection().world_pos = transform.translation;
+//     }
+// }
 
 fn on_image_load(
     mut q_term: Query<(Entity, &Handle<TerminalMaterial>)>,
@@ -199,7 +234,7 @@ fn on_image_load(
             else {
                 continue;
             };
-            commands.entity(entity).insert(UpdateTerminalTransformSize);
+            commands.entity(entity).insert(CacheTransformData);
         }
     }
 }
@@ -216,73 +251,97 @@ fn on_mat_change(
         };
         for (entity, mat_handle) in &mut q_term {
             if mat_handle.id() == *changed_material_id {
-                commands.entity(entity).insert(UpdateTerminalTransformSize);
+                commands.entity(entity).insert(CacheTransformData);
             }
         }
     }
 }
 
-fn update_transform_size(
+fn on_terminal_resize(
     mut q_term: Query<(Entity, &Terminal, &mut TerminalTransform)>,
     q_cam: Query<&TerminalCamera>,
     mut vp_evt: EventWriter<UpdateTerminalViewportEvent>,
     mut commands: Commands,
 ) {
-    for (e, term, mut term_transform) in &mut q_term {
-        if term_transform.term_size != term.size()
-        // || term.get_border().is_some() != term_transform.has_border
-        {
-            term_transform.term_size = term.size();
-            // term_transform.has_border = term.get_border().is_some();
-            commands.entity(e).insert(RebuildTerminalMeshVerts);
-            commands.entity(e).insert(UpdateTerminalTransformSize);
-            for cam in q_cam.iter() {
-                if cam.is_managing_viewport() {
-                    vp_evt.send(UpdateTerminalViewportEvent);
-                }
-            }
-        }
-    }
+    // TODO: Handle terminal resize?
+    // for (e, term, mut term_transform) in &mut q_term {
+    //     if let Some(data) = term_transform.cached_data {
+    //         if term.size() = data.terminal_size
+    //     }
+    //     if term_transform.tile_count_2d != term.size()
+    //     // || term.get_border().is_some() != term_transform.has_border
+    //     {
+    //         term_transform.tile_count_2d = term.size();
+    //         // term_transform.has_border = term.get_border().is_some();
+    //         commands.entity(e).insert(RebuildTerminalMeshVerts);
+    //         commands.entity(e).insert(CacheTransformData);
+    //         for cam in q_cam.iter() {
+    //             if cam.is_managing_viewport() {
+    //                 vp_evt.send(UpdateTerminalViewportEvent);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
+/// Calculate the terminal mesh size and cache the data used when translating
+/// coordinates between world and terminal space. Reads terminal size, border,
+/// mesh and font size, as well as global terminal grid settings.
 #[allow(clippy::type_complexity)]
-fn update_transform_mesh_data(
+fn cache_transform_data(
     mut q_term: Query<
         (
             Entity,
+            &Transform,
             &mut TerminalTransform,
             &TerminalMeshPivot,
-            &Terminal,
+            &mut Terminal,
             &Handle<TerminalMaterial>,
             &TerminalFontScaling,
         ),
-        With<UpdateTerminalTransformSize>,
+        Or<(Added<TerminalTransform>, With<CacheTransformData>)>,
     >,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
     settings: Res<TerminalGridSettings>,
     mut commands: Commands,
 ) {
-    for (entity, mut transform, pivot, term, mat_handle, scaling) in &mut q_term {
-        let Some(mat) = materials.get(mat_handle) else {
+    for (entity, transform, mut term_transform, pivot, term, mat_handle, scaling) in &mut q_term {
+        let snap = term_transform.snap_to_grid;
+
+        let data = term_transform
+            .cached_data
+            .get_or_insert(CachedTransformData::default());
+        data.world_pos = transform.translation;
+        data.terminal_size = term.size();
+
+        let Some(image) = materials
+            .get(mat_handle)
+            .and_then(|mat| mat.texture.as_ref().and_then(|image| images.get(image)))
+        else {
             continue;
         };
-        let Some(image) = mat.texture.as_ref().and_then(|image| images.get(image)) else {
-            continue;
-        };
+
         let ppu = image.size() / 16;
         let world_tile_size = settings
             .tile_scaling
             .calculate_world_tile_size(ppu, Some(scaling.0));
-        transform.update_mesh_data(
-            term.size(),
-            world_tile_size,
-            pivot.0,
-            ppu,
-            // term.get_border().map(|b| (b, term.clear_tile())),
-        );
-        commands
-            .entity(entity)
-            .remove::<UpdateTerminalTransformSize>();
+
+        data.world_tile_size = world_tile_size;
+        data.pixels_per_tile = ppu;
+
+        // Calculate mesh bounds
+        let bounds_size = term.size().as_vec2() * world_tile_size;
+        let normalized_pivot = pivot.0.normalized();
+        let mut min = -bounds_size * normalized_pivot;
+        // To align all terminal tiles to the same grid, an offset must be applied
+        // to account for terminals with odd sizes and different mesh pivots.
+        if snap {
+            min = (min / world_tile_size).floor() * world_tile_size;
+        }
+        let max = min + bounds_size;
+        data.local_mesh_bounds = Rect::from_corners(min, max);
+
+        commands.entity(entity).remove::<CacheTransformData>();
     }
 }

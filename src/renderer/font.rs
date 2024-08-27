@@ -13,7 +13,7 @@ use bevy::{
     render::texture::{Image, ImageLoaderSettings, ImageSampler},
 };
 
-use super::{material::TerminalMaterial, RebuildTerminalMeshVerts};
+use super::{material::TerminalMaterial, mesh::RebuildTerminalMeshVerts};
 
 /// Allows for simple switching of terminal fonts.
 ///
@@ -53,6 +53,11 @@ pub enum TerminalFont {
     Custom(String),
 }
 
+/// System for updating the terminal's material based on the [TerminalFont]. Runs
+/// in [PostUpdate].
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
+pub struct TerminalSystemFontUpdate;
+
 macro_rules! embed_path {
     () => {
         "embedded://bevy_ascii_terminal/renderer/built_in_fonts/"
@@ -87,10 +92,6 @@ impl From<TerminalFont> for AssetPath<'_> {
 
 pub struct TerminalFontPlugin;
 
-/// System for tracking camera and cursor data.
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalFontSystem;
-
 impl Plugin for TerminalFontPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         embedded_asset!(app, "built_in_fonts/unscii_8x8.png");
@@ -104,7 +105,7 @@ impl Plugin for TerminalFontPlugin {
         embedded_asset!(app, "built_in_fonts/pastiche_8x8.png");
         embedded_asset!(app, "built_in_fonts/rexpaint_8x8.png");
 
-        app.add_systems(PostUpdate, update_font.in_set(TerminalFontSystem));
+        app.add_systems(PostUpdate, update_font.in_set(TerminalSystemFontUpdate));
     }
 }
 

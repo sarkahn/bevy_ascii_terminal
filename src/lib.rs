@@ -11,32 +11,28 @@ use std::ops::Mul;
 
 pub use ascii::Glyph;
 use bevy::{
-    app::Plugin,
+    app::{Last, Plugin, PostUpdate},
     asset::Handle,
     ecs::{bundle::Bundle, system::Resource},
     math::Vec2,
+    prelude::IntoSystemSetConfigs,
     sprite::MaterialMesh2dBundle,
 };
-pub use grid::{direction, GridPoint, GridRect, Pivot, PivotedPoint};
+pub use border::TerminalBorder;
+pub use grid::{direction, GridPoint, GridRect, GridSize, Pivot, PivotedPoint};
+use renderer::{
+    camera::{TerminalSystemCameraCacheData, TerminalSystemCameraViewportUpdate},
+    font::TerminalSystemFontUpdate,
+    TerminalSystemMeshRebuild,
+};
 pub use renderer::{TerminalCameraBundle, TerminalFont};
-use string::DecoratedFormattedText;
+pub use string::{DecoratedFormattedText, StringDecorator};
 pub use terminal::Terminal;
-pub use tile::{ColorWriter, Tile, TileFormatter};
+pub use tile::{ColorWriter, FormattedTile, Tile, TileFormatter};
 pub use transform::TerminalTransform;
-/*
-    Update loop:
-    LateUpdate:
-        TerminalTransformPositionSystem (before TransformPropogate)
-        TerminalMeshSystem (after TerminalTransformPositionSystem)
-        UpdateTransformSizeSystem (before TerminalMeshSystems)
-        UpdateTransformMeshDataSystems (after TerminalMeshSystems)
-
-        TerminalCameraSystems (cache camera data, no before/after)
-
-    Last:
-        TerminalViewportSystems (after TerminalTransformPositionSystem)
-        TerminalMeshSystem (rebuild verts, update tile data, build border)
-*/
+use transform::{
+    TerminalSystemTransformCacheData, //, TerminalSystemTransformPositionUpdate
+};
 
 impl Plugin for TerminalPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
@@ -47,6 +43,17 @@ impl Plugin for TerminalPlugin {
             transform::TerminalTransformPlugin,
             renderer::TerminalRendererPlugin,
         ));
+        app.configure_sets(
+            PostUpdate,
+            (
+                //TerminalSystemTransformPositionUpdate,
+                TerminalSystemFontUpdate,
+                TerminalSystemTransformCacheData,
+                TerminalSystemMeshRebuild,
+                TerminalSystemCameraCacheData,
+            )
+                .chain(),
+        );
     }
 }
 
@@ -77,7 +84,8 @@ pub struct TerminalBundle {
 }
 
 impl TerminalBundle {
-    pub fn new(size: impl GridPoint) -> Self {
+    pub fn new(size: impl GridSize) -> Self {
+        let size = size.as_uvec2();
         Self {
             terminal: Terminal::new(size),
             terminal_transform: transform::TerminalTransform::new(size),
@@ -97,7 +105,7 @@ impl TerminalBundle {
         xy: impl Into<PivotedPoint>,
         string: impl Into<DecoratedFormattedText<T>>,
     ) -> Self {
-        //self.terminal.put_string(xy, string);
+        self.terminal.put_string(xy, string);
         self
     }
 
@@ -113,11 +121,11 @@ impl TerminalBundle {
         self
     }
 
-    // /// Set a [Border] for the terminal.
-    // pub fn with_border(mut self, border: Border) -> Self {
-    //     self.terminal.put_border(border);
-    //     self
-    // }
+    /// Set a [Border] for the terminal.
+    pub fn with_border(mut self, border: TerminalBorder) -> Self {
+        self.terminal.put_border(border);
+        self
+    }
 
     // /// Set a border with a title for the terminal.
     // pub fn with_border_title<'a>(
@@ -153,6 +161,13 @@ impl TerminalBundle {
         self.terminal_transform.grid_position = grid_pos.as_ivec2();
         self
     }
+
+    /// Set the initial z position of the terminal in world space.
+    pub fn with_depth(mut self, depth: i32) -> Self {
+        let p = self.mesh_bundle.transform.translation;
+        self.mesh_bundle.transform.translation = p.with_z(depth as f32);
+        self
+    }
 }
 
 impl From<Terminal> for TerminalBundle {
@@ -165,11 +180,26 @@ impl From<Terminal> for TerminalBundle {
     }
 }
 
+/// Global setting that defines how the tiles of terminal meshes are scaled in
+/// world space. This defines how world positions are translated into terminal
+/// grid positions and vice versa.
+///
+/// The [crate::renderer::camera::TerminalCamera] can automatically adjust the
+/// viewport to properly render terminals regardless of [TileScaling], and the
+/// [TerminalTransform] component can be used to translate world positions to
+/// and from terminal grid positions.
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 pub enum TileScaling {
-    Pixels,
+    /// Terminal tiles are scaled such that a single tile takes up one unit of
+    /// world space vertically, regardless of texture resolution. This requires
+    /// a canonical 'pixels per tile/pixels per unit' to be determined by the
+    /// [crate::renderer::TerminalCamera].
     #[default]
     World,
+    /// Terminal tiles are scaled such that a single pixel of a tile takes up
+    /// one unit in world space. This is how bevy's default orthographic camera
+    /// is set up.
+    Pixels,
 }
 
 impl TileScaling {
@@ -192,9 +222,7 @@ impl TileScaling {
     }
 }
 
-/// Global settings for how terminals are positioned in world space.
-///
-/// A terminal's grid position can be set via it's [TerminalTransform] component.
+/// Global settings for how terminals are sized and positionsed in world space.
 #[derive(Default, Resource)]
 pub struct TerminalGridSettings {
     tile_scaling: TileScaling,

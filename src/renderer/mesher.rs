@@ -1,15 +1,17 @@
 use bevy::{
-    color::{Color, ColorToComponents, LinearRgba},
+    color::{ColorToComponents, LinearRgba},
     math::Vec2,
     render::mesh::{Indices, Mesh, VertexAttributeValues},
 };
+
+use crate::GridPoint;
 
 use super::{
     mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV},
     UvMapping,
 };
 
-/// Utility for updating terminal mesh vertices
+/// Utility for updating terminal mesh vertices.
 pub struct VertMesher {
     origin: Vec2,
     tile_size: Vec2,
@@ -50,21 +52,27 @@ impl VertMesher {
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, mesher.verts);
     }
 
-    /// Set the vertex data for the tile at the given tile index.
+    /// Set the mesh vertex data for a tile at a given grid position.
+    ///
+    /// # Arguments
+    ///
+    /// * `x` - The local x coordinate of the tile
+    /// * `y` - The local y coordinate of the tile.
+    /// * `mesh_index` - The index of the tile's data within the mesh.
     #[inline]
-    pub fn set_tile(&mut self, x: i32, y: i32, tile_index: usize) {
-        let p = (self.origin + Vec2::new(x as f32, y as f32) * self.tile_size).extend(0.0);
+    pub fn set_tile_verts(&mut self, xy: impl GridPoint, mesh_index: usize) {
+        let p = (self.origin + xy.as_vec2() * self.tile_size).extend(0.0);
         let right = (Vec2::X * self.tile_size).extend(0.0);
         let up = (Vec2::Y * self.tile_size).extend(0.0);
 
-        let i = tile_index * 4;
+        let i = mesh_index * 4;
         self.verts[i] = (p + up).into();
         self.verts[i + 1] = p.into();
         self.verts[i + 2] = (p + right + up).into();
         self.verts[i + 3] = (p + right).into();
 
         let vi = i as u32;
-        let i = tile_index * 6;
+        let i = mesh_index * 6;
         self.indices[i] = vi;
         self.indices[i + 1] = vi + 1;
         self.indices[i + 2] = vi + 2;
@@ -74,7 +82,7 @@ impl VertMesher {
     }
 }
 
-/// Utility for updating terminal mesh vertex data
+/// Utility for updating terminal mesh vertex data.
 pub struct UvMesher<'a> {
     mapping: &'a UvMapping,
     uvs: Vec<[f32; 2]>,
@@ -84,7 +92,7 @@ pub struct UvMesher<'a> {
 
 impl<'a> UvMesher<'a> {
     /// Update the mesh tile data by removing the relevant mesh attributes and
-    /// modifying them with the [UVMesher]. The attributes will be reinserted
+    /// modifying them with the [UvMesher]. The attributes will be reinserted
     /// into the mesh after this function completes.
     ///
     /// This is done to prevent the borrow checker from complaining when trying
@@ -121,18 +129,26 @@ impl<'a> UvMesher<'a> {
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, mesher.bg);
     }
 
-    /// Sets tile data at the given tile index
+    /// Sets tile data at the given mesh index.
+    ///
+    /// # Arguments
+    ///
+    /// * `glyph` - The glyph which will be translated by the terminal's [UvMapping]
+    ///   component to determine which tile to render.
+    /// * `fg` - The foreground color of the tile.
+    /// * `bg` - The background color of the tile.
+    /// * `mesh_index` - The index of the tile's data within the mesh.
     #[inline]
-    pub fn set_tile(
+    pub fn set_tile_data(
         &mut self,
         glyph: impl Into<char>,
         fg: LinearRgba,
         bg: LinearRgba,
-        index: usize,
+        mesh_index: usize,
     ) {
         let glyph = glyph.into();
         let uvs = self.mapping.uvs_from_char(glyph);
-        let i = index * 4;
+        let i = mesh_index * 4;
 
         self.uvs[i..i + 4]
             .iter_mut()

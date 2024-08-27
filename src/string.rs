@@ -11,7 +11,11 @@ pub struct StringDecoration {
     pub fg_color: Option<LinearRgba>,
     /// Sets the background color for string tiles.
     pub bg_color: Option<LinearRgba>,
+    /// Glyphs written on either end of the string.
     pub delimiters: [Option<char>; 2],
+    /// If true, then the string tile colors will be set to match the
+    /// terminal's clear tiles.
+    pub clear_colors: bool,
 }
 
 /// A trait for creating a [DecoratedString].
@@ -20,9 +24,10 @@ pub trait StringDecorator<T: AsRef<str>> {
     fn fg(self, color: impl Into<LinearRgba>) -> DecoratedString<T>;
     /// Sets the background color for string tiles.
     fn bg(self, color: impl Into<LinearRgba>) -> DecoratedString<T>;
+    /// Sets the string tile colors to match the terminal's clear tile. This will
+    /// override any previously set colors.
+    fn clear_colors(self) -> DecoratedString<T>;
     /// Adds delimiter characters to the front and back of a string.
-    ///
-    /// The string is expected to be one or two characters.
     fn delimiters(self, delimiters: impl AsRef<str>) -> DecoratedString<T>;
 
     fn get_decorated_string(self) -> DecoratedString<T>;
@@ -93,6 +98,16 @@ impl<T: AsRef<str>> StringDecorator<T> for T {
             decoration: Default::default(),
         }
     }
+
+    fn clear_colors(self) -> DecoratedString<T> {
+        DecoratedString {
+            string: self,
+            decoration: StringDecoration {
+                clear_colors: true,
+                ..Default::default()
+            },
+        }
+    }
 }
 
 impl<T: AsRef<str>> StringDecorator<T> for DecoratedString<T> {
@@ -114,6 +129,11 @@ impl<T: AsRef<str>> StringDecorator<T> for DecoratedString<T> {
     fn get_decorated_string(self) -> DecoratedString<T> {
         self
     }
+
+    fn clear_colors(mut self) -> DecoratedString<T> {
+        self.decoration.clear_colors = true;
+        self
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -123,10 +143,9 @@ pub struct StringFormatting {
     /// Defaults to true.
     pub word_wrap: bool,
 
-    /// Defines whether or not 'empty' tiles will be modified when writing strings
-    /// to the terminal. If set to true, then empty tiles will be ignored
-    /// when writing strings to the terminal. Otherwise, decorations will be
-    /// applied even to empty tiles.
+    /// Defines whether or not 'empty' (" ") tiles will be modified when writing strings
+    /// to the terminal. If set to false then decorations will be applied even to
+    /// empty tiles.
     ///
     /// Defaults to false.
     pub ignore_spaces: bool,
@@ -138,15 +157,15 @@ pub struct FormattedString<T: AsRef<str>> {
 }
 
 impl<T: AsRef<str>> FormattedString<T> {
-    pub fn bg(self, color: impl Into<LinearRgba>) -> DecoratedFormattedText<T> {
-        let mut dft = DecoratedFormattedText::from(self);
-        dft.decoration.bg_color = Some(color.into());
-        dft
-    }
-
     pub fn fg(self, color: impl Into<LinearRgba>) -> DecoratedFormattedText<T> {
         let mut dft = DecoratedFormattedText::from(self);
         dft.decoration.fg_color = Some(color.into());
+        dft
+    }
+
+    pub fn bg(self, color: impl Into<LinearRgba>) -> DecoratedFormattedText<T> {
+        let mut dft = DecoratedFormattedText::from(self);
+        dft.decoration.bg_color = Some(color.into());
         dft
     }
 }
@@ -238,121 +257,6 @@ impl<T: AsRef<str>> From<T> for DecoratedFormattedText<T> {
         }
     }
 }
-
-// impl<T: AsRef<str>> TextFormatter<T> for DecoratedText<T> {
-//     fn no_word_wrap(mut self) -> DecoratedText<T> {
-//         self.formatting.word_wrap = false;
-//         self
-//     }
-
-//     fn fg(mut self, color: impl Into<LinearRgba>) -> DecoratedText<T> {
-//         self.decoration.fg_color = Some(color.into());
-//         self
-//     }
-
-//     fn bg(mut self, color: impl Into<LinearRgba>) -> DecoratedText<T> {
-//         self.decoration.bg_color = Some(color.into());
-//         self
-//     }
-
-//     fn ignore_spaces(mut self) -> DecoratedText<T> {
-//         self.formatting.ignore_spaces = true;
-//         self
-//     }
-
-//     fn string(self) -> T {
-//         self.text
-//     }
-
-//     fn formatting(self) -> TextFormatting {
-//         self.formatting
-//     }
-// }
-
-// /// Allows you to customize text before it gets written to the terminal.
-// pub trait TextFormatter<T: AsRef<str>> {
-//     /// By default any string written to the terminal will be wrapped at any
-//     /// newline and also "word wrapped". If disabled, strings will only be
-//     /// wrapped at newlines and the terminal edge.
-//     fn no_word_wrap(self) -> DecoratedText<T>;
-
-//     /// Set the foreground color for the string tiles
-//     fn fg(self, color: Color) -> DecoratedText<T>;
-
-//     /// Set the background color for the string tiles
-//     fn bg(self, color: Color) -> DecoratedText<T>;
-
-//     /// If set then no colors or glyphs will be written for space (' ')
-//     /// characters.
-//     fn ignore_spaces(self) -> DecoratedText<T>;
-
-//     fn string(self) -> T;
-//     fn formatting(self) -> TextFormatting;
-// }
-
-// impl<T: AsRef<str>> TextFormatter<T> for T {
-//     fn no_word_wrap(self) -> DecoratedText<T> {
-//         DecoratedText {
-//             text: self,
-//             formatting: TextFormatting {
-//                 word_wrap: false,
-//                 ..Default::default()
-//             },
-//             decoration: Default::default(),
-//         }
-//     }
-
-//     fn fg(self, color: Color) -> DecoratedText<T> {
-//         DecoratedText {
-//             text: self,
-//             decoration: StringDecoration {
-//                 fg_color: Some(color),
-//                 ..Default::default()
-//             },
-//             formatting: Default::default(),
-//         }
-//     }
-
-//     fn bg(self, color: Color) -> DecoratedText<T> {
-//         DecoratedText {
-//             text: self,
-//             decoration: StringDecoration {
-//                 bg_color: Some(color),
-//                 ..Default::default()
-//             },
-//             formatting: Default::default(),
-//         }
-//     }
-
-//     fn ignore_spaces(self) -> DecoratedText<T> {
-//         DecoratedText {
-//             text: self,
-//             formatting: TextFormatting {
-//                 ignore_spaces: true,
-//                 ..Default::default()
-//             },
-//             decoration: Default::default(),
-//         }
-//     }
-
-//     fn string(self) -> T {
-//         self
-//     }
-
-//     fn formatting(self) -> TextFormatting {
-//         TextFormatting::default()
-//     }
-// }
-
-// impl<T: AsRef<str>> From<T> for DecoratedText<T> {
-//     fn from(value: T) -> Self {
-//         DecoratedText {
-//             text: value,
-//             decoration: Default::default(),
-//             formatting: Default::default(),
-//         }
-//     }
-// }
 
 /// Attempts to wrap a string at either the first newline before `max_len` or the
 /// next available whitespace back from `max_len`. Returns None from an empty string.
@@ -464,7 +368,7 @@ fn split_y_pivot_offset(string: &str, pivot: Pivot, max_width: usize) -> i32 {
 
 /// An iterator for writing wrapped strings to the terminal. Will attempt
 /// to respect formatting and the size of the terminal while yielding
-/// each string character and 2d position.
+/// each string character and grid position.
 pub struct StringIter<'a> {
     word_wrapped: bool,
     remaining: &'a str,

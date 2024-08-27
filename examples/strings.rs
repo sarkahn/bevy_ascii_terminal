@@ -10,7 +10,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(TerminalCameraBundle::auto());
+    commands.spawn(TerminalCameraBundle::with_auto_resolution());
     commands.spawn(
         TerminalBundle::new([60, 25])
             .put_string(

@@ -23,21 +23,21 @@ const TERM_STRINGS: &[&str] = &[
 ];
 
 fn setup(mut commands: Commands, mut terminals: ResMut<Terminals>) {
-    commands.spawn(TerminalCameraBundle::auto());
+    commands.spawn(TerminalCameraBundle::with_auto_resolution());
 
     let v = vec![
         TerminalBundle::from(make_terminal([TERM_STRINGS[0].len() + 4, 5], BRIGHT))
             .with_mesh_pivot(Pivot::BottomRight)
             .put_string([1, 1], TERM_STRINGS[0])
-            .with_border(Border::single_line()),
+            .with_border(TerminalBorder::single_line()),
         TerminalBundle::from(make_terminal([TERM_STRINGS[1].len() + 4, 7], FADED))
             .with_mesh_pivot(Pivot::BottomLeft)
             .put_string([1, 1], TERM_STRINGS[1])
-            .with_border(Border::single_line()),
+            .with_border(TerminalBorder::single_line()),
         TerminalBundle::from(make_terminal([TERM_STRINGS[2].len() + 4, 6], FADED))
             .with_mesh_pivot(Pivot::TopCenter)
             .put_string([0, 1].pivot(Pivot::TopCenter), TERM_STRINGS[2])
-            .with_border(Border::single_line()),
+            .with_border(TerminalBorder::single_line()),
     ];
     terminals.0 = Vec::from_iter(v.into_iter().map(|t| commands.spawn(t).id()));
 }
@@ -105,7 +105,7 @@ fn on_update(
         };
         term.put_string([1, 1].pivot(pivot), TERM_STRINGS[*current]);
         set_brightness(&mut term, BRIGHT);
-        term.put_border(Border::single_line());
+        term.put_border(TerminalBorder::single_line());
     }
 }
 
