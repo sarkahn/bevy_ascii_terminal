@@ -20,24 +20,23 @@ fn setup(mut commands: Commands) {
             }
         }
     }
-    term.put_char([0, 0].pivot(Pivot::Center), 'O');
-    commands.spawn(TerminalBundle::from(term).with_depth(-1));
-    commands.spawn(
-        TerminalBundle::new([3, 3])
-            .with_clear_tile(Glyph::SmilingFace.to_char())
-            .with_grid_position([2, 2])
-            .with_mesh_pivot(Pivot::BottomLeft),
-    );
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            color: basic::BLUE.into(),
-            custom_size: Some(Vec2::ONE),
-            anchor: bevy::sprite::Anchor::BottomLeft,
-            ..Default::default()
-        },
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..Default::default()
-    });
+    // commands.spawn(TerminalBundle::from(term).with_depth(-1));
+    // commands.spawn(
+    //     TerminalBundle::new([3, 3])
+    //         .with_clear_tile(Glyph::SmilingFace.to_char())
+    //         .with_grid_position([2, 2])
+    //         .with_mesh_pivot(Pivot::BottomLeft),
+    // );
+    // commands.spawn(SpriteBundle {
+    //     sprite: Sprite {
+    //         color: basic::BLUE.into(),
+    //         custom_size: Some(Vec2::ONE),
+    //         anchor: bevy::sprite::Anchor::BottomLeft,
+    //         ..Default::default()
+    //     },
+    //     transform: Transform::from_xyz(0.0, 0.0, 0.0),
+    //     ..Default::default()
+    // });
 
     // commands.spawn(
     //     TerminalBundle::new([3, 3])
@@ -46,10 +45,37 @@ fn setup(mut commands: Commands) {
     //         .with_mesh_pivot(Pivot::TopRight),
     // );
 
+    commands.spawn(
+        TerminalBundle::new([3, 3])
+            .with_clear_tile(Glyph::Diamond.to_char())
+            .with_grid_position([0, -2])
+            .with_mesh_pivot(Pivot::TopLeft),
+    );
+    commands.spawn(
+        TerminalBundle::new([3, 3])
+            .with_clear_tile(Glyph::QuestionMark.to_char())
+            .with_grid_position([0, -2])
+            .with_mesh_pivot(Pivot::TopRight),
+    );
+    commands.spawn(
+        TerminalBundle::new([3, 3])
+            .with_clear_tile(Glyph::Ampersand.to_char())
+            .with_grid_position([0, -2])
+            .with_mesh_pivot(Pivot::BottomLeft),
+    );
+    commands.spawn(
+        TerminalBundle::new([3, 3])
+            .with_clear_tile(Glyph::Female.to_char())
+            .with_grid_position([0, -2])
+            .with_mesh_pivot(Pivot::BottomRight),
+    );
+
     // commands.spawn(
     //     TerminalBundle::new([4, 4])
     //         .with_clear_tile(Glyph::ShadeLight.to_char())
     //         .with_grid_position([-2, -2])
     //         .with_mesh_pivot(Pivot::BottomRight),
     // );
+
+    term.put_char([0, 0].pivot(Pivot::Center), 'O');
 }

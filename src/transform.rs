@@ -292,7 +292,7 @@ fn cache_transform_data(
     mut q_term: Query<
         (
             Entity,
-            &Transform,
+            &mut Transform,
             &mut TerminalTransform,
             &TerminalMeshPivot,
             &mut Terminal,
@@ -306,8 +306,10 @@ fn cache_transform_data(
     settings: Res<TerminalGridSettings>,
     mut commands: Commands,
 ) {
-    for (entity, transform, mut term_transform, pivot, term, mat_handle, scaling) in &mut q_term {
+    for (entity, mut transform, mut term_transform, pivot, term, mat_handle, scaling) in &mut q_term
+    {
         let snap = term_transform.snap_to_grid;
+        let grid_pos = term_transform.grid_position;
 
         let data = term_transform
             .cached_data
@@ -326,6 +328,10 @@ fn cache_transform_data(
         let world_tile_size = settings
             .tile_scaling
             .calculate_world_tile_size(ppu, Some(scaling.0));
+
+        let p = grid_pos.as_vec2() * world_tile_size;
+        transform.translation = p.extend(transform.translation.z);
+        data.world_pos = transform.translation;
 
         data.world_tile_size = world_tile_size;
         data.pixels_per_tile = ppu;
