@@ -2,7 +2,7 @@
 
 use bevy::reflect::Reflect;
 
-use super::IVec2;
+use bevy::prelude::IVec2;
 
 use super::point::GridPoint;
 
@@ -46,7 +46,7 @@ impl From<Dir4> for IVec2 {
 impl Dir4 {
     /// Retrieve the direction from the given point, or none if it's `[0,0]`.
     pub fn from_point(p: impl GridPoint) -> Option<Dir4> {
-        match p.as_ivec2().signum().to_array() {
+        match p.to_ivec2().signum().to_array() {
             [0, 1] => Some(Dir4::Up),
             [0, -1] => Some(Dir4::Down),
             [-1, 0] => Some(Dir4::Left),
@@ -102,7 +102,7 @@ pub enum Dir8 {
 impl Dir8 {
     /// Retrieve the direction from the given point, or none if it's (0,0).
     pub fn from_point(p: impl GridPoint) -> Option<Dir8> {
-        match p.as_ivec2().signum().to_array() {
+        match p.to_ivec2().signum().to_array() {
             [0, 1] => Some(Dir8::Up),
             [0, -1] => Some(Dir8::Down),
             [-1, 0] => Some(Dir8::Left),

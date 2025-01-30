@@ -13,10 +13,9 @@ use bevy::{
 use super::mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
 
 pub const TERMINAL_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(13814445327411044821);
-
 const TERMINAL_SHADER_STRING: &str = include_str!("terminal.wgsl");
 
-pub struct TerminalMaterialPlugin;
+pub(crate) struct TerminalMaterialPlugin;
 
 impl Plugin for TerminalMaterialPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {

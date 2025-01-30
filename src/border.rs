@@ -1,56 +1,83 @@
-use bevy::{color::LinearRgba, math::UVec2, prelude::Component};
+use std::ops::Sub;
+
+use bevy::{math::IVec2, prelude::Component, reflect::Reflect, utils::HashMap};
 use enum_ordinalize::Ordinalize;
+use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
 
 use crate::{
     string::{DecoratedString, StringDecoration},
-    GridRect, Pivot,
+    Tile,
 };
 
-#[derive(Debug, Default, Clone, Component)]
+/// A component for drawing a border around a terminal.
+///
+/// Along with a 9 slice string to represent the border, aligned and formatted
+/// strings can be written can be written to the four cardinal sides of the border.
+#[derive(Debug, Default, Clone, Component, Reflect)]
 pub struct TerminalBorder {
     pub edge_glyphs: [Option<char>; 8],
     pub border_strings: Vec<BorderString>,
-    size: UVec2,
+    tiles: HashMap<IVec2, Tile>,
 }
 
 impl TerminalBorder {
-    /// Create a [Border] from a string.
+    /// Create a [Border] from a 9 slice string.
     ///
-    /// The string will be read as 9 tiles with line returns and the center
-    /// space being ignored. Any other spaces will be treated as a clear tile
-    /// for that edge.
+    /// The string will be read line by line, with the last 3 characters on
+    /// each line being used to set the border glyphs, with the center of the
+    /// 9 slice being ignored.
+    ///
+    /// 'Space' characters will count as an empty tile for that edge.
     ///
     /// # Example
     ///
     /// ```
     /// use bevy_ascii_terminal::*;
     ///
-    /// // Create a single-line border with a blank edge on the top and bottom.
+    /// // Create a single-line border with no tiles on the top and bottom edges.
     /// let border = Border::from_string(
     /// "┌ ┐
-    /// │ │
-    /// └ ┘"
+    ///  │ │
+    ///  └ ┘")
     /// );
     /// ```
-    #[allow(clippy::needless_range_loop)]
     pub fn from_string(string: impl AsRef<str>) -> Self {
-        let mut edge_glyphs = [None; 8];
-        let mut chars = string.as_ref().chars().filter(|c| *c != '\n');
-        for i in 0..4 {
-            if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
-                edge_glyphs[i] = Some(ch);
-            }
+        let mut glyphs = [None; 8];
+        let mut lines = string.as_ref().lines();
+        if let Some(mut line) = lines.next().map(|l| l.chars().rev().take(3)) {
+            glyphs[2] = line.next();
+            glyphs[1] = line.next();
+            glyphs[0] = line.next();
         }
-        chars.next();
-        for i in 4..8 {
-            if let Some(ch) = chars.next().filter(|ch| *ch != ' ') {
-                edge_glyphs[i] = Some(ch);
-            }
+
+        if let Some(mut line) = lines.next().map(|l| l.chars().rev().take(3)) {
+            glyphs[4] = line.next();
+            line.next();
+            glyphs[3] = line.next();
         }
+        if let Some(mut line) = lines.next().map(|l| l.chars().rev().take(3)) {
+            glyphs[7] = line.next();
+            glyphs[6] = line.next();
+            glyphs[5] = line.next();
+        }
+
         Self {
-            edge_glyphs,
+            edge_glyphs: glyphs,
             ..Default::default()
         }
+    }
+
+    pub fn single_line() -> Self {
+        Self::from_string("┌─┐\n│ │\n└─┘")
+    }
+
+    pub fn double_line() -> Self {
+        Self::from_string("╔═╗\n║ ║\n╚═╝")
+    }
+
+    pub fn with_title(mut self, title: impl AsRef<str>) -> Self {
+        self.put_title(title);
+        self
     }
 
     pub fn top_left_glyph(&self) -> Option<char> {
@@ -168,9 +195,10 @@ impl TerminalBorder {
     ///
     /// # Arguments
     /// * `edge` - Which edge of the border to write to. Multiple strings
-    ///   can be written to a single edge, and they will be drawn in order.
+    ///   can be written to a single edge, and they will be drawn in order
+    ///   of insertion.
     ///
-    /// * `alignment` - Determines the relative origin of the string, where 0.0
+    /// * `alignment` - Determines the starting position of the string, where 0.0
     ///   is the bottom/left and 1.0 is the top/right.
     ///
     /// * `offset` - Offset the string by the given number of tiles from it's the
@@ -199,126 +227,129 @@ impl TerminalBorder {
         self.put_string(BorderSide::Top, 0.0, 0, string);
     }
 
-    /// The number of visible tiles on the border, taking into account the
-    /// border glyphs and any border strings.
-    pub(crate) fn tile_count(&self) -> usize {
-        let mut count = 0;
-        count += self.top_left_glyph().is_some() as usize;
-        count += self.top_right_glyph().is_some() as usize;
-        count += self.bottom_left_glyph().is_some() as usize;
-        count += self.bottom_right_glyph().is_some() as usize;
-        if self.top_glyph().is_some()
-            || self
-                .border_strings
-                .iter()
-                .any(|bs| bs.edge == BorderSide::Top)
-        {
-            count += self.width() - 2;
-        }
-        if self.bottom_glyph().is_some()
-            || self
-                .border_strings
-                .iter()
-                .any(|bs| bs.edge == BorderSide::Bottom)
-        {
-            count += self.width() - 2;
-        }
-        if self.left_glyph().is_some()
-            || self
-                .border_strings
-                .iter()
-                .any(|bs| bs.edge == BorderSide::Left)
-        {
-            count += self.height() - 2;
-        }
-        if self.right_glyph().is_some()
-            || self
-                .border_strings
-                .iter()
-                .any(|bs| bs.edge == BorderSide::Right)
-        {
-            count += self.height() - 2;
-        }
-        count
+    pub fn bounds(&self, size: impl GridSize) -> GridRect {
+        let mut bounds = GridRect::new([0, 0], size);
+        bounds.resize_from_pivot(Pivot::LeftCenter, self.has_left_side() as i32);
+        bounds.resize_from_pivot(Pivot::RightCenter, self.has_right_side() as i32);
+        bounds.resize_from_pivot(Pivot::TopCenter, self.has_top_side() as i32);
+        bounds.resize_from_pivot(Pivot::BottomCenter, self.has_bottom_side() as i32);
+        bounds
     }
 
-    pub fn pivot_tile_count(&self, pivot: Pivot) -> usize {
-        match pivot {
-            Pivot::TopLeft => self.top_left_glyph().is_some() as usize,
-            Pivot::TopRight => self.top_right_glyph().is_some() as usize,
-            Pivot::BottomLeft => self.bottom_left_glyph().is_some() as usize,
-            Pivot::BottomRight => self.bottom_right_glyph().is_some() as usize,
-            Pivot::TopCenter => {
-                if self.top_glyph().is_some()
-                    || self
-                        .border_strings
-                        .iter()
-                        .any(|bs| bs.edge == BorderSide::Top)
-                {
-                    self.width() - 2
-                } else {
-                    0
+    /// Rebuild border tiles.
+    pub(crate) fn rebuild(&mut self, size: impl GridSize, clear_tile: Tile) {
+        self.tiles.clear();
+        let bounds = self.bounds(size);
+        if let Some(tl) = self.top_left_glyph() {
+            self.tiles
+                .insert(bounds.top_left(), clear_tile.with_char(tl));
+        }
+        if let Some(tr) = self.top_right_glyph() {
+            self.tiles
+                .insert(bounds.top_right(), clear_tile.with_char(tr));
+        }
+        if let Some(bl) = self.bottom_left_glyph() {
+            self.tiles
+                .insert(bounds.bottom_left(), clear_tile.with_char(bl));
+        }
+        if let Some(br) = self.bottom_right_glyph() {
+            self.tiles
+                .insert(bounds.bottom_right(), clear_tile.with_char(br));
+        }
+        if let Some(t) = self.top_glyph() {
+            for xy in bounds
+                .iter_row(bounds.top_index())
+                .skip(1)
+                .take(bounds.width() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(t));
+            }
+        }
+
+        if let Some(b) = self.bottom_glyph() {
+            for xy in bounds
+                .iter_row(bounds.bottom_index())
+                .skip(1)
+                .take(bounds.width() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(b));
+            }
+        }
+
+        if let Some(l) = self.left_glyph() {
+            for xy in bounds
+                .iter_column(bounds.left_index())
+                .skip(1)
+                .take(bounds.height() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(l));
+            }
+        }
+
+        if let Some(r) = self.right_glyph() {
+            for xy in bounds
+                .iter_column(bounds.right_index())
+                .skip(1)
+                .take(bounds.height() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(r));
+            }
+        }
+
+        for s in self.border_strings.iter() {
+            // TODO: Account for delimiters in string
+            let dir = match s.edge {
+                BorderSide::Top | BorderSide::Bottom => IVec2::new(1, 0),
+                BorderSide::Left | BorderSide::Right => IVec2::new(0, -1),
+            };
+            let char_count = s.string.chars().count();
+            let offset = match s.edge {
+                BorderSide::Top | BorderSide::Bottom => {
+                    let align_off = ((bounds.width() - 2) as f32 * s.alignment).round() as i32;
+                    let size_off = (char_count as f32 * s.alignment).round() as i32;
+                    dir * (align_off - size_off)
+                }
+                BorderSide::Left | BorderSide::Right => {
+                    let align_off = ((bounds.height() - 3) as f32 * s.alignment).floor() as i32;
+                    let size_off = (char_count.sub(1) as f32 * (1.0 - s.alignment)).floor() as i32;
+                    -dir * (align_off + size_off)
+                }
+            };
+
+            let mut p = match s.edge {
+                BorderSide::Top => bounds.top_left().right(1),
+                BorderSide::Bottom => bounds.bottom_left().right(1),
+                BorderSide::Left => bounds.bottom_left().up(1),
+                BorderSide::Right => bounds.bottom_right().up(1),
+            } + offset;
+
+            let fg_color = s.decoration.fg_color.unwrap_or(clear_tile.fg_color);
+            let bg_color = s.decoration.bg_color.unwrap_or(clear_tile.bg_color);
+
+            for glyph in s.string.chars() {
+                self.tiles.insert(
+                    p,
+                    Tile {
+                        glyph,
+                        fg_color,
+                        bg_color,
+                    },
+                );
+                p += dir;
+                if !bounds.contains_point(p) {
+                    break;
                 }
             }
-            Pivot::LeftCenter => {
-                if self.left_glyph().is_some()
-                    || self
-                        .border_strings
-                        .iter()
-                        .any(|bs| bs.edge == BorderSide::Left)
-                {
-                    self.height() - 2
-                } else {
-                    0
-                }
-            }
-            Pivot::RightCenter => {
-                if self.right_glyph().is_some()
-                    || self
-                        .border_strings
-                        .iter()
-                        .any(|bs| bs.edge == BorderSide::Right)
-                {
-                    self.height() - 2
-                } else {
-                    0
-                }
-            }
-            Pivot::BottomCenter => {
-                if self.bottom_glyph().is_some()
-                    || self
-                        .border_strings
-                        .iter()
-                        .any(|bs| bs.edge == BorderSide::Bottom)
-                {
-                    self.width() - 2
-                } else {
-                    0
-                }
-            }
-            Pivot::Center => todo!(),
         }
     }
 
-    pub fn size(&self) -> UVec2 {
-        self.size
-    }
-
-    pub fn width(&self) -> usize {
-        self.size.x as usize
-    }
-
-    pub fn height(&self) -> usize {
-        self.size.y as usize
-    }
-
-    pub fn bounds(&self) -> GridRect {
-        GridRect::new([0, 0], self.size)
+    pub fn tiles(&self) -> &HashMap<IVec2, Tile> {
+        &self.tiles
     }
 }
 
 /// One of four sides of a border.
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Ordinalize)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash, Ordinalize, Reflect)]
 pub enum BorderSide {
     Top,
     Left,
@@ -326,19 +357,7 @@ pub enum BorderSide {
     Bottom,
 }
 
-impl BorderSide {
-    pub fn from_pivot(pivot: Pivot) -> Option<BorderSide> {
-        match pivot {
-            Pivot::TopCenter => Some(BorderSide::Top),
-            Pivot::LeftCenter => Some(BorderSide::Left),
-            Pivot::RightCenter => Some(BorderSide::Right),
-            Pivot::BottomCenter => Some(BorderSide::Bottom),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Reflect)]
 pub struct BorderString {
     pub edge: BorderSide,
     pub string: String,
@@ -347,34 +366,23 @@ pub struct BorderString {
     pub alignment: f32,
 }
 
-pub trait BorderStringWriter {
-    fn delimiters(self, delimiters: impl AsRef<str>) -> BorderString;
-    fn fg(self, color: impl Into<LinearRgba>) -> BorderString;
-    fn bg(self, color: impl Into<LinearRgba>) -> BorderString;
-}
-
 #[cfg(test)]
 mod tests {
-    use bevy::color::palettes::basic;
-
-    use crate::string::StringDecorator;
-
     use super::*;
-
     #[test]
-    fn a() {
-        let mut border = TerminalBorder::default();
-        border.put_string(BorderSide::Bottom, 0.0, 1, "hi".fg(basic::BLACK));
-        border.put_title("hi".fg(basic::BLUE).delimiters("[]"));
-    }
+    fn border() {
+        let mut border = TerminalBorder::single_line();
 
-    #[test]
-    fn from_string() {
-        let border = TerminalBorder::from_string(
-            "┌ ┐
-│ │
-└ ┘",
-        );
-        println!("{:?}", border);
+        border.put_string(BorderSide::Right, 0.0, 0, "RightBot");
+        border.put_string(BorderSide::Right, 1.0, 0, "RightTop");
+
+        border.put_string(BorderSide::Left, 0.0, 0, "LeftBa");
+        border.put_string(BorderSide::Left, 1.0, 0, "LeftTa");
+
+        border.put_string(BorderSide::Top, 0.0, 0, "TopLa");
+        border.put_string(BorderSide::Top, 1.0, 0, "TopRa");
+
+        border.put_string(BorderSide::Bottom, 0.0, 0, "BotLa");
+        border.put_string(BorderSide::Bottom, 1.0, 0, "BotRa");
     }
 }

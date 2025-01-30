@@ -48,7 +48,6 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     var fg_col = in.fg_color;
     var bg_col = in.bg_color;
     var tex_col = textureSample(texture, texture_sampler, in.uv);
-    
     if( all(tex_col.rgb - clip_col.rgb < vec3<f32>(0.001, 0.001, 0.001)) ) {
         return bg_col;
     } else {

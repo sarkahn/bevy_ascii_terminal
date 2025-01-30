@@ -1,32 +1,39 @@
 use bevy::math::{IVec2, UVec2, Vec2};
 
+use super::GridPoint;
+
 /// A trait for types representing a 2d size on a grid.
-pub trait GridSize: Clone + Copy {
+pub trait GridSize: Clone {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
     fn tile_count(&self) -> usize {
         self.width() * self.height()
     }
-    fn as_ivec2(&self) -> IVec2 {
+    fn to_ivec2(&self) -> IVec2 {
         IVec2 {
             x: self.width() as i32,
             y: self.height() as i32,
         }
     }
-    fn as_uvec2(&self) -> UVec2 {
+    fn to_uvec2(&self) -> UVec2 {
         UVec2 {
             x: self.width() as u32,
             y: self.height() as u32,
         }
     }
-    fn as_vec2(&self) -> Vec2 {
+    fn to_vec2(&self) -> Vec2 {
         Vec2 {
-            x: self.width() as f32,
-            y: self.height() as f32,
+            x: (self.width() as i32) as f32,
+            y: (self.height() as i32) as f32,
         }
     }
-    fn as_array(&self) -> [usize; 2] {
+    fn to_array(&self) -> [usize; 2] {
         [self.width(), self.height()]
+    }
+
+    fn contains_point(&self, xy: impl GridPoint) -> bool {
+        let xy = xy.to_ivec2();
+        xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.to_ivec2()).all()
     }
 }
 

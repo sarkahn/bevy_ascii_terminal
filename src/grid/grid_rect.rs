@@ -1,11 +1,11 @@
 use std::{
     fmt::{self, Display},
-    ops::{Add, Deref, Sub},
+    ops::{Deref, Sub},
 };
 
-use bevy::math::UVec2;
+use bevy::math::{ivec2, IVec2, Rect, UVec2};
 
-use super::{GridPoint, GridSize, IVec2, Pivot};
+use super::{GridPoint, GridSize, Pivot};
 
 /// A rectangle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
@@ -19,8 +19,8 @@ impl GridRect {
     /// Create a [GridRect] from a position (bottom left tile) and a size.
     pub fn new(xy: impl GridPoint, size: impl GridSize) -> Self {
         GridRect {
-            xy: xy.as_ivec2(),
-            size: size.as_uvec2(),
+            xy: xy.to_ivec2(),
+            size: size.to_uvec2(),
         }
     }
 
@@ -43,8 +43,8 @@ impl GridRect {
 
     /// Create a [GridRect] from a center position and rect size.
     pub fn from_center_size(center: impl GridPoint, size: impl GridSize) -> Self {
-        let bl = center.as_ivec2() - size.as_ivec2() / 2;
-        Self::new(bl, size.as_uvec2())
+        let bl = center.to_ivec2() - size.to_ivec2() / 2;
+        Self::new(bl, size.to_uvec2())
     }
 
     /// Returns a [GridRect] clipped by the bounds of the given [GridRect]
@@ -58,12 +58,28 @@ impl GridRect {
 
     /// Returns a [GridRect] with it's position adjusted by the given amount
     pub fn translated(&self, xy: impl GridPoint) -> GridRect {
-        GridRect::new(self.xy + xy.as_ivec2(), self.size)
+        GridRect::new(self.xy + xy.to_ivec2(), self.size)
     }
 
     /// Returns a [GridRect] with each side adjusted by the given delta.
     pub fn resized(&self, delta: impl GridPoint) -> GridRect {
-        GridRect::from_points(self.min() - delta.as_ivec2(), self.max() + delta.as_ivec2())
+        GridRect::from_points(self.min() - delta.to_ivec2(), self.max() + delta.to_ivec2())
+    }
+
+    /// Resizes the rect along a given pivot point.
+    pub fn resize_from_pivot(&mut self, pivot: Pivot, amount: i32) {
+        let p = match pivot {
+            Pivot::TopLeft => self.top_left() + ivec2(-1, 1) * amount,
+            Pivot::TopCenter => self.top_left() + ivec2(0, 1) * amount,
+            Pivot::TopRight => self.top_right() + ivec2(1, 1) * amount,
+            Pivot::LeftCenter => self.top_left() + ivec2(-1, 0) * amount,
+            Pivot::RightCenter => self.top_right() + ivec2(1, 0) * amount,
+            Pivot::BottomLeft => self.bottom_left() + ivec2(-1, -1) * amount,
+            Pivot::BottomCenter => self.bottom_left() + ivec2(0, -1) * amount,
+            Pivot::BottomRight => self.bottom_right() + ivec2(1, -1) * amount,
+            Pivot::Center => self.center(),
+        };
+        self.envelope_point(p);
     }
 
     /// Returns a [GridRect] with both rects contained in it.
@@ -75,7 +91,7 @@ impl GridRect {
 
     /// Adjusts a single corner of the rect to contain the given point.
     pub fn envelope_point(&mut self, point: impl GridPoint) {
-        let point = point.as_ivec2();
+        let point = point.to_ivec2();
         let min = self.min().min(point);
         let max = self.max().max(point);
         *self = GridRect::from_points(min, max);
@@ -239,7 +255,7 @@ impl GridRect {
 
     /// Retrieve the position of the tile at the given pivot point on the rect.
     pub fn pivot_point(&self, pivot: Pivot) -> IVec2 {
-        self.bottom_left() + pivot.size_offset(self.size)
+        self.bottom_left() + pivot.pivot_position(self.size)
     }
 
     /// Retrieve a point in the rect from the perspective of the given pivot.
@@ -251,7 +267,7 @@ impl GridRect {
     /// Check if a given point lies inside the rect
     #[inline]
     pub fn contains_point(&self, p: impl GridPoint) -> bool {
-        let p = p.as_ivec2();
+        let p = p.to_ivec2();
         !(p.cmplt(self.min()).any() || p.cmpgt(self.max()).any())
     }
 
@@ -268,6 +284,10 @@ impl GridRect {
             && other.left() <= self.right()
             && self.bottom() <= other.top()
             && other.bottom() <= self.top()
+    }
+
+    pub fn as_rect(&self) -> Rect {
+        Rect::from_corners(self.bottom_left().as_vec2(), self.top_right().as_vec2())
     }
 }
 
@@ -442,6 +462,13 @@ mod tests {
         let rect = GridRect::from_points([6, 6], [7, 7]);
         assert_eq!([6, 6], rect.min().to_array());
         assert_eq!([7, 7], rect.max().to_array());
+    }
+
+    #[test]
+    fn new() {
+        let rect = GridRect::new([0, 0], [10, 10]);
+        assert_eq!([9, 9], rect.top_right().to_array());
+        assert_eq!([0, 9], rect.top_left().to_array());
     }
 
     #[test]

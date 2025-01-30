@@ -1,13 +1,11 @@
-pub mod direction;
-pub mod grid_rect;
-pub mod pivot;
-pub mod point;
-pub mod size;
+mod direction;
+mod grid_rect;
+mod pivot;
+mod point;
+mod size;
 
-pub use self::{
-    grid_rect::GridRect,
-    pivot::{Pivot, PivotedPoint},
-    point::GridPoint,
-    size::GridSize,
-};
-pub use bevy::prelude::{IVec2, UVec2, Vec2};
+pub use direction::{Dir4, Dir8};
+pub use grid_rect::GridRect;
+pub use pivot::{Pivot, PivotedPoint};
+pub use point::GridPoint;
+pub use size::GridSize;

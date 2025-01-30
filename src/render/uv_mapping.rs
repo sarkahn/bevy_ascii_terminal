@@ -2,8 +2,8 @@
 //! corresponding uvs on the tile sheet.
 use bevy::{
     math::{Rect, Vec2},
-    prelude::{Asset, AssetApp, Assets, Handle, Plugin},
-    reflect::TypePath,
+    prelude::{Asset, AssetApp, Assets, Component, Deref, DerefMut, Handle, Plugin},
+    reflect::{Reflect, TypePath},
     utils::HashMap,
 };
 
@@ -23,6 +23,9 @@ impl Plugin for TerminalUvMappingPlugin {
 pub struct UvMapping {
     uv_map: HashMap<char, [[f32; 2]; 4]>,
 }
+
+#[derive(Default, Component, Clone, Debug, Deref, DerefMut, Reflect, PartialEq, Eq)]
+pub struct UvMappingHandle(pub Handle<UvMapping>);
 
 impl UvMapping {
     pub fn code_page_437() -> Self {

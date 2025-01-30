@@ -23,16 +23,16 @@ use bevy_ascii_terminal::prelude::*;
 
 fn setup(mut commands: Commands) {
     // Create the terminal
-    let mut terminal = Terminal::new([20,3]).with_border(Border::single_line());
+    let mut terminal = Terminal::new([20,3]));
     // Draw a blue "Hello world!" to the terminal
     terminal.put_string([1, 1], "Hello world!".fg(Color::BLUE));
 
     commands.spawn((
         // Spawn the terminal bundle from our terminal
-        TerminalBundle::from(terminal),
-        // Automatically set up the camera to render the terminal
-        AutoCamera,
+        terminal,
+		TerminalBorder::single_line(),
     ));
+	commands.spawn(TerminalCamera::new());
 }
 
 fn main () {
@@ -46,7 +46,7 @@ fn main () {
 ## Versions
 | bevy  | bevy_ascii_terminal |
 | ----- | ------------------- |
-| 0.14  | 0.16.0              |
+| 0.15  | 0.16.0              |
 | 0.13  | 0.15.0              |
 | 0.12  | 0.14.0              |
 | 0.11  | 0.13.0              |

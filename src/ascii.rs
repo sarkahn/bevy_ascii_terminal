@@ -591,8 +591,13 @@ impl Glyph {
     }
 }
 
+/// Convert an index to it's corresponding ascii glyph (0..256)
+pub const fn index_to_char(index: u8) -> char {
+    CP_437_ARRAY[index as usize]
+}
+
 /// Convert a char to it's corresponding ascii glyph index (0..256)
-const fn char_to_index(c: char) -> Option<u8> {
+pub const fn char_to_index(c: char) -> Option<u8> {
     let value = match c {
         '\0' => 0,
         '☺' => 1,

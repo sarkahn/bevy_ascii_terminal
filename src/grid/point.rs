@@ -1,14 +1,15 @@
 //! Traits for dealing with 2d points on a grid.
-use super::{GridSize, IVec2, UVec2, Vec2};
-
 use super::{
-    direction::{DIR_4, DIR_8},
-    Pivot, PivotedPoint,
+    pivot::{Pivot, PivotedPoint},
+    size::GridSize,
 };
+use bevy::prelude::{IVec2, UVec2, Vec2};
+
+use super::direction::{DIR_4, DIR_8};
 
 /// A trait for types representing an integer point on a 2d grid.
 ///
-/// This trait is implemented for most 2d types, such as [IVec2], [UVec2], [i32;2], etc
+/// This trait is implemented for most 2d vector types such as [IVec2], [UVec2], [i32;2], etc
 pub trait GridPoint: Clone + Copy {
     fn xy(&self) -> IVec2;
 
@@ -27,34 +28,47 @@ pub trait GridPoint: Clone + Copy {
         self.y() as usize
     }
 
-    fn as_ivec2(&self) -> IVec2 {
+    fn to_ivec2(&self) -> IVec2 {
         IVec2::new(self.x(), self.y())
     }
 
-    fn as_uvec2(&self) -> UVec2 {
-        self.as_ivec2().as_uvec2()
+    fn to_uvec2(&self) -> UVec2 {
+        self.to_ivec2().as_uvec2()
     }
-    fn as_vec2(&self) -> Vec2 {
-        self.as_ivec2().as_vec2()
-    }
-
-    fn as_array(&self) -> [i32; 2] {
-        self.as_ivec2().to_array()
+    fn to_vec2(&self) -> Vec2 {
+        self.to_ivec2().as_vec2()
     }
 
-    fn as_usize_array(&self) -> [usize; 2] {
+    fn to_array(&self) -> [i32; 2] {
+        self.to_ivec2().to_array()
+    }
+
+    fn to_usize_array(&self) -> [usize; 2] {
         [self.x() as usize, self.y() as usize]
     }
 
-    /// Get the grid point's corresponding 1d index.
+    /// Calculate the 1d index of this position within a sized grid.
+    ///
+    /// This will panic if the grid position or the resulting 1d index is out of
+    /// bounds.
     #[inline]
     fn as_index(&self, size: impl GridSize) -> usize {
-        let p = self.as_ivec2();
+        let p = self.to_ivec2();
         debug_assert!(
-            p.cmpge(IVec2::ZERO).all() && p.cmplt(size.as_ivec2()).all(),
-            "Attemting to convert an out of bounds grid position {:?} into a 1d index from a grid size of {}", self.as_array(), size.as_ivec2()
+            p.cmpge(IVec2::ZERO).all() && p.cmplt(size.to_ivec2()).all(),
+            "Attempting to convert an out of bounds grid position {:?} into a 1d index from a grid size of {}", self.to_array(), size.to_ivec2()
         );
         self.y() as usize * size.width() + self.x() as usize
+    }
+
+    /// Calculate the 1d index of this position within a sized grid.
+    ///
+    /// Returns [None] if the position is out of bounds.
+    fn get_index(&self, size: impl GridSize) -> Option<usize> {
+        let [x, y] = self.to_array();
+        let [w, h] = size.to_ivec2().to_array();
+        (x >= 0 && x < w && y >= 0 && y < h)
+            .then(|| self.y() as usize * size.width() + self.x() as usize)
     }
 
     /// Returns the grid point the given number of spaces above this one.
@@ -81,25 +95,25 @@ pub trait GridPoint: Clone + Copy {
 
     /// Returns this grid point offset by the given amount.
     fn offset(&self, xy: impl GridPoint) -> IVec2 {
-        self.as_ivec2() + xy.as_ivec2()
+        self.to_ivec2() + xy.to_ivec2()
     }
 
     fn min(&self, other: impl GridPoint) -> IVec2 {
-        self.as_ivec2().min(other.as_ivec2())
+        self.to_ivec2().min(other.to_ivec2())
     }
 
     fn max(&self, other: impl GridPoint) -> IVec2 {
-        self.as_ivec2().max(other.as_ivec2())
+        self.to_ivec2().max(other.to_ivec2())
     }
 
     /// Applies a [Pivot] to this position, which can be used to calculate a
-    /// final pivot adjusted point within a sized rect.
+    /// final pivot adjusted point within a sized grid.
     ///
     /// ## Example:
     ///
     /// ```
-    /// let point = [0,0].pivoted(Pivot::TopRight);
-    /// assert_eq!([8,8], point.calc_from_size([9,9]));
+    /// let point = [0,0].pivot(Pivot::TopRight);
+    /// assert_eq!([8,8], point.calculate([9,9]));
     /// ```
     fn pivot(self, pivot: Pivot) -> PivotedPoint {
         PivotedPoint::new(self, pivot)
@@ -109,23 +123,23 @@ pub trait GridPoint: Clone + Copy {
     /// between two grid points.
     #[inline]
     fn taxi_dist(self, other: impl GridPoint) -> usize {
-        let d = (self.as_ivec2() - other.as_ivec2()).abs();
+        let d = (self.to_ivec2() - other.to_ivec2()).abs();
         (d.x + d.y) as usize
     }
 
     /// Linearly interpolate between points a and b by the amount t.
     #[inline]
     fn lerp(self, other: impl GridPoint, t: f32) -> IVec2 {
-        self.as_vec2().lerp(other.as_vec2(), t).as_ivec2()
+        self.to_vec2().lerp(other.to_vec2(), t).as_ivec2()
     }
 
-    /// Returns an iterator over the 4 grid points orgthogonally adjacent to
+    /// Returns an iterator over the 4 grid points orthogonally adjacent to
     /// this one.
     #[inline]
     fn adj_4(&self) -> AdjIterator {
         AdjIterator {
             i: 0,
-            p: self.as_ivec2(),
+            p: self.to_ivec2(),
             arr: DIR_4,
         }
     }
@@ -135,7 +149,7 @@ pub trait GridPoint: Clone + Copy {
     fn adj_8(&self) -> AdjIterator {
         AdjIterator {
             i: 0,
-            p: self.as_ivec2(),
+            p: self.to_ivec2(),
             arr: DIR_8,
         }
     }
@@ -147,7 +161,7 @@ pub struct AdjIterator<'a> {
     arr: &'a [IVec2],
 }
 
-impl<'a> Iterator for AdjIterator<'a> {
+impl Iterator for AdjIterator<'_> {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -180,7 +194,7 @@ impl_grid_point!([usize; 2]);
 
 #[cfg(test)]
 mod tests {
-    use crate::GridPoint;
+    use super::GridPoint;
 
     #[test]
     fn taxi() {

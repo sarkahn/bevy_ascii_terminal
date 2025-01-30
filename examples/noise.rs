@@ -1,5 +1,4 @@
-//! A simple example of an interactive ui to display noise using the
-//! fastnoise-lite crate.
+//! An interactive ui to display noise using the fastnoise-lite crate.
 
 use bevy::{app::AppExit, prelude::*, time::common_conditions::on_timer};
 use bevy_ascii_terminal::*;
@@ -46,15 +45,15 @@ fn main() {
     let key_repeat = std::time::Duration::from_secs_f32(0.1);
     App::new()
         .insert_resource(controls)
-        .add_plugins((DefaultPlugins, TerminalPlugin::default()))
+        .add_plugins((DefaultPlugins, TerminalPlugins))
         .add_systems(Startup, setup)
         .add_systems(
             Update,
             (
                 handle_key_repeat.run_if(on_timer(key_repeat)),
                 handle_other_input,
-                draw_controls,
-                make_some_noise,
+                draw_controls.run_if(resource_changed::<State>),
+                make_some_noise.run_if(resource_changed::<State>),
             )
                 .chain(),
         )
@@ -65,19 +64,13 @@ fn main() {
 pub struct ControlsTerminal;
 
 fn setup(mut commands: Commands) {
-    commands.spawn(TerminalCameraBundle::with_auto_resolution());
-
-    commands.spawn(
-        TerminalBundle::new([80, 60])
-            //.with_border(Border::single_line())
-            .with_mesh_pivot(Pivot::TopLeft),
-    );
+    commands.spawn((Terminal::new([80, 60]), TerminalMeshPivot::TopLeft));
     commands.spawn((
-        TerminalBundle::new([30, 30])
-            //.with_border(Border::single_line())
-            .with_mesh_pivot(Pivot::TopRight),
+        Terminal::new([30, 30]),
+        TerminalMeshPivot::TopRight,
         ControlsTerminal,
     ));
+    commands.spawn(TerminalCamera::new());
 }
 
 pub struct Control {
@@ -142,10 +135,6 @@ fn handle_other_input(
 }
 
 fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, controls: Res<State>) {
-    if !controls.is_changed() {
-        return;
-    }
-
     let mut term = q_term.single_mut();
     term.clear();
     term.put_string([0, 0], "WASD to change noise values");
@@ -156,7 +145,7 @@ fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, contr
     for (i, control) in controls.values.iter().enumerate() {
         let value = (control.value * 1000.0).round() / 1000.0;
         let control_string = format!("{}: {}", control.name, value);
-        term.put_string([0, i + 5], &control_string);
+        term.put_string([0, i + 5], control_string.as_str());
 
         if i == controls.current_control {
             term.put_string(
@@ -171,10 +160,6 @@ fn make_some_noise(
     mut q_term: Query<&mut Terminal, Without<ControlsTerminal>>,
     controls: Res<State>,
 ) {
-    if !controls.is_changed() {
-        return;
-    }
-
     let mut term = q_term.single_mut();
     let mut noise = FastNoiseLite::new();
     noise.set_noise_type(Some(controls.noise_type));
@@ -210,12 +195,4 @@ fn make_some_noise(
         )
         .clear_colors(),
     );
-    // term.put_title(
-    //     format!(
-    //         "Noise:{:?}---Fractal:{:?}",
-    //         controls.noise_type, controls.fractal_type
-    //     )
-    //     .title_fg(css::ANTIQUE_WHITE.into())
-    //     .title_bg(css::GRAY.into()),
-    // );
 }
