@@ -1,6 +1,7 @@
 pub mod ascii;
 pub mod border;
 //pub mod grid;
+pub mod colors;
 pub mod render;
 pub(crate) mod rex;
 pub mod string;
