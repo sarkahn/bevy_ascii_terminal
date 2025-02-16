@@ -1,9 +1,9 @@
 pub mod ascii;
 pub mod border;
 //pub mod grid;
-pub mod colors;
+pub mod color;
 pub mod render;
-pub(crate) mod rex;
+pub(crate) mod rexpaint;
 pub mod string;
 pub mod terminal;
 pub mod tile;

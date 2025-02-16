@@ -1,4 +1,4 @@
-//! A collection of [LinearRgba] colors that can be used in a const context.
+//! Set of [LinearRgba] colors that can be used in a const context.
 
 use bevy::color::LinearRgba;
 

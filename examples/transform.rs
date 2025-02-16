@@ -8,7 +8,12 @@ fn main() {
     App::new()
         .add_plugins((DefaultPlugins, TerminalPlugins))
         .add_systems(Startup, setup)
-        .add_systems(PostStartup, init)
+        .add_systems(PostStartup, |mut q: Query<&mut Terminal>| {
+            for mut term in &mut q {
+                clear_term(&mut term);
+                term.put_string([0, 0], "Cursor out of bounds".bg(BLACK));
+            }
+        })
         .add_systems(Update, update)
         .run();
 }
@@ -32,12 +37,6 @@ fn setup(mut commands: Commands) {
     commands.spawn(TerminalCamera::new());
 }
 
-fn init(mut q_term: Query<&mut Terminal>) {
-    for mut t in &mut q_term {
-        clear_term(&mut t);
-    }
-}
-
 fn update(mut q_term: Query<(&mut Terminal, &TerminalTransform)>, q_cam: Query<&TerminalCamera>) {
     let cam = q_cam.single();
     let Some(cursor_pos) = cam.cursor_world_pos() else {
@@ -46,21 +45,21 @@ fn update(mut q_term: Query<(&mut Terminal, &TerminalTransform)>, q_cam: Query<&
     for (mut term, transform) in &mut q_term {
         clear_term(&mut term);
         if let Some(xy) = transform.world_to_tile(cursor_pos) {
-            term.put_string([0, 0], format!("Cursor pos: {}", xy).fg(WHITE).bg(BLACK));
+            term.put_string([0, 0], format!("Cursor pos: {}", xy).bg(BLACK));
         } else {
-            term.put_string([0, 0], "Cursor out of bounds".fg(WHITE).bg(BLACK));
+            term.put_string([0, 0], "Cursor out of bounds".bg(BLACK));
         }
     }
 }
 
 fn clear_term(term: &mut Terminal) {
+    term.clear();
     for (p, t) in term.iter_xy_mut() {
         let grid_color = if (p.x + p.y) % 2 == 0 {
-            Color::srgba_u8(0x15, 0x15, 0x15, 0xFF)
+            color::hex_color(0x151515)
         } else {
-            Color::srgba_u8(0x04, 0x04, 0x04, 0xFF)
-        }
-        .to_linear();
+            color::hex_color(0x040404)
+        };
         t.glyph = ' ';
         t.bg_color = grid_color;
     }

@@ -5,14 +5,14 @@ use bevy::{
     reflect::Reflect,
     sprite::MeshMaterial2d,
 };
-use sark_grids::{GridPoint, GridRect, GridSize, PivotedPoint};
+use sark_grids::{GridRect, GridSize, PivotedPoint};
 
 use crate::{
     ascii,
     render::{
         RebuildMeshVerts, TerminalFont, TerminalMaterial, TerminalMeshPivot, UvMappingHandle,
     },
-    rex::reader::XpFile,
+    rexpaint::reader::XpFile,
     string::{StringIter, TerminalString},
     transform::TerminalTransform,
     Tile,
@@ -77,6 +77,22 @@ impl Terminal {
             }
         }
         Ok(terminal)
+    }
+
+    pub fn from_string(string: impl AsRef<str>) -> Option<Self> {
+        let width = string.as_ref().lines().map(|l| l.len()).max()?;
+        let height = string.as_ref().lines().filter(|l| !l.is_empty()).count();
+        if width == 0 || height == 0 {
+            return None;
+        }
+        let mut terminal = Self::new([width, height]);
+        for (y, line) in string.as_ref().lines().rev().enumerate() {
+            for (x, ch) in line.chars().enumerate() {
+                let t = terminal.tile_mut([x as i32, y as i32]);
+                t.glyph = ch;
+            }
+        }
+        Some(terminal)
     }
 
     /// Specify the terminal's `clear tile`. This is the default tile used when
