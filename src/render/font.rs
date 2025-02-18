@@ -29,7 +29,7 @@ use super::material::TerminalMaterial;
 /// use bevy_ascii_terminal::*;
 ///
 /// fn setup(mut commands: Commands) {
-///    commands.spawn((Terminal, TerminalFont::Custom("assets/MyFont.png")));
+///    commands.spawn((Terminal::new([10,10]), TerminalFont::Custom("assets/MyFont.png".to_string())));
 /// }
 /// ```
 #[derive(Debug, Component, Reflect, Default, Clone)]

@@ -39,7 +39,8 @@ fn rand_color(rng: &mut ThreadRng) -> LinearRgba {
     let r: f32 = rng.gen_range(0.0..=1.0);
     let g: f32 = rng.gen_range(0.0..=1.0);
     let b: f32 = rng.gen_range(0.0..=1.0);
-    Color::linear_rgb(r, g, b).into()
+    let a: f32 = rng.gen_range(0.2..=1.0);
+    Color::linear_rgba(r, g, b, a).into()
 }
 
 fn spam_terminal(
@@ -54,6 +55,8 @@ fn spam_terminal(
     if *pause {
         return;
     }
+
+    let _ = info_span!("span_name", name = "span_name").entered();
 
     let mut rng = rand::thread_rng();
     let mut term = q.single_mut();

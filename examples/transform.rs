@@ -1,7 +1,7 @@
-use bevy::{
-    color::palettes::css::{BLACK, WHITE},
-    prelude::*,
-};
+//! Demonstrates how to use TerminalTransform and TerminalCamera to
+//! convert world coordinates into terminal tile coordinates.
+
+use bevy::{color::palettes::css::BLACK, prelude::*};
 use bevy_ascii_terminal::*;
 
 fn main() {

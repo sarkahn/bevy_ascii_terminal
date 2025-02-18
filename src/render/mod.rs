@@ -39,6 +39,6 @@ pub enum TerminalMeshWorldScaling {
     /// size. This means the terminal's world size will change when the font
     /// changes.
     ///
-    /// This is the expected default when using bevy's default [Camera2d].
+    /// This is the expected default when using bevy's default [bevy::prelude::Camera2d].
     Pixels,
 }

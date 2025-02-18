@@ -1,9 +1,21 @@
+//! Utilities  for writing formatted/decorated strings to the terminal
+//! without any extra allocations.
 use std::{ops::Sub, str::Chars};
 
 use bevy::{color::LinearRgba, math::IVec2, reflect::Reflect};
-use sark_grids::{GridRect, Pivot, PivotedPoint};
+use sark_grids::{GridRect, GridSize, Pivot, PivotedPoint};
 
 /// A string with optional [StringDecoration] and [StringFormatting] applied.
+///
+/// `dont_word_wrap` Can be used to disable word wrapping, which is enabled by
+/// default for terminal strings.
+///
+/// `clear_colors` can be used to set the fg and bg colors of the string
+/// tiles to match the terminal's clear tile.
+///
+/// The `bg` and `fg` methods can be used to set the background and foreground
+/// colors of the string tiles if clear_colors isn't set. Otherwise the existing
+/// colors in the terminal will remain unchanged.
 #[derive(Default, Debug, Clone)]
 pub struct TerminalString<T> {
     pub string: T,
@@ -32,17 +44,32 @@ impl<T: AsRef<str>> TerminalString<T> {
         self.decoration.clear_colors = true;
         self
     }
+
+    pub fn ignore_spaces(mut self) -> Self {
+        self.formatting.ignore_spaces = true;
+        self
+    }
+
+    pub fn dont_word_wrap(mut self) -> Self {
+        self.formatting.word_wrap = false;
+        self
+    }
 }
 
 /// Optional decoration to be applied to a string being written to a terminal.
-#[derive(Default, Debug, Clone, Reflect)]
+#[derive(Default, Debug, Clone, Copy, Reflect)]
 pub struct StringDecoration {
+    /// An optional foreground color for the string. If set to None then the
+    /// terminal's clear tile color will be used.
     pub fg_color: Option<LinearRgba>,
+    /// An optional background color for the string. If set to None then the
+    /// terminal's clear tile color will be used.
     pub bg_color: Option<LinearRgba>,
+    /// An optional pair of delimiters to be placed around the string.
     pub delimiters: (Option<char>, Option<char>),
-    /// If true the string's foreground and background colors will be set to
-    /// match the terminal's clear tile. This will override the fg and bg colors.
-    /// colors.
+    /// If true, then the terminal's clear tile colors will be used for the
+    /// string. If false then the fg and bg colors will be used if they are set.
+    /// Otherwise the existing colors in the terminal will remain unchanged.
     pub clear_colors: bool,
 }
 
@@ -63,7 +90,7 @@ pub trait StringDecorator<T: AsRef<str>> {
     /// opening delimiter and the second character will be the closing delimiter.
     fn delimiters(self, delimiters: impl AsRef<str>) -> DecoratedString<T>;
     /// Sets the string tile colors to match the terminal's clear tile. This will
-    /// override any previously set colors.
+    /// override the string's fg and bg colors.
     fn clear_colors(self) -> DecoratedString<T>;
 }
 
@@ -161,7 +188,7 @@ impl<T: AsRef<str>> From<T> for DecoratedString<T> {
 }
 
 /// Optional formatting to be applied to a string being written to a terminal.
-#[derive(Debug, Clone, Reflect)]
+#[derive(Debug, Clone, Reflect, Copy)]
 pub struct StringFormatting {
     /// Defines whether or not 'empty' (" ") tiles will be modified when writing
     /// strings to the terminal. If set to false then decorations will be
@@ -171,7 +198,18 @@ pub struct StringFormatting {
     // TODO: move to decoration?
     pub ignore_spaces: bool,
     /// Word wrap prevents words from being split across lines.
+    ///
+    /// Defaults to true.
     pub word_wrap: bool,
+}
+
+impl StringFormatting {
+    pub fn without_word_wrap() -> Self {
+        Self {
+            word_wrap: false,
+            ..Self::default()
+        }
+    }
 }
 
 impl Default for StringFormatting {
@@ -282,16 +320,16 @@ impl<T: AsRef<str>> FormattedString<T> {
         }
     }
 
-    pub fn clear_colors(self) -> TerminalString<T> {
-        TerminalString {
-            string: self.string,
-            decoration: StringDecoration {
-                clear_colors: true,
-                ..Default::default()
-            },
-            formatting: self.formatting,
-        }
-    }
+    // pub fn clear_colors(self) -> TerminalString<T> {
+    //     TerminalString {
+    //         string: self.string,
+    //         decoration: StringDecoration {
+    //             clear_colors: true,
+    //             ..Default::default()
+    //         },
+    //         formatting: self.formatting,
+    //     }
+    // }
 }
 
 impl<T: AsRef<str> + Default> From<T> for TerminalString<T> {
@@ -329,7 +367,7 @@ fn ver_pivot_offset(string: &str, pivot: Pivot, max_width: usize, wrap: bool) ->
         Pivot::TopLeft | Pivot::TopCenter | Pivot::TopRight => 0,
         _ => {
             let line_count = line_count(string, max_width, wrap);
-            (line_count as f32 * (1.0 - pivot.normalized().y)).round() as i32
+            (line_count.saturating_sub(1) as f32 * (1.0 - pivot.normalized().y)).round() as i32
         }
     }
 }
@@ -339,7 +377,10 @@ fn ver_pivot_offset(string: &str, pivot: Pivot, max_width: usize, wrap: bool) ->
 /// split at the last whitespace character before max_len, otherwise the string
 /// will be split at max_len.
 fn wrap_string(string: &str, max_len: usize, word_wrap: bool) -> Option<(&str, &str)> {
-    debug_assert!(max_len > 0, "max_len must be greater than 0");
+    debug_assert!(
+        max_len > 0,
+        "max_len for wrap_string must be greater than 0"
+    );
     if string.trim_end().is_empty() {
         return None;
     }
@@ -377,43 +418,57 @@ fn wrap_string(string: &str, max_len: usize, word_wrap: bool) -> Option<(&str, &
 /// The iterator will always wrap at newlines and will strip leading and trailing
 /// whitespace past the first line.
 pub struct StringIter<'a> {
-    word_wrapped: bool,
     remaining: &'a str,
-    current: Chars<'a>,
     rect: GridRect,
-    pivot: Pivot,
     xy: IVec2,
+    pivot: Pivot,
+    current: Chars<'a>,
+    formatting: StringFormatting,
+    decoration: StringDecoration,
 }
 
 impl<'a> StringIter<'a> {
     pub fn new(
-        xy: impl Into<PivotedPoint>,
         string: &'a str,
         rect: GridRect,
-        wrapped: bool,
+        local_xy: impl Into<PivotedPoint>,
+        formatting: Option<StringFormatting>,
+        decoration: Option<StringDecoration>,
     ) -> Self {
-        let xy: PivotedPoint = xy.into().with_default_pivot(Pivot::TopLeft);
-        let pivot = xy.pivot.unwrap();
-        let offset = xy.point;
+        let pivoted_point: PivotedPoint = local_xy.into().with_default_pivot(Pivot::TopLeft);
+        let pivot = pivoted_point.pivot.unwrap();
+        let local_xy = pivoted_point.point;
 
-        let first_max_len = rect.width().saturating_sub(offset.abs().x as usize);
-        let (first, remaining) = wrap_string(string, first_max_len, wrapped).unwrap_or_default();
+        let formatting = formatting.unwrap_or_default();
+        let decoration = decoration.unwrap_or_default();
+
+        debug_assert!(
+            rect.size.contains_point(local_xy),
+            "Local xy {} passed to StringIter must be within the bounds of the given rect size {}",
+            local_xy,
+            rect.size
+        );
+
+        let first_max_len = rect.width().saturating_sub(local_xy.x as usize);
+        let (first, remaining) =
+            wrap_string(string, first_max_len, formatting.word_wrap).unwrap_or_default();
 
         let horizontal_offset = hor_pivot_offset(pivot, first.len());
-        let vertical_offset = ver_pivot_offset(string, pivot, rect.width(), wrapped);
+        let vertical_offset = ver_pivot_offset(string, pivot, rect.width(), formatting.word_wrap);
 
-        let mut xy = xy.calculate(rect.size);
+        let mut xy = rect.pivoted_point(pivoted_point);
 
         xy.x += horizontal_offset;
         xy.y += vertical_offset;
 
         Self {
-            word_wrapped: wrapped,
             remaining,
-            current: first.chars(),
             rect,
-            pivot,
             xy,
+            pivot,
+            current: first.chars(),
+            formatting,
+            decoration,
         }
     }
 
@@ -426,30 +481,36 @@ impl<'a> StringIter<'a> {
 }
 
 impl Iterator for StringIter<'_> {
-    type Item = (IVec2, char);
+    type Item = (IVec2, (char, Option<LinearRgba>, Option<LinearRgba>));
 
     fn next(&mut self) -> Option<Self::Item> {
-        let ch = self.current.next().or_else(|| {
-            let (next_line, remaining) =
-                wrap_string(self.remaining, self.rect.width(), self.word_wrapped)?;
+        let ch = self
+            .decoration
+            .delimiters
+            .0
+            .take()
+            .or_else(|| self.current.next())
+            .or_else(|| {
+                let (next_line, remaining) =
+                    wrap_string(self.remaining, self.rect.width(), self.formatting.word_wrap)?;
 
-            // if self.word_wrapped {
-            //     wrap_string(self.remaining, self.rect.width())?
-            // } else {
-            //     split_string(self.remaining, self.rect.width())?
-            // };
-            self.line_feed(next_line.len());
-            if self.xy.y < 0 {
-                return None;
-            }
-            self.remaining = remaining;
-            self.current = next_line.chars();
-            self.current.next()
-        })?;
-
-        let ret = Some((self.xy, ch));
+                self.line_feed(next_line.len());
+                if self.xy.y < 0 {
+                    return None;
+                }
+                self.remaining = remaining;
+                self.current = next_line.chars();
+                self.current.next()
+            })
+            .or_else(|| self.decoration.delimiters.1.take())?;
+        let p = self.xy;
         self.xy.x += 1;
-        ret
+        if ch == ' ' && self.formatting.ignore_spaces {
+            return self.next();
+        }
+        let fg = self.decoration.fg_color;
+        let bg = self.decoration.bg_color;
+        Some((p, (ch, fg, bg)))
     }
 }
 
@@ -463,7 +524,7 @@ mod tests {
 
     /// Map each character in the string to it's grid position
     fn make_map(string: StringIter<'_>) -> HashMap<[i32; 2], char> {
-        string.map(|(p, ch)| (p.to_array(), ch)).collect()
+        string.map(|(p, (ch, _, _))| (p.to_array(), ch)).collect()
     }
 
     fn get_char(map: &HashMap<[i32; 2], char>, xy: [i32; 2]) -> char {
@@ -496,7 +557,16 @@ mod tests {
     #[test]
     fn iter_newline() {
         let area = GridRect::new([0, 0], [40, 40]);
-        let iter = StringIter::new([0, 0], "A simple string\nWith a newline", area, true);
+        let iter = StringIter::new(
+            "A simple string\nWith a newline",
+            area,
+            [0, 0],
+            Some(StringFormatting {
+                word_wrap: true,
+                ..Default::default()
+            }),
+            None,
+        );
         let map = make_map(iter);
         assert_eq!('g', get_char(&map, [14, 39]));
         assert_eq!('W', get_char(&map, [0, 38]))
@@ -536,9 +606,15 @@ mod tests {
     }
 
     #[test]
-    fn iter_line_wrap() {
+    fn iter_no_word_wrap() {
         let area = GridRect::new([0, 0], [12, 20]);
-        let iter = StringIter::new([0, 0], "A simple string\nWith a newline", area, false);
+        let iter = StringIter::new(
+            "A simple string\nWith a newline",
+            area,
+            [0, 0],
+            Some(StringFormatting::without_word_wrap()),
+            None,
+        );
         let map = make_map(iter);
         assert_eq!("A simple str", read_string(&map, [0, 19], 12));
         assert_eq!("ing", read_string(&map, [0, 18], 3));
@@ -549,7 +625,16 @@ mod tests {
     #[test]
     fn iter_word_wrap() {
         let area = GridRect::new([0, 0], [12, 20]);
-        let iter = StringIter::new([0, 0], "A simple string\nWith a newline", area, true);
+        let iter = StringIter::new(
+            "A simple string\nWith a newline",
+            area,
+            [0, 0],
+            Some(StringFormatting {
+                word_wrap: true,
+                ..Default::default()
+            }),
+            None,
+        );
         let map = make_map(iter);
         assert_eq!("A simple", read_string(&map, [0, 19], 8));
         assert_eq!("string", read_string(&map, [0, 18], 6));
@@ -565,22 +650,42 @@ mod tests {
     }
 
     #[test]
-    fn y_offset() {
+    fn y_offset_wrap() {
         let string = "A somewhat longer line\nWith a newline or two\nOkay? WHEEEEEE.";
         let line_len = 12;
         let wrap = true;
         let offset = ver_pivot_offset(string, Pivot::TopLeft, line_len, wrap);
         assert_eq!(0, offset);
+        assert_eq!(7, line_count(string, 12, wrap));
+        assert_eq!(6, ver_pivot_offset(string, Pivot::BottomLeft, 12, wrap));
+    }
+
+    #[test]
+    fn y_offset_no_wrap() {
+        let string = "A somewhat longer line\nWith a newline or two\nOkay? WHEEEEEE.";
+        let line_len = 12;
+        let wrap = false;
+        let offset = ver_pivot_offset(string, Pivot::TopLeft, line_len, wrap);
+        assert_eq!(0, offset);
         let offset = ver_pivot_offset(string, Pivot::BottomLeft, 12, wrap);
-        assert_eq!(7, offset);
+        assert_eq!(6, line_count(string, 12, false));
+        assert_eq!(5, offset);
     }
 
     #[test]
     fn right_pivot() {
         let string = "A somewhat longer line\nWith a newline";
         let area = GridRect::new([0, 0], [12, 20]);
-        let wrap = true;
-        let iter = StringIter::new([0, 0].pivot(Pivot::TopRight), string, area, wrap);
+        let iter = StringIter::new(
+            string,
+            area,
+            [0, 0].pivot(Pivot::TopRight),
+            Some(StringFormatting {
+                word_wrap: true,
+                ..Default::default()
+            }),
+            None,
+        );
         let map = make_map(iter);
         let assert_string_location = |string: &str, xy: [i32; 2]| {
             assert_eq!(string, read_string(&map, xy, string.len()));
@@ -589,5 +694,54 @@ mod tests {
         assert_string_location("longer line", [1, 18]);
         assert_string_location("With a", [6, 17]);
         assert_string_location("newline", [5, 16]);
+    }
+
+    #[test]
+    fn delimiters() {
+        let string = "A simple string";
+        let area = GridRect::new([0, 0], [20, 5]);
+        let iter = StringIter::new(
+            string,
+            area,
+            [0, 0],
+            None,
+            Some(StringDecoration {
+                delimiters: (Some('['), Some(']')),
+                ..Default::default()
+            }),
+        );
+        let map = make_map(iter);
+        assert_eq!("[A simple string]", read_string(&map, [0, 4], 17));
+    }
+
+    #[test]
+    fn one_wide() {
+        let string = "Abcdefg";
+        let area = GridRect::new([0, 0], [1, 7]);
+        let iter = StringIter::new(string, area, [0, 0], None, None);
+        let map = make_map(iter);
+        assert_eq!('A', get_char(&map, [0, 6]));
+        assert_eq!('b', get_char(&map, [0, 5]));
+        assert_eq!('c', get_char(&map, [0, 4]));
+        assert_eq!('d', get_char(&map, [0, 3]));
+        assert_eq!('e', get_char(&map, [0, 2]));
+        assert_eq!('f', get_char(&map, [0, 1]));
+        assert_eq!('g', get_char(&map, [0, 0]));
+    }
+
+    #[test]
+    fn leftbot() {
+        let string = "LeftBot";
+        let p = [0, 0].pivot(Pivot::BottomLeft);
+        let rect = GridRect::new([-1, 6], [1, 40]);
+        let iter = StringIter::new(string, rect, p, None, None);
+        let map = make_map(iter);
+        assert_eq!('L', get_char(&map, [-1, 12]));
+        assert_eq!('e', get_char(&map, [-1, 11]));
+        assert_eq!('f', get_char(&map, [-1, 10]));
+        assert_eq!('t', get_char(&map, [-1, 9]));
+        assert_eq!('B', get_char(&map, [-1, 8]));
+        assert_eq!('o', get_char(&map, [-1, 7]));
+        assert_eq!('t', get_char(&map, [-1, 6]));
     }
 }

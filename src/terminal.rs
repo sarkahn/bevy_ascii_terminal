@@ -1,3 +1,5 @@
+//! A grid of tiles for rendering colorful ascii.
+
 use bevy::{
     color::{ColorToPacked, LinearRgba},
     math::{IVec2, UVec2},
@@ -18,7 +20,7 @@ use crate::{
     Tile,
 };
 
-/// A terminal to present a sized grid of colored tiles.
+/// A grid of tiles for rendering colorful ascii.
 #[derive(Debug, Reflect, Component, Clone)]
 #[require(
     TerminalTransform,
@@ -64,7 +66,7 @@ impl Terminal {
                     let Some(glyph) = char::from_u32(cell.ch) else {
                         continue;
                     };
-                    let glyph = ascii::index_to_char(glyph as u8);
+                    let glyph = ascii::try_index_to_char(glyph as u8).unwrap_or(' ');
                     let frgb = [cell.fg.r, cell.fg.g, cell.fg.b, 255];
                     let brgb = [cell.bg.r, cell.bg.g, cell.bg.b, 255];
                     let fg = LinearRgba::from_u8_array(frgb);
@@ -79,6 +81,15 @@ impl Terminal {
         Ok(terminal)
     }
 
+    /// Create a terminal from a string, where each line is a row of the terminal.
+    /// Empty lines will be ignored, add a space if you want an actual empty row
+    /// built into the terminal.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy_ascii_terminal::Terminal;
+    /// let terminal = Terminal::from_string("Hello\nWorld").unwrap();
+    /// ```
     pub fn from_string(string: impl AsRef<str>) -> Option<Self> {
         let width = string.as_ref().lines().map(|l| l.len()).max()?;
         let height = string.as_ref().lines().filter(|l| !l.is_empty()).count();
@@ -96,14 +107,14 @@ impl Terminal {
     }
 
     /// Specify the terminal's `clear tile`. This is the default tile used when
-    /// clearing a dense terminal or when creating a new tile on a sparse terminal.
+    /// clearing a dense terminal.
     pub fn with_clear_tile(mut self, clear_tile: Tile) -> Self {
         self.clear_tile = clear_tile;
         self.fill(clear_tile);
         self
     }
 
-    /// Can be used to add a string to the terminal during initialization.
+    /// A utility function to add a string to the terminal during creation.
     pub fn with_string<T: AsRef<str>>(
         mut self,
         xy: impl Into<PivotedPoint>,
@@ -113,10 +124,32 @@ impl Terminal {
         self
     }
 
+    /// Insert a character to the terminal.
+    ///
+    /// This returns a mutable reference to the terminal tile which can be used
+    /// to further modify it.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// let mut terminal = Terminal::new([10, 10]);
+    /// terminal.put_char([5, 5], 'X').fg(color::RED);
+    /// ```
     pub fn put_char(&mut self, xy: impl Into<PivotedPoint>, ch: char) -> &mut Tile {
         self.tile_mut(xy).char(ch)
     }
 
+    /// Set the foreground color of a tile.
+    ///
+    /// This returns a mutable reference to the terminal tile which can be used
+    /// to further modify it.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// let mut terminal = Terminal::new([10, 10]);
+    /// terminal.put_fg_color([5, 5], color::RED).bg(color::BLUE);
+    /// ```
     pub fn put_fg_color(
         &mut self,
         xy: impl Into<PivotedPoint>,
@@ -125,6 +158,17 @@ impl Terminal {
         self.tile_mut(xy).fg(color)
     }
 
+    /// Set the background color of a tile.
+    ///
+    /// This returns a mutable reference to the terminal tile which can be used
+    /// to further modify it.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// let mut terminal = Terminal::new([10, 10]);
+    /// terminal.put_bg_color([5, 5], color::BLUE).fg(color::RED);
+    /// ```
     pub fn put_bg_color(
         &mut self,
         xy: impl Into<PivotedPoint>,
@@ -133,6 +177,7 @@ impl Terminal {
         self.tile_mut(xy).bg(color)
     }
 
+    /// Insert a tile into the terminal.
     pub fn put_tile(&mut self, xy: impl Into<PivotedPoint>, tile: Tile) -> &mut Tile {
         let xy = xy.into();
         let t = self.tile_mut(xy);
@@ -140,7 +185,7 @@ impl Terminal {
         t
     }
 
-    /// Clear the terminal, setting all tiles to the terminals `clear_tile`.
+    /// Clear the terminal, setting all tiles to the terminal's `clear_tile`.
     pub fn clear(&mut self) {
         self.tiles.fill(self.clear_tile);
     }
@@ -151,8 +196,19 @@ impl Terminal {
 
     /// Write a formatted string to the terminal.
     ///
+    /// Formatting options can be applied to the string before writing it to the terminal,
+    /// see [TerminalString].
+    ///
     /// By default strings will be written to the top left of the terminal. You
     /// can apply a pivot to the xy position to change this.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// let mut terminal = Terminal::new([10, 10]);
+    /// terminal.put_string([5, 5], "Hello, World!".bg(color::BLUE));
+    /// terminal.put_string([1, 1].pivot(Pivot::BottomLeft), "Beep beep!");
+    /// ```
     pub fn put_string<T: AsRef<str>>(
         &mut self,
         xy: impl Into<PivotedPoint>,
@@ -160,31 +216,28 @@ impl Terminal {
     ) {
         let bounds = self.bounds();
         let ts: TerminalString<T> = string.into();
-        let wrap = ts.formatting.word_wrap;
-        let fg = if ts.decoration.clear_colors {
-            Some(self.clear_tile.fg_color)
-        } else {
-            ts.decoration.fg_color
-        };
-        let bg = if ts.decoration.clear_colors {
-            Some(self.clear_tile.bg_color)
-        } else {
-            ts.decoration.bg_color
-        };
-        let ignore_spaces = ts.formatting.ignore_spaces;
-        let mut iter = StringIter::new(xy, ts.string.as_ref(), bounds, wrap);
-
-        for (xy, ch) in iter.by_ref() {
-            if ignore_spaces && ch.is_whitespace() {
-                continue;
-            }
+        let clear_tile = self.clear_tile;
+        let clear_colors = ts.decoration.clear_colors;
+        let mut iter = StringIter::new(
+            ts.string.as_ref(),
+            bounds,
+            xy,
+            Some(ts.formatting),
+            Some(ts.decoration),
+        );
+        for (xy, (ch, fg, bg)) in iter.by_ref() {
             let tile = self.tile_mut(xy);
             tile.glyph = ch;
-            if let Some(fg) = fg {
-                tile.fg_color = fg;
-            }
-            if let Some(bg) = bg {
-                tile.bg_color = bg;
+            if clear_colors {
+                tile.fg_color = clear_tile.fg_color;
+                tile.bg_color = clear_tile.bg_color;
+            } else {
+                if let Some(col) = fg {
+                    tile.fg_color = col;
+                }
+                if let Some(col) = bg {
+                    tile.bg_color = col;
+                }
             }
         }
     }

@@ -596,6 +596,10 @@ pub const fn index_to_char(index: u8) -> char {
     CP_437_ARRAY[index as usize]
 }
 
+pub fn try_index_to_char(index: u8) -> Option<char> {
+    CP_437_ARRAY.get(index as usize).copied()
+}
+
 /// Convert a char to it's corresponding ascii glyph index (0..256)
 pub const fn char_to_index(c: char) -> Option<u8> {
     let value = match c {

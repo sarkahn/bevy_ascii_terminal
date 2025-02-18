@@ -1,5 +1,6 @@
 //! A terminal component which determines how glyphs are mapped to their
 //! corresponding uvs on the tile sheet.
+//!
 use bevy::{
     math::{Rect, Vec2},
     prelude::{Asset, AssetApp, Assets, Component, Deref, DerefMut, Handle, Plugin},

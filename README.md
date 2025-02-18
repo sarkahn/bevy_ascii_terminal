@@ -27,11 +27,12 @@ fn setup(mut commands: Commands) {
     // Draw a blue "Hello world!" to the terminal
     terminal.put_string([1, 1], "Hello world!".fg(Color::BLUE));
 
+    // Spawn the terminal entity.
     commands.spawn((
-        // Spawn the terminal bundle from our terminal
         terminal,
 		TerminalBorder::single_line(),
     ));
+    // Spawn the camera to render the terminal.
 	commands.spawn(TerminalCamera::new());
 }
 
@@ -55,7 +56,7 @@ fn main () {
 | 0.8   | 0.11                |
 | 0.7   | 0.9-0.10            |
 
-## Bevy Ascii Terminal Projects
+## Bevy Ascii Terminal Projects (Note these were built on earlier versions and haven't been updated in a while)
 
 **Bevy Roguelike** - [Source](https://github.com/sarkahn/bevy_roguelike/) - [WASM](https://sarkahn.github.io/bevy_rust_roguelike_tut_web/)
 

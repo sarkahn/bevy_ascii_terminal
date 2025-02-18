@@ -1,3 +1,5 @@
+//! A minimal example with a terminal and camera.
+
 use bevy::prelude::*;
 use bevy_ascii_terminal::*;
 

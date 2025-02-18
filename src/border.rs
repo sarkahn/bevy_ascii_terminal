@@ -5,14 +5,17 @@ use enum_ordinalize::Ordinalize;
 use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
 
 use crate::{
-    string::{DecoratedString, StringDecoration},
+    string::{DecoratedString, StringDecoration, StringIter},
     Tile,
 };
 
 /// A component for drawing a border around a terminal.
 ///
 /// Along with a 9 slice string to represent the border, aligned and formatted
-/// strings can be written can be written to the four cardinal sides of the border.
+/// strings can be written can be four sides of the border.
+///
+/// The border can have "empty" sides which will be ignored when building the
+/// terminal mesh.
 #[derive(Debug, Default, Clone, Component, Reflect)]
 pub struct TerminalBorder {
     pub edge_glyphs: [Option<char>; 8],
@@ -24,7 +27,7 @@ impl TerminalBorder {
     /// Create a [Border] from a 9 slice string.
     ///
     /// The string will be read line by line, with the last 3 characters on
-    /// each line being used to set the border glyphs, with the center of the
+    /// each line being used to set the border glyphs. The center of the
     /// 9 slice being ignored.
     ///
     /// 'Space' characters will count as an empty tile for that edge.
@@ -35,11 +38,10 @@ impl TerminalBorder {
     /// use bevy_ascii_terminal::*;
     ///
     /// // Create a single-line border with no tiles on the top and bottom edges.
-    /// let border = Border::from_string(
+    /// let border = TerminalBorder::from_string(
     /// "┌ ┐
     ///  │ │
-    ///  └ ┘")
-    /// );
+    ///  └ ┘");
     /// ```
     pub fn from_string(string: impl AsRef<str>) -> Self {
         let mut glyphs = [None; 8];
@@ -156,24 +158,6 @@ impl TerminalBorder {
                 .any(|bs| bs.edge == BorderSide::Top)
     }
 
-    pub fn edge_glyph(&self, pivot: Pivot) -> Option<char> {
-        let i = if pivot == Pivot::Center {
-            Pivot::TopCenter.ordinal() as usize
-        } else {
-            pivot.ordinal() as usize
-        };
-        self.edge_glyphs[i]
-    }
-
-    pub fn edge_glyph_mut(&mut self, pivot: Pivot) -> Option<&mut char> {
-        let i = if pivot == Pivot::Center {
-            Pivot::TopCenter.ordinal() as usize
-        } else {
-            pivot.ordinal() as usize
-        };
-        self.edge_glyphs[i].as_mut()
-    }
-
     pub fn set_edge_glyph(&mut self, pivot: Pivot, glyph: Option<char>) {
         let pivot = if pivot == Pivot::Center {
             Pivot::TopCenter
@@ -201,7 +185,7 @@ impl TerminalBorder {
     /// * `alignment` - Determines the starting position of the string, where 0.0
     ///   is the bottom/left and 1.0 is the top/right.
     ///
-    /// * `offset` - Offset the string by the given number of tiles from it's the
+    /// * `offset` - Offset the string by the given number of tiles from it's
     ///   aligned position. Positive values adjust up/right, negative values adjust
     ///   down/left.
     pub fn put_string<T: AsRef<str>>(
@@ -236,7 +220,8 @@ impl TerminalBorder {
         bounds
     }
 
-    /// Rebuild border tiles.
+    /// Rebuild border tiles. This is called by terminal systems to update the
+    /// border tiles before building them into the terminal mesh.
     pub(crate) fn rebuild(&mut self, size: impl GridSize, clear_tile: Tile) {
         self.tiles.clear();
         let bounds = self.bounds(size);
@@ -297,7 +282,6 @@ impl TerminalBorder {
         }
 
         for s in self.border_strings.iter() {
-            // TODO: Account for delimiters in string
             let dir = match s.edge {
                 BorderSide::Top | BorderSide::Bottom => IVec2::new(1, 0),
                 BorderSide::Left | BorderSide::Right => IVec2::new(0, -1),
@@ -316,29 +300,34 @@ impl TerminalBorder {
                 }
             };
 
-            let mut p = match s.edge {
-                BorderSide::Top => bounds.top_left().right(1),
-                BorderSide::Bottom => bounds.bottom_left().right(1),
-                BorderSide::Left => bounds.bottom_left().up(1),
-                BorderSide::Right => bounds.bottom_right().up(1),
-            } + offset;
+            let side_rect = match s.edge {
+                BorderSide::Top => {
+                    GridRect::new(bounds.top_left().right(1), [bounds.width() - 2, 1])
+                }
+                BorderSide::Bottom => {
+                    GridRect::new(bounds.bottom_left().right(1), [bounds.width() - 2, 1])
+                }
+                BorderSide::Left => {
+                    GridRect::new(bounds.bottom_left().up(1), [1, bounds.height() - 2])
+                }
+                BorderSide::Right => {
+                    GridRect::new(bounds.bottom_right().up(1), [1, bounds.height() - 2])
+                }
+            };
 
-            let fg_color = s.decoration.fg_color.unwrap_or(clear_tile.fg_color);
-            let bg_color = s.decoration.bg_color.unwrap_or(clear_tile.bg_color);
-
-            for glyph in s.string.chars() {
+            for (p, (ch, fg, bg)) in
+                StringIter::new(&s.string, side_rect, offset, None, Some(s.decoration))
+            {
+                // decoration.clear_colors is ignored in borders since we don't have
+                // an existing tile to work from.
                 self.tiles.insert(
                     p,
                     Tile {
-                        glyph,
-                        fg_color,
-                        bg_color,
+                        glyph: ch,
+                        fg_color: fg.unwrap_or(clear_tile.fg_color),
+                        bg_color: bg.unwrap_or(clear_tile.bg_color),
                     },
                 );
-                p += dir;
-                if !bounds.contains_point(p) {
-                    break;
-                }
             }
         }
     }
@@ -369,20 +358,22 @@ pub struct BorderString {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn border() {
-        let mut border = TerminalBorder::single_line();
 
+    #[test]
+    fn build_border_strings() {
+        let mut border = TerminalBorder::single_line();
+        border.put_string(BorderSide::Top, 0.0, 0, "TopLef");
+        border.put_string(BorderSide::Top, 1.0, 0, "TopRig");
+        border.put_string(BorderSide::Bottom, 0.0, 0, "BotLef");
+        border.put_string(BorderSide::Bottom, 1.0, 0, "BotRig");
+        border.put_string(BorderSide::Left, 0.0, 0, "LeftBot");
+        border.put_string(BorderSide::Left, 1.0, 0, "LeftTop");
         border.put_string(BorderSide::Right, 0.0, 0, "RightBot");
         border.put_string(BorderSide::Right, 1.0, 0, "RightTop");
+        border.rebuild([40, 40], Tile::default());
 
-        border.put_string(BorderSide::Left, 0.0, 0, "LeftBa");
-        border.put_string(BorderSide::Left, 1.0, 0, "LeftTa");
-
-        border.put_string(BorderSide::Top, 0.0, 0, "TopLa");
-        border.put_string(BorderSide::Top, 1.0, 0, "TopRa");
-
-        border.put_string(BorderSide::Bottom, 0.0, 0, "BotLa");
-        border.put_string(BorderSide::Bottom, 1.0, 0, "BotRa");
+        for (p, t) in border.tiles() {
+            println!("{:?} {:?}", p, t);
+        }
     }
 }

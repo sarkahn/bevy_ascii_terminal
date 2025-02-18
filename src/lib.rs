@@ -16,12 +16,12 @@ use bevy::{
 };
 pub use border::TerminalBorder;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
-pub use sark_grids::{GridPoint, GridRect, GridSize};
+pub use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
 pub use string::StringDecorator;
 pub use terminal::Terminal;
 pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;
-pub use transform::TerminalTransform;
+pub use transform::{SetTerminalGridPosition, SetTerminalLayerPosition, TerminalTransform};
 
 pub struct TerminalPlugins;
 

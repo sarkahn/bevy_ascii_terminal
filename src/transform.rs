@@ -22,7 +22,7 @@ use bevy::{
 
 use crate::{
     border::TerminalBorder,
-    render::{TerminalFont, TerminalMaterial, TerminalMeshPivot},
+    render::{TerminalFont, TerminalMaterial, TerminalMeshPivot, TerminalMeshTileScaling},
     GridPoint, Terminal, TerminalMeshWorldScaling,
 };
 pub(crate) struct TerminalTransformPlugin;
@@ -70,24 +70,20 @@ pub struct TerminalTransform {
 
 /// A temporary component for setting the terminal to a fixed grid position
 /// based on the terminal tile size. Runs in [PostUpdate].
-#[derive(Component, Debug, Default, Clone, Copy)]
-pub struct SetTerminalGridPosition {
-    pub xy: IVec2,
-}
+///
+/// Note that since the terminal tile size can only be calculated from the terminal
+/// font there might be a delay before this gets applied while the terminal font
+/// image is being loaded.
+#[derive(Component, Debug, Default, Clone, Copy, Reflect)]
+pub struct SetTerminalGridPosition(pub IVec2);
 
-impl SetTerminalGridPosition {
-    pub fn new(xy: impl GridPoint) -> Self {
-        Self { xy: xy.to_ivec2() }
+impl<T: GridPoint> From<T> for SetTerminalGridPosition {
+    fn from(xy: T) -> Self {
+        Self(xy.to_ivec2())
     }
 }
 
-impl GridPoint for SetTerminalGridPosition {
-    fn xy(&self) -> IVec2 {
-        self.xy
-    }
-}
-
-/// Component to set the terminal's layer position. Terminals on a higher layer
+/// A temporary component to set the terminal's layer position. Terminals on a higher layer
 /// will be rendered on top of terminals on a lower layer. Runs in [PostUpdate].
 #[derive(Component, Default, Clone, Copy)]
 pub struct SetTerminalLayerPosition(pub i32);
@@ -208,6 +204,7 @@ fn cache_transform_data(
             &TerminalMeshPivot,
             &Terminal,
             &MeshMaterial2d<TerminalMaterial>,
+            Option<&TerminalMeshTileScaling>,
             Option<&TerminalBorder>,
         ),
         Or<(
@@ -222,7 +219,9 @@ fn cache_transform_data(
     scaling: Res<TerminalMeshWorldScaling>,
     mut commands: Commands,
 ) {
-    for (entity, transform, mut term_transform, pivot, term, mat_handle, border) in &mut q_term {
+    for (entity, transform, mut term_transform, pivot, term, mat_handle, tile_scaling, border) in
+        &mut q_term
+    {
         let Some(image) = materials
             .get(&mat_handle.0)
             .and_then(|mat| mat.texture.as_ref().and_then(|image| images.get(image)))
@@ -240,6 +239,11 @@ fn cache_transform_data(
         let world_tile_size = match *scaling {
             TerminalMeshWorldScaling::World => Vec2::new(ppu.x as f32 / ppu.y as f32, 1.0),
             TerminalMeshWorldScaling::Pixels => ppu.as_vec2(),
+        };
+        let world_tile_size = if let Some(tile_scaling) = tile_scaling.as_ref() {
+            world_tile_size * tile_scaling.0
+        } else {
+            world_tile_size
         };
 
         data.world_tile_size = world_tile_size;
@@ -268,6 +272,7 @@ fn cache_transform_data(
         .to_vec2()
             * world_tile_size;
 
+        // The size of the terminal mesh excluding the border bounds
         let inner_mesh_size = term.size().as_vec2() * world_tile_size;
         let inner_mesh_min = -inner_mesh_size * pivot.normalized();
         let local_min = inner_mesh_min + border_offset;
@@ -276,9 +281,11 @@ fn cache_transform_data(
 
         let world_bounds = if let Some(border) = border.as_ref() {
             let bounds = border.bounds(term.size());
-            let size = bounds.size.as_vec2() * world_tile_size;
-            let world_min = transform.translation().truncate() - size * pivot.normalized();
-            let world_max = world_min + size;
+            // The size of the terminal mesh including the border bounds
+            let total_world_size = bounds.size.as_vec2() * world_tile_size;
+            let world_min =
+                transform.translation().truncate() - total_world_size * pivot.normalized();
+            let world_max = world_min + total_world_size;
             Rect::from_corners(world_min, world_max)
         } else {
             let world_min = transform.translation().truncate() + local_min;
@@ -304,7 +311,7 @@ fn set_grid_position(
 ) {
     for (e, grid_pos, term_transform, mut transform) in &mut q_grid_pos {
         if let Some(data) = &term_transform.cached_data {
-            let p = grid_pos.to_vec2() * data.world_tile_size;
+            let p = grid_pos.0.as_vec2() * data.world_tile_size;
             let z = transform.translation.z;
             transform.translation = p.extend(z);
             commands.entity(e).remove::<SetTerminalGridPosition>();

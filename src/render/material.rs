@@ -66,6 +66,10 @@ impl Material2d for TerminalMaterial {
 
         Ok(())
     }
+
+    fn alpha_mode(&self) -> bevy::sprite::AlphaMode2d {
+        bevy::sprite::AlphaMode2d::Blend
+    }
 }
 
 impl Default for TerminalMaterial {

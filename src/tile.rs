@@ -1,3 +1,5 @@
+//! A terminal tile.
+
 use bevy::{
     color::{Color, LinearRgba},
     reflect::Reflect,

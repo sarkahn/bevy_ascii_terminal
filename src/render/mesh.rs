@@ -1,3 +1,5 @@
+//! Systems for building the terminal mesh.
+
 use bevy::{
     app::{Last, Plugin},
     asset::{AssetEvent, Assets},
@@ -70,6 +72,9 @@ pub struct RebuildMeshVerts;
 /// Component for the terminal which determines where terminal mesh tiles
 /// are built relative to the terminal's transform position.
 ///
+/// Two terminals with the same position and a different [TerminalMeshPivot] will
+/// not overlap.
+///
 /// Defaults to bottom left.
 #[derive(Component, Default)]
 pub enum TerminalMeshPivot {
@@ -104,7 +109,7 @@ impl TerminalMeshPivot {
     }
 }
 
-/// An optional component to scale terminal tiles after [TerminalMeshWorldScaling] is
+/// An optional component to scale terminal tiles after [crate::TerminalMeshWorldScaling] is
 /// applied.
 #[derive(Component)]
 pub struct TerminalMeshTileScaling(pub Vec2);
@@ -212,15 +217,12 @@ fn rebuild_mesh_verts(
             &Mesh2d,
             &MeshMaterial2d<TerminalMaterial>,
             &TerminalTransform,
-            // &TerminalWorldScaling,
-            // Option<&TerminalTileScaling>,
             Option<&mut TerminalBorder>,
         ),
         Or<(
             Changed<TerminalMeshPivot>,
             Changed<TerminalMeshTileScaling>,
             Changed<TerminalBorder>,
-            //Added<TerminalBorder>,
             With<RebuildMeshVerts>,
         )>,
     >,
@@ -230,17 +232,7 @@ fn rebuild_mesh_verts(
     images: Res<Assets<Image>>,
     mut evt: EventWriter<UpdateTerminalViewportEvent>,
 ) {
-    for (
-        entity,
-        mut term,
-        mesh_handle,
-        mat_handle,
-        transform,
-        // world_scaling,
-        // tile_scaling,
-        mut border,
-    ) in &mut q_term
-    {
+    for (entity, mut term, mesh_handle, mat_handle, transform, mut border) in &mut q_term {
         let mesh = meshes
             .get_mut(&mesh_handle.0.clone())
             .expect("Error getting terminal mesh");
@@ -376,14 +368,11 @@ fn rebuild_mesh_uvs(
         let mut set_tile_uvs = |t: &Tile, tile_index: usize| {
             let i = tile_index * 4;
             let map_uvs = mapping.uvs_from_char(t.glyph);
-
-            uvs[i..i + 4]
-                .iter_mut()
-                .zip(map_uvs)
-                .for_each(|(mesh_uv, map_uvs)| *mesh_uv = *map_uvs);
-
-            fg[i..i + 4].fill(t.fg_color.to_f32_array());
-            bg[i..i + 4].fill(t.bg_color.to_f32_array());
+            for (map_index, i) in (i..i + 4).enumerate() {
+                uvs[i] = map_uvs[map_index];
+                fg[i] = t.fg_color.to_f32_array();
+                bg[i] = t.bg_color.to_f32_array();
+            }
         };
 
         for (i, t) in term.iter().enumerate() {
