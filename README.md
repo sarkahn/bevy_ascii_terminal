@@ -30,7 +30,7 @@ fn setup(mut commands: Commands) {
     // Spawn the terminal entity.
     commands.spawn((
         terminal,
-		TerminalBorder::single_line(),
+	TerminalBorder::single_line(),
     ));
     // Spawn the camera to render the terminal.
 	commands.spawn(TerminalCamera::new());
