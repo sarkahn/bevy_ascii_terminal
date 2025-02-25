@@ -272,27 +272,25 @@ fn update_viewport(
     // with the largest font.
     let Some(ppu) = q_term
         .iter()
-        .map(|t| {
-            t.cached_data
-                .as_ref()
-                .expect("Terminal transform update should run before camera update")
-                .pixels_per_tile
+        .filter_map(|t| {
+            t.cached_data.as_ref().map(|d| d.pixels_per_tile)
         })
         .reduce(UVec2::max)
     else {
+        // Terminal font images may still be loading
         return;
     };
     // Determine our canonical tile size from the largest of all terminals.
-    let tile_size = q_term
+    let Some(tile_size) = q_term
         .iter()
-        .map(|t| {
+        .filter_map(|t| {
             t.cached_data
-                .as_ref()
-                .expect("Terminal transform update should run before camera update")
-                .world_tile_size
+                .as_ref().map(|d| d.world_tile_size)
         })
         .reduce(Vec2::max)
-        .unwrap();
+    else {
+        return;
+    };
 
     // Invalid terminal image size, images could still be loading.
     if ppu.cmpeq(UVec2::ZERO).any() {
