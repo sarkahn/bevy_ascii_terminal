@@ -19,35 +19,28 @@ roguelikes" in mind, but should serve as a simple UI tool if needed.
 
 ```rust
 use bevy::prelude::*;
-use bevy_ascii_terminal::prelude::*;
+use bevy_ascii_terminal::*;
 
-fn setup(mut commands: Commands) {
-    // Create the terminal
-    let mut terminal = Terminal::new([20,3]));
-    // Draw a blue "Hello world!" to the terminal
-    terminal.put_string([1, 1], "Hello world!".fg(Color::BLUE));
-
-    // Spawn the terminal entity.
-    commands.spawn((
-        terminal,
-	TerminalBorder::single_line(),
-    ));
-    // Spawn the camera to render the terminal.
-	commands.spawn(TerminalCamera::new());
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, TerminalPlugins))
+        .add_systems(Startup, setup)
+        .run();
 }
 
-fn main () {
-    App::new()
-    .add_plugins((DefaultPlugins, TerminalPlugin))
-    .add_systems(Startup, setup)
-    .run();
+fn setup(mut commands: Commands) {
+    commands.spawn((
+        Terminal::new([12, 1]).with_string([0, 0], "Hello world!".fg(color::BLUE)),
+        TerminalBorder::single_line(),
+    ));
+    commands.spawn(TerminalCamera::new());
 }
 ```
 
 ## Versions
 | bevy  | bevy_ascii_terminal |
 | ----- | ------------------- |
-| 0.15  | 0.16.0              |
+| 0.15  | 0.16.*              |
 | 0.13  | 0.15.0              |
 | 0.12  | 0.14.0              |
 | 0.11  | 0.13.0              |
@@ -56,7 +49,8 @@ fn main () {
 | 0.8   | 0.11                |
 | 0.7   | 0.9-0.10            |
 
-## Bevy Ascii Terminal Projects (Note these were built on earlier versions and haven't been updated in a while)
+## Bevy Ascii Terminal Projects
+ _(Note these were built on earlier versions and haven't been updated in a while)_
 
 **Bevy Roguelike** - [Source](https://github.com/sarkahn/bevy_roguelike/) - [WASM](https://sarkahn.github.io/bevy_rust_roguelike_tut_web/)
 
@@ -66,4 +60,4 @@ fn main () {
 
 [![Roguelike](images/bevy_roguelike.gif)](https://github.com/sarkahn/bevy_roguelike/)
 [![Snake](images/bevy_snake.gif)](https://github.com/sarkahn/bevy_ascii_snake)
-[![Tetris](images/tetris.gif)](https://github.com/sarkahn/bevy_ascii_tetris/)
+[![Tetris](images/bevy_tetris.gif)](https://github.com/sarkahn/bevy_ascii_tetris/)

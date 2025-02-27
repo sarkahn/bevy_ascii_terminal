@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.2] - 2025/02/27
+
+### Changes
+- Removed usage of bevy's `embedded_asset!` macro as it causes crashes in windows wasm builds: https://github.com/bevyengine/bevy/issues/14246. Reverted to manually setting up image handles for built in fonts, no api change.
+- Added necessary bevy dependencies so linux/wasm builds should work.
+- Cargo update.
+
+## [0.16.1] - 2025/02/25
+
+### Changes
+- Fixed a bug where the `TerminalCamera` update system would panic if the terminal font wasn't loaded yet.
+
 ## [0.16] - 2025/02/17
 
 ### Changes

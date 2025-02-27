@@ -12,7 +12,7 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Terminal::new([12, 1]).with_string([0, 0], "Hello world!"),
+        Terminal::new([12, 1]).with_string([0, 0], "Hello world!".fg(color::BLUE)),
         TerminalBorder::single_line(),
     ));
     commands.spawn(TerminalCamera::new());
