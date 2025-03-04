@@ -33,7 +33,7 @@ impl Plugin for TerminalPlugins {
             render::TerminalUvMappingPlugin,
             render::TerminalMaterialPlugin,
             render::TerminalFontPlugin,   // 'PostUpdate' systems
-            render::TerminalCameraPlugin, // 'PostUpdate' and 'Last' systems
+            render::TerminalCameraPlugin, // 'First` systems
             render::TerminalMeshPlugin,   // 'PostUpdate' systems
         ));
         app.configure_sets(

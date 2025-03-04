@@ -1,5 +1,5 @@
 use bevy::{
-    app::{Last, Plugin, PostUpdate},
+    app::{First, Plugin},
     asset::{AssetEvent, Assets},
     ecs::{
         component::Component,
@@ -24,9 +24,9 @@ use super::{TerminalMaterial, TerminalMeshWorldScaling};
 
 pub struct TerminalCameraPlugin;
 
-/// [TerminalCamera] systems for caching camera data. Runs in [PostUpdate].
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-pub struct TerminalSystemsCacheCameraData;
+// /// [TerminalCamera] systems for caching camera data. Runs in [PostUpdate].
+// #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
+// pub struct TerminalSystemsCacheCameraData;
 
 /// [TerminalCamera] systems for updating the camera viewport.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
@@ -35,16 +35,22 @@ pub struct TerminalSystemsUpdateCamera;
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_event::<UpdateTerminalViewportEvent>()
+            // .add_systems(
+            //     PostUpdate,
+            //     (cache_camera_data, cache_cursor_data)
+            //         .chain()
+            //         .in_set(TerminalSystemsCacheCameraData)
+            //         .after(bevy::render::camera::CameraUpdateSystem),
+            // )
             .add_systems(
-                PostUpdate,
-                (cache_camera_data, cache_cursor_data)
-                    .chain()
-                    .in_set(TerminalSystemsCacheCameraData)
-                    .after(bevy::render::camera::CameraUpdateSystem),
-            )
-            .add_systems(
-                Last,
-                (on_window_resized, on_font_changed, update_viewport)
+                First,
+                (
+                    cache_cursor_data,
+                    cache_camera_data,
+                    on_window_resized,
+                    on_font_changed,
+                    update_viewport,
+                )
                     .chain()
                     .in_set(TerminalSystemsUpdateCamera),
             );
