@@ -29,12 +29,12 @@ impl Plugin for TerminalPlugins {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(TerminalMeshWorldScaling::default());
         app.add_plugins((
-            transform::TerminalTransformPlugin,
+            transform::TerminalTransformPlugin, // 'PostUpdate' systems
             render::TerminalUvMappingPlugin,
             render::TerminalMaterialPlugin,
-            render::TerminalMeshPlugin,
-            render::TerminalFontPlugin,
-            render::TerminalCameraPlugin,
+            render::TerminalFontPlugin,   // 'PostUpdate' systems
+            render::TerminalCameraPlugin, // 'PostUpdate' and 'Last' systems
+            render::TerminalMeshPlugin,   // 'PostUpdate' systems
         ));
         app.configure_sets(
             PostUpdate,

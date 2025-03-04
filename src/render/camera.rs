@@ -12,7 +12,7 @@ use bevy::{
     image::Image,
     math::{Mat4, UVec2, Vec2},
     prelude::Camera2d,
-    render::camera::{Camera, CameraUpdateSystem, OrthographicProjection, ScalingMode, Viewport},
+    render::camera::{Camera, OrthographicProjection, ScalingMode, Viewport},
     sprite::MeshMaterial2d,
     transform::components::{GlobalTransform, Transform},
     window::{PrimaryWindow, Window, WindowResized},
@@ -40,7 +40,7 @@ impl Plugin for TerminalCameraPlugin {
                 (cache_camera_data, cache_cursor_data)
                     .chain()
                     .in_set(TerminalSystemsCacheCameraData)
-                    .after(CameraUpdateSystem),
+                    .after(bevy::render::camera::CameraUpdateSystem),
             )
             .add_systems(
                 Last,
@@ -272,9 +272,7 @@ fn update_viewport(
     // with the largest font.
     let Some(ppu) = q_term
         .iter()
-        .filter_map(|t| {
-            t.cached_data.as_ref().map(|d| d.pixels_per_tile)
-        })
+        .filter_map(|t| t.cached_data.as_ref().map(|d| d.pixels_per_tile))
         .reduce(UVec2::max)
     else {
         // Terminal font images may still be loading
@@ -283,10 +281,7 @@ fn update_viewport(
     // Determine our canonical tile size from the largest of all terminals.
     let Some(tile_size) = q_term
         .iter()
-        .filter_map(|t| {
-            t.cached_data
-                .as_ref().map(|d| d.world_tile_size)
-        })
+        .filter_map(|t| t.cached_data.as_ref().map(|d| d.world_tile_size))
         .reduce(Vec2::max)
     else {
         return;
