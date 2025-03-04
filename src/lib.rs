@@ -32,9 +32,9 @@ impl Plugin for TerminalPlugins {
             transform::TerminalTransformPlugin, // 'PostUpdate' systems
             render::TerminalUvMappingPlugin,
             render::TerminalMaterialPlugin,
-            render::TerminalMeshPlugin,   // 'Last' systems
             render::TerminalFontPlugin,   // 'PostUpdate' systems
             render::TerminalCameraPlugin, // 'PostUpdate' and 'Last' systems
+            render::TerminalMeshPlugin,   // 'PostUpdate' systems
         ));
         app.configure_sets(
             PostUpdate,

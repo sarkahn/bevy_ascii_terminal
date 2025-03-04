@@ -1,7 +1,7 @@
 //! Systems for building the terminal mesh.
 
 use bevy::{
-    app::{Last, Plugin},
+    app::{Plugin, PostUpdate},
     asset::{AssetEvent, Assets},
     color::ColorToComponents,
     ecs::{
@@ -22,7 +22,6 @@ use bevy::{
         render_resource::{PrimitiveTopology, VertexFormat},
     },
     sprite::MeshMaterial2d,
-    time::Time,
 };
 
 use crate::{border::TerminalBorder, transform::TerminalTransform, Terminal, Tile};
@@ -46,7 +45,7 @@ impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_observer(on_border_removed);
         app.add_systems(
-            Last,
+            PostUpdate,
             (
                 init_mesh,
                 on_image_load,
@@ -61,7 +60,7 @@ impl Plugin for TerminalMeshPlugin {
     }
 }
 
-/// Systems for rebuilding/updating the terminal mesh. Runs in [Last].
+/// Systems for rebuilding/updating the terminal mesh. Runs in [PostUpdate].
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
 pub struct TerminalSystemsUpdateMesh;
 
@@ -234,13 +233,13 @@ fn rebuild_mesh_verts(
     mut evt: EventWriter<UpdateTerminalViewportEvent>,
 ) {
     for (entity, mut term, mesh_handle, mat_handle, transform, mut border) in &mut q_term {
-        let mesh = meshes
-            .get_mut(&mesh_handle.0.clone())
-            .expect("Error getting terminal mesh");
+        let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
+            continue;
+        };
 
-        let mat = materials
-            .get(&*mat_handle.clone())
-            .expect("Error getting terminal material");
+        let Some(mat) = materials.get(&*mat_handle.clone()) else {
+            continue;
+        };
 
         // If the material texture is set to none, or if it's not loaded yet,
         // clear the mesh. This function will be called again when a valid image
@@ -332,7 +331,6 @@ fn rebuild_mesh_uvs(
     >,
     mut meshes: ResMut<Assets<Mesh>>,
     mappings: Res<Assets<UvMapping>>,
-    time: Res<Time>,
 ) {
     for (term, mesh_handle, mapping_handle, border) in &q_term {
         let mesh = meshes
@@ -392,7 +390,7 @@ fn rebuild_mesh_uvs(
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, fg);
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, bg);
 
-        println!("Rebuilding uvs: {}\n", time.elapsed_secs());
+        //println!("Rebuilding uvs: {}\n", time.elapsed_secs());
     }
 }
 
