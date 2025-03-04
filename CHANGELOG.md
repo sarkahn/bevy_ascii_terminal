@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.16.3] - 2025/02/27
+
+### Changes
+- Moved mesh update systems from the `Last` schedule to the `PostUpdate` schedule to fix a one-frame-delay bug.
+
 ## [0.16.2] - 2025/02/27
 
 ### Changes
