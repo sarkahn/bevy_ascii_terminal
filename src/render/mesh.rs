@@ -22,6 +22,7 @@ use bevy::{
         render_resource::{PrimitiveTopology, VertexFormat},
     },
     sprite::MeshMaterial2d,
+    time::Time,
 };
 
 use crate::{border::TerminalBorder, transform::TerminalTransform, Terminal, Tile};
@@ -331,6 +332,7 @@ fn rebuild_mesh_uvs(
     >,
     mut meshes: ResMut<Assets<Mesh>>,
     mappings: Res<Assets<UvMapping>>,
+    time: Res<Time>,
 ) {
     for (term, mesh_handle, mapping_handle, border) in &q_term {
         let mesh = meshes
@@ -389,6 +391,8 @@ fn rebuild_mesh_uvs(
         mesh.insert_attribute(ATTRIBUTE_UV, uvs);
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, fg);
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, bg);
+
+        println!("Rebuilding uvs: {}\n", time.elapsed_secs());
     }
 }
 
