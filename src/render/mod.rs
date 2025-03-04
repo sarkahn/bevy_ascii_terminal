@@ -18,7 +18,9 @@ pub(crate) use mesh::TerminalMeshPlugin;
 pub(crate) use uv_mapping::TerminalUvMappingPlugin;
 
 pub use camera::{
-    TerminalSystemsCacheCameraData, TerminalSystemsUpdateCamera, UpdateTerminalViewportEvent,
+    //TerminalSystemsCacheCameraData,
+    TerminalSystemsUpdateCamera,
+    UpdateTerminalViewportEvent,
 };
 pub use font::TerminalSystemsUpdateFont;
 pub use mesh::TerminalSystemsUpdateMesh;

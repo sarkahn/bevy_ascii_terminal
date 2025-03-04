@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.16.3] - 2025/02/27
+## [0.16.4] - 2025/03/03
+
+### Changes
+- Moved `TerminalCamera`update systems to `First` schedule to fix the camera flicker any time the terminal was resized.
+
+## [0.16.3] - 2025/03/03
 
 ### Changes
 - Moved mesh update systems from the `Last` schedule to the `PostUpdate` schedule to fix a one-frame-delay bug.
