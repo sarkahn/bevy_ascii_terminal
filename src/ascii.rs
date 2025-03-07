@@ -1,6 +1,6 @@
 //! Extended ascii used as the default for mapping chars to terminal glyphs.
 //! Note this is simply the default, a custom mapping can be defined via
-//! [crate::renderer::UvMapping]
+//! [crate::render::UvMapping]
 use enum_ordinalize::Ordinalize;
 use thiserror::Error;
 

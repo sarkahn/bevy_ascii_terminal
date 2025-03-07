@@ -3,7 +3,7 @@
 use std::{ops::Sub, str::Chars};
 
 use bevy::{color::LinearRgba, math::IVec2, reflect::Reflect};
-use sark_grids::{GridRect, GridSize, Pivot, PivotedPoint};
+use sark_grids::{GridPoint, GridRect, GridSize, Pivot, PivotedPoint};
 
 /// A string with optional [StringDecoration] and [StringFormatting] applied.
 ///
@@ -14,7 +14,7 @@ use sark_grids::{GridRect, GridSize, Pivot, PivotedPoint};
 /// tiles to match the terminal's clear tile.
 ///
 /// The `bg` and `fg` methods can be used to set the background and foreground
-/// colors of the string tiles if clear_colors isn't set. Otherwise the existing
+/// colors of the string tiles if `clear_colors`` isn't set. Otherwise the existing
 /// colors in the terminal will remain unchanged.
 #[derive(Default, Debug, Clone)]
 pub struct TerminalString<T> {
@@ -443,13 +443,16 @@ impl<'a> StringIter<'a> {
         let decoration = decoration.unwrap_or_default();
 
         debug_assert!(
-            rect.size.contains_point(local_xy),
-            "Local xy {} passed to StringIter must be within the bounds of the given rect size {}",
+            rect.size
+                .contains_point(local_xy.pivot(pivot).calculate(rect.size)),
+            "Local position {} passed to StringIter must be within the bounds of the given rect size {}",
             local_xy,
             rect.size
         );
 
-        let first_max_len = rect.width().saturating_sub(local_xy.x as usize);
+        let first_max_len = rect
+            .width()
+            .saturating_sub(local_xy.x.unsigned_abs() as usize);
         let (first, remaining) =
             wrap_string(string, first_max_len, formatting.word_wrap).unwrap_or_default();
 
@@ -743,5 +746,19 @@ mod tests {
         assert_eq!('B', get_char(&map, [-1, 8]));
         assert_eq!('o', get_char(&map, [-1, 7]));
         assert_eq!('t', get_char(&map, [-1, 6]));
+    }
+
+    #[test]
+    fn centered() {
+        let string = "Hello\nThere";
+        let p = [0, 0].pivot(Pivot::Center);
+        let rect = GridRect::new([0, 0], [11, 11]);
+        let iter = StringIter::new(string, rect, p, None, None);
+        let map = make_map(iter);
+        assert_eq!('H', get_char(&map, [3, 6]));
+        assert_eq!('e', get_char(&map, [4, 6]));
+        assert_eq!('l', get_char(&map, [5, 6]));
+        assert_eq!('l', get_char(&map, [6, 6]));
+        assert_eq!('o', get_char(&map, [7, 6]));
     }
 }

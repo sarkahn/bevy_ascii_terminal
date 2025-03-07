@@ -7,7 +7,7 @@ use bevy::{
     reflect::Reflect,
     sprite::MeshMaterial2d,
 };
-use sark_grids::{GridRect, GridSize, PivotedPoint};
+use sark_grids::{GridRect, GridSize, Pivot, PivotedPoint};
 
 use crate::{
     ascii,
@@ -242,6 +242,22 @@ impl Terminal {
         }
     }
 
+    /// Read a line of characters starting from a grid position on the terminal.
+    ///
+    /// As with [Terminal::put_string] the xy position will default to a top-left
+    /// pivot.
+    pub fn read_line(
+        &self,
+        xy: impl Into<PivotedPoint>,
+        width: usize,
+    ) -> impl Iterator<Item = char> + '_ {
+        let xy: PivotedPoint = xy.into();
+        let xy = xy.with_default_pivot(Pivot::TopLeft);
+        let i = self.tile_to_index(xy);
+        let remaining_width = (self.width() - i % self.width()).min(width);
+        self.tiles[i..i + remaining_width].iter().map(|t| t.glyph)
+    }
+
     /// Transform a local 2d tile index into 1d index into the terminal tile data.
     #[inline]
     pub fn tile_to_index(&self, xy: impl Into<PivotedPoint>) -> usize {
@@ -258,11 +274,8 @@ impl Terminal {
         IVec2::new(i as i32 % w, i as i32 / w)
     }
 
-    /// Retrieve a tile at the grid position. This will panic if the index is
+    /// Retrieve a tile at the grid position. This will panic if the position is
     /// out of bounds.
-    ///
-    /// For a sparse grid this will insert a clear tile if no tile exists and
-    /// return it.
     pub fn tile_mut(&mut self, xy: impl Into<PivotedPoint>) -> &mut Tile {
         let xy = xy.into();
         debug_assert!(
@@ -276,12 +289,8 @@ impl Terminal {
         &mut self.tiles[i]
     }
 
-    /// Retrieve a tile at the grid position. This will panic if the index is
+    /// Retrieve a tile at the grid position. This will panic if the position is
     /// out of bounds.
-    ///
-    /// For a sparse terminal this will panic if no tile exists at the given position.
-    /// Note this behavior is different from `tile_mut` which will automatically
-    /// insert and return a clear tile if no tile exists at the given position.
     pub fn tile(&self, xy: impl Into<PivotedPoint>) -> &Tile {
         let xy = xy.into();
         debug_assert!(
@@ -392,7 +401,7 @@ impl Terminal {
         self.tiles.iter_mut()
     }
 
-    /// The local grid bounds of the terminal. For world bounds, see [TerminalTransform].
+    /// The local grid bounds of the terminal. For world bounds see [TerminalTransform].
     pub fn bounds(&self) -> GridRect {
         GridRect::new([0, 0], self.size)
     }
@@ -405,5 +414,25 @@ impl Terminal {
         let new_size = new_size.to_uvec2().max(UVec2::new(2, 2));
         self.tiles = vec![self.clear_tile; new_size.tile_count()];
         self.size = new_size;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{GridPoint, Pivot, Terminal};
+
+    #[test]
+    fn put_string_negative() {
+        let mut terminal = Terminal::new([10, 10]);
+        terminal.put_string([-2, -2].pivot(Pivot::Center), "Hello");
+        assert_eq!(terminal.tile([1, 3]).glyph, 'H');
+    }
+
+    #[test]
+    fn read_line() {
+        let mut terminal = Terminal::new([20, 10]);
+        terminal.put_string([2, 2], "Hello, World!");
+        let line: String = terminal.read_line([2, 2], 5).collect();
+        assert_eq!(line, "Hello");
     }
 }

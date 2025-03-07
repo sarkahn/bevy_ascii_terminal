@@ -61,3 +61,18 @@ fn setup(mut commands: Commands) {
 [![Roguelike](images/bevy_roguelike.gif)](https://github.com/sarkahn/bevy_roguelike/)
 [![Snake](images/bevy_snake.gif)](https://github.com/sarkahn/bevy_ascii_snake)
 [![Tetris](images/bevy_tetris.gif)](https://github.com/sarkahn/bevy_ascii_tetris/)
+
+## Credits
+
+Built in fonts were put together from various sources and modified only to make them uniform by changing background colors and adding the empty box drawing character from rexpaint (`□`):
+- Px437 - https://int10h.org/oldschool-pc-fonts/
+- ZxEvolution - https://www.gridsagegames.com/rexpaint/resources.html
+- Pastiche - https://dwarffortresswiki.org/index.php/DF2014:Tileset_repository
+- Rexpaint - https://www.gridsagegames.com/rexpaint/resources.html
+- Unscii - https://github.com/viznut/unscii
+- Taffer - https://dwarffortresswiki.org/index.php/DF2014:Tileset_repository
+- TaritusCurses - https://dwarffortresswiki.org/index.php/DF2014:Tileset_repository
+- JtCurses - https://dwarffortresswiki.org/index.php/DF2014:Tileset_repository
+- SazaroteCurses - Unknown
+
+Rexpaint loader - https://docs.rs/rexpaint/latest/rexpaint/

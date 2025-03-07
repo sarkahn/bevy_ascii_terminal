@@ -8,14 +8,14 @@ license = "MIT"
 name = "bevy_ascii_terminal"
 readme = "README.md"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
-version = "0.16.4"
+version = "0.16.5"
 
 [dependencies]
 enum-ordinalize = "4.3.0"
 thiserror = "1.0.56"
 flate2 = "1.0"
 byteorder = "1"
-sark_grids = "0.6"
+sark_grids = "0.6.2"
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"

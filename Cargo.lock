@@ -315,7 +315,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.16.4"
+version = "0.16.5"
 dependencies = [
  "bevy",
  "byteorder",
@@ -2879,9 +2879,9 @@ dependencies = [
 
 [[package]]
 name = "sark_grids"
-version = "0.6.0"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7996fb55a2cd7e7d4f069a8671da0785b3f068f66b5d66e174633e4ae9b5a5b"
+checksum = "c1b32fbf93dd07e468db2b9ea8acd3f16b4f915c6107605abd84bd05b59eaf5d"
 dependencies = [
  "bit-vec 0.6.3",
  "enum-ordinalize",

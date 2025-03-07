@@ -24,36 +24,24 @@ use super::{TerminalMaterial, TerminalMeshWorldScaling};
 
 pub struct TerminalCameraPlugin;
 
-// /// [TerminalCamera] systems for caching camera data. Runs in [PostUpdate].
-// #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
-// pub struct TerminalSystemsCacheCameraData;
-
 /// [TerminalCamera] systems for updating the camera viewport.
 #[derive(Debug, Default, Clone, Eq, PartialEq, Hash, SystemSet)]
 pub struct TerminalSystemsUpdateCamera;
 
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_event::<UpdateTerminalViewportEvent>()
-            // .add_systems(
-            //     PostUpdate,
-            //     (cache_camera_data, cache_cursor_data)
-            //         .chain()
-            //         .in_set(TerminalSystemsCacheCameraData)
-            //         .after(bevy::render::camera::CameraUpdateSystem),
-            // )
-            .add_systems(
-                First,
-                (
-                    cache_cursor_data,
-                    cache_camera_data,
-                    on_window_resized,
-                    on_font_changed,
-                    update_viewport,
-                )
-                    .chain()
-                    .in_set(TerminalSystemsUpdateCamera),
-            );
+        app.add_event::<UpdateTerminalViewportEvent>().add_systems(
+            First,
+            (
+                cache_cursor_data,
+                cache_camera_data,
+                on_window_resized,
+                on_font_changed,
+                update_viewport,
+            )
+                .chain()
+                .in_set(TerminalSystemsUpdateCamera),
+        );
     }
 }
 
@@ -94,8 +82,8 @@ impl TerminalCamera {
     ///
     /// Will return [None] if the camera data has not been initialized.
     ///
-    /// For accurate results this should be called after [TerminalSystemsCacheCameraData]
-    /// which runs in [PostUpdate].
+    /// For accurate results this should be called after [TerminalSystemsUpdateCamera]
+    /// which runs in the [First] schedule.
     pub fn cursor_world_pos(&self) -> Option<Vec2> {
         self.cursor_data.as_ref().map(|v| v.world_pos)
     }
@@ -105,8 +93,8 @@ impl TerminalCamera {
     ///
     /// Will return [None] if the camera data has not been initialized.
     ///
-    /// For accurate results this should be called after [TerminalSystemCameraCacheData]
-    /// which runs in [PostUpdate].
+    /// For accurate results this should be called after [TerminalSystemsUpdateCamera]
+    /// which runs in [First].
     pub fn cursor_viewport_pos(&self) -> Option<Vec2> {
         self.cursor_data.as_ref().map(|v| v.viewport_pos)
     }
@@ -119,7 +107,8 @@ impl TerminalCamera {
     /// [TerminalTransform::world_to_tile] instead.
     //
     // Note this is more or less a copy of the existing bevy viewport transform
-    // function, but adjusted to account for a manually resized viewport.
+    // function, but adjusted to account for a manually resized viewport which
+    // the original function did not do.
     pub fn viewport_to_world(&self, mut viewport_position: Vec2) -> Option<Vec2> {
         let data = self.cam_data.as_ref()?;
         let target_size = data.target_size?;
@@ -274,6 +263,7 @@ fn update_viewport(
         return;
     };
 
+    // TODO: Calculate this from the lowest common multiple?
     // Determine our canonical 'pixels per unit' from the terminal
     // with the largest font.
     let Some(ppu) = q_term
@@ -281,7 +271,9 @@ fn update_viewport(
         .filter_map(|t| t.cached_data.as_ref().map(|d| d.pixels_per_tile))
         .reduce(UVec2::max)
     else {
-        // Terminal font images may still be loading
+        // The camera system runs first, so this will return immediately at least once.
+        // Furthermore the transform data won't be cached until the terminal font
+        // is done loading.
         return;
     };
     // Determine our canonical tile size from the largest of all terminals.
@@ -290,6 +282,7 @@ fn update_viewport(
         .filter_map(|t| t.cached_data.as_ref().map(|d| d.world_tile_size))
         .reduce(Vec2::max)
     else {
+        // We can probably just unwrap?
         return;
     };
 
@@ -299,16 +292,14 @@ fn update_viewport(
     }
 
     // The total bounds of all terminal meshes in world space
-    let mesh_bounds = q_term
+    let Some(mesh_bounds) = q_term
         .iter()
-        .map(|t| {
-            t.cached_data
-                .as_ref()
-                .expect("Terminal transform update should run before camera update")
-                .world_mesh_bounds
-        })
+        .filter_map(|t| t.cached_data.as_ref().map(|d| d.world_mesh_bounds))
         .reduce(|a, b| a.union(b))
-        .unwrap();
+    else {
+        // We can probably just unwrap?
+        return;
+    };
 
     let z = cam_transform.translation.z;
     cam_transform.translation = mesh_bounds.center().extend(z);

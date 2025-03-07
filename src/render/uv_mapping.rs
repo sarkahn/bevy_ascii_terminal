@@ -1,6 +1,4 @@
-//! A terminal component which determines how glyphs are mapped to their
-//! corresponding uvs on the tile sheet.
-//!
+//! A terminal component for precalculating uv data and mapping it to a rust [char].
 use bevy::{
     math::{Rect, Vec2},
     prelude::{Asset, AssetApp, Assets, Component, Deref, DerefMut, Handle, Plugin},
@@ -18,8 +16,7 @@ impl Plugin for TerminalUvMappingPlugin {
     }
 }
 
-/// An asset that defines how a rust [char] is converted into uv data for rendering
-/// terminal tiles.
+/// An asset for precalculating uv data and mapping it to a rust [char].
 #[derive(Asset, Debug, Clone, TypePath)]
 pub struct UvMapping {
     uv_map: HashMap<char, [[f32; 2]; 4]>,
@@ -63,8 +60,8 @@ impl UvMapping {
         ]
     }
 
-    /// Retrieve the uv data for a terminal mesh tile from it's corresponding
-    /// [char]. Will panic if no uvs have been set for the char.
+    /// Retrieve the uv data from it's mapped [char]. Will panic if no uvs have
+    /// been set for the char.
     pub fn uvs_from_char(&self, ch: char) -> &[[f32; 2]; 4] {
         self.uv_map.get(&ch).unwrap_or_else(|| {
             panic!(
@@ -74,8 +71,7 @@ impl UvMapping {
         })
     }
 
-    /// Retrieve the uv data for a terminal mesh tile from it's corresponding
-    /// [char].
+    /// Retrieve the uv data from it's mapped [char].
     pub fn get_uvs_from_char(&self, ch: char) -> Option<&[[f32; 2]; 4]> {
         self.uv_map.get(&ch)
     }

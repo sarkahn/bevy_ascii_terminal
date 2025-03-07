@@ -22,10 +22,8 @@ pub struct TerminalSystemsUpdateFont;
 
 /// A component for easy swapping of terminal fonts.
 ///
-/// A custom font can be used by specifying the asset path with [TerminalFont::Custom].
-///
-/// Note that all [TerminalFont]s will be loaded with [ImageSampler::nearest] filtering.
-/// To prevent this you can set the image handle manually on the [TerminalMaterial].
+/// Note that all [TerminalFont]s loaded this way will be loaded with [ImageSampler::nearest] filtering.
+/// To prevent this you can use [TerminalFont::CustomImage] with your manually loaded image handle.
 ///
 /// ## Example:
 ///
@@ -54,7 +52,7 @@ pub enum TerminalFont {
     JtCurses12x12,
     SazaroteCurses12x12,
     Custom(String),
-    CustomImage(Handle<Image>)
+    CustomImage(Handle<Image>),
 }
 
 macro_rules! font_bytes {
@@ -84,6 +82,7 @@ impl Plugin for TerminalFontPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         let mut images = app.world_mut().resource_mut::<Assets<Image>>();
         let v = vec![
+            // Note: Order must match the enum variant order.
             images.add(font_image!("px437_8x8")),
             images.add(font_image!("zx_evolution_8x8")),
             images.add(font_image!("pastiche_8x8")),

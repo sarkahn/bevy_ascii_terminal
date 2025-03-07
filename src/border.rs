@@ -12,7 +12,7 @@ use crate::{
 /// A component for drawing a border around a terminal.
 ///
 /// Along with a 9 slice string to represent the border, aligned and formatted
-/// strings can be written can be four sides of the border.
+/// strings can be written to the four sides of the border.
 ///
 /// The border can have "empty" sides which will be ignored when building the
 /// terminal mesh.
@@ -24,7 +24,7 @@ pub struct TerminalBorder {
 }
 
 impl TerminalBorder {
-    /// Create a [Border] from a 9 slice string.
+    /// Create a [TerminalBorder] from a 9 slice string.
     ///
     /// The string will be read line by line, with the last 3 characters on
     /// each line being used to set the border glyphs. The center of the

@@ -58,10 +58,6 @@ struct CacheTransformData;
 
 /// Component for transforming between world positions and terminal grid
 /// coordinates.
-///
-/// Setting the `grid_position` of this component will alter the terminal's position
-/// in world space during the next transform update, based the global [crate::TileScaling]
-/// and [TerminalMeshWorldScaling].
 #[derive(Debug, Component, Default, Reflect)]
 #[require(CacheTransformData)]
 pub struct TerminalTransform {
@@ -69,7 +65,8 @@ pub struct TerminalTransform {
 }
 
 /// A temporary component for setting the terminal to a fixed grid position
-/// based on the terminal tile size. Runs in [PostUpdate].
+/// based on the terminal tile size. This will be automatically removed once
+/// the position is set. Runs in [PostUpdate].
 ///
 /// Note that since the terminal tile size can only be calculated from the terminal
 /// font there might be a delay before this gets applied while the terminal font
@@ -85,13 +82,16 @@ impl<T: GridPoint> From<T> for SetTerminalGridPosition {
 
 /// A temporary component to set the terminal's layer position. Terminals on a higher layer
 /// will be rendered on top of terminals on a lower layer. Runs in [PostUpdate].
+///
+/// This will automatically be removed once the position is set.
 #[derive(Component, Default, Clone, Copy)]
 pub struct SetTerminalLayerPosition(pub i32);
 
 #[derive(Debug, Default, Reflect)]
 pub(crate) struct CachedTransformData {
-    /// The world size of a terminal tile, based on the global [crate::TileScaling],
-    /// the terminal's [crate::TerminalFont] and the terminal's [TerminalFontScaling].
+    /// The world size of a terminal tile, based on the global [crate::render::TerminalMeshWorldScaling],
+    /// the terminal's [crate::TerminalFont] and the terminal's [crate::render::TerminalMeshTileScaling]
+    /// component.
     pub world_tile_size: Vec2,
     /// The number of tiles on each axis excluding the terminal border
     pub terminal_size: UVec2,
@@ -299,7 +299,6 @@ fn cache_transform_data(
     }
 }
 
-#[allow(clippy::type_complexity)]
 fn set_grid_position(
     mut q_grid_pos: Query<(
         Entity,

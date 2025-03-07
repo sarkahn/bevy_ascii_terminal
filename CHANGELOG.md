@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.16.5] - 2025/03/07
+
+### Changes
+- Merged a pr to directly us a `Handle<Image>` in font switching, will probably replace `TerminalFont::Custom` with that at some point.
+- Fixed a bug where `Terminal::put_string` would always panic if negative values were used for the `GridPosition`, even if those values would be in bounds, ie: from a centered pivot.
+- Added `Terminal::read_line`.
+- Cleanup docs.
+- Add credits to readme.
+  
 ## [0.16.4] - 2025/03/03
 
 ### Changes
