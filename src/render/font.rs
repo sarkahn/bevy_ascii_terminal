@@ -54,6 +54,7 @@ pub enum TerminalFont {
     JtCurses12x12,
     SazaroteCurses12x12,
     Custom(String),
+    CustomImage(Handle<Image>)
 }
 
 macro_rules! font_bytes {
@@ -116,6 +117,7 @@ fn update_font(
                     settings.sampler = ImageSampler::nearest()
                 })
             }
+            TerminalFont::CustomImage(image) => image.clone(),
             _ => handles.handles[font.variant_index()].clone(),
         };
         // Dont overwrite the default terminal material which may
