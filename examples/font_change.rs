@@ -16,16 +16,17 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    let size = [47, 13];
+    let size = [47, 12];
     let clear_tile = Tile::default().with_bg(MIDNIGHT_BLUE);
+    let string = String::from_iter(CP437.chars());
     let term = Terminal::new(size)
         .with_clear_tile(clear_tile)
         // Unlike put_char, put_string defaults to a top left pivot
-        .with_string([0, 1], "Press spacebar to change fonts")
-        .with_string([0, 3], "!@#$%^&*()_+=-`~")
-        .with_string([0, 5], "The quick brown fox jumps over the lazy dog.")
-        .with_string([0, 7], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼")
-        .with_string([0, 9], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
+        .with_string([0, 0], "Press spacebar to change fonts")
+        .with_string([0, 1], "The quick brown fox jumps over the lazy dog.")
+        .with_string([0, 2], string.fg(color::TAN));
+    // .with_string([0, 7], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
+    // .with_string([0, 9], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
     commands.spawn((term, TerminalBorder::single_line()));
     commands.spawn(TerminalCamera::new());
 }
@@ -40,9 +41,9 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
             bevy::reflect::TypeInfo::Enum(info) => info,
             _ => unreachable!(),
         };
-        let max = info.variant_len().sub(1);
-        let i = font.variant_index();
         // Exclude custom variant
+        let max = info.variant_len().sub(2);
+        let i = font.variant_index();
         let i = (i + 1).rem_euclid(max);
         let mut dynamic = font.clone_dynamic();
         dynamic.set_variant_with_index(i, info.variant_names()[i], DynamicVariant::Unit);
@@ -56,3 +57,14 @@ fn update(mut q_term: Query<(&TerminalFont, &mut TerminalBorder), Changed<Termin
         border.put_title(font.variant_name().fg(MAROON).delimiters("[]"));
     }
 }
+
+const CP437: &str = r#"
+.☺☻♥♦♣♠•◘○◙♂♀♪♫☼ ►◄↕‼¶§▬↨↑↓→←∟↔▲▼
+!\"\#$%&'()*+,-./ 0123456789:;<=>?
+@ABCDEFGHIJKLMNO PQRSTUVWXYZ[\]^_
+`abcdefghijklmno pqrstuvwxyz{|}~⌂
+ÇüéâäàåçêëèïîìÄÅ ÉæÆôöòûùÿÖÜ¢£¥₧ƒ
+áíóúñÑªº¿⌐¬½¼¡«» ░▒▓│┤╡╢╖╕╣║╗╝╜╛┐
+└┴┬├─┼╞╟╚╔╩╦╠═╬╧ ╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀
+αßΓπΣσµτΦΘΩδ∞φε∩ ≡±≥≤⌠⌡÷≈°∙·√ⁿ²■□
+"#;

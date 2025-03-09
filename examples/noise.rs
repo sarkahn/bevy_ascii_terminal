@@ -192,6 +192,7 @@ fn make_some_noise(
         format!(
             "[Noise:{:?} | Fractal:{:?}]",
             controls.noise_type, controls.fractal_type
-        ),
+        )
+        .clear_colors(),
     );
 }

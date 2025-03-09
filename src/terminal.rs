@@ -419,7 +419,7 @@ impl Terminal {
 
 #[cfg(test)]
 mod tests {
-    use crate::{GridPoint, Pivot, Terminal};
+    use crate::{ascii, GridPoint, Pivot, Terminal};
 
     #[test]
     fn put_string_negative() {
@@ -434,5 +434,12 @@ mod tests {
         terminal.put_string([2, 2], "Hello, World!");
         let line: String = terminal.read_line([2, 2], 5).collect();
         assert_eq!(line, "Hello");
+    }
+
+    #[test]
+    fn big_string() {
+        let mut term = Terminal::new([16, 16]);
+        let string = String::from_iter(ascii::CP_437_ARRAY.iter());
+        term.put_string([0, 0], string);
     }
 }

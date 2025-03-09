@@ -56,8 +56,6 @@ fn spam_terminal(
         return;
     }
 
-    let _ = info_span!("span_name", name = "span_name").entered();
-
     let mut rng = rand::thread_rng();
     let mut term = q.single_mut();
     for t in term.iter_mut() {

@@ -315,7 +315,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_ascii_terminal"
-version = "0.16.5"
+version = "0.16.6"
 dependencies = [
  "bevy",
  "byteorder",

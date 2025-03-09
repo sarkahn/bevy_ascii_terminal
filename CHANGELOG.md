@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.6] - 2025/03/09
+
+### Changes
+- Fixed a crash where string iterator would try to split a string between char boundaries.
+- Minor tweaks to examples.
+
 ## [0.16.5] - 2025/03/07
 
 ### Changes

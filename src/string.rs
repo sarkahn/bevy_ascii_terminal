@@ -386,7 +386,13 @@ fn wrap_string(string: &str, max_len: usize, word_wrap: bool) -> Option<(&str, &
     }
 
     // Handle newlines first
-    if let Some(newline_index) = string.chars().take(max_len).position(|c| c == '\n') {
+    if let Some(newline_index) = string
+        // Accounts for unicode chars
+        .char_indices()
+        .take(max_len)
+        .find(|(_, c)| *c == '\n')
+        .map(|(i, _)| i)
+    {
         let (a, b) = string.split_at(newline_index);
         return Some((a.trim_end(), b.trim_start()));
     };
@@ -396,7 +402,7 @@ fn wrap_string(string: &str, max_len: usize, word_wrap: bool) -> Option<(&str, &
         return Some((string.trim_end(), ""));
     };
 
-    let move_back = if word_wrap {
+    let mut move_back = if word_wrap {
         string
             .chars()
             .rev()
@@ -406,6 +412,9 @@ fn wrap_string(string: &str, max_len: usize, word_wrap: bool) -> Option<(&str, &
     } else {
         0
     };
+    while !string.is_char_boundary(max_len.sub(move_back)) {
+        move_back += 1;
+    }
 
     let (a, b) = string.split_at(max_len.sub(move_back));
     Some((a.trim_end(), b.trim_start()))
@@ -521,7 +530,7 @@ impl Iterator for StringIter<'_> {
 mod tests {
     use bevy::utils::HashMap;
 
-    use crate::{GridPoint, GridRect};
+    use crate::{ascii, GridPoint, GridRect};
 
     use super::*;
 
@@ -760,5 +769,22 @@ mod tests {
         assert_eq!('l', get_char(&map, [5, 6]));
         assert_eq!('l', get_char(&map, [6, 6]));
         assert_eq!('o', get_char(&map, [7, 6]));
+    }
+
+    #[test]
+    fn wrap_after_unicode() {
+        let mut string = String::with_capacity(ascii::CP_437_ARRAY.len() * 2);
+        for ch in ascii::CP_437_ARRAY.iter() {
+            string.push(*ch);
+            string.push('\n');
+        }
+        let iter = StringIter::new(
+            &string,
+            GridRect::new([0, 0], [10, 500]),
+            [0, 0],
+            None,
+            None,
+        );
+        iter.count();
     }
 }
