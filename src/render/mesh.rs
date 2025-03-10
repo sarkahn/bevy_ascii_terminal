@@ -24,12 +24,12 @@ use bevy::{
     sprite::MeshMaterial2d,
 };
 
-use crate::{border::TerminalBorder, transform::TerminalTransform, Terminal, Tile};
+use crate::{Terminal, Tile, border::TerminalBorder, transform::TerminalTransform};
 
 use super::{
+    UpdateTerminalViewportEvent,
     material::TerminalMaterial,
     uv_mapping::{UvMapping, UvMappingHandle},
-    UpdateTerminalViewportEvent,
 };
 
 pub const ATTRIBUTE_UV: MeshVertexAttribute =
@@ -202,7 +202,7 @@ fn on_terminal_resized(
 }
 
 fn on_border_removed(trigger: Trigger<OnReplace, TerminalBorder>, mut commands: Commands) {
-    commands.entity(trigger.entity()).insert(RebuildMeshVerts);
+    commands.entity(trigger.target()).insert(RebuildMeshVerts);
 }
 
 // Rebuilding mesh verts is a more expensive and complicated operation compared
@@ -312,7 +312,7 @@ fn rebuild_mesh_verts(
         commands.entity(entity).remove::<RebuildMeshVerts>();
         // Force tile mesh update
         term.set_changed();
-        evt.send(UpdateTerminalViewportEvent);
+        evt.write(UpdateTerminalViewportEvent);
     }
 }
 

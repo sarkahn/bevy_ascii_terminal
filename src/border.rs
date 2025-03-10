@@ -1,12 +1,14 @@
 use std::ops::Sub;
 
-use bevy::{math::IVec2, prelude::Component, reflect::Reflect, utils::HashMap};
+use bevy::{
+    math::IVec2, platform_support::collections::HashMap, prelude::Component, reflect::Reflect,
+};
 use enum_ordinalize::Ordinalize;
 use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
 
 use crate::{
-    string::{DecoratedString, StringDecoration, StringIter},
     Tile,
+    string::{DecoratedString, StringDecoration, StringIter},
 };
 
 /// A component for drawing a border around a terminal.

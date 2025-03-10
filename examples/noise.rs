@@ -102,7 +102,7 @@ fn handle_other_input(
     mut evt_quit: EventWriter<AppExit>,
 ) {
     if input.just_pressed(KeyCode::Escape) {
-        evt_quit.send(AppExit::Success);
+        evt_quit.write(AppExit::Success);
     }
     let ver = input.just_pressed(KeyCode::KeyS) as i32 - input.just_pressed(KeyCode::KeyW) as i32;
     if ver != 0 {
@@ -135,7 +135,7 @@ fn handle_other_input(
 }
 
 fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, controls: Res<State>) {
-    let mut term = q_term.single_mut();
+    let mut term = q_term.single_mut().unwrap();
     term.clear();
     term.put_string([0, 0], "WASD to change noise values");
     term.put_string([0, 1], "Space to change noise type");
@@ -160,7 +160,7 @@ fn make_some_noise(
     mut q_term: Query<&mut Terminal, Without<ControlsTerminal>>,
     controls: Res<State>,
 ) {
-    let mut term = q_term.single_mut();
+    let mut term = q_term.single_mut().unwrap();
     let mut noise = FastNoiseLite::new();
     noise.set_noise_type(Some(controls.noise_type));
     noise.set_fractal_type(Some(controls.fractal_type));

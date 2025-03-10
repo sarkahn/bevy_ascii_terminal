@@ -38,7 +38,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn update(mut q_term: Query<(&mut Terminal, &TerminalTransform)>, q_cam: Query<&TerminalCamera>) {
-    let cam = q_cam.single();
+    let cam = q_cam.single().unwrap();
     let Some(cursor_pos) = cam.cursor_world_pos() else {
         return;
     };

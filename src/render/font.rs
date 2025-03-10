@@ -4,8 +4,9 @@ use bevy::{
     ecs::{
         component::Component,
         query::Changed,
+        resource::Resource,
         schedule::{IntoSystemConfigs, SystemSet},
-        system::{Query, Res, ResMut, Resource},
+        system::{Query, Res, ResMut},
     },
     image::{Image, ImageLoaderSettings, ImageSampler},
     prelude::Plugin,
@@ -38,7 +39,7 @@ pub struct TerminalSystemsUpdateFont;
 ///    ));
 /// }
 /// ```
-#[derive(Debug, Component, Reflect, Default, Clone)]
+#[derive(Debug, Component, Reflect, Default, Clone, PartialEq, Eq)]
 pub enum TerminalFont {
     #[default]
     Px4378x8,
@@ -82,7 +83,7 @@ impl Plugin for TerminalFontPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         let mut images = app.world_mut().resource_mut::<Assets<Image>>();
         let v = vec![
-            // Note: Order must match the enum variant order.
+            // NOTE: Order must match the enum variant order.
             images.add(font_image!("px437_8x8")),
             images.add(font_image!("zx_evolution_8x8")),
             images.add(font_image!("pastiche_8x8")),

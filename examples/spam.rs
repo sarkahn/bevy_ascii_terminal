@@ -4,13 +4,16 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy_ascii_terminal::*;
-use rand::rngs::ThreadRng;
 use rand::Rng;
+use rand::rngs::ThreadRng;
 
 fn main() {
     let mut app = App::new();
     if !cfg!(debug_assertions) {
-        app.add_plugins((LogDiagnosticsPlugin::default(), FrameTimeDiagnosticsPlugin));
+        app.add_plugins((
+            LogDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin::new(100),
+        ));
     };
     app.add_plugins((
         DefaultPlugins.set(WindowPlugin {
@@ -57,7 +60,7 @@ fn spam_terminal(
     }
 
     let mut rng = rand::thread_rng();
-    let mut term = q.single_mut();
+    let mut term = q.single_mut().unwrap();
     for t in term.iter_mut() {
         let index = rng.gen_range(0..=255) as u8;
         let glyph = ascii::index_to_char(index);

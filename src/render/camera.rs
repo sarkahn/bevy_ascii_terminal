@@ -12,13 +12,13 @@ use bevy::{
     image::Image,
     math::{Mat4, UVec2, Vec2},
     prelude::Camera2d,
-    render::camera::{Camera, OrthographicProjection, ScalingMode, Viewport},
+    render::camera::{Camera, Projection, ScalingMode, Viewport},
     sprite::MeshMaterial2d,
     transform::components::{GlobalTransform, Transform},
     window::{PrimaryWindow, Window, WindowResized},
 };
 
-use crate::{transform::TerminalTransform, Terminal};
+use crate::{Terminal, transform::TerminalTransform};
 
 use super::{TerminalMaterial, TerminalMeshWorldScaling};
 
@@ -165,7 +165,7 @@ fn cache_cursor_data(
     mut q_cam: Query<&mut TerminalCamera>,
     window: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let cursor_viewport_pos = window.get_single().ok().and_then(|w| w.cursor_position());
+    let cursor_viewport_pos = window.single().ok().and_then(|w| w.cursor_position());
     for mut terminal_cam in &mut q_cam {
         if !terminal_cam.track_cursor {
             if terminal_cam.cursor_data.is_some() {
@@ -195,12 +195,12 @@ fn on_window_resized(
     if q_win.is_empty() || resize_events.is_empty() {
         return;
     }
-    let primary_window = q_win.single();
+    let primary_window = q_win.single().unwrap();
     for resize_event in resize_events.read() {
         if resize_event.window != primary_window {
             continue;
         }
-        vp_evt.send(UpdateTerminalViewportEvent);
+        vp_evt.write(UpdateTerminalViewportEvent);
         return;
     }
 }
@@ -222,7 +222,7 @@ fn on_font_changed(
             _ => continue,
         };
         if q_term.iter().any(|mat| mat.id() == *changed_mat_id) {
-            vp_evt.send(UpdateTerminalViewportEvent);
+            vp_evt.write(UpdateTerminalViewportEvent);
             return;
         }
     }
@@ -236,7 +236,7 @@ fn on_font_changed(
             .filter_map(|mat| mats.get(&mat.0).and_then(|mat| mat.texture.as_ref()))
             .any(|image| image.id() == *loaded_image_id)
         {
-            vp_evt.send(UpdateTerminalViewportEvent);
+            vp_evt.write(UpdateTerminalViewportEvent);
             return;
         }
     }
@@ -244,10 +244,7 @@ fn on_font_changed(
 
 fn update_viewport(
     q_term: Query<&TerminalTransform>,
-    mut q_cam: Query<
-        (&mut Camera, &mut Transform, &mut OrthographicProjection),
-        With<TerminalCamera>,
-    >,
+    mut q_cam: Query<(&mut Camera, &mut Transform, &mut Projection), With<TerminalCamera>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     scaling: Res<TerminalMeshWorldScaling>,
     mut update_evt: EventReader<UpdateTerminalViewportEvent>,
@@ -256,10 +253,10 @@ fn update_viewport(
         return;
     }
 
-    let Ok((mut cam, mut cam_transform, mut proj)) = q_cam.get_single_mut() else {
+    let Ok((mut cam, mut cam_transform, mut proj)) = q_cam.single_mut() else {
         return;
     };
-    let Ok(window) = q_window.get_single() else {
+    let Ok(window) = q_window.single() else {
         return;
     };
 
@@ -334,9 +331,11 @@ fn update_viewport(
         });
     }
 
-    proj.scaling_mode = ScalingMode::FixedVertical {
-        viewport_height: ortho_size,
-    };
+    if let Projection::Orthographic(proj) = proj.as_mut() {
+        proj.scaling_mode = ScalingMode::FixedVertical {
+            viewport_height: ortho_size,
+        };
+    }
 
     update_evt.clear();
 }

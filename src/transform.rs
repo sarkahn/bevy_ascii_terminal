@@ -17,13 +17,13 @@ use bevy::{
     prelude::{GlobalTransform, OnReplace, Or, Trigger},
     reflect::Reflect,
     sprite::MeshMaterial2d,
-    transform::{components::Transform, TransformSystem},
+    transform::{TransformSystem, components::Transform},
 };
 
 use crate::{
+    GridPoint, Terminal, TerminalMeshWorldScaling,
     border::TerminalBorder,
     render::{TerminalFont, TerminalMaterial, TerminalMeshPivot, TerminalMeshTileScaling},
-    GridPoint, Terminal, TerminalMeshWorldScaling,
 };
 pub(crate) struct TerminalTransformPlugin;
 
@@ -187,7 +187,7 @@ fn on_size_change(
 }
 fn on_border_replace(on_replace: Trigger<OnReplace, TerminalBorder>, mut commands: Commands) {
     commands
-        .entity(on_replace.entity())
+        .entity(on_replace.target())
         .insert(CacheTransformData);
 }
 

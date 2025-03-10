@@ -1,4 +1,5 @@
 use bevy::{
+    asset::weak_handle,
     prelude::{Asset, Assets, Color, Handle, Image, LinearRgba, Mesh, Plugin, Shader},
     reflect::TypePath,
     render::{
@@ -12,7 +13,8 @@ use bevy::{
 
 use super::mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
 
-pub const TERMINAL_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(13814445327411044821);
+pub const TERMINAL_SHADER_HANDLE: Handle<Shader> =
+    weak_handle!("ce314a88-2b55-4636-a1e0-6ea8dafbc2d3");
 const TERMINAL_SHADER_STRING: &str = include_str!("terminal.wgsl");
 
 pub(crate) struct TerminalMaterialPlugin;

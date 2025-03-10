@@ -105,7 +105,7 @@ fn handle_just_pressed(
     }
 
     if input.just_pressed(KeyCode::Escape) {
-        evt_quit.send(AppExit::Success);
+        evt_quit.write(AppExit::Success);
     }
 
     if input.just_pressed(KeyCode::Space) {

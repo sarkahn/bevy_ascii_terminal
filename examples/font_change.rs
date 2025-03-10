@@ -33,7 +33,7 @@ fn setup(mut commands: Commands) {
 
 fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>) {
     if input.just_pressed(KeyCode::Space) {
-        let mut font = q_term.single_mut();
+        let mut font = q_term.single_mut().unwrap();
         let info = font
             .get_represented_type_info()
             .expect("Error getting terminal font enum info");
@@ -52,7 +52,7 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
 }
 
 fn update(mut q_term: Query<(&TerminalFont, &mut TerminalBorder), Changed<TerminalFont>>) {
-    if let Ok((font, mut border)) = q_term.get_single_mut() {
+    if let Ok((font, mut border)) = q_term.single_mut() {
         border.clear_strings();
         border.put_title(font.variant_name().fg(MAROON).delimiters("[]"));
     }
