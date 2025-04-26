@@ -6,7 +6,7 @@ use bevy::{
         entity::Entity,
         event::{Event, EventReader, EventWriter},
         query::{Changed, Or, With},
-        schedule::{IntoSystemConfigs, SystemSet},
+        schedule::{IntoScheduleConfigs, SystemSet},
         system::{Query, Res},
     },
     image::Image,

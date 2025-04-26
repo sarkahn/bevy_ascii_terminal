@@ -5,7 +5,7 @@ use bevy::{
         component::Component,
         query::Changed,
         resource::Resource,
-        schedule::{IntoSystemConfigs, SystemSet},
+        schedule::{IntoScheduleConfigs, SystemSet},
         system::{Query, Res, ResMut},
     },
     image::{Image, ImageLoaderSettings, ImageSampler},

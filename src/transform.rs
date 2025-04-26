@@ -9,7 +9,7 @@ use bevy::{
         entity::Entity,
         event::EventReader,
         query::{Changed, With},
-        schedule::{IntoSystemConfigs, SystemSet},
+        schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res},
     },
     image::Image,

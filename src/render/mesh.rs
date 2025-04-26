@@ -10,7 +10,7 @@ use bevy::{
         entity::Entity,
         event::EventReader,
         query::{Added, Changed, Or, With},
-        schedule::{IntoSystemConfigs, SystemSet},
+        schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res, ResMut},
     },
     image::Image,

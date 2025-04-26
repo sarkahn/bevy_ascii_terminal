@@ -12,7 +12,7 @@ pub mod transform;
 pub use ascii::Glyph;
 use bevy::{
     app::{Plugin, PostUpdate},
-    prelude::IntoSystemSetConfigs,
+    prelude::IntoScheduleConfigs,
 };
 pub use border::TerminalBorder;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
