@@ -51,7 +51,7 @@ pub struct UpdateTerminalViewportEvent;
 /// A camera component to assist in rendering terminals and translating
 /// cursor coordinates to and from terminal grid coordinates.
 #[derive(Component)]
-#[require(Camera2d, Transform(cam_transform))]
+#[require(Camera2d, Transform = cam_transform())]
 pub struct TerminalCamera {
     pub track_cursor: bool,
     cam_data: Option<CachedCameraData>,
