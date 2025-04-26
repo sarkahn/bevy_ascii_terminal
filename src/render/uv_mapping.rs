@@ -1,10 +1,11 @@
 //! A terminal component for precalculating uv data and mapping it to a rust [char].
 use bevy::{
     math::{Rect, Vec2},
-    platform_support::collections::HashMap,
     prelude::{Asset, AssetApp, Assets, Component, Deref, DerefMut, Handle, Plugin},
     reflect::{Reflect, TypePath},
 };
+
+use bevy_platform::collections::HashMap;
 
 pub struct TerminalUvMappingPlugin;
 

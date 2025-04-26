@@ -1,8 +1,10 @@
 use std::ops::Sub;
 
 use bevy::{
-    math::IVec2, platform_support::collections::HashMap, prelude::Component, reflect::Reflect,
+    math::IVec2, prelude::Component, reflect::Reflect,
 };
+
+use bevy_platform::collections::HashMap;
 use enum_ordinalize::Ordinalize;
 use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
 

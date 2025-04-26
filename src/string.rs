@@ -528,7 +528,7 @@ impl Iterator for StringIter<'_> {
 
 #[cfg(test)]
 mod tests {
-    use bevy::platform_support::collections::HashMap;
+    use bevy_platform::collections::HashMap;
 
     use crate::{GridPoint, GridRect, ascii};
 
