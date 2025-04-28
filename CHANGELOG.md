@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.17.0] - 2025/03/09
+
+### Changes
+- Update for bevy 0.16
+
 ## [0.16.6] - 2025/03/09
 
 ### Changes

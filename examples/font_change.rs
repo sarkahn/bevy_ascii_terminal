@@ -45,7 +45,7 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
         let max = info.variant_len().sub(2);
         let i = font.variant_index();
         let i = (i + 1).rem_euclid(max);
-        let mut dynamic = font.clone_dynamic();
+        let mut dynamic = font.to_dynamic_enum();
         dynamic.set_variant_with_index(i, info.variant_names()[i], DynamicVariant::Unit);
         font.apply(&dynamic);
     }
