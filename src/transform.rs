@@ -14,10 +14,10 @@ use bevy::{
     },
     image::Image,
     math::{IVec2, Rect, UVec2, Vec2, Vec3},
-    prelude::{GlobalTransform, OnReplace, Or, Trigger},
+    prelude::{GlobalTransform, On, Or, Replace},
     reflect::Reflect,
     sprite::MeshMaterial2d,
-    transform::{TransformSystem, components::Transform},
+    transform::{TransformSystems, components::Transform},
 };
 
 use crate::{
@@ -46,7 +46,7 @@ impl Plugin for TerminalTransformPlugin {
             )
                 .chain()
                 .in_set(TerminalSystemsUpdateTransform)
-                .before(TransformSystem::TransformPropagate),
+                .before(TransformSystems::Propagate),
         );
     }
 }
@@ -185,7 +185,7 @@ fn on_size_change(
         }
     }
 }
-fn on_border_replace(on_replace: Trigger<OnReplace, TerminalBorder>, mut commands: Commands) {
+fn on_border_replace(on_replace: On<Replace, TerminalBorder>, mut commands: Commands) {
     commands
         .entity(on_replace.target())
         .insert(CacheTransformData);

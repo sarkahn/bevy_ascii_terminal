@@ -15,7 +15,7 @@ use bevy::{
     },
     image::Image,
     math::{IVec2, Vec2},
-    prelude::{EventWriter, Mesh2d, OnReplace, Trigger},
+    prelude::{EventWriter, Mesh2d, On, Replace},
     render::{
         mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
         render_asset::RenderAssetUsages,
@@ -201,7 +201,7 @@ fn on_terminal_resized(
     }
 }
 
-fn on_border_removed(trigger: Trigger<OnReplace, TerminalBorder>, mut commands: Commands) {
+fn on_border_removed(trigger: On<Replace, TerminalBorder>, mut commands: Commands) {
     commands.entity(trigger.target()).insert(RebuildMeshVerts);
 }
 

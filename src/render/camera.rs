@@ -4,7 +4,7 @@ use bevy::{
     ecs::{
         component::Component,
         entity::Entity,
-        event::{Event, EventReader, EventWriter},
+        event::{BufferedEvent, Event, EventReader, EventWriter},
         query::{Changed, Or, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Query, Res},
@@ -45,7 +45,7 @@ impl Plugin for TerminalCameraPlugin {
     }
 }
 
-#[derive(Event)]
+#[derive(Event, BufferedEvent)]
 pub struct UpdateTerminalViewportEvent;
 
 /// A camera component to assist in rendering terminals and translating
@@ -118,7 +118,7 @@ impl TerminalCamera {
         // Flip the Y co-ordinate origin from the top to the bottom.
         viewport_position.y = target_size.y - viewport_position.y;
         let ndc = viewport_position * 2. / target_size - Vec2::ONE;
-        let ndc_to_world = data.cam_transform.compute_matrix() * data.proj_matrix.inverse();
+        let ndc_to_world = data.cam_transform.to_matrix() * data.proj_matrix.inverse();
         let world_space_coords = ndc_to_world.project_point3(ndc.extend(1.));
         (!world_space_coords.is_nan()).then_some(world_space_coords.truncate())
     }

@@ -1,8 +1,6 @@
 use std::ops::Sub;
 
-use bevy::{
-    math::IVec2, prelude::Component, reflect::Reflect,
-};
+use bevy::{math::IVec2, prelude::Component, reflect::Reflect};
 
 use bevy_platform::collections::HashMap;
 use enum_ordinalize::Ordinalize;
@@ -20,7 +18,7 @@ use crate::{
 ///
 /// The border can have "empty" sides which will be ignored when building the
 /// terminal mesh.
-#[derive(Debug, Default, Clone, Component, Reflect)]
+#[derive(Debug, Default, Clone, Component)]
 pub struct TerminalBorder {
     pub edge_glyphs: [Option<char>; 8],
     pub border_strings: Vec<BorderString>,
