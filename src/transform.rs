@@ -7,17 +7,15 @@ use bevy::{
     ecs::{
         component::Component,
         entity::Entity,
-        event::EventReader,
         query::{Changed, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res},
     },
     image::Image,
     math::{IVec2, Rect, UVec2, Vec2, Vec3},
-    prelude::{GlobalTransform, OnReplace, Or, Trigger},
+    prelude::{GlobalTransform, MeshMaterial2d, MessageReader, On, Or, Replace},
     reflect::Reflect,
-    sprite::MeshMaterial2d,
-    transform::{TransformSystem, components::Transform},
+    transform::{TransformSystems, components::Transform},
 };
 
 use crate::{
@@ -46,7 +44,7 @@ impl Plugin for TerminalTransformPlugin {
             )
                 .chain()
                 .in_set(TerminalSystemsUpdateTransform)
-                .before(TransformSystem::TransformPropagate),
+                .before(TransformSystems::Propagate),
         );
     }
 }
@@ -130,7 +128,7 @@ fn on_image_load(
     q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
-    mut img_evt: EventReader<AssetEvent<Image>>,
+    mut img_evt: MessageReader<AssetEvent<Image>>,
     mut commands: Commands,
 ) {
     for evt in img_evt.read() {
@@ -157,7 +155,7 @@ fn on_image_load(
 
 fn on_mat_change(
     q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
-    mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
+    mut mat_evt: MessageReader<AssetEvent<TerminalMaterial>>,
     mut commands: Commands,
 ) {
     for evt in mat_evt.read() {
@@ -185,9 +183,9 @@ fn on_size_change(
         }
     }
 }
-fn on_border_replace(on_replace: Trigger<OnReplace, TerminalBorder>, mut commands: Commands) {
+fn on_border_replace(on_replace: On<Replace, TerminalBorder>, mut commands: Commands) {
     commands
-        .entity(on_replace.target())
+        .entity(on_replace.entity)
         .insert(CacheTransformData);
 }
 

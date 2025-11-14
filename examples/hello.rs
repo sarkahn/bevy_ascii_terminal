@@ -12,8 +12,8 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Terminal::new([12, 1]).with_string([0, 0], "Hello world!".fg(color::BLUE)),
-        TerminalBorder::single_line(),
+        Terminal::new([14, 4]).with_string([1, 2], "Hello world!".fg(color::BLUE)),
+        TerminalBorder::double_line(),
     ));
     commands.spawn(TerminalCamera::new());
 }

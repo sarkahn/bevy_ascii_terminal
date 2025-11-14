@@ -1,20 +1,19 @@
 use bevy::{
-    asset::weak_handle,
+    asset::uuid_handle,
+    mesh::MeshVertexBufferLayoutRef,
     prelude::{Asset, Assets, Color, Handle, Image, LinearRgba, Mesh, Plugin, Shader},
     reflect::TypePath,
-    render::{
-        mesh::MeshVertexBufferLayoutRef,
-        render_resource::{
-            AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
-        },
+    render::render_resource::{
+        AsBindGroup, RenderPipelineDescriptor, SpecializedMeshPipelineError,
     },
-    sprite::{Material2d, Material2dKey, Material2dPlugin},
+    shader::ShaderRef,
+    sprite_render::{Material2d, Material2dKey, Material2dPlugin},
 };
 
 use super::mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
 
 pub const TERMINAL_SHADER_HANDLE: Handle<Shader> =
-    weak_handle!("ce314a88-2b55-4636-a1e0-6ea8dafbc2d3");
+    uuid_handle!("ce314a88-2b55-4636-a1e0-6ea8dafbc2d3");
 const TERMINAL_SHADER_STRING: &str = include_str!("terminal.wgsl");
 
 pub(crate) struct TerminalMaterialPlugin;
@@ -23,7 +22,7 @@ impl Plugin for TerminalMaterialPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins(Material2dPlugin::<TerminalMaterial>::default());
         let mut shaders = app.world_mut().resource_mut::<Assets<Shader>>();
-        shaders.insert(
+        _ = shaders.insert(
             &TERMINAL_SHADER_HANDLE,
             Shader::from_wgsl(
                 TERMINAL_SHADER_STRING,
@@ -69,8 +68,8 @@ impl Material2d for TerminalMaterial {
         Ok(())
     }
 
-    fn alpha_mode(&self) -> bevy::sprite::AlphaMode2d {
-        bevy::sprite::AlphaMode2d::Blend
+    fn alpha_mode(&self) -> bevy::sprite_render::AlphaMode2d {
+        bevy::sprite_render::AlphaMode2d::Blend
     }
 }
 

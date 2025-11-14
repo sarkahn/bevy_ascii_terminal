@@ -3,21 +3,19 @@
 use bevy::{
     color::{ColorToPacked, LinearRgba},
     math::{IVec2, UVec2},
-    prelude::{Component, Mesh2d},
+    prelude::{Component, Mesh2d, MeshMaterial2d},
     reflect::Reflect,
-    sprite::MeshMaterial2d,
 };
 use sark_grids::{GridRect, GridSize, Pivot, PivotedPoint};
 
 use crate::{
-    ascii,
+    Tile, ascii,
     render::{
         RebuildMeshVerts, TerminalFont, TerminalMaterial, TerminalMeshPivot, UvMappingHandle,
     },
     rexpaint::reader::XpFile,
     string::{StringIter, TerminalString},
     transform::TerminalTransform,
-    Tile,
 };
 
 /// A grid of tiles for rendering colorful ascii.
@@ -419,7 +417,7 @@ impl Terminal {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ascii, GridPoint, Pivot, Terminal};
+    use crate::{GridPoint, Pivot, Terminal, ascii};
 
     #[test]
     fn put_string_negative() {

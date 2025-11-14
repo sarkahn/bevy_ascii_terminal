@@ -2,26 +2,22 @@
 
 use bevy::{
     app::{Plugin, PostUpdate},
-    asset::{AssetEvent, Assets},
+    asset::{AssetEvent, Assets, RenderAssetUsages},
     color::ColorToComponents,
     ecs::{
         change_detection::DetectChangesMut,
         component::Component,
         entity::Entity,
-        event::EventReader,
         query::{Added, Changed, Or, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res, ResMut},
     },
     image::Image,
     math::{IVec2, Vec2},
-    prelude::{EventWriter, Mesh2d, OnReplace, Trigger},
-    render::{
-        mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
-        render_asset::RenderAssetUsages,
-        render_resource::{PrimitiveTopology, VertexFormat},
-    },
-    sprite::MeshMaterial2d,
+    mesh::{Indices, Mesh, Mesh2d, MeshVertexAttribute, VertexAttributeValues},
+    prelude::{MessageReader, MessageWriter, On, Replace},
+    render::render_resource::{PrimitiveTopology, VertexFormat},
+    sprite_render::MeshMaterial2d,
 };
 
 use crate::{Terminal, Tile, border::TerminalBorder, transform::TerminalTransform};
@@ -142,7 +138,7 @@ fn init_mesh(
 fn on_image_load(
     mut q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
-    mut img_evt: EventReader<AssetEvent<Image>>,
+    mut img_evt: MessageReader<AssetEvent<Image>>,
     mut commands: Commands,
 ) {
     for evt in img_evt.read() {
@@ -168,7 +164,7 @@ fn on_image_load(
 // Force a mesh rebuild when a terminal's material changes.
 fn on_material_changed(
     mut q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
-    mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
+    mut mat_evt: MessageReader<AssetEvent<TerminalMaterial>>,
     mut commands: Commands,
 ) {
     for evt in mat_evt.read() {
@@ -201,8 +197,8 @@ fn on_terminal_resized(
     }
 }
 
-fn on_border_removed(trigger: Trigger<OnReplace, TerminalBorder>, mut commands: Commands) {
-    commands.entity(trigger.target()).insert(RebuildMeshVerts);
+fn on_border_removed(trigger: On<Replace, TerminalBorder>, mut commands: Commands) {
+    commands.entity(trigger.entity).insert(RebuildMeshVerts);
 }
 
 // Rebuilding mesh verts is a more expensive and complicated operation compared
@@ -230,7 +226,7 @@ fn rebuild_mesh_verts(
     mut meshes: ResMut<Assets<Mesh>>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
-    mut evt: EventWriter<UpdateTerminalViewportEvent>,
+    mut evt: MessageWriter<UpdateTerminalViewportEvent>,
 ) {
     for (entity, mut term, mesh_handle, mat_handle, transform, mut border) in &mut q_term {
         let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
@@ -404,26 +400,31 @@ fn mesh_vertex_count(mesh: &Mesh) -> usize {
 
 /// Resize all mesh attributes to accommodate the given terminal tile count.
 fn resize_mesh_data(mesh: &mut Mesh, tile_count: usize) {
-    let Some(Indices::U32(indices)) = mesh.indices_mut() else {
+    if let Some(Indices::U32(indices)) = mesh.indices_mut() {
+        indices.resize(tile_count * 6, 0);
+    } else {
         panic!("Incorrect terminal mesh indices format");
     };
-    indices.resize(tile_count * 6, 0);
-    let Some(VertexAttributeValues::Float32x3(verts)) =
+    if let Some(VertexAttributeValues::Float32x3(verts)) =
         mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
-    else {
+    {
+        verts.resize(tile_count * 4, [0.0; 3]);
+    } else {
         panic!("Incorrect mesh terminal vertex format");
     };
-    verts.resize(tile_count * 4, [0.0; 3]);
-    let Some(VertexAttributeValues::Float32x2(uvs)) = mesh.attribute_mut(ATTRIBUTE_UV) else {
-        panic!("Incorrect terminal mesh uv format");
+    if let Some(VertexAttributeValues::Float32x2(uvs)) = mesh.attribute_mut(ATTRIBUTE_UV) {
+        uvs.resize(tile_count * 4, [0.0; 2]);
+    } else {
+        panic!("Incorrect mesh uv format");
     };
-    uvs.resize(tile_count * 4, [0.0; 2]);
-    let Some(VertexAttributeValues::Float32x4(fg)) = mesh.attribute_mut(ATTRIBUTE_COLOR_FG) else {
+    if let Some(VertexAttributeValues::Float32x4(fg)) = mesh.attribute_mut(ATTRIBUTE_COLOR_FG) {
+        fg.resize(tile_count * 4, [0.0; 4]);
+    } else {
         panic!("Incorrect terminal mesh fg color format");
     };
-    fg.resize(tile_count * 4, [0.0; 4]);
-    let Some(VertexAttributeValues::Float32x4(bg)) = mesh.attribute_mut(ATTRIBUTE_COLOR_BG) else {
+    if let Some(VertexAttributeValues::Float32x4(bg)) = mesh.attribute_mut(ATTRIBUTE_COLOR_BG) {
+        bg.resize(tile_count * 4, [0.0; 4]);
+    } else {
         panic!("Incorrect terminal mesh bg color format");
     };
-    bg.resize(tile_count * 4, [0.0; 4]);
 }

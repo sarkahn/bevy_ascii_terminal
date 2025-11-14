@@ -15,30 +15,30 @@ enum-ordinalize = "4.3.0"
 thiserror = "1.0.56"
 flate2 = "1.0"
 byteorder = "1"
-sark_grids = "0.6.2"
-bevy_platform = "0.16.0"
+sark_grids = "0.7.0"
+bevy_platform = "0.17.2"
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"
 rand = "0.8.4"
 
 [dependencies.bevy]
-version = "0.16.0"
+version = "0.17.2"
 default-features = false
-features = ["std", "png", "bevy_render", "bevy_asset", "bevy_sprite", "bevy_window", "bevy_color"]
+features = ["std", "png", "bevy_render", "bevy_asset", "bevy_sprite", "bevy_sprite_render", "bevy_window", "bevy_color"]
 
 [dev-dependencies.bevy]
-version = "0.16.0"
+version = "0.17.2"
 default-features = false
 features = ["bevy_winit"]
 
 [target.'cfg(unix)'.dependencies.bevy]
-version = "0.16.0"
+version = "0.17.2"
 default-features = false
 features = ["x11"]
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.bevy]
-version = "0.16.0"
+version = "0.17.2"
 default-features = false
 features = ["webgl2"]
 

@@ -19,7 +19,6 @@ struct Current(usize);
 /// resized.
 #[derive(Component)]
 pub struct TermString(String, Pivot);
-
 fn main() {
     let key_repeat = std::time::Duration::from_secs_f32(0.1);
     App::new()

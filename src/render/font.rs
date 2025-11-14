@@ -11,7 +11,7 @@ use bevy::{
     image::{Image, ImageLoaderSettings, ImageSampler},
     prelude::Plugin,
     reflect::{Enum, Reflect},
-    sprite::MeshMaterial2d,
+    sprite_render::MeshMaterial2d,
 };
 
 use super::material::TerminalMaterial;
