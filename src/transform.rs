@@ -137,9 +137,14 @@ fn on_image_load(
             _ => continue,
         };
         for (entity, mat_handle) in q_term.iter() {
-            let mat = materials
+            // Check for the Material safely. If None, skip this entity.
+            let Some(mat) = materials
                 .get(&mat_handle.0)
-                .expect("Error getting terminal material");
+            else {
+                continue; // Skip, will retry later when the material is loaded.
+            };
+            
+            // Now that we have the material, check if its texture matches the loaded image.
             let Some(_) = mat
                 .texture
                 .as_ref()
@@ -148,6 +153,7 @@ fn on_image_load(
             else {
                 continue;
             };
+            
             commands.entity(entity).insert(CacheTransformData);
         }
     }
