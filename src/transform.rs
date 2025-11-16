@@ -7,7 +7,7 @@ use bevy::{
     ecs::{
         component::Component,
         entity::Entity,
-        event::EventReader,
+        message::MessageReader,
         query::{Changed, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res},
@@ -16,7 +16,7 @@ use bevy::{
     math::{IVec2, Rect, UVec2, Vec2, Vec3},
     prelude::{GlobalTransform, On, Or, Replace},
     reflect::Reflect,
-    sprite::MeshMaterial2d,
+    sprite_render::MeshMaterial2d,
     transform::{TransformSystems, components::Transform},
 };
 
@@ -68,9 +68,10 @@ pub struct TerminalTransform {
 /// based on the terminal tile size. This will be automatically removed once
 /// the position is set. Runs in [PostUpdate].
 ///
-/// Note that since the terminal tile size can only be calculated from the terminal
-/// font there might be a delay before this gets applied while the terminal font
-/// image is being loaded.
+/// Note that terminal tile size can only be calculated from the terminal font. Since
+/// a terminal font is loaded from an external file there might be an intial delay
+/// on a new terminal before the new position gets applied while the terminal
+/// font image is being loaded.
 #[derive(Component, Debug, Default, Clone, Copy, Reflect)]
 pub struct SetTerminalGridPosition(pub IVec2);
 
@@ -130,7 +131,7 @@ fn on_image_load(
     q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
-    mut img_evt: EventReader<AssetEvent<Image>>,
+    mut img_evt: MessageReader<AssetEvent<Image>>,
     mut commands: Commands,
 ) {
     for evt in img_evt.read() {
@@ -157,7 +158,7 @@ fn on_image_load(
 
 fn on_mat_change(
     q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
-    mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
+    mut mat_evt: MessageReader<AssetEvent<TerminalMaterial>>,
     mut commands: Commands,
 ) {
     for evt in mat_evt.read() {
@@ -187,7 +188,7 @@ fn on_size_change(
 }
 fn on_border_replace(on_replace: On<Replace, TerminalBorder>, mut commands: Commands) {
     commands
-        .entity(on_replace.target())
+        .entity(on_replace.event().entity)
         .insert(CacheTransformData);
 }
 

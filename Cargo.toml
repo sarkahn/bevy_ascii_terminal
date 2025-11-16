@@ -8,48 +8,31 @@ license = "MIT"
 name = "bevy_ascii_terminal"
 readme = "README.md"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
-version = "0.17.1-dev"
+version = "0.18.0-dev"
 
 [dependencies]
 enum-ordinalize = "4.3.0"
 thiserror = "1.0.56"
 flate2 = "1.0"
 byteorder = "1"
-sark_grids = "0.6.2"
-bevy_platform = "0.16.0"
+sark_grids = "0.7"
+bevy_platform = "0.17"
+anyhow = "1.0.100"
+nom = "8.0.0"
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"
 rand = "0.8.4"
 
 [dependencies.bevy]
-#version = "0.16.0"
-git = "https://github.com/bevyengine/bevy"
-rev = "73a313200dc19ed9ca466d586d305979bb18e81e"
-
+version = "0.17"
 default-features = false
-features = ["std", "png", "bevy_render", "bevy_asset", "bevy_sprite", "bevy_window", "bevy_color"]
+features = ["std", "png", "bevy_render", "bevy_asset", "bevy_sprite", "bevy_sprite_render", "bevy_window", "bevy_color"]
 
 [dev-dependencies.bevy]
-#version = "0.16.0"
-git = "https://github.com/bevyengine/bevy"
-rev = "73a313200dc19ed9ca466d586d305979bb18e81e"
+version = "0.17"
 default-features = false
 features = ["bevy_winit"]
-
-[target.'cfg(unix)'.dependencies.bevy]
-#version = "0.16.0"
-git = "https://github.com/bevyengine/bevy"
-rev = "73a313200dc19ed9ca466d586d305979bb18e81e"
-default-features = false
-features = ["x11"]
-
-[target.'cfg(target_arch = "wasm32")'.dependencies.bevy]
-#version = "0.16.0"
-git = "https://github.com/bevyengine/bevy"
-rev = "73a313200dc19ed9ca466d586d305979bb18e81e"
-default-features = false
-features = ["webgl2"]
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

@@ -13,7 +13,9 @@ impl Plugin for TerminalUvMappingPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.init_asset::<UvMapping>();
         let mut mappings = app.world_mut().resource_mut::<Assets<UvMapping>>();
-        mappings.insert(&Handle::<UvMapping>::default(), UvMapping::default());
+        mappings
+            .insert(&Handle::<UvMapping>::default(), UvMapping::default())
+            .expect("Error inserting default UV Mapping");
     }
 }
 

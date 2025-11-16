@@ -8,7 +8,7 @@ use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
 
 use crate::{
     Tile,
-    string::{DecoratedString, StringDecoration, StringIter},
+    strings::{DecoratedString, GridStringIterator, StringDecoration},
 };
 
 /// A component for drawing a border around a terminal.
@@ -318,7 +318,7 @@ impl TerminalBorder {
             };
 
             for (p, (ch, fg, bg)) in
-                StringIter::new(&s.string, side_rect, offset, None, Some(s.decoration))
+                GridStringIterator::new(&s.string, side_rect, offset, None, Some(s.decoration))
             {
                 // decoration.clear_colors is ignored in borders since we don't have
                 // an existing tile to work from.

@@ -40,6 +40,7 @@ fn setup(mut commands: Commands) {
 ## Versions
 | bevy  | bevy_ascii_terminal |
 | ----- | ------------------- |
+| 0.17  | 0.18.*              |
 | 0.16  | 0.17.*              |
 | 0.15  | 0.16.*              |
 | 0.13  | 0.15.0              |

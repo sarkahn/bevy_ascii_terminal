@@ -2,7 +2,7 @@
 
 use bevy::{
     app::{Plugin, PostUpdate},
-    asset::{AssetEvent, Assets},
+    asset::{AssetEvent, Assets, RenderAssetUsages},
     color::ColorToComponents,
     ecs::{
         change_detection::DetectChangesMut,
@@ -15,13 +15,10 @@ use bevy::{
     },
     image::Image,
     math::{IVec2, Vec2},
+    mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
     prelude::{EventWriter, Mesh2d, On, Replace},
-    render::{
-        mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
-        render_asset::RenderAssetUsages,
-        render_resource::{PrimitiveTopology, VertexFormat},
-    },
-    sprite::MeshMaterial2d,
+    render::render_resource::{PrimitiveTopology, VertexFormat},
+    sprite_render::MeshMaterial2d,
 };
 
 use crate::{Terminal, Tile, border::TerminalBorder, transform::TerminalTransform};

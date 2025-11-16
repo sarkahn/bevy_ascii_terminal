@@ -1,10 +1,11 @@
 pub mod ascii;
 pub mod border;
-//pub mod grid;
 pub mod color;
+pub mod padding;
 pub mod render;
 pub(crate) mod rexpaint;
 pub mod string;
+pub mod strings;
 pub mod terminal;
 pub mod tile;
 pub mod transform;
@@ -17,7 +18,7 @@ use bevy::{
 pub use border::TerminalBorder;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
 pub use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
-pub use string::StringDecorator;
+pub use strings::StringDecorator;
 pub use terminal::Terminal;
 pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;

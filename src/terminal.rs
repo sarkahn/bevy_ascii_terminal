@@ -5,19 +5,18 @@ use bevy::{
     math::{IVec2, UVec2},
     prelude::{Component, Mesh2d},
     reflect::Reflect,
-    sprite::MeshMaterial2d,
+    sprite_render::MeshMaterial2d,
 };
 use sark_grids::{GridRect, GridSize, Pivot, PivotedPoint};
 
 use crate::{
-    ascii,
+    Tile, ascii,
     render::{
         RebuildMeshVerts, TerminalFont, TerminalMaterial, TerminalMeshPivot, UvMappingHandle,
     },
     rexpaint::reader::XpFile,
-    string::{StringIter, TerminalString},
+    strings::{GridStringIterator, TerminalString, parse_tokens},
     transform::TerminalTransform,
-    Tile,
 };
 
 /// A grid of tiles for rendering colorful ascii.
@@ -35,6 +34,8 @@ pub struct Terminal {
     size: UVec2,
     tiles: Vec<Tile>,
     clear_tile: Tile,
+    /// An internal buffer to minimize allocations when processing strings.
+    string_buffer: String,
 }
 
 impl Terminal {
@@ -43,6 +44,7 @@ impl Terminal {
             size: size.to_uvec2(),
             tiles: vec![Tile::default(); size.tile_count()],
             clear_tile: Tile::default(),
+            string_buffer: String::default(),
         }
     }
 
@@ -107,7 +109,7 @@ impl Terminal {
     }
 
     /// Specify the terminal's `clear tile`. This is the default tile used when
-    /// clearing a dense terminal.
+    /// clearing a terminal.
     pub fn with_clear_tile(mut self, clear_tile: Tile) -> Self {
         self.clear_tile = clear_tile;
         self.fill(clear_tile);
@@ -218,13 +220,74 @@ impl Terminal {
         let ts: TerminalString<T> = string.into();
         let clear_tile = self.clear_tile;
         let clear_colors = ts.decoration.clear_colors;
-        let mut iter = StringIter::new(
+        let mut iter = GridStringIterator::new(
             ts.string.as_ref(),
             bounds,
             xy,
             Some(ts.formatting),
             Some(ts.decoration),
         );
+        for (xy, (ch, fg, bg)) in iter.by_ref() {
+            let tile = self.tile_mut(xy);
+            tile.glyph = ch;
+            if clear_colors {
+                tile.fg_color = clear_tile.fg_color;
+                tile.bg_color = clear_tile.bg_color;
+            } else {
+                if let Some(col) = fg {
+                    tile.fg_color = col;
+                }
+                if let Some(col) = bg {
+                    tile.bg_color = col;
+                }
+            }
+        }
+    }
+
+    /// Write a formatted string to the terminal.
+    ///
+    /// Formatting options can be applied to the string before writing it to the terminal,
+    /// see [TerminalString].
+    ///
+    /// By default strings will be written to the top left of the terminal. You
+    /// can apply a pivot to the xy position to change this.
+    ///
+    /// # Example
+    /// ```
+    /// use bevy_ascii_terminal::*;
+    /// let mut terminal = Terminal::new([10, 10]);
+    /// terminal.put_string([5, 5], "Hello, World!".bg(color::BLUE));
+    /// terminal.put_string([1, 1].pivot(Pivot::BottomLeft), "Beep beep!");
+    /// ```
+    pub fn put_string_ex<T: AsRef<str>>(
+        &mut self,
+        xy: impl Into<PivotedPoint>,
+        mut string: impl Into<TerminalString<T>>,
+    ) {
+        let bounds = self.bounds();
+        let ts: TerminalString<T> = string.into();
+        let clear_tile = self.clear_tile;
+        let clear_colors = ts.decoration.clear_colors;
+        let mut input = ts.string.as_ref();
+        let mut tags = Vec::new();
+        let mut buffer = String::new();
+
+        if ts.decoration.parse_tags {
+            let mut i: usize = 0;
+            for tag in parse_tokens(input) {
+                match tag {
+                    crate::strings::TerminalStringToken::Text(s) => {
+                        buffer.push_str(s);
+                        i += s.chars().count();
+                    }
+                    _ => tags.push((i, tag)),
+                };
+            }
+            input = &buffer;
+        }
+
+        let mut iter =
+            GridStringIterator::new(input, bounds, xy, Some(ts.formatting), Some(ts.decoration));
         for (xy, (ch, fg, bg)) in iter.by_ref() {
             let tile = self.tile_mut(xy);
             tile.glyph = ch;
@@ -258,7 +321,8 @@ impl Terminal {
         self.tiles[i..i + remaining_width].iter().map(|t| t.glyph)
     }
 
-    /// Transform a local 2d tile index into 1d index into the terminal tile data.
+    /// Transform a local 2d tile index into it's corresponding 1d index into the
+    /// terminal tile data.
     #[inline]
     pub fn tile_to_index(&self, xy: impl Into<PivotedPoint>) -> usize {
         let xy: PivotedPoint = xy.into();
@@ -357,13 +421,10 @@ impl Terminal {
 
     /// Iterate over a rectangular section of terminal tiles.
     pub fn iter_rect(&self, rect: GridRect) -> impl DoubleEndedIterator<Item = &Tile> {
-        let iter = self
-            .tiles
+        self.tiles
             .chunks(self.width())
             .skip(rect.bottom() as usize)
-            .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter());
-
-        iter
+            .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter())
     }
 
     /// Iterate over a rectangular section of terminal tiles.
@@ -419,7 +480,7 @@ impl Terminal {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ascii, GridPoint, Pivot, Terminal};
+    use crate::{GridPoint, Pivot, Terminal, ascii};
 
     #[test]
     fn put_string_negative() {

@@ -1,19 +1,20 @@
 use bevy::{
     app::{First, Plugin},
     asset::{AssetEvent, Assets},
+    camera::{Camera, Projection, ScalingMode, Viewport},
     ecs::{
         component::Component,
         entity::Entity,
-        event::{BufferedEvent, Event, EventReader, EventWriter},
+        message::{Message, MessageReader, MessageWriter},
         query::{Changed, Or, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Query, Res},
     },
     image::Image,
     math::{Mat4, UVec2, Vec2},
+    mesh::Mesh,
     prelude::Camera2d,
-    render::camera::{Camera, Projection, ScalingMode, Viewport},
-    sprite::MeshMaterial2d,
+    sprite_render::{Material2d, MeshMaterial2d},
     transform::components::{GlobalTransform, Transform},
     window::{PrimaryWindow, Window, WindowResized},
 };
@@ -30,22 +31,23 @@ pub struct TerminalSystemsUpdateCamera;
 
 impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_event::<UpdateTerminalViewportEvent>().add_systems(
-            First,
-            (
-                cache_cursor_data,
-                cache_camera_data,
-                on_window_resized,
-                on_font_changed,
-                update_viewport,
-            )
-                .chain()
-                .in_set(TerminalSystemsUpdateCamera),
-        );
+        app.add_message::<UpdateTerminalViewportEvent>()
+            .add_systems(
+                First,
+                (
+                    cache_cursor_data,
+                    cache_camera_data,
+                    on_window_resized,
+                    on_font_changed,
+                    update_viewport,
+                )
+                    .chain()
+                    .in_set(TerminalSystemsUpdateCamera),
+            );
     }
 }
 
-#[derive(Event, BufferedEvent)]
+#[derive(Message)]
 pub struct UpdateTerminalViewportEvent;
 
 /// A camera component to assist in rendering terminals and translating
@@ -189,8 +191,8 @@ fn cache_cursor_data(
 
 fn on_window_resized(
     q_win: Query<Entity, With<PrimaryWindow>>,
-    mut resize_events: EventReader<WindowResized>,
-    mut vp_evt: EventWriter<UpdateTerminalViewportEvent>,
+    mut resize_events: MessageReader<WindowResized>,
+    mut vp_evt: MessageWriter<UpdateTerminalViewportEvent>,
 ) {
     if q_win.is_empty() || resize_events.is_empty() {
         return;
@@ -206,9 +208,9 @@ fn on_window_resized(
 }
 
 fn on_font_changed(
-    mut img_evt: EventReader<AssetEvent<Image>>,
-    mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
-    mut vp_evt: EventWriter<UpdateTerminalViewportEvent>,
+    mut img_evt: MessageReader<AssetEvent<Image>>,
+    mut mat_evt: MessageReader<AssetEvent<TerminalMaterial>>,
+    mut vp_evt: MessageWriter<UpdateTerminalViewportEvent>,
     q_term: Query<&MeshMaterial2d<TerminalMaterial>, With<Terminal>>,
     mats: Res<Assets<TerminalMaterial>>,
 ) {
@@ -247,7 +249,7 @@ fn update_viewport(
     mut q_cam: Query<(&mut Camera, &mut Transform, &mut Projection), With<TerminalCamera>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     scaling: Res<TerminalMeshWorldScaling>,
-    mut update_evt: EventReader<UpdateTerminalViewportEvent>,
+    mut update_evt: MessageReader<UpdateTerminalViewportEvent>,
 ) {
     if update_evt.is_empty() {
         return;
