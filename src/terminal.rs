@@ -15,7 +15,7 @@ use crate::{
         RebuildMeshVerts, TerminalFont, TerminalMaterial, TerminalMeshPivot, UvMappingHandle,
     },
     rexpaint::reader::XpFile,
-    strings::{GridStringIterator, TerminalString, parse_tokens},
+    strings::{GridStringIterator, TerminalString},
     transform::TerminalTransform,
 };
 
@@ -228,67 +228,9 @@ impl Terminal {
             Some(ts.decoration),
         );
         for (xy, (ch, fg, bg)) in iter.by_ref() {
-            let tile = self.tile_mut(xy);
-            tile.glyph = ch;
-            if clear_colors {
-                tile.fg_color = clear_tile.fg_color;
-                tile.bg_color = clear_tile.bg_color;
-            } else {
-                if let Some(col) = fg {
-                    tile.fg_color = col;
-                }
-                if let Some(col) = bg {
-                    tile.bg_color = col;
-                }
+            if !self.bounds().contains_point(xy) {
+                continue;
             }
-        }
-    }
-
-    /// Write a formatted string to the terminal.
-    ///
-    /// Formatting options can be applied to the string before writing it to the terminal,
-    /// see [TerminalString].
-    ///
-    /// By default strings will be written to the top left of the terminal. You
-    /// can apply a pivot to the xy position to change this.
-    ///
-    /// # Example
-    /// ```
-    /// use bevy_ascii_terminal::*;
-    /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_string([5, 5], "Hello, World!".bg(color::BLUE));
-    /// terminal.put_string([1, 1].pivot(Pivot::BottomLeft), "Beep beep!");
-    /// ```
-    pub fn put_string_ex<T: AsRef<str>>(
-        &mut self,
-        xy: impl Into<PivotedPoint>,
-        mut string: impl Into<TerminalString<T>>,
-    ) {
-        let bounds = self.bounds();
-        let ts: TerminalString<T> = string.into();
-        let clear_tile = self.clear_tile;
-        let clear_colors = ts.decoration.clear_colors;
-        let mut input = ts.string.as_ref();
-        let mut tags = Vec::new();
-        let mut buffer = String::new();
-
-        if ts.decoration.parse_tags {
-            let mut i: usize = 0;
-            for tag in parse_tokens(input) {
-                match tag {
-                    crate::strings::TerminalStringToken::Text(s) => {
-                        buffer.push_str(s);
-                        i += s.chars().count();
-                    }
-                    _ => tags.push((i, tag)),
-                };
-            }
-            input = &buffer;
-        }
-
-        let mut iter =
-            GridStringIterator::new(input, bounds, xy, Some(ts.formatting), Some(ts.decoration));
-        for (xy, (ch, fg, bg)) in iter.by_ref() {
             let tile = self.tile_mut(xy);
             tile.glyph = ch;
             if clear_colors {

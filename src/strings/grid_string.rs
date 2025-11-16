@@ -1,7 +1,6 @@
-
 use std::{ops::Sub, str::Chars};
 
-use bevy::{color::LinearRgba, math::IVec2, reflect::Reflect};
+use bevy::{color::LinearRgba, math::IVec2};
 use sark_grids::{GridPoint, GridRect, GridSize, Pivot, PivotedPoint};
 
 use crate::strings::{StringDecoration, StringFormatting};

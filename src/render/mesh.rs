@@ -8,7 +8,7 @@ use bevy::{
         change_detection::DetectChangesMut,
         component::Component,
         entity::Entity,
-        event::EventReader,
+        message::{MessageReader, MessageWriter},
         query::{Added, Changed, Or, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res, ResMut},
@@ -16,7 +16,7 @@ use bevy::{
     image::Image,
     math::{IVec2, Vec2},
     mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
-    prelude::{EventWriter, Mesh2d, On, Replace},
+    prelude::{Mesh2d, On, Replace},
     render::render_resource::{PrimitiveTopology, VertexFormat},
     sprite_render::MeshMaterial2d,
 };
@@ -139,7 +139,7 @@ fn init_mesh(
 fn on_image_load(
     mut q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
-    mut img_evt: EventReader<AssetEvent<Image>>,
+    mut img_evt: MessageReader<AssetEvent<Image>>,
     mut commands: Commands,
 ) {
     for evt in img_evt.read() {
@@ -165,7 +165,7 @@ fn on_image_load(
 // Force a mesh rebuild when a terminal's material changes.
 fn on_material_changed(
     mut q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
-    mut mat_evt: EventReader<AssetEvent<TerminalMaterial>>,
+    mut mat_evt: MessageReader<AssetEvent<TerminalMaterial>>,
     mut commands: Commands,
 ) {
     for evt in mat_evt.read() {
@@ -199,7 +199,7 @@ fn on_terminal_resized(
 }
 
 fn on_border_removed(trigger: On<Replace, TerminalBorder>, mut commands: Commands) {
-    commands.entity(trigger.target()).insert(RebuildMeshVerts);
+    commands.entity(trigger.entity).insert(RebuildMeshVerts);
 }
 
 // Rebuilding mesh verts is a more expensive and complicated operation compared
@@ -227,7 +227,7 @@ fn rebuild_mesh_verts(
     mut meshes: ResMut<Assets<Mesh>>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
-    mut evt: EventWriter<UpdateTerminalViewportEvent>,
+    mut evt: MessageWriter<UpdateTerminalViewportEvent>,
 ) {
     for (entity, mut term, mesh_handle, mat_handle, transform, mut border) in &mut q_term {
         let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {

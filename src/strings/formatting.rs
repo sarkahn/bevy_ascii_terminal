@@ -1,9 +1,7 @@
 //! Utilities  for writing formatted/decorated strings to the terminal
 //! without any extra allocations.
-use std::{ops::Sub, str::Chars};
 
-use bevy::{color::LinearRgba, math::IVec2, reflect::Reflect};
-use sark_grids::{GridPoint, GridRect, GridSize, Pivot, PivotedPoint};
+use bevy::{color::LinearRgba, reflect::Reflect};
 
 /// A string with optional [StringDecoration] and [StringFormatting] applied.
 ///
@@ -248,44 +246,44 @@ pub struct FormattedString<T: AsRef<str>> {
     pub formatting: StringFormatting,
 }
 
-pub trait StringFormatter<T: AsRef<str>> {
-    fn ignore_spaces(self) -> FormattedString<T>;
-    fn dont_word_wrap(self) -> FormattedString<T>;
-}
+// pub trait StringFormatter<T: AsRef<str>> {
+//     fn ignore_spaces(self) -> FormattedString<T>;
+//     fn dont_word_wrap(self) -> FormattedString<T>;
+// }
 
-impl<T: AsRef<str>> StringFormatter<T> for T {
-    fn ignore_spaces(self) -> FormattedString<T> {
-        FormattedString {
-            string: self,
-            formatting: StringFormatting {
-                ignore_spaces: true,
-                ..Default::default()
-            },
-        }
-    }
+// impl<T: AsRef<str>> StringFormatter<T> for T {
+//     fn ignore_spaces(self) -> FormattedString<T> {
+//         FormattedString {
+//             string: self,
+//             formatting: StringFormatting {
+//                 ignore_spaces: true,
+//                 ..Default::default()
+//             },
+//         }
+//     }
 
-    fn dont_word_wrap(self) -> FormattedString<T> {
-        FormattedString {
-            string: self,
-            formatting: StringFormatting {
-                word_wrap: false,
-                ..Default::default()
-            },
-        }
-    }
-}
+//     fn dont_word_wrap(self) -> FormattedString<T> {
+//         FormattedString {
+//             string: self,
+//             formatting: StringFormatting {
+//                 word_wrap: false,
+//                 ..Default::default()
+//             },
+//         }
+//     }
+// }
 
-impl<T: AsRef<str>> StringFormatter<T> for FormattedString<T> {
-    fn ignore_spaces(mut self) -> FormattedString<T> {
-        self.formatting.ignore_spaces = true;
-        self
-    }
+// impl<T: AsRef<str>> StringFormatter<T> for FormattedString<T> {
+//     fn ignore_spaces(mut self) -> FormattedString<T> {
+//         self.formatting.ignore_spaces = true;
+//         self
+//     }
 
-    fn dont_word_wrap(mut self) -> FormattedString<T> {
-        self.formatting.word_wrap = false;
-        self
-    }
-}
+//     fn dont_word_wrap(mut self) -> FormattedString<T> {
+//         self.formatting.word_wrap = false;
+//         self
+//     }
+// }
 
 impl<T: AsRef<str>> From<DecoratedString<T>> for TerminalString<T> {
     fn from(value: DecoratedString<T>) -> Self {

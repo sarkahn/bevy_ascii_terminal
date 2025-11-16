@@ -99,7 +99,7 @@ fn handle_key_repeat(input: Res<ButtonInput<KeyCode>>, mut controls: ResMut<Stat
 fn handle_other_input(
     input: Res<ButtonInput<KeyCode>>,
     mut controls: ResMut<State>,
-    mut evt_quit: EventWriter<AppExit>,
+    mut evt_quit: MessageWriter<AppExit>,
 ) {
     if input.just_pressed(KeyCode::Escape) {
         evt_quit.write(AppExit::Success);

@@ -1,8 +1,10 @@
 # Changelog
-## [0.18.0] - 2025/06/27
+## [0.18.0] - 2025/11/15
 
 ### Changes
 - Update for bevy 0.17.
+- Moved strings to their own module.
+- Added a bounds check to put_string.
 
 ## [0.17.0] - 2025/03/09
 

@@ -3,15 +3,12 @@ use bevy::{
     mesh::MeshVertexBufferLayoutRef,
     prelude::{Asset, Assets, Color, Handle, Image, LinearRgba, Mesh, Plugin, Shader},
     reflect::TypePath,
-    render::{
-        render_asset,
-        render_resource::{AsBindGroup, RenderPipelineDescriptor, SpecializedMeshPipelineError},
+    render::render_resource::{
+        AsBindGroup, RenderPipelineDescriptor, SpecializedMeshPipelineError,
     },
     shader::ShaderRef,
     sprite_render::{Material2d, Material2dKey, Material2dPlugin},
 };
-
-use crate::render;
 
 use super::mesh::{ATTRIBUTE_COLOR_BG, ATTRIBUTE_COLOR_FG, ATTRIBUTE_UV};
 

@@ -179,10 +179,10 @@ fn on_size_change(
     mut commands: Commands,
 ) {
     for (entity, term, term_transform) in &q_term {
-        if let Some(data) = &term_transform.cached_data {
-            if data.terminal_size != term.size() {
-                commands.entity(entity).insert(CacheTransformData);
-            }
+        if let Some(data) = &term_transform.cached_data
+            && data.terminal_size != term.size()
+        {
+            commands.entity(entity).insert(CacheTransformData);
         }
     }
 }

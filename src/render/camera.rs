@@ -12,9 +12,8 @@ use bevy::{
     },
     image::Image,
     math::{Mat4, UVec2, Vec2},
-    mesh::Mesh,
     prelude::Camera2d,
-    sprite_render::{Material2d, MeshMaterial2d},
+    sprite_render::MeshMaterial2d,
     transform::components::{GlobalTransform, Transform},
     window::{PrimaryWindow, Window, WindowResized},
 };

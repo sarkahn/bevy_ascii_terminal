@@ -89,12 +89,12 @@ fn handle_just_pressed(
     input: Res<ButtonInput<KeyCode>>,
     q_border: Query<&TerminalBorder>,
     mut current: ResMut<Current>,
-    mut evt_quit: EventWriter<AppExit>,
+    mut evt_quit: MessageWriter<AppExit>,
     mut commands: Commands,
 ) {
     // If we're accessing a terminal by index we need to make sure they're
     // always in the same order
-    let mut terminals: Vec<_> = q_term.iter_mut().sort::<Entity>().collect();
+    let mut terminals: Vec<_> = q_term.iter_mut().sort::<Entity>().rev().collect();
     if input.just_pressed(KeyCode::Tab) {
         current.0 = (current.0 + 1) % terminals.len();
         for (i, (_, term, string)) in terminals.iter_mut().enumerate() {
@@ -132,7 +132,7 @@ fn handle_pressed(
     let size = IVec2::new(hor, ver);
     if !size.cmpeq(IVec2::ZERO).all() {
         // You can sort by entity even if Entity isn't explicitly in the query
-        let mut terminals: Vec<_> = q_term.iter_mut().sort::<Entity>().collect();
+        let mut terminals: Vec<_> = q_term.iter_mut().sort::<Entity>().rev().collect();
         let string = terminals[current.0].1;
         let term = &mut terminals[current.0].0;
 
