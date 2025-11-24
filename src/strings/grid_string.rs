@@ -44,10 +44,7 @@ fn ver_pivot_offset(string: &str, pivot: Pivot, max_width: usize, word_wrap: boo
 ///
 /// Returns a tuple with the wrapped line and the remaining text in the string.
 fn wrap_line(string: &str, max_len: usize, word_wrap: bool) -> Option<(&str, &str)> {
-    debug_assert!(
-        max_len > 0,
-        "max_len for wrap_string must be greater than 0"
-    );
+    debug_assert!(max_len > 0, "max_len for wrap_line must be greater than 0");
     if string.trim_end().is_empty() {
         return None;
     }
