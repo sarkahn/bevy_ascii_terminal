@@ -129,9 +129,9 @@ fn update_font(
             });
             *mat_handle = MeshMaterial2d(mat);
         } else {
-            let mat = materials
-                .get_mut(&*mat_handle.clone())
-                .expect("Error getting terminal material");
+            let Some(mat) = materials.get_mut(&*mat_handle.clone()) else {
+                continue;
+            };
             mat.texture = Some(image);
         }
     }

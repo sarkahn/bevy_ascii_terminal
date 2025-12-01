@@ -140,9 +140,9 @@ fn on_image_load(
             _ => continue,
         };
         for (entity, mat_handle) in q_term.iter() {
-            let mat = materials
-                .get(&mat_handle.0)
-                .expect("Error getting terminal material");
+            let Some(mat) = materials.get(&mat_handle.0) else {
+                continue;
+            };
             let Some(_) = mat
                 .texture
                 .as_ref()

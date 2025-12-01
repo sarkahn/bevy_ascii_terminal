@@ -148,9 +148,10 @@ fn on_image_load(
             _ => continue,
         };
         for (entity, mat_handle) in &mut q_term {
-            let mat = materials
-                .get(&*mat_handle.clone())
-                .expect("Error getting terminal material");
+            let Some(mat) = materials.get(&*mat_handle.clone()) else {
+                continue;
+            };
+
             if mat
                 .texture
                 .as_ref()
@@ -190,7 +191,9 @@ fn on_terminal_resized(
 ) {
     for (e, term, mesh, border) in &q_term {
         let tile_count = term.tile_count() + border.as_ref().map_or(0, |b| b.tiles().len());
-        let mesh = meshes.get(mesh).expect("Couldn't find terminal mesh");
+        let Some(mesh) = meshes.get(mesh) else {
+            continue;
+        };
         if mesh_vertex_count(mesh) == tile_count * 4 {
             continue;
         }
@@ -330,9 +333,9 @@ fn rebuild_mesh_uvs(
     mappings: Res<Assets<UvMapping>>,
 ) {
     for (term, mesh_handle, mapping_handle, border) in &q_term {
-        let mesh = meshes
-            .get_mut(&mesh_handle.0.clone())
-            .expect("Couldn't find terminal mesh");
+        let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
+            continue;
+        };
 
         // Mesh vertices not yet updated, this function will be called again
         // once the vertex update is completed.
@@ -340,9 +343,9 @@ fn rebuild_mesh_uvs(
             continue;
         }
 
-        let mapping = mappings
-            .get(&*mapping_handle.clone())
-            .expect("Couldn't find terminal uv mapping");
+        let Some(mapping) = mappings.get(&*mapping_handle.clone()) else {
+            continue;
+        };
 
         // Remove all our relevant attributes from the mesh. This is done
         // to prevent the borrow checker from complaining when trying to
