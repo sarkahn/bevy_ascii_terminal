@@ -1,4 +1,14 @@
 # Changelog
+## [0.18.2] - 2026/02/02
+
+### Changes
+- Update for bevy 0.18.
+
+## [0.18.1] - 2025/12/01
+
+### Changes
+- Fix a bug where the transform, font or mesh systems could panic when an image finishes loading before a terminal material is ready.
+
 ## [0.18.0] - 2025/11/15
 
 ### Changes
