@@ -17,8 +17,8 @@ use bevy::{
 };
 pub use border::TerminalBorder;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
-pub use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
-pub use strings::StringDecorator;
+pub use sark_grids::{GridPoint, GridRect, GridSize, Pivot, PivotedPoint};
+pub use strings::{StringDecorator, TerminalString};
 pub use terminal::Terminal;
 pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;
