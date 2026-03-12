@@ -1,8 +1,10 @@
 //! A grid of tiles for rendering colorful ascii.
 
+use std::default;
+
 use bevy::{
     color::{ColorToPacked, LinearRgba},
-    math::{IVec2, UVec2},
+    math::{IVec2, UVec2, ivec2},
     prelude::{Component, Mesh2d},
     reflect::Reflect,
     sprite_render::MeshMaterial2d,
@@ -10,14 +12,183 @@ use bevy::{
 use sark_grids::{GridRect, GridSize, Pivot, PivotedPoint};
 
 use crate::{
-    Tile, ascii,
+    Tile,
+    ascii,
     render::{
         RebuildMeshVerts, TerminalFont, TerminalMaterial, TerminalMeshPivot, UvMappingHandle,
     },
     rexpaint::reader::XpFile,
-    strings::{GridStringIterator, TerminalString},
+    //string::wrap_line,
+    strings::{
+        GridStringIterator,
+        TerminalString,
+        Token,
+        TokenIterator, //Token, next_token
+    },
     transform::TerminalTransform,
 };
+
+#[derive(Debug, Reflect, Component, Clone, Copy, Default)]
+pub struct Padding {
+    left: usize,
+    top: usize,
+    right: usize,
+    bottom: usize,
+}
+
+impl Padding {
+    pub const ONE: Padding = Padding {
+        left: 1,
+        top: 1,
+        right: 1,
+        bottom: 1,
+    };
+
+    pub const ZERO: Padding = Padding {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+    };
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct BoxStyle {
+    pub top_left: char,
+    pub top_center: char,
+    pub top_right: char,
+    pub center_left: char,
+    pub center: char,
+    pub center_right: char,
+    pub bottom_left: char,
+    pub bottom_center: char,
+    pub bottom_right: char,
+    pub fg_color: Option<ColorWrite>,
+    pub bg_color: Option<ColorWrite>,
+}
+
+impl Default for BoxStyle {
+    fn default() -> Self {
+        Self {
+            top_left: Default::default(),
+            top_center: Default::default(),
+            top_right: Default::default(),
+            center_left: Default::default(),
+            center: Default::default(),
+            center_right: Default::default(),
+            bottom_left: Default::default(),
+            bottom_center: Default::default(),
+            bottom_right: Default::default(),
+            fg_color: Some(ColorWrite::Clear),
+            bg_color: Some(ColorWrite::Clear),
+        }
+    }
+}
+
+const fn decode_char(bytes: &[u8], pos: usize) -> (char, usize) {
+    let b = bytes[pos];
+    let (cp, len) = if b & 0x80 == 0 {
+        (b as u32, 1)
+    } else if b & 0xE0 == 0xC0 {
+        let cp = (((b & 0x1F) as u32) << 6) | ((bytes[pos + 1] & 0x3F) as u32);
+        (cp, 2)
+    } else if b & 0xF0 == 0xE0 {
+        let cp = (((b & 0x0F) as u32) << 12)
+            | (((bytes[pos + 1] & 0x3F) as u32) << 6)
+            | ((bytes[pos + 2] & 0x3F) as u32);
+        (cp, 3)
+    } else {
+        let cp = (((b & 0x07) as u32) << 18)
+            | (((bytes[pos + 1] & 0x3F) as u32) << 12)
+            | (((bytes[pos + 2] & 0x3F) as u32) << 6)
+            | ((bytes[pos + 3] & 0x3F) as u32);
+        (cp, 4)
+    };
+
+    (char::from_u32(cp).unwrap(), len)
+}
+
+impl BoxStyle {
+    pub const fn from_string(s: &str) -> BoxStyle {
+        let b = s.as_bytes();
+        let mut pos = 0;
+
+        let (top_left, n) = decode_char(b, pos);
+        pos += n;
+        let (top_center, n) = decode_char(b, pos);
+        pos += n;
+        let (top_right, n) = decode_char(b, pos);
+        pos += n;
+        let (center_left, n) = decode_char(b, pos);
+        pos += n;
+        let (center, n) = decode_char(b, pos);
+        pos += n;
+        let (center_right, n) = decode_char(b, pos);
+        pos += n;
+        let (bottom_left, n) = decode_char(b, pos);
+        pos += n;
+        let (bottom_center, n) = decode_char(b, pos);
+        pos += n;
+        let (bottom_right, _) = decode_char(b, pos);
+
+        BoxStyle {
+            top_left,
+            top_center,
+            top_right,
+            center_left,
+            center,
+            center_right,
+            bottom_left,
+            bottom_center,
+            bottom_right,
+            fg_color: Some(ColorWrite::Clear),
+            bg_color: Some(ColorWrite::Clear),
+        }
+    }
+
+    pub const SINGLE: BoxStyle = BoxStyle::from_string("┌─┐│ │└─┘");
+    pub const DOUBLE: BoxStyle = BoxStyle::from_string("╔═╗║ ║╚═╝");
+    pub const ASCII: BoxStyle = BoxStyle::from_string("+-+| |+-+");
+
+    /// Set the foreground colors on border tiles to the terminal's clear tile color
+    pub fn clear_fg(mut self) -> Self {
+        self.fg_color = Some(ColorWrite::Clear);
+        self
+    }
+
+    /// Set the background colors on border tiles to the terminal's clear tile color
+    pub fn clear_bg(mut self) -> Self {
+        self.bg_color = Some(ColorWrite::Clear);
+        self
+    }
+
+    pub fn set_fg(mut self, col: LinearRgba) -> Self {
+        self.fg_color = Some(ColorWrite::Set(col));
+        self
+    }
+
+    pub fn set_bg(mut self, col: LinearRgba) -> Self {
+        self.bg_color = Some(ColorWrite::Set(col));
+        self
+    }
+
+    pub fn dont_clear_fg(mut self) -> Self {
+        self.fg_color = None;
+        self
+    }
+
+    pub fn dont_clear_bg(mut self) -> Self {
+        self.bg_color = None;
+        self
+    }
+}
+
+#[derive(Default, Debug, Copy, Clone)]
+pub enum ColorWrite {
+    #[default]
+    Clear,
+    Set(LinearRgba),
+}
 
 /// A grid of tiles for rendering colorful ascii.
 #[derive(Debug, Reflect, Component, Clone)]
@@ -34,8 +205,7 @@ pub struct Terminal {
     size: UVec2,
     tiles: Vec<Tile>,
     clear_tile: Tile,
-    /// An internal buffer to minimize allocations when processing strings.
-    string_buffer: String,
+    padding: Padding,
 }
 
 impl Terminal {
@@ -44,7 +214,7 @@ impl Terminal {
             size: size.to_uvec2(),
             tiles: vec![Tile::default(); size.tile_count()],
             clear_tile: Tile::default(),
-            string_buffer: String::default(),
+            padding: Padding::ZERO,
         }
     }
 
@@ -116,13 +286,58 @@ impl Terminal {
         self
     }
 
+    /// Set the padding for the terminal.
+    pub fn with_padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
+    /// Draw a border on the terminal.
+    pub fn with_border(mut self, style: BoxStyle) -> Self {
+        self.put_border(style);
+        self
+    }
+
+    /// Set a title
+    pub fn with_title(mut self, title: &str) -> Self {
+        self.put_title(title);
+        self
+    }
+
+    /// Set the clear character
+    pub fn with_clear_char(mut self, glyph: char) -> Self {
+        self.clear_tile.glyph = glyph;
+        self.maybe_fill(Some(glyph), None, None);
+        self
+    }
+
+    /// Set the foreground clear color
+    pub fn with_fg_clear_color(mut self, col: LinearRgba) -> Self {
+        self.clear_tile.fg_color = col;
+        self.maybe_fill(None, Some(col), None);
+        self
+    }
+
+    /// Set the background clear color
+    pub fn with_bg_clear_color(mut self, col: LinearRgba) -> Self {
+        self.clear_tile.bg_color = col;
+        self.maybe_fill(None, None, Some(col));
+        self
+    }
+
+    /// Set the clear colors
+    pub fn with_clear_colors(mut self, fg: LinearRgba, bg: LinearRgba) -> Self {
+        self.maybe_fill(None, Some(fg), Some(bg));
+        self
+    }
+
     /// A utility function to add a string to the terminal during creation.
     pub fn with_string<T: AsRef<str>>(
         mut self,
         xy: impl Into<PivotedPoint>,
         string: impl Into<TerminalString<T>>,
     ) -> Self {
-        self.put_string(xy, string);
+        self.put_string2(xy, string);
         self
     }
 
@@ -196,6 +411,30 @@ impl Terminal {
         self.tiles.fill(tile);
     }
 
+    pub fn maybe_fill(
+        &mut self,
+        glyph: Option<char>,
+        fg: Option<LinearRgba>,
+        bg: Option<LinearRgba>,
+    ) {
+        if let Some(ch) = glyph {
+            for t in self.tiles.iter_mut() {
+                t.glyph = ch;
+            }
+        }
+        if let Some(col) = fg {
+            for t in self.tiles.iter_mut() {
+                t.fg_color = col;
+            }
+        }
+
+        if let Some(col) = bg {
+            for t in self.tiles.iter_mut() {
+                t.bg_color = col;
+            }
+        }
+    }
+
     /// Write a formatted string to the terminal.
     ///
     /// Formatting options can be applied to the string before writing it to the terminal,
@@ -244,6 +483,169 @@ impl Terminal {
                     tile.bg_color = col;
                 }
             }
+        }
+    }
+
+    pub fn put_string2<T: AsRef<str>>(
+        &mut self,
+        xy: impl Into<PivotedPoint>,
+        string: impl Into<TerminalString<T>>,
+    ) {
+        // How to make this work with aligned writing? Seems like a mess...
+        let ts: TerminalString<T> = string.into();
+        let clear_tile = self.clear_tile;
+        let string = ts.string.as_ref();
+        let pp: PivotedPoint = xy.into();
+        let mut xy = pp.calculate(self.size);
+        xy.x += self.padding.left as i32;
+        xy.y += self.padding.top as i32;
+        let max_width = (self.width() - self.padding.right) as i32;
+        let max_height = (self.height() - self.padding.top) as i32;
+
+        let mut fg = clear_tile.fg_color;
+        let mut bg = clear_tile.bg_color;
+
+        for token in TokenIterator::new(string) {
+            let token = token.unwrap();
+            match token {
+                Token::Text(text) => {
+                    if ts.formatting.word_wrap {
+                        let count = text.chars().count() as i32;
+                        if xy.x + count > max_width {
+                            xy.x = self.padding.left as i32;
+                            xy.y += 1;
+                            if xy.y >= max_height {
+                                return;
+                            }
+                        }
+                    }
+
+                    for char in text.chars() {
+                        let y = self.height() as i32 - 1 - xy.y;
+                        let i = (y * self.width() as i32 + xy.x) as usize;
+
+                        let t = &mut self.tiles[i];
+                        t.glyph = char;
+                        t.fg_color = fg;
+                        t.bg_color = bg;
+
+                        xy.x += 1;
+                        if xy.x >= max_width {
+                            xy.x = self.padding.left as i32;
+                            xy.y += 1;
+                            if xy.y >= max_height {
+                                return;
+                            }
+                        }
+                    }
+                }
+                Token::Space => {
+                    if xy.x == self.padding.left as i32 {
+                        continue; // Eat leading whitespace
+                    }
+                    // Ignore space at the end of a line. This leaves a break in
+                    // background colors that span between lines
+                    if xy.x + 1 >= max_width {
+                        xy.x = self.padding.left as i32;
+                        xy.y += 1;
+                        if xy.y >= max_height {
+                            return;
+                        }
+                    } else {
+                        let y = self.height() as i32 - 1 - xy.y;
+                        let i = (y * self.width() as i32 + xy.x) as usize;
+
+                        let t = &mut self.tiles[i];
+                        t.glyph = ' ';
+                        t.fg_color = fg;
+                        t.bg_color = bg;
+                        xy.x += 1;
+                    }
+                }
+                Token::Newline => {
+                    xy.x = self.padding.left as i32;
+                    xy.y += 1;
+                    if xy.y >= max_height {
+                        return;
+                    }
+                }
+                Token::FgStart(col) => fg = col,
+                Token::BgStart(col) => bg = col,
+                Token::FgEnd => fg = clear_tile.fg_color,
+                Token::BgEnd => bg = clear_tile.bg_color,
+            }
+        }
+    }
+
+    pub fn put_box(&mut self, xy: impl Into<PivotedPoint>, size: impl GridSize, style: BoxStyle) {
+        let xy = xy.into().calculate(self.size);
+        let size = size.to_ivec2();
+
+        let right = ivec2(size.x - 1, 0);
+        let up = ivec2(0, size.y - 1);
+
+        let fg = style.fg_color.map(|v| match v {
+            ColorWrite::Clear => self.clear_tile.fg_color,
+            ColorWrite::Set(col) => col,
+        });
+        let bg = style.bg_color.map(|v| match v {
+            ColorWrite::Clear => self.clear_tile.bg_color,
+            ColorWrite::Set(col) => col,
+        });
+        self.maybe_put(xy, Some(style.bottom_left), fg, bg);
+        self.maybe_put(xy + up, Some(style.top_left), fg, bg);
+        self.maybe_put(xy + right, Some(style.bottom_right), fg, bg);
+        self.maybe_put(xy + right + up, Some(style.top_right), fg, bg);
+
+        for i in 1..size.x - 1 {
+            self.maybe_put([xy.x + i, xy.y], Some(style.bottom_center), fg, bg);
+            self.maybe_put([xy.x + i, xy.y + up.y], Some(style.top_center), fg, bg);
+        }
+
+        for i in 1..size.y - 1 {
+            self.maybe_put([xy.x, xy.y + i], Some(style.center_left), fg, bg);
+            self.maybe_put([xy.x + right.x, xy.y + i], Some(style.center_right), fg, bg);
+        }
+    }
+
+    pub fn put_border(&mut self, style: BoxStyle) {
+        let padding = self.padding;
+        self.padding = Padding::ZERO;
+        self.put_box([0, 0], self.size(), style);
+        self.padding = padding;
+    }
+
+    pub fn put_title(&mut self, title: &str) {
+        let padding = self.padding;
+        self.padding = Padding::ZERO;
+
+        let offset = title.find(|c| c != ' ').unwrap_or(0);
+        let title = title.trim_start();
+        self.put_string2([offset, 0], title);
+
+        self.padding = padding;
+    }
+
+    pub fn maybe_put(
+        &mut self,
+        xy: impl Into<PivotedPoint>,
+        glyph: Option<char>,
+        fg: Option<LinearRgba>,
+        bg: Option<LinearRgba>,
+    ) {
+        let xy = xy.into().calculate(self.size());
+        let i = (xy.y * self.width() as i32 + xy.x) as usize;
+        let t = &mut self.tiles[i];
+        if let Some(glyph) = glyph {
+            t.glyph = glyph;
+        }
+
+        if let Some(fg) = fg {
+            t.fg_color = fg;
+        }
+
+        if let Some(bg) = bg {
+            t.bg_color = bg;
         }
     }
 
@@ -308,6 +710,13 @@ impl Terminal {
         );
         let i = self.tile_to_index(xy);
         &self.tiles[i]
+    }
+
+    /// Apply padding the edges of the terminal, this will cause get/set
+    /// functions to be adjusted according to the padding. Useful when your
+    /// terminal has a border.
+    pub fn set_padding(&mut self, padding: Padding) {
+        self.padding = padding;
     }
 
     pub fn width(&self) -> usize {
@@ -418,11 +827,32 @@ impl Terminal {
         self.tiles = vec![self.clear_tile; new_size.tile_count()];
         self.size = new_size;
     }
+
+    pub fn print_to_console(self) {
+        for y in (0..self.height()).rev() {
+            for x in 0..self.width() {
+                let t = &self.tiles[y * self.width() + x];
+                print!("{}", t.glyph);
+            }
+            println!();
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{GridPoint, Pivot, Terminal, ascii};
+
+    #[test]
+    fn printing() {
+        let mut term = Terminal::new([30, 5]);
+        term.put_string([0, 0], "Hello");
+
+        term.put_box([0, 0], [5, 4], BoxStyle::DOUBLE);
+
+        term.print_to_console();
+    }
 
     #[test]
     fn put_string_negative() {

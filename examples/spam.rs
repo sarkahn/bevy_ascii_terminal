@@ -2,7 +2,7 @@
 
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
-use bevy::window::PresentMode;
+use bevy::window::{PresentMode, PrimaryWindow, WindowMode};
 use bevy_ascii_terminal::*;
 use rand::Rng;
 use rand::rngs::ThreadRng;
@@ -31,10 +31,11 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn((
-        Terminal::new([80, 50]),
-        TerminalBorder::single_line().with_title("Press space to pause"),
-    ));
+    commands.spawn(
+        Terminal::new([82, 52])
+            .with_border(BoxStyle::SINGLE)
+            .with_title(" Press space to pause"),
+    );
     commands.spawn(TerminalCamera::new());
 }
 
@@ -47,12 +48,22 @@ fn rand_color(rng: &mut ThreadRng) -> LinearRgba {
 }
 
 fn spam_terminal(
+    mut windows: Query<&mut Window, With<PrimaryWindow>>,
     keys: Res<ButtonInput<KeyCode>>,
     mut q: Query<&mut Terminal>,
     mut pause: Local<bool>,
 ) {
     if keys.just_pressed(KeyCode::Space) {
         *pause = !(*pause);
+    }
+    if keys.just_pressed(KeyCode::KeyF)
+        && let Ok(mut window) = windows.single_mut()
+    {
+        if window.mode == WindowMode::BorderlessFullscreen(MonitorSelection::Current) {
+            window.mode = WindowMode::Windowed;
+        } else {
+            window.mode = WindowMode::BorderlessFullscreen(MonitorSelection::Current);
+        }
     }
 
     if *pause {
@@ -61,16 +72,18 @@ fn spam_terminal(
 
     let mut rng = rand::thread_rng();
     let mut term = q.single_mut().unwrap();
-    for t in term.iter_mut() {
-        let index = rng.gen_range(0..=255) as u8;
-        let glyph = ascii::index_to_char(index);
-        let fg = rand_color(&mut rng);
-        let bg = rand_color(&mut rng);
+    for y in 1..term.height() - 1 {
+        for x in 1..term.width() - 1 {
+            let index = rng.gen_range(0..=255) as u8;
+            let glyph = ascii::index_to_char(index);
+            let fg = rand_color(&mut rng);
+            let bg = rand_color(&mut rng);
 
-        *t = Tile {
-            glyph,
-            fg_color: fg,
-            bg_color: bg,
+            let i = y * term.width() + x;
+            let t = &mut term.tiles_mut()[i];
+            t.glyph = glyph;
+            t.fg_color = fg;
+            t.bg_color = bg;
         }
     }
 }

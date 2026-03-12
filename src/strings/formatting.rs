@@ -32,12 +32,6 @@ impl<T: AsRef<str>> TerminalString<T> {
         self
     }
 
-    pub fn delimiters(mut self, delimiters: impl AsRef<str>) -> Self {
-        let mut chars = delimiters.as_ref().chars();
-        self.decoration.delimiters = (chars.next(), chars.next());
-        self
-    }
-
     pub fn clear_colors(mut self) -> Self {
         self.decoration.clear_colors = true;
         self
@@ -86,9 +80,6 @@ pub trait StringDecorator<T: AsRef<str>> {
     fn fg(self, color: impl Into<LinearRgba>) -> DecoratedString<T>;
     /// Sets the background color for string tiles.
     fn bg(self, color: impl Into<LinearRgba>) -> DecoratedString<T>;
-    /// Add a pair of delimiters to the string. The first character will be the
-    /// opening delimiter and the second character will be the closing delimiter.
-    fn delimiters(self, delimiters: impl AsRef<str>) -> DecoratedString<T>;
     /// Sets the string tile colors to match the terminal's clear tile. This will
     /// override the string's fg and bg colors.
     fn clear_colors(self) -> DecoratedString<T>;
@@ -129,17 +120,6 @@ impl<T: AsRef<str>> StringDecorator<T> for T {
         }
     }
 
-    fn delimiters(self, delimiters: impl AsRef<str>) -> DecoratedString<T> {
-        let mut chars = delimiters.as_ref().chars();
-        DecoratedString {
-            string: self,
-            decoration: StringDecoration {
-                delimiters: (chars.next(), chars.next()),
-                ..Default::default()
-            },
-        }
-    }
-
     fn parse_tags(self) -> DecoratedString<T> {
         DecoratedString {
             string: self,
@@ -165,17 +145,6 @@ impl<T: AsRef<str>> StringDecorator<T> for DecoratedString<T> {
     fn clear_colors(mut self) -> DecoratedString<T> {
         self.decoration.clear_colors = true;
         self
-    }
-
-    fn delimiters(self, delimiters: impl AsRef<str>) -> DecoratedString<T> {
-        let mut chars = delimiters.as_ref().chars();
-        DecoratedString {
-            string: self.string,
-            decoration: StringDecoration {
-                delimiters: (chars.next(), chars.next()),
-                ..self.decoration
-            },
-        }
     }
 
     fn parse_tags(mut self) -> DecoratedString<T> {
@@ -234,7 +203,7 @@ impl StringFormatting {
 impl Default for StringFormatting {
     fn default() -> Self {
         Self {
-            ignore_spaces: Default::default(),
+            ignore_spaces: false,
             word_wrap: true,
         }
     }

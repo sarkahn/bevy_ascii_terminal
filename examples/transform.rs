@@ -45,9 +45,12 @@ fn update(mut q_term: Query<(&mut Terminal, &TerminalTransform)>, q_cam: Query<&
     for (mut term, transform) in &mut q_term {
         clear_term(&mut term);
         if let Some(xy) = transform.world_to_tile(cursor_pos) {
-            term.put_string([0, 0], format!("Cursor pos: {}", xy).bg(BLACK));
+            term.put_string2(
+                [0, 0],
+                format!("Cursor pos: <fg=magenta>{}</fg>", xy).bg(BLACK),
+            );
         } else {
-            term.put_string([0, 0], "Cursor out of bounds".bg(BLACK));
+            term.put_string2([0, 0], "Cursor out of bounds".bg(BLACK));
         }
     }
 }

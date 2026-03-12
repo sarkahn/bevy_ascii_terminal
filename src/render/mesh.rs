@@ -21,7 +21,12 @@ use bevy::{
     sprite_render::MeshMaterial2d,
 };
 
-use crate::{Terminal, Tile, border::TerminalBorder, transform::TerminalTransform};
+use crate::{
+    Terminal,
+    Tile,
+    //border::TerminalBorder,
+    transform::TerminalTransform,
+};
 
 use super::{
     UpdateTerminalViewportEvent,
@@ -40,7 +45,7 @@ pub struct TerminalMeshPlugin;
 
 impl Plugin for TerminalMeshPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_observer(on_border_removed);
+        //app.add_observer(on_border_removed);
         app.add_systems(
             PostUpdate,
             (
@@ -185,12 +190,20 @@ fn on_material_changed(
 }
 
 fn on_terminal_resized(
-    q_term: Query<(Entity, &Terminal, &Mesh2d, Option<&TerminalBorder>), Changed<Terminal>>,
+    q_term: Query<
+        (
+            Entity,
+            &Terminal,
+            &Mesh2d,
+            //    Option<&TerminalBorder>
+        ),
+        Changed<Terminal>,
+    >,
     mut commands: Commands,
     meshes: Res<Assets<Mesh>>,
 ) {
-    for (e, term, mesh, border) in &q_term {
-        let tile_count = term.tile_count() + border.as_ref().map_or(0, |b| b.tiles().len());
+    for (e, term, mesh) in &q_term {
+        let tile_count = term.tile_count(); // + border.as_ref().map_or(0, |b| b.tiles().len());
         let Some(mesh) = meshes.get(mesh) else {
             continue;
         };
@@ -201,9 +214,10 @@ fn on_terminal_resized(
     }
 }
 
-fn on_border_removed(trigger: On<Replace, TerminalBorder>, mut commands: Commands) {
-    commands.entity(trigger.entity).insert(RebuildMeshVerts);
-}
+// fn on_border_removed(trigger: On<Replace,
+//     //TerminalBorder>, mut commands: Commands) {
+//     commands.entity(trigger.entity).insert(RebuildMeshVerts);
+// }
 
 // Rebuilding mesh verts is a more expensive and complicated operation compared
 // to updating uvs and colors. Generally it only needs to be done when terminal
@@ -217,12 +231,12 @@ fn rebuild_mesh_verts(
             &Mesh2d,
             &MeshMaterial2d<TerminalMaterial>,
             &TerminalTransform,
-            Option<&mut TerminalBorder>,
+            //Option<&mut TerminalBorder>,
         ),
         Or<(
             Changed<TerminalMeshPivot>,
             Changed<TerminalMeshTileScaling>,
-            Changed<TerminalBorder>,
+            //            Changed<TerminalBorder>,
             With<RebuildMeshVerts>,
         )>,
     >,
@@ -232,7 +246,15 @@ fn rebuild_mesh_verts(
     images: Res<Assets<Image>>,
     mut evt: MessageWriter<UpdateTerminalViewportEvent>,
 ) {
-    for (entity, mut term, mesh_handle, mat_handle, transform, mut border) in &mut q_term {
+    for (
+        entity,
+        mut term,
+        mesh_handle,
+        mat_handle,
+        transform,
+        //    mut border
+    ) in &mut q_term
+    {
         let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
             continue;
         };
@@ -254,14 +276,12 @@ fn rebuild_mesh_verts(
             continue;
         };
 
-        if let Some(border) = border.as_mut() {
-            border.rebuild(term.size(), term.clear_tile());
-        }
-
         let tile_count = term.tile_count();
-        let border_tile_count = border.as_ref().map_or(0, |b| b.tiles().len());
+        //let border_tile_count = border.as_ref().map_or(0, |b| b.tiles().len());
 
-        resize_mesh_data(mesh, tile_count + border_tile_count);
+        resize_mesh_data(
+            mesh, tile_count, //+ border_tile_count
+        );
 
         let tile_size = transform_data.world_tile_size;
         let mesh_bl = transform_data.local_inner_mesh_bounds.min;
@@ -299,12 +319,12 @@ fn rebuild_mesh_verts(
             set_tile_verts(xy, i);
         }
 
-        if let Some(tiles) = border.as_ref().map(|b| b.tiles()) {
-            let mesh_index = tile_count;
-            for (i, (p, _)) in tiles.iter().enumerate() {
-                set_tile_verts(*p, mesh_index + i);
-            }
-        }
+        // if let Some(tiles) = border.as_ref().map(|b| b.tiles()) {
+        //     let mesh_index = tile_count;
+        //     for (i, (p, _)) in tiles.iter().enumerate() {
+        //         set_tile_verts(*p, mesh_index + i);
+        //     }
+        // }
 
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts);
         mesh.insert_indices(Indices::U32(indices));
@@ -325,14 +345,20 @@ fn rebuild_mesh_uvs(
             &Terminal,
             &Mesh2d,
             &UvMappingHandle,
-            Option<&TerminalBorder>,
+            //Option<&TerminalBorder>,
         ),
         Changed<Terminal>,
     >,
     mut meshes: ResMut<Assets<Mesh>>,
     mappings: Res<Assets<UvMapping>>,
 ) {
-    for (term, mesh_handle, mapping_handle, border) in &q_term {
+    for (
+        term,
+        mesh_handle,
+        mapping_handle,
+        //border
+    ) in &q_term
+    {
         let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
             continue;
         };
@@ -379,12 +405,12 @@ fn rebuild_mesh_uvs(
             set_tile_uvs(t, i);
         }
 
-        if let Some(tiles) = border.map(|b| b.tiles()) {
-            let mesh_index = term.tile_count();
-            for (i, (_, t)) in tiles.iter().enumerate() {
-                set_tile_uvs(t, mesh_index + i);
-            }
-        }
+        // if let Some(tiles) = border.map(|b| b.tiles()) {
+        //     let mesh_index = term.tile_count();
+        //     for (i, (_, t)) in tiles.iter().enumerate() {
+        //         set_tile_uvs(t, mesh_index + i);
+        //     }
+        // }
 
         mesh.insert_attribute(ATTRIBUTE_UV, uvs);
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, fg);

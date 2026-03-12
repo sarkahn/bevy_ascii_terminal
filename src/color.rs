@@ -3,10 +3,15 @@
 use bevy::color::LinearRgba;
 
 pub const fn hex_color(hex: u32) -> LinearRgba {
-    let r = (hex >> 16) & 0xff;
-    let g = (hex >> 8) & 0xff;
-    let b = hex & 0xff;
-    LinearRgba::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0)
+    let rgba = if hex < 0xFFFFFF { hex << 8 | 0xFF } else { hex };
+    let bytes: [u8; 4] = rgba.to_be_bytes();
+
+    LinearRgba::new(
+        bytes[0] as f32 / 255.0,
+        bytes[1] as f32 / 255.0,
+        bytes[2] as f32 / 255.0,
+        bytes[3] as f32 / 255.0,
+    )
 }
 
 pub const ALICE_BLUE: LinearRgba = hex_color(0xF0F8FF);
@@ -151,6 +156,18 @@ pub const WHITE_SMOKE: LinearRgba = hex_color(0xF5F5F5);
 pub const YELLOW: LinearRgba = hex_color(0xFFFF00);
 pub const YELLOW_GREEN: LinearRgba = hex_color(0x9ACD32);
 
+fn ascii_upper<'a>(s: &str, buf: &'a mut [u8]) -> Option<&'a str> {
+    if s.len() > buf.len() {
+        return None;
+    }
+
+    for (i, b) in s.bytes().enumerate() {
+        buf[i] = b.to_ascii_uppercase();
+    }
+
+    std::str::from_utf8(&buf[..s.len()]).ok()
+}
+
 pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
     let s = input.trim();
 
@@ -168,9 +185,10 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
         return Some(hex_color(v));
     }
 
-    let up = s.to_ascii_uppercase();
+    let mut buf = [0u8; 32];
+    let up = ascii_upper(s, &mut buf)?;
 
-    Some(match up.as_str() {
+    Some(match up {
         "ALICE_BLUE" => ALICE_BLUE,
         "ANTIQUE_WHITE" => ANTIQUE_WHITE,
         "AQUA" => AQUA,

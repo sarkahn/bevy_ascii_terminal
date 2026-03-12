@@ -15,11 +15,11 @@ use bevy::{
     app::{Plugin, PostUpdate},
     prelude::IntoScheduleConfigs,
 };
-pub use border::TerminalBorder;
+//pub use border::TerminalBorder;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
 pub use sark_grids::{GridPoint, GridRect, GridSize, Pivot, PivotedPoint};
 pub use strings::{StringDecorator, TerminalString};
-pub use terminal::Terminal;
+pub use terminal::{BoxStyle, Padding, Terminal};
 pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;
 pub use transform::{SetTerminalGridPosition, SetTerminalLayerPosition, TerminalTransform};

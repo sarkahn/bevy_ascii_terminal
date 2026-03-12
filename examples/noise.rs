@@ -1,6 +1,12 @@
 //! An interactive ui to display noise using the fastnoise-lite crate.
 
-use bevy::{app::AppExit, prelude::*, time::common_conditions::on_timer};
+use bevy::{
+    app::AppExit,
+    ecs::entity::unique_slice::Windows,
+    prelude::*,
+    time::common_conditions::on_timer,
+    window::{PrimaryWindow, WindowMode},
+};
 use bevy_ascii_terminal::*;
 use fastnoise_lite::*;
 
@@ -40,6 +46,11 @@ fn main() {
                 value: 0.0,
                 step: 0.03,
             },
+            Control {
+                name: "Scale".to_string(),
+                value: 0.05,
+                step: 0.005,
+            },
         ],
     };
     let key_repeat = std::time::Duration::from_secs_f32(0.1);
@@ -53,7 +64,7 @@ fn main() {
                 handle_key_repeat.run_if(on_timer(key_repeat)),
                 handle_other_input,
                 draw_controls.run_if(resource_changed::<State>),
-                make_some_noise.run_if(resource_changed::<State>),
+                make_some_noise,
             )
                 .chain(),
         )
@@ -97,6 +108,7 @@ fn handle_key_repeat(input: Res<ButtonInput<KeyCode>>, mut controls: ResMut<Stat
 }
 
 fn handle_other_input(
+    mut windows: Query<&mut Window, With<PrimaryWindow>>,
     input: Res<ButtonInput<KeyCode>>,
     mut controls: ResMut<State>,
     mut evt_quit: MessageWriter<AppExit>,
@@ -132,6 +144,16 @@ fn handle_other_input(
             NoiseType::Value => NoiseType::OpenSimplex2,
         };
     }
+
+    if input.just_pressed(KeyCode::KeyF)
+        && let Ok(mut window) = windows.single_mut()
+    {
+        if window.mode == WindowMode::BorderlessFullscreen(MonitorSelection::Current) {
+            window.mode = WindowMode::Windowed;
+        } else {
+            window.mode = WindowMode::BorderlessFullscreen(MonitorSelection::Current);
+        }
+    }
 }
 
 fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, controls: Res<State>) {
@@ -156,8 +178,20 @@ fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, contr
     }
 }
 
+fn noise_to_ascii(n: f32, ramp: &[u8]) -> char {
+    let v = n.clamp(0.0, 1.0);
+    let idx = (v * (ramp.len() as f32 - 1.0)) as usize;
+    ramp[idx] as char
+}
+
+fn noise_to_unicode(n: f32, ramp: &[char]) -> char {
+    let idx = (n * (ramp.len() as f32)) as usize;
+    ramp[idx.min(ramp.len() - 1)]
+}
+
 fn make_some_noise(
     mut q_term: Query<&mut Terminal, Without<ControlsTerminal>>,
+    time: Res<Time>,
     controls: Res<State>,
 ) {
     let mut term = q_term.single_mut().unwrap();
@@ -172,19 +206,40 @@ fn make_some_noise(
     noise.set_fractal_gain(Some(controls.values[4].value));
     noise.set_fractal_weighted_strength(Some(controls.values[5].value));
 
+    let scale = controls.values[6].value;
+
+    let dt = time.elapsed_secs();
+
     for (p, t) in term.iter_xy_mut() {
-        let noise = noise.get_noise_2d(p.x as f32, p.y as f32);
-        let noise = (noise + 1.0) / 2.0;
-        let glyph = if noise < 0.25 {
-            Glyph::ShadeLight
-        } else if noise < 0.5 {
-            Glyph::ShadeMedium
-        } else if noise < 0.75 {
-            Glyph::ShadeDark
+        let x = p.x as f32 * scale;
+        let y = p.y as f32 * scale * 0.5;
+
+        let noise = noise.get_noise_2d(x + dt, y);
+        let mut noise = (noise + 1.0) * 0.5;
+        noise = noise.powf(1.5);
+
+        const RAMP1: &[u8] = b" .:-=+*#%@";
+        const RAMP2: &[u8] =
+            b" .'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+
+        const RAMP3: &[char] = &[' ', '░', '▒', '▓', '█'];
+        const RAMP4: &[char] = &[' ', '.', ':', '-', '=', '+', '*', '#', '▓', '█'];
+
+        let c = if p.x + p.y % 2 == 0 {
+            noise_to_ascii(noise, RAMP1)
         } else {
-            Glyph::BlockFull
+            noise_to_ascii(noise, RAMP2)
         };
-        t.glyph = glyph.to_char();
+        let c2 = if p.x + p.y % 2 == 0 {
+            noise_to_unicode(noise, RAMP3)
+        } else {
+            noise_to_unicode(noise, RAMP4)
+        };
+
+        //let c = noise_to_ascii(noise, ramp1);
+        //let c = noise_to_unicode(noise, ramp1);
+
+        t.glyph = c2;
         t.bg_color = Hsla::from(t.bg_color).with_lightness(noise).into();
     }
     term.put_string(
