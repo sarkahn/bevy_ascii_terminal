@@ -1,6 +1,7 @@
 mod formatting;
 mod grid_string;
 mod parse;
+mod parse2;
 
 pub use formatting::{
     DecoratedString, StringDecoration, StringDecorator, StringFormatting, TerminalString,
