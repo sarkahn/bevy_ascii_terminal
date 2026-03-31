@@ -13,7 +13,7 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands.spawn(
         Terminal::new([14, 3])
-            .with_border(BoxStyle::SINGLE)
+            .with_border(BoxStyle::SINGLE_LINE)
             .with_padding(Padding::ONE)
             .with_bg_clear_color(css::DARK_BLUE.into())
             .with_string(

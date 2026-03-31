@@ -1,10 +1,8 @@
-mod formatting;
-mod grid_string;
 mod parse;
-mod parse2;
+mod terminal_string;
 
-pub use formatting::{
-    DecoratedString, StringDecoration, StringDecorator, StringFormatting, TerminalString,
+pub use terminal_string::{TerminalString, TerminalStringBuilder};
+
+pub use parse::{
+    Token, TokenIterator, wrap_line_count, wrap_string, wrap_tagged_line_count, wrap_tagged_string,
 };
-pub use grid_string::GridStringIterator;
-pub use parse::{Token, TokenIterator};

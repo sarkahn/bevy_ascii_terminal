@@ -2,7 +2,6 @@
 
 use bevy::{
     app::AppExit,
-    ecs::entity::unique_slice::Windows,
     prelude::*,
     time::common_conditions::on_timer,
     window::{PrimaryWindow, WindowMode},
@@ -167,12 +166,12 @@ fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, contr
     for (i, control) in controls.values.iter().enumerate() {
         let value = (control.value * 1000.0).round() / 1000.0;
         let control_string = format!("{}: {}", control.name, value);
-        term.put_string([0, i + 5], control_string.as_str());
+        term.put_string([0, i as i32 + 5], control_string.as_str());
 
         if i == controls.current_control {
             term.put_string(
-                [control_string.len() + 1, i + 5],
-                "<--".fg(LinearRgba::GREEN),
+                [control_string.len() as i32 + 1, i as i32 + 5],
+                "<--".dont_parse_tags().fg(LinearRgba::GREEN),
             );
         }
     }
@@ -247,7 +246,6 @@ fn make_some_noise(
         format!(
             "[Noise:{:?} | Fractal:{:?}]",
             controls.noise_type, controls.fractal_type
-        )
-        .clear_colors(),
+        ),
     );
 }

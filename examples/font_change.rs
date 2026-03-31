@@ -1,6 +1,7 @@
 use bevy::{
     prelude::*,
     reflect::{DynamicVariant, Enum},
+    window::WindowMode,
 };
 use bevy_ascii_terminal::{color::hex_color, *};
 
@@ -16,7 +17,7 @@ fn setup(mut commands: Commands) {
     let size = [36, 14];
     let term = Terminal::new(size)
         .with_bg_clear_color(hex_color(0x000063))
-        .with_border(BoxStyle::SINGLE)
+        .with_border(BoxStyle::SINGLE_LINE)
         .with_padding(Padding::ONE)
         .with_string([0, 0], "Press spacebar to change fonts")
         .with_string([0, 1], "The quick brown fox jumps over the lazy dog.")
@@ -25,7 +26,24 @@ fn setup(mut commands: Commands) {
     commands.spawn(TerminalCamera::new());
 }
 
-fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>) {
+fn input(
+    input: Res<ButtonInput<KeyCode>>,
+    mut q_term: Query<&mut TerminalFont>,
+    mut exit: MessageWriter<AppExit>,
+    mut window: Single<&mut Window>,
+) {
+    if input.just_pressed(KeyCode::Escape) {
+        exit.write(AppExit::Success);
+    }
+    if input.just_pressed(KeyCode::F11) {
+        window.mode = match window.mode {
+            bevy::window::WindowMode::Windowed => {
+                WindowMode::BorderlessFullscreen(MonitorSelection::Current)
+            }
+            bevy::window::WindowMode::BorderlessFullscreen(_) => WindowMode::Windowed,
+            _ => window.mode,
+        };
+    }
     if input.just_pressed(KeyCode::Space) {
         let mut font = q_term.single_mut().unwrap();
         let info = font
@@ -48,14 +66,14 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
 fn update(mut q_term: Query<(&mut Terminal, &TerminalFont), Changed<TerminalFont>>) {
     if let Ok((mut term, font)) = q_term.single_mut() {
         let new_string = format!(" [<fg=maroon>{}</fg>]", font.variant_name());
-        term.put_border(BoxStyle::SINGLE);
+        term.put_border(BoxStyle::SINGLE_LINE);
         term.put_title(new_string.as_str());
     }
 }
 
-/// A Big string with unicode and fancy colors
+// A Big string with unicode and fancy colors
 const BIG_STRING: &str = r#"
-<bg=002b59><fg=#6ceded>.☺☻♥♦♣♠•◘○◙♂♀♪♫☼ ►◄↕‼¶§▬↨↑↓→←∟↔▲▼</fg>
+<bg=#002b59><fg=#6ceded>.☺☻♥♦♣♠•◘○◙♂♀♪♫☼ ►◄↕‼¶§▬↨↑↓→←∟↔▲▼</fg>
 <fg=#6cb9c9>!"\#$%&'()*+,-./ 0123456789:;/<=>?</fg></bg>
 <bg=#005f8c><fg=#6d85a5>@ABCDEFGHIJKLMNO PQRSTUVWXYZ[\]^_</fg>
 <fg=#6e5181>`abcdefghijklmno pqrstuvwxyz{|}~⌂</fg></bg>

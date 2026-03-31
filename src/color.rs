@@ -348,5 +348,8 @@ mod tests {
 
         let col = parse_color_string("F0F8FF").unwrap();
         assert_eq!(ALICE_BLUE, col);
+
+        let col = parse_color_string("#F0F8FF").unwrap();
+        assert_eq!(ALICE_BLUE, col);
     }
 }

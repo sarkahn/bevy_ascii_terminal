@@ -16,7 +16,7 @@ use bevy::{
     image::Image,
     math::{IVec2, Vec2},
     mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
-    prelude::{Mesh2d, On, Replace},
+    prelude::Mesh2d,
     render::render_resource::{PrimitiveTopology, VertexFormat},
     sprite_render::MeshMaterial2d,
 };

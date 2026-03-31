@@ -20,18 +20,15 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Terminal::new([20, 8]),
-        TerminalBorder::single_line(),
+        Terminal::new([26, 10]).with_border(BoxStyle::SINGLE_LINE),
         TerminalMeshPivot::BottomLeft,
     ));
     commands.spawn((
-        Terminal::new([20, 10]),
-        TerminalBorder::single_line(),
+        Terminal::new([22, 8]).with_border(BoxStyle::SINGLE_LINE),
         TerminalMeshPivot::BottomRight,
     ));
     commands.spawn((
-        Terminal::new([20, 10]),
-        TerminalBorder::single_line(),
+        Terminal::new([24, 10]).with_border(BoxStyle::SINGLE_LINE),
         TerminalMeshPivot::TopCenter,
     ));
     commands.spawn(TerminalCamera::new());
@@ -45,12 +42,9 @@ fn update(mut q_term: Query<(&mut Terminal, &TerminalTransform)>, q_cam: Query<&
     for (mut term, transform) in &mut q_term {
         clear_term(&mut term);
         if let Some(xy) = transform.world_to_tile(cursor_pos) {
-            term.put_string2(
-                [0, 0],
-                format!("Cursor pos: <fg=magenta>{}</fg>", xy).bg(BLACK),
-            );
+            term.put_string([0, 0], format!("Cursor pos: <fg=magenta>{}</fg>", xy));
         } else {
-            term.put_string2([0, 0], "Cursor out of bounds".bg(BLACK));
+            term.put_string([0, 0], "Cursor out of bounds");
         }
     }
 }
@@ -66,4 +60,5 @@ fn clear_term(term: &mut Terminal) {
         t.glyph = ' ';
         t.bg_color = grid_color;
     }
+    term.put_border(BoxStyle::SINGLE_LINE);
 }

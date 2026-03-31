@@ -1,6 +1,8 @@
 //! Demonstrates how the [TerminalCamera] will automatically adjust the viewport
 //! to render all visible terminals.
 
+// TODO: Fix top left mesh getting clipped...probably transform issue
+
 use bevy::{
     app::AppExit,
     color::palettes::css::{BLUE, RED},
@@ -18,7 +20,7 @@ struct Current(usize);
 /// It's necessary to store the strings externally since the terminals may be
 /// resized.
 #[derive(Component)]
-pub struct TermString(String, Pivot);
+pub struct TermString(String);
 
 fn main() {
     let key_repeat = std::time::Duration::from_secs_f32(0.1);
@@ -43,24 +45,21 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         make_terminal([10, 10], BRIGHT),
         TerminalMeshPivot::BottomRight,
-        TerminalBorder::single_line(),
-        TermString("WASD to change size".to_string(), Pivot::Center),
+        TermString("WASD to change size".to_string()),
     ));
     commands.spawn((
         make_terminal([10, 10], FADED),
         TerminalMeshPivot::BottomLeft,
-        TerminalBorder::single_line(),
-        TermString("Tab to change active terminal".to_string(), Pivot::Center),
+        TermString("Tab to change active terminal".to_string()),
     ));
     commands.spawn((
         make_terminal([12, 12], FADED),
         TerminalMeshPivot::TopCenter,
-        TerminalBorder::single_line(),
-        TermString("Space to toggle border".to_string(), Pivot::TopCenter),
+        TermString("Space to toggle border".to_string()),
     ));
 }
 
-fn make_terminal(size: impl GridSize, lightness: f32) -> Terminal {
+fn make_terminal(size: impl Into<UVec2>, lightness: f32) -> Terminal {
     let mut term = Terminal::new(size);
     draw_grid(&mut term, lightness);
     term
@@ -80,17 +79,15 @@ fn draw_grid(term: &mut Terminal, lightness: f32) {
 
 fn put_strings(mut q_term: Query<(&mut Terminal, &TermString)>) {
     for (mut term, string) in &mut q_term {
-        term.put_string([0, 0].pivot(string.1), string.0.as_str().clear_colors());
+        term.put_string([0, 0], string.0.as_str());
     }
 }
 
 fn handle_just_pressed(
     mut q_term: Query<(Entity, &mut Terminal, &TermString)>,
     input: Res<ButtonInput<KeyCode>>,
-    q_border: Query<&TerminalBorder>,
     mut current: ResMut<Current>,
     mut evt_quit: MessageWriter<AppExit>,
-    mut commands: Commands,
 ) {
     // If we're accessing a terminal by index we need to make sure they're
     // always in the same order
@@ -100,24 +97,12 @@ fn handle_just_pressed(
         for (i, (_, term, string)) in terminals.iter_mut().enumerate() {
             let lightness = if current.0 == i { BRIGHT } else { FADED };
             draw_grid(term, lightness);
-            term.put_string([0, 0].pivot(string.1), string.0.as_str().clear_colors());
+            term.put_string([0, 0], string.0.as_str());
         }
     }
 
     if input.just_pressed(KeyCode::Escape) {
         evt_quit.write(AppExit::Success);
-    }
-
-    if input.just_pressed(KeyCode::Space) {
-        if q_border.get(terminals[current.0].0).is_ok() {
-            commands
-                .entity(terminals[current.0].0)
-                .remove::<TerminalBorder>();
-        } else {
-            commands
-                .entity(terminals[current.0].0)
-                .insert(TerminalBorder::single_line());
-        };
     }
 }
 
@@ -140,6 +125,6 @@ fn handle_pressed(
         term.resize((curr_size + size).max(IVec2::ONE).as_uvec2());
         term.clear();
         draw_grid(term, BRIGHT);
-        term.put_string([0, 0].pivot(string.1), string.0.as_str().clear_colors());
+        term.put_string([0, 0], string.0.as_str());
     }
 }

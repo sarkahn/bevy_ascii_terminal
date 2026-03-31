@@ -1,6 +1,4 @@
 //! Spamming the entire terminal with random glyphs and colors.
-
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::window::{PresentMode, PrimaryWindow, WindowMode};
 use bevy_ascii_terminal::*;
@@ -9,16 +7,10 @@ use rand::rngs::ThreadRng;
 
 fn main() {
     let mut app = App::new();
-    if !cfg!(debug_assertions) {
-        app.add_plugins((
-            LogDiagnosticsPlugin::default(),
-            FrameTimeDiagnosticsPlugin::new(100),
-        ));
-    };
     app.add_plugins((
         DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                present_mode: PresentMode::AutoNoVsync,
+                present_mode: PresentMode::Immediate,
                 ..Default::default()
             }),
             ..Default::default()
@@ -33,7 +25,7 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands.spawn(
         Terminal::new([82, 52])
-            .with_border(BoxStyle::SINGLE)
+            .with_border(BoxStyle::SINGLE_LINE)
             .with_title(" Press space to pause"),
     );
     commands.spawn(TerminalCamera::new());
@@ -47,18 +39,37 @@ fn rand_color(rng: &mut ThreadRng) -> LinearRgba {
     Color::linear_rgba(r, g, b, a).into()
 }
 
+#[derive(Default)]
+struct Fps {
+    start: f32,
+    count: u32,
+    fps: u32,
+}
+
 fn spam_terminal(
-    mut windows: Query<&mut Window, With<PrimaryWindow>>,
-    keys: Res<ButtonInput<KeyCode>>,
+    mut window: Single<&mut Window, With<PrimaryWindow>>,
     mut q: Query<&mut Terminal>,
+    time: Res<Time>,
+    mut fps: Local<Fps>,
     mut pause: Local<bool>,
+    input: Res<ButtonInput<KeyCode>>,
+    mut exit: MessageWriter<AppExit>,
 ) {
-    if keys.just_pressed(KeyCode::Space) {
+    fps.count += 1;
+    let now = time.elapsed_secs();
+    if now - fps.start > 1.0 {
+        fps.fps = fps.count;
+        fps.count = 0;
+        fps.start = now;
+    }
+
+    if input.just_pressed(KeyCode::Space) {
         *pause = !(*pause);
     }
-    if keys.just_pressed(KeyCode::KeyF)
-        && let Ok(mut window) = windows.single_mut()
-    {
+    if input.just_pressed(KeyCode::Escape) {
+        exit.write(AppExit::Success);
+    }
+    if input.just_pressed(KeyCode::KeyF) {
         if window.mode == WindowMode::BorderlessFullscreen(MonitorSelection::Current) {
             window.mode = WindowMode::Windowed;
         } else {
@@ -66,24 +77,27 @@ fn spam_terminal(
         }
     }
 
-    if *pause {
-        return;
-    }
-
-    let mut rng = rand::thread_rng();
     let mut term = q.single_mut().unwrap();
-    for y in 1..term.height() - 1 {
-        for x in 1..term.width() - 1 {
-            let index = rng.gen_range(0..=255) as u8;
-            let glyph = ascii::index_to_char(index);
-            let fg = rand_color(&mut rng);
-            let bg = rand_color(&mut rng);
+    if !*pause {
+        let mut rng = rand::thread_rng();
 
-            let i = y * term.width() + x;
-            let t = &mut term.tiles_mut()[i];
-            t.glyph = glyph;
-            t.fg_color = fg;
-            t.bg_color = bg;
+        for y in 1..term.height() - 1 {
+            for x in 1..term.width() - 1 {
+                let index = rng.gen_range(0..=255) as u8;
+                let glyph = ascii::index_to_char(index);
+                let fg = rand_color(&mut rng);
+                let bg = rand_color(&mut rng);
+
+                let i = y * term.width() + x;
+                let t = &mut term.tiles_mut()[i];
+                t.glyph = glyph;
+                t.fg_color = fg;
+                t.bg_color = bg;
+            }
         }
     }
+
+    term.set_pivot(Pivot::RightTop);
+    term.put_string([0, 0], format!("FPS: {}", fps.fps));
+    term.set_pivot(Pivot::LeftTop);
 }

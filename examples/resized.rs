@@ -25,13 +25,22 @@ fn update(mut q_term: Query<&mut Terminal>, time: Res<Time>) {
     term.resize([size, size]);
 
     term.clear();
-    term.put_string([0, 0].pivot(Pivot::TopLeft), "TopL");
-    term.put_string([0, 0].pivot(Pivot::TopCenter), "TopC");
-    term.put_string([0, 0].pivot(Pivot::TopRight), "TopR");
-    term.put_string([0, 0].pivot(Pivot::LeftCenter), "LefC");
-    term.put_string([0, 0].pivot(Pivot::Center), "C");
-    term.put_string([0, 0].pivot(Pivot::RightCenter), "RigC");
-    term.put_string([0, 0].pivot(Pivot::BottomLeft), "BotL");
-    term.put_string([0, 0].pivot(Pivot::BottomCenter), "BotC");
-    term.put_string([0, 0].pivot(Pivot::BottomRight), "BotR");
+    term.set_pivot(Pivot::LeftTop);
+    term.put_string([0, 0], "TopL");
+    term.set_pivot(Pivot::CenterTop);
+    term.put_string([0, 0], "TopC");
+    term.set_pivot(Pivot::RightTop);
+    term.put_string([0, 0], "TopR");
+    term.set_pivot(Pivot::LeftCenter);
+    term.put_string([0, 0], "LefC");
+    term.set_pivot(Pivot::Center);
+    term.put_string([0, 0], "C");
+    term.set_pivot(Pivot::RightCenter);
+    term.put_string([0, 0], "RigC");
+    term.set_pivot(Pivot::LeftBottom);
+    term.put_string([0, 0], "BotL");
+    term.set_pivot(Pivot::CenterBottom);
+    term.put_string([0, 0], "BotC");
+    term.set_pivot(Pivot::RightBottom);
+    term.put_string([0, 0], "BotR");
 }

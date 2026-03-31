@@ -21,7 +21,6 @@ use bevy::{
 };
 
 use crate::{
-    GridPoint,
     Terminal,
     TerminalMeshWorldScaling,
     //   border::TerminalBorder,
@@ -77,9 +76,9 @@ pub struct TerminalTransform {
 #[derive(Component, Debug, Default, Clone, Copy, Reflect)]
 pub struct SetTerminalGridPosition(pub IVec2);
 
-impl<T: GridPoint> From<T> for SetTerminalGridPosition {
+impl<T: Into<IVec2>> From<T> for SetTerminalGridPosition {
     fn from(xy: T) -> Self {
-        Self(xy.to_ivec2())
+        Self(xy.into())
     }
 }
 
