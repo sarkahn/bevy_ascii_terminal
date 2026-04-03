@@ -2,6 +2,7 @@ use bevy::{
     app::{First, Plugin},
     asset::{AssetEvent, Assets},
     camera::{Camera, Projection, ScalingMode, Viewport},
+    camera::visibility::InheritedVisibility,
     ecs::{
         component::Component,
         entity::Entity,
@@ -244,7 +245,7 @@ fn on_font_changed(
 }
 
 fn update_viewport(
-    q_term: Query<&TerminalTransform>,
+    q_term: Query<(&TerminalTransform, Option<&InheritedVisibility>)>,
     mut q_cam: Query<(&mut Camera, &mut Transform, &mut Projection), With<TerminalCamera>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     scaling: Res<TerminalMeshWorldScaling>,
@@ -266,7 +267,8 @@ fn update_viewport(
     // with the largest font.
     let Some(ppu) = q_term
         .iter()
-        .filter_map(|t| t.cached_data.as_ref().map(|d| d.pixels_per_tile))
+        .filter(|(_, visibility)| visibility.is_none_or(|v| v.get()))
+        .filter_map(|(t, _)| t.cached_data.as_ref().map(|d| d.pixels_per_tile))
         .reduce(UVec2::max)
     else {
         // The camera system runs first, so this will return immediately at least once.
@@ -277,7 +279,8 @@ fn update_viewport(
     // Determine our canonical tile size from the largest of all terminals.
     let Some(tile_size) = q_term
         .iter()
-        .filter_map(|t| t.cached_data.as_ref().map(|d| d.world_tile_size))
+        .filter(|(_, visibility)| visibility.is_none_or(|v| v.get()))
+        .filter_map(|(t, _)| t.cached_data.as_ref().map(|d| d.world_tile_size))
         .reduce(Vec2::max)
     else {
         // We can probably just unwrap?
@@ -292,7 +295,8 @@ fn update_viewport(
     // The total bounds of all terminal meshes in world space
     let Some(mesh_bounds) = q_term
         .iter()
-        .filter_map(|t| t.cached_data.as_ref().map(|d| d.world_mesh_bounds))
+        .filter(|(_, visibility)| visibility.is_none_or(|v| v.get()))
+        .filter_map(|(t, _)| t.cached_data.as_ref().map(|d| d.world_mesh_bounds))
         .reduce(|a, b| a.union(b))
     else {
         // We can probably just unwrap?
