@@ -1,4 +1,9 @@
 # Changelog
+## [0.18.3] - 2026/02/02
+
+### Changes
+- Hidden terminals will be ignored by TerminalCamera.
+
 ## [0.18.2] - 2026/02/02
 
 ### Changes
