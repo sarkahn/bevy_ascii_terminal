@@ -31,6 +31,7 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
+    #[allow(deprecated)]
     commands.spawn((
         Terminal::new([80, 50]),
         TerminalBorder::single_line().with_title("Press space to pause"),

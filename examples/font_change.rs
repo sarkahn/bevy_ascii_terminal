@@ -27,6 +27,8 @@ fn setup(mut commands: Commands) {
         .with_string([0, 2], string.fg(color::TAN));
     // .with_string([0, 7], "☺☻♥♦♣♠•'◘'○'◙'♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼");
     // .with_string([0, 9], "░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞");
+
+    #[allow(deprecated)]
     commands.spawn((term, TerminalBorder::single_line()));
     commands.spawn(TerminalCamera::new());
 }
@@ -51,6 +53,7 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
     }
 }
 
+#[allow(deprecated)]
 fn update(mut q_term: Query<(&TerminalFont, &mut TerminalBorder), Changed<TerminalFont>>) {
     if let Ok((font, mut border)) = q_term.single_mut() {
         border.clear_strings();

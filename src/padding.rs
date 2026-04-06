@@ -1,12 +1,7 @@
 use bevy::{
-    color::LinearRgba,
-    math::{IVec2, ivec2},
+    //color::LinearRgba,
+    //math::{IVec2, ivec2},
     reflect::Reflect,
-};
-
-use crate::{
-    Pivot,
-    //terminal::ColorWrite
 };
 
 #[derive(Debug, Reflect, Clone, Copy, Default)]

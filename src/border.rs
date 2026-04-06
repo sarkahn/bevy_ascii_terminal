@@ -365,6 +365,7 @@ mod tests {
 
     #[test]
     fn build_border_strings() {
+        #[allow(deprecated)]
         let mut border = TerminalBorder::single_line();
         border.put_string(BorderSide::Top, 0.0, 0, "TopLef");
         border.put_string(BorderSide::Top, 1.0, 0, "TopRig");

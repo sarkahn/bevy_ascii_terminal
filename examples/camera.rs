@@ -37,6 +37,7 @@ fn main() {
         .run();
 }
 
+#[allow(deprecated)]
 fn setup(mut commands: Commands) {
     commands.spawn(TerminalCamera::new());
 
@@ -60,6 +61,7 @@ fn setup(mut commands: Commands) {
     ));
 }
 
+#[allow(deprecated)]
 fn make_terminal(size: impl GridSize, lightness: f32) -> Terminal {
     let mut term = Terminal::new(size);
     draw_grid(&mut term, lightness);
@@ -84,6 +86,7 @@ fn put_strings(mut q_term: Query<(&mut Terminal, &TermString)>) {
     }
 }
 
+#[allow(deprecated)]
 fn handle_just_pressed(
     mut q_term: Query<(Entity, &mut Terminal, &TermString)>,
     input: Res<ButtonInput<KeyCode>>,
@@ -121,6 +124,7 @@ fn handle_just_pressed(
     }
 }
 
+#[allow(deprecated)]
 fn handle_pressed(
     mut q_term: Query<(&mut Terminal, &TermString)>,
     input: Res<ButtonInput<KeyCode>>,
