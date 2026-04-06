@@ -10,6 +10,7 @@ fn main() {
         .run();
 }
 
+#[allow(deprecated)]
 fn setup(mut commands: Commands) {
     commands.spawn((
         Terminal::new([12, 1]).with_string([0, 0], "Hello world!".fg(color::BLUE)),

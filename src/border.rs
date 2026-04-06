@@ -5,6 +5,7 @@ use bevy::{math::IVec2, prelude::Component, reflect::Reflect};
 use bevy_platform::collections::HashMap;
 use enum_ordinalize::Ordinalize;
 
+#[allow(deprecated)]
 use crate::{
     GridRect, GridSize, Pivot, Tile,
     strings::{DecoratedString, GridStringIterator, StringDecoration},
@@ -25,6 +26,7 @@ pub struct TerminalBorder {
     tiles: HashMap<IVec2, Tile>,
 }
 
+#[allow(deprecated)]
 impl TerminalBorder {
     /// Create a [TerminalBorder] from a 9 slice string.
     ///
@@ -244,43 +246,43 @@ impl TerminalBorder {
                 .insert(bounds.bottom_right(), clear_tile.with_char(br));
         }
         if let Some(t) = self.top_glyph() {
-            // for xy in bounds
-            //     .iter_row(bounds.top_index())
-            //     .skip(1)
-            //     .take(bounds.width() - 2)
-            // {
-            //     self.tiles.insert(xy, clear_tile.with_char(t));
-            // }
+            for xy in bounds
+                .iter_row(bounds.top_index())
+                .skip(1)
+                .take(bounds.width() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(t));
+            }
         }
 
         if let Some(b) = self.bottom_glyph() {
-            // for xy in bounds
-            //     .iter_row(bounds.bottom_index())
-            //     .skip(1)
-            //     .take(bounds.width() - 2)
-            // {
-            //     self.tiles.insert(xy, clear_tile.with_char(b));
-            // }
+            for xy in bounds
+                .iter_row(bounds.bottom_index())
+                .skip(1)
+                .take(bounds.width() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(b));
+            }
         }
 
         if let Some(l) = self.left_glyph() {
-            // for xy in bounds
-            //     .iter_column(bounds.left_index())
-            //     .skip(1)
-            //     .take(bounds.height() - 2)
-            // {
-            //     self.tiles.insert(xy, clear_tile.with_char(l));
-            // }
+            for xy in bounds
+                .iter_column(bounds.left_index())
+                .skip(1)
+                .take(bounds.height() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(l));
+            }
         }
 
         if let Some(r) = self.right_glyph() {
-            // for xy in bounds
-            //     .iter_column(bounds.right_index())
-            //     .skip(1)
-            //     .take(bounds.height() - 2)
-            // {
-            //     self.tiles.insert(xy, clear_tile.with_char(r));
-            // }
+            for xy in bounds
+                .iter_column(bounds.right_index())
+                .skip(1)
+                .take(bounds.height() - 2)
+            {
+                self.tiles.insert(xy, clear_tile.with_char(r));
+            }
         }
 
         for s in self.border_strings.iter() {

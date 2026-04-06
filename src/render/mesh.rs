@@ -22,6 +22,7 @@ use bevy::{
     sprite_render::MeshMaterial2d,
 };
 
+#[allow(deprecated)]
 use crate::{Terminal, Tile, border::TerminalBorder, transform::TerminalTransform};
 
 use super::{
@@ -185,6 +186,7 @@ fn on_material_changed(
     }
 }
 
+#[allow(deprecated)]
 fn on_terminal_resized(
     q_term: Query<(Entity, &Terminal, &Mesh2d, Option<&TerminalBorder>), Changed<Terminal>>,
     mut commands: Commands,
@@ -202,6 +204,7 @@ fn on_terminal_resized(
     }
 }
 
+#[allow(deprecated)]
 fn on_border_removed(trigger: On<Insert, TerminalBorder>, mut commands: Commands) {
     commands.entity(trigger.entity).insert(RebuildMeshVerts);
 }
@@ -210,6 +213,7 @@ fn on_border_removed(trigger: On<Insert, TerminalBorder>, mut commands: Commands
 // to updating uvs and colors. Generally it only needs to be done when terminal
 // assets are changed or a terminal is resized.
 #[allow(clippy::type_complexity)]
+#[allow(deprecated)]
 fn rebuild_mesh_verts(
     mut q_term: Query<
         (
@@ -320,6 +324,7 @@ fn rebuild_mesh_verts(
 // Update tile uv and color data. This is called any time the terminal is
 // modified in any way.
 #[allow(clippy::type_complexity)]
+#[allow(deprecated)]
 fn rebuild_mesh_uvs(
     q_term: Query<
         (
@@ -340,7 +345,7 @@ fn rebuild_mesh_uvs(
 
         // Mesh vertices not yet updated, this function will be called again
         // once the vertex update is completed.
-        if mesh_vertex_count(&mut mesh) == 0 {
+        if mesh_vertex_count(&mesh) == 0 {
             continue;
         }
 

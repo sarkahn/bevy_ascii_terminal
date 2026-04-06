@@ -2,6 +2,7 @@ use std::{ops::Sub, str::Chars};
 
 use bevy::{color::LinearRgba, math::IVec2};
 
+#[allow(deprecated)]
 use crate::{
     GridPoint, GridRect, GridSize, Pivot, PivotedPoint,
     strings::{StringDecoration, StringFormatting},
@@ -108,6 +109,7 @@ pub struct GridStringIterator<'a> {
     decoration: StringDecoration,
 }
 
+#[allow(deprecated)]
 impl<'a> GridStringIterator<'a> {
     pub fn new(
         string: &'a str,
@@ -203,6 +205,7 @@ impl Iterator for GridStringIterator<'_> {
 mod tests {
     use bevy_platform::collections::HashMap;
 
+    #[allow(deprecated)]
     use crate::{GridPoint, GridRect, ascii, strings::formatting::StringFormatting};
 
     use super::*;
@@ -356,6 +359,7 @@ mod tests {
         assert_eq!(5, offset);
     }
 
+    #[allow(deprecated)]
     #[test]
     fn right_pivot() {
         let string = "A somewhat longer line\nWith a newline";
@@ -413,6 +417,7 @@ mod tests {
         assert_eq!('g', get_char(&map, [0, 0]));
     }
 
+    #[allow(deprecated)]
     #[test]
     fn leftbot() {
         let string = "LeftBot";
@@ -429,6 +434,7 @@ mod tests {
         assert_eq!('t', get_char(&map, [-1, 6]));
     }
 
+    #[allow(deprecated)]
     #[test]
     fn centered() {
         let string = "Hello\nThere";

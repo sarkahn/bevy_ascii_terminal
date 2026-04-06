@@ -8,6 +8,7 @@ use bevy::{
     sprite_render::MeshMaterial2d,
 };
 
+#[allow(deprecated)]
 use crate::{
     GridRect, GridSize, Pivot, PivotedPoint, Tile, ascii,
     render::{
@@ -36,6 +37,7 @@ pub struct Terminal {
 }
 
 impl Terminal {
+    #[allow(deprecated)]
     pub fn new(size: impl GridSize) -> Self {
         Self {
             size: size.to_uvec2(),
@@ -278,6 +280,7 @@ impl Terminal {
 
     /// Retrieve a tile at the grid position. This will panic if the position is
     /// out of bounds.
+    #[allow(deprecated)]
     pub fn tile_mut(&mut self, xy: impl Into<PivotedPoint>) -> &mut Tile {
         let xy = xy.into();
         debug_assert!(
@@ -293,6 +296,7 @@ impl Terminal {
 
     /// Retrieve a tile at the grid position. This will panic if the position is
     /// out of bounds.
+    #[allow(deprecated)]
     pub fn tile(&self, xy: impl Into<PivotedPoint>) -> &Tile {
         let xy = xy.into();
         debug_assert!(
@@ -409,6 +413,7 @@ impl Terminal {
         self.clear_tile
     }
 
+    #[allow(deprecated)]
     pub fn resize(&mut self, new_size: impl GridSize) {
         let new_size = new_size.to_uvec2().max(UVec2::new(2, 2));
         self.tiles = vec![self.clear_tile; new_size.tile_count()];
@@ -418,9 +423,11 @@ impl Terminal {
 
 #[cfg(test)]
 mod tests {
+    #[allow(deprecated)]
     use crate::{GridPoint, Pivot, Terminal, ascii};
 
     #[test]
+    #[allow(deprecated)]
     fn put_string_negative() {
         let mut terminal = Terminal::new([10, 10]);
         terminal.put_string([-2, -2].pivot(Pivot::Center), "Hello");

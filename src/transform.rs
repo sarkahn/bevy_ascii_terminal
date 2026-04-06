@@ -1,16 +1,20 @@
 //! Terminal component for translating between world positions and terminal
 //! grid coordinates.
 
+#[allow(deprecated)]
+use crate::{
+    GridPoint, Terminal, TerminalMeshWorldScaling,
+    border::TerminalBorder,
+    render::{TerminalFont, TerminalMaterial, TerminalMeshPivot, TerminalMeshTileScaling},
+};
 use bevy::{
     app::{Plugin, PostUpdate},
     asset::{AssetEvent, Assets},
     ecs::{
         component::Component,
         entity::Entity,
-        event::Event,
-        lifecycle::{Add, Discard, Insert},
+        lifecycle::Add,
         message::MessageReader,
-        observer::Observer,
         query::{Changed, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res},
@@ -21,12 +25,6 @@ use bevy::{
     reflect::Reflect,
     sprite_render::MeshMaterial2d,
     transform::{TransformSystems, components::Transform},
-};
-
-use crate::{
-    GridPoint, Terminal, TerminalMeshWorldScaling,
-    border::TerminalBorder,
-    render::{TerminalFont, TerminalMaterial, TerminalMeshPivot, TerminalMeshTileScaling},
 };
 pub(crate) struct TerminalTransformPlugin;
 
@@ -78,6 +76,7 @@ pub struct TerminalTransform {
 #[derive(Component, Debug, Default, Clone, Copy, Reflect)]
 pub struct SetTerminalGridPosition(pub IVec2);
 
+#[allow(deprecated)]
 impl<T: GridPoint> From<T> for SetTerminalGridPosition {
     fn from(xy: T) -> Self {
         Self(xy.to_ivec2())
@@ -191,6 +190,7 @@ fn on_size_change(
 }
 
 // TODO: How do we do this now?
+#[allow(deprecated)]
 fn on_border_replace(on_replace: On<Add, TerminalBorder>, mut commands: Commands) {
     commands
         .entity(on_replace.event().entity)
@@ -201,6 +201,7 @@ fn on_border_replace(on_replace: On<Add, TerminalBorder>, mut commands: Commands
 /// coordinates between world and terminal space. Reads terminal size, border,
 /// mesh and font size, as well as global terminal grid settings.
 #[allow(clippy::type_complexity)]
+#[allow(deprecated)]
 fn cache_transform_data(
     mut q_term: Query<
         (

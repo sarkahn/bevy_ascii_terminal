@@ -16,6 +16,7 @@ use bevy::{
     math::{IVec2, UVec2, Vec2, ivec2},
     prelude::IntoScheduleConfigs,
 };
+#[allow(deprecated)]
 pub use border::TerminalBorder;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
 pub use strings::{StringDecorator, TerminalString};
@@ -90,6 +91,7 @@ pub trait GridPoint: Clone + Copy {
     /// This will panic if the grid position or the resulting 1d index is out of
     /// bounds.
     #[inline]
+    #[allow(deprecated)]
     fn as_index(&self, size: impl GridSize) -> usize {
         let p = self.to_ivec2();
         debug_assert!(
@@ -104,6 +106,7 @@ pub trait GridPoint: Clone + Copy {
     /// Calculate the 1d index of this position within a sized grid.
     ///
     /// Returns [None] if the position is out of bounds.
+    #[allow(deprecated)]
     fn get_index(&self, size: impl GridSize) -> Option<usize> {
         let [x, y] = self.to_array();
         let [w, h] = size.to_ivec2().to_array();
@@ -192,6 +195,7 @@ pub trait GridPoint: Clone + Copy {
 
 macro_rules! impl_grid_point {
     ($type:ty) => {
+        #[allow(deprecated)]
         impl GridPoint for $type {
             fn xy(&self) -> IVec2 {
                 IVec2::new(self[0] as i32, self[1] as i32)
@@ -237,6 +241,7 @@ pub trait GridSize: Clone {
         [self.width(), self.height()]
     }
 
+    #[allow(deprecated)]
     fn contains_point(&self, xy: impl GridPoint) -> bool {
         let xy = xy.to_ivec2();
         xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.to_ivec2()).all()
@@ -245,6 +250,7 @@ pub trait GridSize: Clone {
 
 macro_rules! impl_grid_size {
     ($type:ty) => {
+        #[allow(deprecated)]
         impl GridSize for $type {
             fn width(&self) -> usize {
                 self[0] as usize
@@ -287,6 +293,7 @@ pub enum Pivot {
     Center,
 }
 
+#[allow(deprecated)]
 impl Pivot {
     /// Coordinate axis for each pivot, used when transforming a point into
     /// the pivot's coordinate space.
@@ -344,6 +351,7 @@ pub struct PivotedPoint {
     pub pivot: Option<Pivot>,
 }
 
+#[allow(deprecated)]
 impl PivotedPoint {
     pub fn new(xy: impl GridPoint, pivot: Pivot) -> Self {
         Self {
@@ -374,6 +382,7 @@ impl PivotedPoint {
     }
 }
 
+#[allow(deprecated)]
 impl<T: GridPoint> From<T> for PivotedPoint {
     fn from(value: T) -> Self {
         Self {
@@ -391,6 +400,7 @@ pub struct GridRect {
     pub size: UVec2,
 }
 
+#[allow(deprecated)]
 impl GridRect {
     /// Create a [GridRect] from a position (bottom left tile) and a size.
     pub fn new(pos: impl GridPoint, size: impl GridSize) -> Self {
@@ -434,11 +444,13 @@ impl GridRect {
         GridRect::from_points(min, max)
     }
 
+    #[allow(deprecated)]
     /// Returns a [GridRect] with it's position adjusted by the given amount
     pub fn translated(&self, pos: impl GridPoint) -> GridRect {
         GridRect::new(self.pos + pos.to_ivec2(), self.size)
     }
 
+    #[allow(deprecated)]
     /// Returns a [GridRect] with each side adjusted by the given delta.
     pub fn resized(&self, delta: impl GridPoint) -> GridRect {
         GridRect::from_points(self.min() - delta.to_ivec2(), self.max() + delta.to_ivec2())
@@ -467,6 +479,7 @@ impl GridRect {
         other
     }
 
+    #[allow(deprecated)]
     /// Adjusts a single corner of the rect to contain the given point.
     pub fn envelope_point(&mut self, point: impl GridPoint) {
         let point = point.to_ivec2();
@@ -577,40 +590,45 @@ impl GridRect {
         self.width() - 1
     }
 
-    // /// Iterate over the tile positions of a single column of the rect.
-    // pub fn iter_column(
-    //     &self,
-    //     col: usize,
-    // ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
-    //     self.iter_points().skip(col).step_by(self.width())
-    // }
+    /// Iterate over the tile positions of a single column of the rect.
+    pub fn iter_column(
+        &self,
+        col: usize,
+    ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
+        self.iter_points().skip(col).step_by(self.width())
+    }
 
-    // /// Iterate over the tile positions of a single row of the rect.
-    // pub fn iter_row(
-    //     &self,
-    //     row: usize,
-    // ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
-    //     self.iter_points()
-    //         .skip(row * self.width())
-    //         .take(self.width())
-    // }
+    /// Iterate over the tile positions of a single row of the rect.
+    pub fn iter_row(
+        &self,
+        row: usize,
+    ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
+        self.iter_points()
+            .skip(row * self.width())
+            .take(self.width())
+    }
 
-    // /// Iterate over all the tile positions of the border of the rect in clockwise
-    // /// order, starting from the bottom left.
-    // pub fn iter_border(&self) -> impl DoubleEndedIterator<Item = IVec2> {
-    //     let left = self.iter_column(0);
-    //     let top = self
-    //         .iter_row(self.top_index())
-    //         .skip(1)
-    //         .take(self.width().sub(2));
-    //     let right = self.iter_column(self.right_index()).rev();
-    //     let bottom = self
-    //         .iter_row(self.bottom_index())
-    //         .rev()
-    //         .skip(1)
-    //         .take(self.width().sub(2));
-    //     left.chain(top).chain(right).chain(bottom)
-    // }
+    /// Iterate over all the tile positions of the border of the rect in clockwise
+    /// order, starting from the bottom left.
+    pub fn iter_border(&self) -> impl DoubleEndedIterator<Item = IVec2> {
+        let left = self.iter_column(0);
+        let top = self
+            .iter_row(self.top_index())
+            .skip(1)
+            .take(self.width() - 2);
+        let right = self.iter_column(self.right_index()).rev();
+        let bottom = self
+            .iter_row(self.bottom_index())
+            .rev()
+            .skip(1)
+            .take(self.width() - 2);
+        left.chain(top).chain(right).chain(bottom)
+    }
+
+    /// Iterate over each point of the rect.
+    pub fn iter_points(&self) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
+        GridRectIter::new(*self)
+    }
 
     /// Retrieve the position of the tile at the given pivot point on the rect.
     pub fn pivot_point(&self, pivot: Pivot) -> IVec2 {
@@ -646,5 +664,96 @@ impl GridRect {
             && other.left() <= self.right()
             && self.bottom() <= other.top()
             && other.bottom() <= self.top()
+    }
+}
+
+/// An iterator over the 2d grid points of a [GridRect].
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct GridRectIter {
+    origin: IVec2,
+    size: UVec2,
+    head: IVec2,
+    tail: IVec2,
+}
+
+impl GridRectIter {
+    pub fn new(rect: GridRect) -> Self {
+        Self {
+            origin: rect.pos,
+            size: rect.size,
+            head: IVec2::ZERO,
+            tail: rect.size.as_ivec2() - 1,
+        }
+    }
+
+    pub fn can_iterate(&self) -> bool {
+        self.head.y < self.tail.y || (self.head.y == self.tail.y && self.head.x <= self.tail.x)
+    }
+}
+
+impl Iterator for GridRectIter {
+    type Item = IVec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.can_iterate() {
+            return None;
+        }
+        let size = self.size.as_ivec2();
+        let head = &mut self.head;
+
+        let ret = self.origin + *head;
+        head.x += 1;
+        if head.x >= size.x {
+            head.x = 0;
+            head.y += 1;
+        }
+
+        Some(ret)
+    }
+
+    #[allow(deprecated)]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if !self.can_iterate() {
+            return (0, Some(0));
+        }
+        let count = self
+            .tail
+            .as_index(self.size)
+            .saturating_sub(self.head.as_index(self.size))
+            + 1;
+        (count, Some(count))
+    }
+}
+
+impl DoubleEndedIterator for GridRectIter {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let size = self.size.as_ivec2();
+        let tail = &mut self.tail;
+        let head = self.head;
+
+        if tail.y < head.y || (tail.y == head.y && tail.x < head.x) {
+            None
+        } else {
+            let ret = self.origin + *tail;
+            tail.x -= 1;
+            if tail.x < 0 {
+                tail.x = size.x - 1;
+                tail.y -= 1;
+            }
+
+            Some(ret)
+        }
+    }
+}
+
+impl ExactSizeIterator for GridRectIter {}
+
+impl IntoIterator for GridRect {
+    type Item = IVec2;
+
+    type IntoIter = GridRectIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        GridRectIter::new(self)
     }
 }
