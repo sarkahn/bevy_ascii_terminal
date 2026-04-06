@@ -74,9 +74,6 @@ pub struct RebuildMeshVerts;
 /// Component for the terminal which determines where terminal mesh tiles
 /// are built relative to the terminal's transform position.
 ///
-/// Two terminals with the same position and a different [TerminalMeshPivot] will
-/// not overlap.
-///
 /// Defaults to bottom left.
 #[derive(Component, Default)]
 pub enum TerminalMeshPivot {
@@ -190,20 +187,12 @@ fn on_material_changed(
 }
 
 fn on_terminal_resized(
-    q_term: Query<
-        (
-            Entity,
-            &Terminal,
-            &Mesh2d,
-            //    Option<&TerminalBorder>
-        ),
-        Changed<Terminal>,
-    >,
+    q_term: Query<(Entity, &Terminal, &Mesh2d), Changed<Terminal>>,
     mut commands: Commands,
     meshes: Res<Assets<Mesh>>,
 ) {
     for (e, term, mesh) in &q_term {
-        let tile_count = term.tile_count(); // + border.as_ref().map_or(0, |b| b.tiles().len());
+        let tile_count = term.tile_count();
         let Some(mesh) = meshes.get(mesh) else {
             continue;
         };
@@ -213,11 +202,6 @@ fn on_terminal_resized(
         commands.entity(e).insert(RebuildMeshVerts);
     }
 }
-
-// fn on_border_removed(trigger: On<Replace,
-//     //TerminalBorder>, mut commands: Commands) {
-//     commands.entity(trigger.entity).insert(RebuildMeshVerts);
-// }
 
 // Rebuilding mesh verts is a more expensive and complicated operation compared
 // to updating uvs and colors. Generally it only needs to be done when terminal
@@ -231,12 +215,10 @@ fn rebuild_mesh_verts(
             &Mesh2d,
             &MeshMaterial2d<TerminalMaterial>,
             &TerminalTransform,
-            //Option<&mut TerminalBorder>,
         ),
         Or<(
             Changed<TerminalMeshPivot>,
             Changed<TerminalMeshTileScaling>,
-            //            Changed<TerminalBorder>,
             With<RebuildMeshVerts>,
         )>,
     >,
@@ -277,7 +259,6 @@ fn rebuild_mesh_verts(
         };
 
         let tile_count = term.tile_count();
-        //let border_tile_count = border.as_ref().map_or(0, |b| b.tiles().len());
 
         resize_mesh_data(
             mesh, tile_count, //+ border_tile_count
@@ -319,13 +300,6 @@ fn rebuild_mesh_verts(
             set_tile_verts(xy, i);
         }
 
-        // if let Some(tiles) = border.as_ref().map(|b| b.tiles()) {
-        //     let mesh_index = tile_count;
-        //     for (i, (p, _)) in tiles.iter().enumerate() {
-        //         set_tile_verts(*p, mesh_index + i);
-        //     }
-        // }
-
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, verts);
         mesh.insert_indices(Indices::U32(indices));
 
@@ -340,15 +314,7 @@ fn rebuild_mesh_verts(
 // modified in any way.
 #[allow(clippy::type_complexity)]
 fn rebuild_mesh_uvs(
-    q_term: Query<
-        (
-            &Terminal,
-            &Mesh2d,
-            &UvMappingHandle,
-            //Option<&TerminalBorder>,
-        ),
-        Changed<Terminal>,
-    >,
+    q_term: Query<(&Terminal, &Mesh2d, &UvMappingHandle), Changed<Terminal>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mappings: Res<Assets<UvMapping>>,
 ) {
@@ -404,13 +370,6 @@ fn rebuild_mesh_uvs(
         for (i, t) in term.iter().enumerate() {
             set_tile_uvs(t, i);
         }
-
-        // if let Some(tiles) = border.map(|b| b.tiles()) {
-        //     let mesh_index = term.tile_count();
-        //     for (i, (_, t)) in tiles.iter().enumerate() {
-        //         set_tile_uvs(t, mesh_index + i);
-        //     }
-        // }
 
         mesh.insert_attribute(ATTRIBUTE_UV, uvs);
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, fg);

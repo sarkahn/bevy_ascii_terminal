@@ -1,18 +1,12 @@
 //! Extended ascii used as the default for mapping chars to terminal glyphs.
 //! Note this is simply the default, a custom mapping can be defined via
 //! [crate::render::UvMapping]
-use enum_ordinalize::Ordinalize;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-#[error("Unable to convert from char to terminal glyph")]
-pub struct GlyphFromCharError;
 
 /// An ascii glyph that can be drawn to a terminal.
 ///
 /// Can be converted directly into a [char].
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Ordinalize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Glyph {
     /// '\0' (c string terminator)
     Null = 0,
@@ -570,24 +564,10 @@ impl From<Glyph> for char {
     }
 }
 
-impl TryFrom<char> for Glyph {
-    type Error = GlyphFromCharError;
-
-    fn try_from(value: char) -> Result<Self, Self::Error> {
-        Glyph::from_char(value).ok_or(GlyphFromCharError)
-    }
-}
-
 impl Glyph {
     /// Convert an ascii glyph to it's corresponding char.
     pub const fn to_char(self) -> char {
         CP_437_ARRAY[self as usize]
-    }
-
-    /// Convert from a char to a terminal ascii glyph. Returns [None] if the char
-    /// is not a valid terminal glyph.
-    pub fn from_char(ch: char) -> Option<Self> {
-        char_to_index(ch).and_then(Self::from_ordinal)
     }
 }
 

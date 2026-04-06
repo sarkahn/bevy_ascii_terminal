@@ -234,26 +234,40 @@ pub fn wrap_tagged_line_count(input: &str, max_len: usize, word_wrap: bool) -> R
 }
 
 pub fn wrap_string(input: &str, max_len: usize, wrap: bool) -> (&str, &str) {
-    let line = &input[..max_len.min(input.len())];
+    // Find the byte index of the max_len-th character boundary
+    let max_byte = input
+        .char_indices()
+        .nth(max_len)
+        .map(|(i, _)| i)
+        .unwrap_or(input.len());
+
+    let line = &input[..max_byte];
 
     if let Some(newline_pos) = line.find('\n') {
         return (&input[..newline_pos], &input[newline_pos + 1..]);
     }
 
-    if input.len() <= max_len {
+    if input.len() <= max_byte {
         return (input, "");
     }
 
-    if wrap && let Some(last_space) = line.rfind(' ') {
-        return (&input[..last_space], &input[last_space + 1..]);
+    if wrap {
+        // Search one char past the boundary in case a space falls right on it
+        let search_byte = input
+            .char_indices()
+            .nth(max_len + 1)
+            .map(|(i, _)| i)
+            .unwrap_or(input.len());
+
+        if let Some(last_space) = input[..search_byte].rfind(' ')
+            && last_space > 0
+        {
+            return (&input[..last_space], &input[last_space + 1..]);
+        }
     }
 
-    // Hard break at max_len (on a char boundary)
-    let mut split_at = max_len;
-    while !input.is_char_boundary(split_at) {
-        split_at -= 1;
-    }
-    (&input[..split_at], &input[split_at..])
+    // Hard break at max_len chars (already a valid char boundary)
+    (&input[..max_byte], &input[max_byte..])
 }
 
 /// Precalculate the number of vertical lines a wrapped string will occupy.
@@ -273,7 +287,7 @@ mod tests {
     use crate::{
         color,
         strings::{
-            parse::{wrap_string, wrap_tagged_string},
+            tagged_string::{wrap_string, wrap_tagged_string},
             wrap_line_count,
         },
     };

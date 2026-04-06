@@ -11,18 +11,16 @@ repository = "https://github.com/sarkahn/bevy_ascii_terminal"
 version = "0.18.3"
 
 [dependencies]
-enum-ordinalize = "4.3.0"
-thiserror = "2"
 flate2 = "1.0"
 byteorder = "1"
-sark_grids = "0.7"
 bevy_platform = "0.18"
 anyhow = "1.0.100"
-nom = "8.0.0"
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"
 rand = "0.8.4"
+strum = "0.28.0"
+strum_macros = "0.28.0"
 
 [dependencies.bevy]
 version = "0.18"

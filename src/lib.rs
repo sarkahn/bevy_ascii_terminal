@@ -1,8 +1,7 @@
 pub mod ascii;
-pub mod border;
-pub mod box_style;
 pub mod color;
 pub mod padding;
+pub mod pivot;
 pub mod render;
 pub(crate) mod rexpaint;
 pub mod strings;
@@ -16,10 +15,11 @@ use bevy::{
     prelude::IntoScheduleConfigs,
 };
 //pub use border::TerminalBorder;
-pub use box_style::{BoxStyle, Padding};
+pub use padding::{BoxStyle, Padding};
+pub use pivot::Pivot;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
 pub use strings::{TerminalString, TerminalStringBuilder};
-pub use terminal::{Pivot, Terminal};
+pub use terminal::Terminal;
 pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;
 pub use transform::{SetTerminalGridPosition, SetTerminalLayerPosition, TerminalTransform};

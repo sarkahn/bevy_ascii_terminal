@@ -35,7 +35,7 @@ fn input(
     if input.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
-    if input.just_pressed(KeyCode::F11) {
+    if input.just_pressed(KeyCode::KeyF) {
         window.mode = match window.mode {
             bevy::window::WindowMode::Windowed => {
                 WindowMode::BorderlessFullscreen(MonitorSelection::Current)

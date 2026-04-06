@@ -1,4 +1,13 @@
 # Changelog
+
+## [0.18.3] - 2026/03/30
+
+### Changes
+- Removed dependency on sark_grids.
+- Removed PivotedPoint. Added pivot to the terminal itself which determines the pivot for all puts.
+- Combined StringDecoration and StringFormatting in to TerminalString.
+- Added padding to the terminal and removed the border componenent. The border is now just a part of the terminal itself and all drawing should respect the padding.
+
 ## [0.18.2] - 2026/02/02
 
 ### Changes

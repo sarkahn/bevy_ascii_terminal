@@ -298,19 +298,9 @@ fn cache_transform_data(
         let local_max = local_min + inner_mesh_size;
         data.local_inner_mesh_bounds = Rect::from_corners(local_min, local_max);
 
-        // let world_bounds = if let Some(border) = border.as_ref() {
-        //     let bounds = border.bounds(term.size());
-        //     // The size of the terminal mesh including the border bounds
-        //     let total_world_size = bounds.size.as_vec2() * world_tile_size;
-        //     let world_min =
-        //         transform.translation().truncate() - total_world_size * pivot.normalized();
-        //     let world_max = world_min + total_world_size;
-        //     Rect::from_corners(world_min, world_max)
-        // } else {
         let world_min = transform.translation().truncate() + local_min;
         let world_max = world_min + inner_mesh_size;
         let world_bounds = Rect::from_corners(world_min, world_max);
-        //};
 
         data.world_mesh_bounds = world_bounds;
 

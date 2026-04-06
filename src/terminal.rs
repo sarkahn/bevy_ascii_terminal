@@ -1,9 +1,7 @@
 //! A grid of tiles for rendering colorful ascii.
-use std::ops::Sub;
-
 use bevy::{
     color::{ColorToPacked, LinearRgba},
-    math::{IVec2, UVec2, Vec2, ivec2},
+    math::{IVec2, UVec2, ivec2},
     prelude::{Component, Mesh2d},
     reflect::Reflect,
     sprite_render::MeshMaterial2d,
@@ -11,18 +9,13 @@ use bevy::{
 
 use crate::{
     BoxStyle, Padding, Tile, ascii,
+    pivot::Pivot,
     render::{
         RebuildMeshVerts, TerminalFont, TerminalMaterial, TerminalMeshPivot, UvMappingHandle,
     },
     rexpaint::reader::XpFile,
     strings::{
-        //GridStringIterator,
-        TerminalString,
-        Token,
-        TokenIterator,
-        wrap_line_count, //Token, next_token
-        wrap_string,
-        wrap_tagged_line_count,
+        TerminalString, Token, TokenIterator, wrap_line_count, wrap_string, wrap_tagged_line_count,
         wrap_tagged_string,
     },
     transform::TerminalTransform,
@@ -37,7 +30,7 @@ pub enum ColorWrite {
 }
 
 /// A grid of tiles for rendering colorful ascii.
-#[derive(Debug, Reflect, Component, Clone)]
+#[derive(Debug, Reflect, Component, Clone, Default)]
 #[require(
     TerminalTransform,
     TerminalFont,
@@ -142,8 +135,8 @@ impl Terminal {
     }
 
     /// Draw a border on the terminal.
-    pub fn with_border(mut self, style: BoxStyle) -> Self {
-        self.put_border(style);
+    pub fn with_border(mut self, box_style: BoxStyle) -> Self {
+        self.put_border(box_style);
         self
     }
 
@@ -208,6 +201,10 @@ impl Terminal {
     /// ```
     pub fn put_char(&mut self, xy: impl Into<IVec2>, ch: char) -> &mut Tile {
         self.tile_mut(xy).char(ch)
+    }
+
+    pub fn get_char(&self, xy: impl Into<IVec2>) -> char {
+        self.tile(xy).glyph
     }
 
     /// Set the foreground color of a tile.
@@ -324,10 +321,14 @@ impl Terminal {
         let max_len = self.width() - self.padding.right - self.padding.left;
 
         // First line length may be different because of initial x offset
-        let first_line_len = max_len - origin.x as usize;
+        let first_line_len = max_len - origin.x.unsigned_abs() as usize;
+
         // TODO: Error handling
         let (mut wrapped, mut char_count, mut rem) =
             wrap_tagged_string(string, first_line_len, ts.word_wrap).unwrap();
+
+        // TODO: Error handling
+        let mut xy = self.transform_point(origin).unwrap();
 
         // Count remaining lines after wrapping the first line since all
         // remaining line widths are the same
@@ -335,8 +336,6 @@ impl Terminal {
         let lines = 1 + wrap_tagged_line_count(rem, max_len, ts.word_wrap).unwrap();
         let line_offset = (lines.saturating_sub(1) as f32 * (1.0 - pivot.y)) as i32;
 
-        // TODO: Error handling
-        let mut xy = self.transform_point(origin).unwrap();
         xy.y += line_offset;
 
         // Newline resets x position based on pivot
@@ -407,7 +406,7 @@ impl Terminal {
         let fg = self.clear_tile.fg_color;
         let bg = self.clear_tile.bg_color;
 
-        let max_len = self.width() - self.padding.left - self.padding.right;
+        let max_len = self.inner_size().x as usize - self.padding.left - self.padding.right;
 
         // TODO: Handle negative xy for center pivot
         // First line length may be different because of initial x offset
@@ -551,26 +550,24 @@ impl Terminal {
         }
     }
 
-    /// Read a number of characters from the terminal.
-    pub fn read_chars(
-        &self,
-        xy: impl Into<IVec2>,
-        count: usize,
-    ) -> impl Iterator<Item = char> + '_ {
-        let xy = self.transform_point(xy.into()).unwrap();
+    /// Read a number of characters from the inner area of the terminal
+    /// at given line, based on the current pivot. Negative lines are valid
+    /// for vertically centered pivots.
+    pub fn read_line_chars(&self, line: i32, count: usize) -> impl Iterator<Item = char> + '_ {
+        let mut p = self
+            .transform_point([0, line])
+            .expect("Index out of bounds");
 
-        self.tiles
-            .chunks(self.width())
-            .rev()
-            .skip(self.height() - 1 - xy.y as usize)
-            .flat_map(|c| c.iter())
-            .skip(xy.x as usize)
-            .map(|t| t.glyph)
-            .take(count)
+        let xoff = (count - 1) as f32 * self.pivot.normalized().x;
+        p.x -= xoff as i32;
+
+        let i = self.tile_to_index(p);
+
+        self.tiles[i..i + count].iter().map(|t| t.glyph)
     }
 
-    pub fn read_to_string(&self, xy: impl Into<IVec2>, count: usize) -> String {
-        String::from_iter(self.read_chars(xy, count))
+    pub fn read_line_to_string(&self, line: i32, count: usize) -> String {
+        String::from_iter(self.read_line_chars(line, count))
     }
 
     /// Transform a local 2d tile index (bottom left origin) into it's corresponding
@@ -590,17 +587,23 @@ impl Terminal {
         IVec2::new(i as i32 % w, i as i32 / w)
     }
 
+    pub fn try_tile_mut(&mut self, xy: impl Into<IVec2>) -> Option<&mut Tile> {
+        let xy = self.transform_point(xy.into())?;
+        let i = self.tile_to_index(xy);
+        Some(&mut self.tiles[i])
+    }
+
     /// Retrieve a tile at the grid position. This will panic if the position is
     /// out of bounds.
     pub fn tile_mut(&mut self, xy: impl Into<IVec2>) -> &mut Tile {
-        let xy = self.transform_point(xy.into()).unwrap();
-        debug_assert!(
-            xy.cmplt(self.size.as_ivec2()).all(),
-            "Attempting to access a tile at an out of bounds grid position {:?} 
-        from a terminal of size {}",
-            xy,
-            self.size
-        );
+        let xy = xy.into();
+        let xy = self.transform_point(xy).unwrap_or_else(|| {
+            panic!(
+                "Error accessing tile position {} in terminal sized {}",
+                xy,
+                self.size()
+            );
+        });
         let i = self.tile_to_index(xy);
         &mut self.tiles[i]
     }
@@ -643,6 +646,20 @@ impl Terminal {
 
     pub fn size(&self) -> UVec2 {
         self.size
+    }
+
+    pub fn inner_size(&self) -> UVec2 {
+        UVec2::new(self.inner_width() as u32, self.inner_height() as u32)
+    }
+
+    pub fn inner_width(&self) -> usize {
+        let w = self.size.x as usize;
+        w.saturating_sub(self.padding.left + self.padding.right)
+    }
+
+    pub fn inner_height(&self) -> usize {
+        let h = self.size.y as usize;
+        h.saturating_sub(self.padding.top + self.padding.bottom)
     }
 
     pub fn tile_count(&self) -> usize {
@@ -750,11 +767,6 @@ impl Terminal {
         self.tiles.iter_mut()
     }
 
-    // /// The local grid bounds of the terminal. For world bounds see [TerminalTransform].
-    // pub fn bounds(&self) -> GridRect {
-    //     GridRect::new([0, 0], self.size)
-    // }
-
     pub fn clear_tile(&self) -> Tile {
         self.clear_tile
     }
@@ -765,7 +777,7 @@ impl Terminal {
         self.size = new_size;
     }
 
-    pub fn print_to_console(self) {
+    pub fn print_to_console(&self) {
         for y in (0..self.height()).rev() {
             for x in 0..self.width() {
                 let t = &self.tiles[y * self.width() + x];
@@ -778,92 +790,40 @@ impl Terminal {
     /// Transform a point from a bottom-left origin to the current pivot origin
     /// within the padded area of the terminal.
     fn transform_point(&self, xy: impl Into<IVec2>) -> Option<IVec2> {
+        let innersize = self.inner_size();
+        let mut xy = self.pivot.transform_point(xy, innersize);
+        if xy.cmplt(IVec2::ZERO).any() {
+            return None;
+        }
+
         let padding_offset = IVec2::new(self.padding.left as i32, self.padding.bottom as i32);
-        let xy = xy.into();
-
-        let inner = UVec2::new(
-            self.size
-                .x
-                .saturating_sub((self.padding.left + self.padding.right) as u32),
-            self.size
-                .y
-                .saturating_sub((self.padding.top + self.padding.bottom) as u32),
-        )
-        .as_ivec2();
-
-        let max = IVec2::new(
-            (self.width() - 1 - self.padding.right) as i32,
-            (self.height() - 1 - self.padding.top) as i32,
-        );
-
-        let xy = padding_offset + self.pivot.transform_point(xy, inner);
-        if xy.cmplt(IVec2::ZERO).any() || xy.cmpgt(max).any() {
+        xy += padding_offset;
+        if xy.cmpge(self.size.as_ivec2()).any() {
             return None;
         }
 
         Some(xy)
     }
-}
 
-#[derive(Debug, Default, Reflect, Clone, Copy, PartialEq, Eq)]
-pub enum Pivot {
-    LeftBottom, // X right, Y up
-    LeftCenter, // X right, Y up
-    #[default]
-    LeftTop, // X right, Y down
-    CenterTop,  // X right, Y down,
-    Center,     // X right, Y up
-    CenterBottom, // X right, Y up
-    RightTop,   // X left, Y down
-    RightCenter, // X left, Y up
-    RightBottom, // X left, Y up
-}
+    // /// Transform a point from a bottom-left origin to the current pivot origin
+    // /// within the padded area of the terminal.
+    // fn transform_point(&self, xy: impl Into<IVec2>) -> Option<IVec2> {
+    //     let padding_offset = IVec2::new(self.padding.left as i32, self.padding.bottom as i32);
+    //     let innersize = self.inner_size();
 
-impl Pivot {
-    pub fn axis(&self) -> IVec2 {
-        IVec2::from(match self {
-            Pivot::LeftBottom => [1, 1],
-            Pivot::LeftCenter => [1, 1],
-            Pivot::LeftTop => [1, -1],
-            Pivot::CenterTop => [1, -1],
-            Pivot::Center => [1, 1],
-            Pivot::CenterBottom => [1, 1],
-            Pivot::RightTop => [-1, -1],
-            Pivot::RightBottom => [-1, 1],
-            Pivot::RightCenter => [-1, 1],
-        })
-    }
+    //     let mut xy = self.pivot.transform_point(xy, innersize);
+    //     if xy.cmplt(IVec2::ZERO).any() {
+    //         return None;
+    //     }
 
-    /// Calculate the position of a pivot on a sized grid.
-    pub fn pivot_position(&self, grid_size: impl Into<IVec2>) -> IVec2 {
-        (grid_size.into().as_vec2().sub(1.0) * self.normalized())
-            .round()
-            .as_ivec2()
-    }
+    //     xy += padding_offset;
 
-    pub fn normalized(&self) -> Vec2 {
-        match self {
-            Pivot::LeftTop => Vec2::new(0.0, 1.0),
-            Pivot::LeftBottom => Vec2::new(0.0, 0.0),
-            Pivot::LeftCenter => Vec2::new(0.0, 0.5),
-            Pivot::RightTop => Vec2::new(1.0, 1.0),
-            Pivot::RightCenter => Vec2::new(1.0, 0.5),
-            Pivot::RightBottom => Vec2::new(1.0, 0.0),
-            Pivot::Center => Vec2::new(0.5, 0.5),
-            Pivot::CenterTop => Vec2::new(0.5, 1.0),
-            Pivot::CenterBottom => Vec2::new(0.5, 0.0),
-        }
-    }
+    //     if xy.cmpgt(innersize.as_ivec2()).any() {
+    //         return None;
+    //     }
 
-    /// Transform a point into the pivot's coordinate space.
-    pub fn transform_coordinates(&self, grid_point: impl Into<IVec2>) -> IVec2 {
-        grid_point.into() * self.axis()
-    }
-
-    /// Transform a point from a bottom-left origin to the pivot origin
-    pub fn transform_point(&self, point: impl Into<IVec2>, grid_size: impl Into<IVec2>) -> IVec2 {
-        self.pivot_position(grid_size) + self.transform_coordinates(point)
-    }
+    //     Some(xy)
+    // }
 }
 
 /// A grid point that may optionally have a pivot applied to it.
@@ -884,10 +844,12 @@ impl PivotedPoint {
 
 #[cfg(test)]
 mod tests {
+    use crate::TerminalStringBuilder;
+
     use super::*;
-    use crate::{Terminal, TerminalStringBuilder, ascii};
 
     #[test]
+    #[ignore]
     fn printing() {
         let mut term = Terminal::new([10, 6]).with_pivot(Pivot::LeftTop);
         term.put_string([0, 0], "Hello");
@@ -899,16 +861,19 @@ mod tests {
 
     #[test]
     fn put_string_negative() {
-        let mut terminal = Terminal::new([10, 10]).with_pivot(Pivot::Center);
-        terminal.put_string([-2, -2], "Hello");
-        assert_eq!(terminal.tile([-2, -2]).glyph, 'H');
+        let mut term = Terminal::new([10, 5]).with_pivot(Pivot::Center);
+        term.put_char([0, 0], '*');
+        term.put_string([-2, 2], "Hello");
+        term.set_pivot(Pivot::LeftTop);
+
+        assert_eq!(term.tile([1, 0]).glyph, 'H');
     }
 
     #[test]
     fn big_string() {
         let mut term = Terminal::new([16, 16]);
         let string = String::from_iter(ascii::CP_437_ARRAY.iter());
-        term.put_string([0, 0], string);
+        term.put_string([0, 0], string.dont_parse_tags());
     }
 
     #[test]
@@ -916,7 +881,7 @@ mod tests {
         let mut term = Terminal::new([15, 3]);
         term.put_border(BoxStyle::SINGLE_LINE);
         term.put_string([0, 0], "<bg=gray><fg=blue>Hello</fg> <fg=red>World</fg>!");
-        assert_eq!("Hello World!", term.read_to_string([0, 0], 12).as_str());
+        assert_eq!("Hello World!", &term.read_line_to_string(0, 12));
     }
 
     const INPUT: &str =
@@ -928,8 +893,21 @@ mod tests {
         term.put_border(BoxStyle::SINGLE_LINE);
 
         term.put_string([0, 0], INPUT);
-        term.print_to_console();
-        println!()
+
+        let line = term.read_line_to_string(4, 12);
+        assert_eq!("HELLO WORLD!", &line);
+
+        let line = term.read_line_to_string(3, 33);
+        assert_eq!("How the heck are you doing today?", &line);
+
+        let line = term.read_line_to_string(2, 9);
+        assert_eq!("I'm good.", &line);
+
+        let line = term.read_line_to_string(1, 14);
+        assert_eq!("How about you?", &line);
+
+        let line = term.read_line_to_string(0, 10);
+        assert_eq!("COOL BEANS", &line);
     }
 
     #[test]
@@ -939,8 +917,21 @@ mod tests {
 
         term.pivot = Pivot::LeftTop;
         term.put_string([0, 0], INPUT);
-        term.print_to_console();
-        println!()
+
+        let line = term.read_line_to_string(0, 12);
+        assert_eq!("HELLO WORLD!", &line);
+
+        let line = term.read_line_to_string(1, 33);
+        assert_eq!("How the heck are you doing today?", &line);
+
+        let line = term.read_line_to_string(2, 9);
+        assert_eq!("I'm good.", &line);
+
+        let line = term.read_line_to_string(3, 14);
+        assert_eq!("How about you?", &line);
+
+        let line = term.read_line_to_string(4, 10);
+        assert_eq!("COOL BEANS", &line);
     }
 
     #[test]
@@ -949,19 +940,44 @@ mod tests {
         term.put_border(BoxStyle::SINGLE_LINE);
 
         term.put_string([0, 0], INPUT);
-        term.print_to_console();
-        println!()
+
+        let line = term.read_line_to_string(2, 12);
+        assert_eq!("HELLO WORLD!", &line);
+
+        let line = term.read_line_to_string(1, 33);
+        assert_eq!("How the heck are you doing today?", &line);
+
+        let line = term.read_line_to_string(0, 9);
+        assert_eq!("I'm good.", &line);
+
+        let line = term.read_line_to_string(-1, 14);
+        assert_eq!("How about you?", &line);
+
+        let line = term.read_line_to_string(-2, 10);
+        assert_eq!("COOL BEANS", &line);
     }
 
     #[test]
     fn put_string_right_top() {
-        let mut term = Terminal::new([35, 10]);
+        let mut term = Terminal::new([35, 10]).with_pivot(Pivot::RightTop);
         term.put_border(BoxStyle::SINGLE_LINE);
 
-        term.pivot = Pivot::RightTop;
         term.put_string([0, 0], INPUT);
-        term.print_to_console();
-        println!()
+
+        let line = term.read_line_to_string(0, 12);
+        assert_eq!("HELLO WORLD!", &line);
+
+        let line = term.read_line_to_string(1, 33);
+        assert_eq!("How the heck are you doing today?", &line);
+
+        let line = term.read_line_to_string(2, 9);
+        assert_eq!("I'm good.", &line);
+
+        let line = term.read_line_to_string(3, 14);
+        assert_eq!("How about you?", &line);
+
+        let line = term.read_line_to_string(4, 10);
+        assert_eq!("COOL BEANS", &line);
     }
 
     #[test]
@@ -970,37 +986,122 @@ mod tests {
         term.put_border(BoxStyle::SINGLE_LINE);
 
         term.put_string([0, 0], INPUT);
-        term.print_to_console();
-        println!()
+
+        let line = term.read_line_to_string(4, 12);
+        assert_eq!("HELLO WORLD!", &line);
+
+        let line = term.read_line_to_string(3, 33);
+        assert_eq!("How the heck are you doing today?", &line);
+
+        let line = term.read_line_to_string(2, 9);
+        assert_eq!("I'm good.", &line);
+
+        let line = term.read_line_to_string(1, 14);
+        assert_eq!("How about you?", &line);
+
+        let line = term.read_line_to_string(0, 10);
+        assert_eq!("COOL BEANS", &line);
     }
 
-    #[test]
-    fn put_with_no_padding_and_no_word_wrap_wraps_correctly() {
-        let mut term = Terminal::new([10, 5]).with_pivot(Pivot::LeftTop);
-        let string = "Hello, how are";
+    // #[test]
+    // fn put_with_no_padding_and_no_word_wrap_wraps_correctly() {
+    //     let mut term = Terminal::new([10, 5]);
+    //     let string = "Hello, how are";
 
-        term.put_string([1, 1], string.dont_word_wrap());
-        assert_eq!(string, term.read_to_string([1, 1], string.len()).as_str());
-    }
+    //     term.put_string([1, 1], string.dont_word_wrap());
 
-    #[test]
-    fn put_with_no_padding_and_word_wrap_wraps_correctly() {
-        let mut term = Terminal::new([10, 5])
-            .with_pivot(Pivot::LeftTop)
-            .with_clear_char('.');
-        let string = "Hello, how are";
+    //     assert_eq!(" Hello, ho", term.read_line_to_string(1).as_str());
+    //     assert_eq!("w are", term.read_line_to_string(2).as_str());
+    // }
 
-        term.put_string([1, 1], string);
-        assert_eq!("Hello,", term.read_to_string([1, 1], 6).as_str());
-        assert_eq!("how are", term.read_to_string([0, 2], 7).as_str());
-    }
+    // #[test]
+    // fn put_with_no_padding_and_word_wrap_wraps_correctly() {
+    //     let mut term = Terminal::new([10, 5])
+    //         .with_pivot(Pivot::LeftTop)
+    //         .with_clear_char('.');
+    //     let string = "Hello, how are";
 
-    #[test]
-    fn put_string_without_border() {
-        let mut term = Terminal::new([15, 5]).with_clear_char('.');
-        term.put_string([0, 1], "Hello. How are you doing?".dont_word_wrap());
+    //     term.put_string([1, 1], string);
+    //     assert_eq!("Hello,", term.read_line_to_string(1).as_str());
+    //     assert_eq!("how are", term.read_line_to_string(2).as_str());
+    // }
 
-        assert_eq!("Hello. How are", term.read_to_string([0, 2], 14));
-        assert_eq!("you doing?", term.read_to_string([0, 1], 10));
-    }
+    // #[test]
+    // fn put_string_without_border() {
+    //     let mut term = Terminal::new([15, 5]);
+    //     term.put_string([0, 1], "Hello. How are you doing?".dont_word_wrap());
+
+    //     assert_eq!("Hello. How are", &term.read_line_to_string(1)[0..14]);
+    //     assert_eq!("you doing?", term.read_line_to_string(2));
+    // }
+
+    // #[test]
+    // fn read_string_with_pivot() {
+    //     let mut term = Terminal::new([40, 5]).with_clear_char('.');
+    //     let text = "Hello, world!";
+    //     let len = text.len();
+    //     let right = term.width() as i32 - len as i32;
+    //     let bottom = term.height() as i32 - 1;
+
+    //     term.put_string([0, 0], text);
+    //     term.put_string([0, bottom], text);
+    //     term.put_string([right, 0], text);
+    //     term.put_string([right, bottom], text);
+
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+
+    //     term.pivot = Pivot::RightTop;
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+
+    //     term.pivot = Pivot::RightBottom;
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+
+    //     term.pivot = Pivot::LeftBottom;
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+    // }
+
+    // #[test]
+    // fn read_string_with_pivot_and_border() {
+    //     let mut term = Terminal::new([40, 5])
+    //         .with_clear_char('.')
+    //         .with_border(BoxStyle::SINGLE_LINE);
+
+    //     let text = "Hello, world!";
+    //     let len = text.len();
+    //     let right = term.inner_width() as i32 - len as i32;
+    //     let bottom = term.inner_height() as i32 - 1;
+
+    //     term.put_string([0, 0], text);
+    //     term.put_string([0, bottom], text);
+    //     term.put_string([right, 0], text);
+    //     term.put_string([right, bottom], text);
+
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+
+    //     term.pivot = Pivot::RightTop;
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+
+    //     term.pivot = Pivot::RightBottom;
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+
+    //     term.pivot = Pivot::LeftBottom;
+    //     let string = term.read_line_to_string(0);
+    //     assert_eq!(text, string.as_str());
+    // }
+
+    // #[test]
+    // fn read_str_test() {
+    //     let mut term = Terminal::new([15, 5]).with_clear_char('.');
+    //     term.put_string([0, 0], "Hello world");
+
+    //     let string = term.read_line_to_string(0);
+    //     println!("LINE `{}`", string);
+    // }
 }

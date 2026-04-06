@@ -14,6 +14,15 @@ pub const fn hex_color(hex: u32) -> LinearRgba {
     )
 }
 
+pub const fn from_bytes(r: u8, g: u8, b: u8, a: u8) -> LinearRgba {
+    LinearRgba {
+        red: r as f32 / 255.0,
+        green: g as f32 / 255.0,
+        blue: b as f32 / 255.0,
+        alpha: a as f32 / 255.0,
+    }
+}
+
 pub const ALICE_BLUE: LinearRgba = hex_color(0xF0F8FF);
 pub const ANTIQUE_WHITE: LinearRgba = hex_color(0xFAEBD7);
 pub const AQUA: LinearRgba = hex_color(0x00FFFF);

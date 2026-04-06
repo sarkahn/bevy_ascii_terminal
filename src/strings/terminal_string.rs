@@ -3,7 +3,7 @@
 
 use bevy::color::LinearRgba;
 
-/// A string with optional [StringDecoration] and [StringFormatting] applied.
+/// A string with optional formatting and tags.
 ///
 /// `dont_word_wrap`: Disable word wrapping, which is enabled by default for
 /// terminal strings.
@@ -65,8 +65,8 @@ pub trait TerminalStringBuilder<T: AsRef<str>> {
     /// overriden by [Self::fg] or [Self::bg] if they are set
     fn dont_clear_colors(self) -> TerminalString<T>;
 
-    /// Disbable tag parsing for embedded tags before writing. Tag parsing doesn't
-    /// allocate but it isn't free.
+    /// Disable parsing for embedded string tags before writing. Tag parsing
+    /// doesn't allocate but it isn't free.
     fn dont_parse_tags(self) -> TerminalString<T>;
 
     /// Disable word wrap, allowing words to be split between lines.
