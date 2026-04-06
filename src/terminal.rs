@@ -34,8 +34,6 @@ pub struct Terminal {
     size: UVec2,
     tiles: Vec<Tile>,
     clear_tile: Tile,
-    /// An internal buffer to minimize allocations when processing strings.
-    string_buffer: String,
 }
 
 impl Terminal {
@@ -44,7 +42,6 @@ impl Terminal {
             size: size.to_uvec2(),
             tiles: vec![Tile::default(); size.tile_count()],
             clear_tile: Tile::default(),
-            string_buffer: String::default(),
         }
     }
 
