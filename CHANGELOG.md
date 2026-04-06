@@ -1,8 +1,10 @@
 # Changelog
-## [0.18.3] - 2026/02/02
+## [0.18.3] - 2026/04/06
 
 ### Changes
 - Hidden terminals will be ignored by TerminalCamera.
+- Removed dependency on sark_grids and move it's types to this crate. `GridPoint`, `GridSize`, `GridRect`, `PivotedPoint` are deprecated and will be removed by bevy 0.20. `GridPoint` and `GridSize` will be replaced with `impl Into<IVec2>` and `impl Into<UVec2>`. `PivotedPoint` will be replaced with a persistent `Pivot` state on the Terminal that will affect all drawing.
+- Deprecated `TerminalBorder`. `TerminalBorder` will be removed `put_border` will be re-added to the terminal along with persistent `Padding` state that will affect all drawing.
 
 ## [0.18.2] - 2026/02/02
 
