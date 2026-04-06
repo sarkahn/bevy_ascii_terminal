@@ -3,7 +3,7 @@ use std::ops::Sub;
 use bevy::{
     color::palettes::css::{MAROON, MIDNIGHT_BLUE},
     prelude::*,
-    reflect::{DynamicVariant, Enum},
+    reflect::enums::{DynamicVariant, Enum},
 };
 use bevy_ascii_terminal::*;
 

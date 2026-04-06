@@ -1,9 +1,11 @@
 use std::{ops::Sub, str::Chars};
 
 use bevy::{color::LinearRgba, math::IVec2};
-use sark_grids::{GridPoint, GridRect, GridSize, Pivot, PivotedPoint};
 
-use crate::strings::{StringDecoration, StringFormatting};
+use crate::{
+    GridPoint, GridRect, GridSize, Pivot, PivotedPoint,
+    strings::{StringDecoration, StringFormatting},
+};
 
 /// Precalculate the number of vertical lines a wrapped string will occupy.
 // TODO: Integrate with `wrap_string` to avoid the duplicate work

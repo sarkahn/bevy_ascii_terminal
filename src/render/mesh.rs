@@ -8,6 +8,7 @@ use bevy::{
         change_detection::DetectChangesMut,
         component::Component,
         entity::Entity,
+        lifecycle::Insert,
         message::{MessageReader, MessageWriter},
         query::{Added, Changed, Or, With},
         schedule::{IntoScheduleConfigs, SystemSet},
@@ -16,7 +17,7 @@ use bevy::{
     image::Image,
     math::{IVec2, Vec2},
     mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
-    prelude::{Mesh2d, On, Replace},
+    prelude::{Mesh2d, On},
     render::render_resource::{PrimitiveTopology, VertexFormat},
     sprite_render::MeshMaterial2d,
 };
@@ -201,7 +202,7 @@ fn on_terminal_resized(
     }
 }
 
-fn on_border_removed(trigger: On<Replace, TerminalBorder>, mut commands: Commands) {
+fn on_border_removed(trigger: On<Insert, TerminalBorder>, mut commands: Commands) {
     commands.entity(trigger.entity).insert(RebuildMeshVerts);
 }
 
@@ -233,7 +234,7 @@ fn rebuild_mesh_verts(
     mut evt: MessageWriter<UpdateTerminalViewportEvent>,
 ) {
     for (entity, mut term, mesh_handle, mat_handle, transform, mut border) in &mut q_term {
-        let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
+        let Some(mut mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
             continue;
         };
 
@@ -245,7 +246,7 @@ fn rebuild_mesh_verts(
         // clear the mesh. This function will be called again when a valid image
         // is loaded
         if mat.texture.is_none() || images.get(mat.texture.as_ref().unwrap()).is_none() {
-            resize_mesh_data(mesh, 0);
+            resize_mesh_data(&mut mesh, 0);
             continue;
         }
 
@@ -261,7 +262,7 @@ fn rebuild_mesh_verts(
         let tile_count = term.tile_count();
         let border_tile_count = border.as_ref().map_or(0, |b| b.tiles().len());
 
-        resize_mesh_data(mesh, tile_count + border_tile_count);
+        resize_mesh_data(&mut mesh, tile_count + border_tile_count);
 
         let tile_size = transform_data.world_tile_size;
         let mesh_bl = transform_data.local_inner_mesh_bounds.min;
@@ -333,13 +334,13 @@ fn rebuild_mesh_uvs(
     mappings: Res<Assets<UvMapping>>,
 ) {
     for (term, mesh_handle, mapping_handle, border) in &q_term {
-        let Some(mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
+        let Some(mut mesh) = meshes.get_mut(&mesh_handle.0.clone()) else {
             continue;
         };
 
         // Mesh vertices not yet updated, this function will be called again
         // once the vertex update is completed.
-        if mesh_vertex_count(mesh) == 0 {
+        if mesh_vertex_count(&mut mesh) == 0 {
             continue;
         }
 

@@ -7,14 +7,17 @@ use bevy::{
     ecs::{
         component::Component,
         entity::Entity,
+        event::Event,
+        lifecycle::{Add, Discard, Insert},
         message::MessageReader,
+        observer::Observer,
         query::{Changed, With},
         schedule::{IntoScheduleConfigs, SystemSet},
         system::{Commands, Query, Res},
     },
     image::Image,
     math::{IVec2, Rect, UVec2, Vec2, Vec3},
-    prelude::{GlobalTransform, On, Or, Replace},
+    prelude::{GlobalTransform, On, Or},
     reflect::Reflect,
     sprite_render::MeshMaterial2d,
     transform::{TransformSystems, components::Transform},
@@ -186,7 +189,9 @@ fn on_size_change(
         }
     }
 }
-fn on_border_replace(on_replace: On<Replace, TerminalBorder>, mut commands: Commands) {
+
+// TODO: How do we do this now?
+fn on_border_replace(on_replace: On<Add, TerminalBorder>, mut commands: Commands) {
     commands
         .entity(on_replace.event().entity)
         .insert(CacheTransformData);

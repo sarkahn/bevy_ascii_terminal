@@ -10,7 +10,7 @@ use bevy::{
     },
     image::{Image, ImageLoaderSettings, ImageSampler},
     prelude::Plugin,
-    reflect::{Enum, Reflect},
+    reflect::{Reflect, enums::Enum},
     sprite_render::MeshMaterial2d,
 };
 
@@ -129,7 +129,7 @@ fn update_font(
             });
             *mat_handle = MeshMaterial2d(mat);
         } else {
-            let Some(mat) = materials.get_mut(&*mat_handle.clone()) else {
+            let Some(mut mat) = materials.get_mut(&*mat_handle.clone()) else {
                 continue;
             };
             mat.texture = Some(image);

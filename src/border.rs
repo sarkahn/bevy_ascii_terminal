@@ -4,10 +4,9 @@ use bevy::{math::IVec2, prelude::Component, reflect::Reflect};
 
 use bevy_platform::collections::HashMap;
 use enum_ordinalize::Ordinalize;
-use sark_grids::{GridPoint, GridRect, GridSize, Pivot};
 
 use crate::{
-    Tile,
+    GridRect, GridSize, Pivot, Tile,
     strings::{DecoratedString, GridStringIterator, StringDecoration},
 };
 
@@ -161,14 +160,14 @@ impl TerminalBorder {
                 .any(|bs| bs.edge == BorderSide::Top)
     }
 
-    pub fn set_edge_glyph(&mut self, pivot: Pivot, glyph: Option<char>) {
-        let pivot = if pivot == Pivot::Center {
-            Pivot::TopCenter
-        } else {
-            pivot
-        };
-        self.edge_glyphs[pivot.ordinal() as usize] = glyph;
-    }
+    // pub fn set_edge_glyph(&mut self, pivot: Pivot, glyph: Option<char>) {
+    //     let pivot = if pivot == Pivot::Center {
+    //         Pivot::TopCenter
+    //     } else {
+    //         pivot
+    //     };
+    //     self.edge_glyphs[pivot.ordinal() as usize] = glyph;
+    // }
 
     pub fn clear_strings(&mut self) {
         self.border_strings.clear();
@@ -245,43 +244,43 @@ impl TerminalBorder {
                 .insert(bounds.bottom_right(), clear_tile.with_char(br));
         }
         if let Some(t) = self.top_glyph() {
-            for xy in bounds
-                .iter_row(bounds.top_index())
-                .skip(1)
-                .take(bounds.width() - 2)
-            {
-                self.tiles.insert(xy, clear_tile.with_char(t));
-            }
+            // for xy in bounds
+            //     .iter_row(bounds.top_index())
+            //     .skip(1)
+            //     .take(bounds.width() - 2)
+            // {
+            //     self.tiles.insert(xy, clear_tile.with_char(t));
+            // }
         }
 
         if let Some(b) = self.bottom_glyph() {
-            for xy in bounds
-                .iter_row(bounds.bottom_index())
-                .skip(1)
-                .take(bounds.width() - 2)
-            {
-                self.tiles.insert(xy, clear_tile.with_char(b));
-            }
+            // for xy in bounds
+            //     .iter_row(bounds.bottom_index())
+            //     .skip(1)
+            //     .take(bounds.width() - 2)
+            // {
+            //     self.tiles.insert(xy, clear_tile.with_char(b));
+            // }
         }
 
         if let Some(l) = self.left_glyph() {
-            for xy in bounds
-                .iter_column(bounds.left_index())
-                .skip(1)
-                .take(bounds.height() - 2)
-            {
-                self.tiles.insert(xy, clear_tile.with_char(l));
-            }
+            // for xy in bounds
+            //     .iter_column(bounds.left_index())
+            //     .skip(1)
+            //     .take(bounds.height() - 2)
+            // {
+            //     self.tiles.insert(xy, clear_tile.with_char(l));
+            // }
         }
 
         if let Some(r) = self.right_glyph() {
-            for xy in bounds
-                .iter_column(bounds.right_index())
-                .skip(1)
-                .take(bounds.height() - 2)
-            {
-                self.tiles.insert(xy, clear_tile.with_char(r));
-            }
+            // for xy in bounds
+            //     .iter_column(bounds.right_index())
+            //     .skip(1)
+            //     .take(bounds.height() - 2)
+            // {
+            //     self.tiles.insert(xy, clear_tile.with_char(r));
+            // }
         }
 
         for s in self.border_strings.iter() {
@@ -305,16 +304,16 @@ impl TerminalBorder {
 
             let side_rect = match s.edge {
                 BorderSide::Top => {
-                    GridRect::new(bounds.top_left().right(1), [bounds.width() - 2, 1])
+                    GridRect::new(bounds.top_left() + IVec2::X, [bounds.width() - 2, 1])
                 }
                 BorderSide::Bottom => {
-                    GridRect::new(bounds.bottom_left().right(1), [bounds.width() - 2, 1])
+                    GridRect::new(bounds.bottom_left() + IVec2::X, [bounds.width() - 2, 1])
                 }
                 BorderSide::Left => {
-                    GridRect::new(bounds.bottom_left().up(1), [1, bounds.height() - 2])
+                    GridRect::new(bounds.bottom_left() + IVec2::Y, [1, bounds.height() - 2])
                 }
                 BorderSide::Right => {
-                    GridRect::new(bounds.bottom_right().up(1), [1, bounds.height() - 2])
+                    GridRect::new(bounds.bottom_right() + IVec2::Y, [1, bounds.height() - 2])
                 }
             };
 
