@@ -2,9 +2,14 @@
 ## [0.18.3] - 2026/04/06
 
 ### Changes
-- Hidden terminals will be ignored by TerminalCamera.
-- Removed dependency on sark_grids and move it's types to this crate. `GridPoint`, `GridSize`, `GridRect`, `PivotedPoint` are deprecated and will be removed by bevy 0.20. `GridPoint` and `GridSize` will be replaced with `impl Into<IVec2>` and `impl Into<UVec2>`. `PivotedPoint` will be replaced with a persistent `Pivot` state on the Terminal that will affect all drawing.
-- Deprecated `TerminalBorder`. `TerminalBorder` will be removed `put_border` will be re-added to the terminal along with persistent `Padding` state that will affect all drawing.
+
+***(Apologies for the various breaking changes, I am trying to simplify some aspects of the library.)***
+
+- Update for bevy 0.19.
+- Hidden terminals will be ignored by `TerminalCamera`.
+- Removed dependency on sark_grids and moved it's types to this crate. `GridPoint`, `GridSize`, `GridRect` and `PivotedPoint` are deprecated and will be removed by bevy 0.20. `GridPoint` and `GridSize` will be replaced with `impl Into<IVec2>` and `impl Into<UVec2>`. `PivotedPoint` will be replaced with a persistent `Pivot` state on the Terminal that will affect all drawing.
+- Deprecated `TerminalBorder`. `TerminalBorder` will be removed and `put_border` will be re-added to the terminal itself along with persistent `Padding` state that will affect all drawing.
+- `Pivot` variant names changed so horizontal axis is always first (IE: `LeftBottom` instead of `BottomLeft`) - a little awkward to write but much easier for my brain to reason about in code.
 
 ## [0.18.2] - 2026/02/02
 

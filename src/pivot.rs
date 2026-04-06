@@ -5,6 +5,9 @@ use bevy::{
     reflect::Reflect,
 };
 
+#[allow(deprecated)]
+use crate::GridPoint;
+
 #[derive(Debug, Default, Reflect, Clone, Copy, PartialEq, Eq)]
 pub enum Pivot {
     LeftBottom, // X right, Y up
@@ -58,6 +61,13 @@ impl Pivot {
     /// Transform a point into the pivot's coordinate space.
     pub fn transform_coordinates(&self, grid_point: impl Into<IVec2>) -> IVec2 {
         grid_point.into() * self.axis()
+    }
+
+    /// Transform a point into the pivot's coordinate space.
+    #[inline]
+    #[allow(deprecated)]
+    pub fn transform_axis(&self, grid_point: impl GridPoint) -> IVec2 {
+        grid_point.to_ivec2() * self.axis()
     }
 
     /// Transform a point from a bottom-left origin to the pivot origin

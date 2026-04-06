@@ -219,8 +219,8 @@ impl TerminalBorder {
         let mut bounds = GridRect::new([0, 0], size);
         bounds.resize_from_pivot(Pivot::LeftCenter, self.has_left_side() as i32);
         bounds.resize_from_pivot(Pivot::RightCenter, self.has_right_side() as i32);
-        bounds.resize_from_pivot(Pivot::TopCenter, self.has_top_side() as i32);
-        bounds.resize_from_pivot(Pivot::BottomCenter, self.has_bottom_side() as i32);
+        bounds.resize_from_pivot(Pivot::CenterTop, self.has_top_side() as i32);
+        bounds.resize_from_pivot(Pivot::CenterBottom, self.has_bottom_side() as i32);
         bounds
     }
 

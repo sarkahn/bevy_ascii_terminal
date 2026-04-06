@@ -23,7 +23,7 @@ fn line_count(mut input: &str, max_len: usize, word_wrap: bool) -> usize {
 /// on it's pivot and length.
 fn hor_pivot_offset(pivot: Pivot, line_len: usize) -> i32 {
     match pivot {
-        Pivot::TopLeft | Pivot::LeftCenter | Pivot::BottomLeft => 0,
+        Pivot::LeftBottom | Pivot::LeftCenter | Pivot::LeftTop => 0,
         _ => -(line_len.saturating_sub(1) as f32 * pivot.normalized().x).round() as i32,
     }
 }
@@ -32,7 +32,7 @@ fn hor_pivot_offset(pivot: Pivot, line_len: usize) -> i32 {
 /// on the pivot.
 fn ver_pivot_offset(string: &str, pivot: Pivot, max_width: usize, word_wrap: bool) -> i32 {
     match pivot {
-        Pivot::TopLeft | Pivot::TopCenter | Pivot::TopRight => 0,
+        Pivot::LeftTop | Pivot::CenterTop | Pivot::RightTop => 0,
         _ => {
             let line_count = line_count(string, max_width, word_wrap);
             (line_count.saturating_sub(1) as f32 * (1.0 - pivot.normalized().y)).round() as i32
@@ -118,7 +118,7 @@ impl<'a> GridStringIterator<'a> {
         formatting: Option<StringFormatting>,
         decoration: Option<StringDecoration>,
     ) -> Self {
-        let pivoted_point: PivotedPoint = local_xy.into().with_default_pivot(Pivot::TopLeft);
+        let pivoted_point: PivotedPoint = local_xy.into().with_default_pivot(Pivot::LeftTop);
         let pivot = pivoted_point.pivot.unwrap();
         let local_xy = pivoted_point.point;
 
@@ -341,10 +341,10 @@ mod tests {
         let string = "A somewhat longer line\nWith a newline or two\nOkay? WHEEEEEE.";
         let line_len = 12;
         let wrap = true;
-        let offset = ver_pivot_offset(string, Pivot::TopLeft, line_len, wrap);
+        let offset = ver_pivot_offset(string, Pivot::LeftTop, line_len, wrap);
         assert_eq!(0, offset);
         assert_eq!(7, line_count(string, 12, wrap));
-        assert_eq!(6, ver_pivot_offset(string, Pivot::BottomLeft, 12, wrap));
+        assert_eq!(6, ver_pivot_offset(string, Pivot::LeftBottom, 12, wrap));
     }
 
     #[test]
@@ -352,9 +352,9 @@ mod tests {
         let string = "A somewhat longer line\nWith a newline or two\nOkay? WHEEEEEE.";
         let line_len = 12;
         let wrap = false;
-        let offset = ver_pivot_offset(string, Pivot::TopLeft, line_len, wrap);
+        let offset = ver_pivot_offset(string, Pivot::LeftTop, line_len, wrap);
         assert_eq!(0, offset);
-        let offset = ver_pivot_offset(string, Pivot::BottomLeft, line_len, wrap);
+        let offset = ver_pivot_offset(string, Pivot::LeftBottom, line_len, wrap);
         assert_eq!(6, line_count(string, line_len, false));
         assert_eq!(5, offset);
     }
@@ -367,7 +367,7 @@ mod tests {
         let iter = GridStringIterator::new(
             string,
             area,
-            [0, 0].pivot(Pivot::TopRight),
+            [0, 0].pivot(Pivot::RightTop),
             Some(StringFormatting {
                 word_wrap: true,
                 ..Default::default()
@@ -421,7 +421,7 @@ mod tests {
     #[test]
     fn leftbot() {
         let string = "LeftBot";
-        let p = [0, 0].pivot(Pivot::BottomLeft);
+        let p = [0, 0].pivot(Pivot::LeftBottom);
         let rect = GridRect::new([-1, 6], [1, 40]);
         let iter = GridStringIterator::new(string, rect, p, None, None);
         let map = make_map(iter);

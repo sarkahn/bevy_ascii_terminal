@@ -56,7 +56,7 @@ fn setup(mut commands: Commands) {
         make_terminal([12, 12], FADED),
         TerminalMeshPivot::TopCenter,
         TerminalBorder::single_line(),
-        TermString("Space to toggle border".to_string(), Pivot::TopCenter),
+        TermString("Space to toggle border".to_string(), Pivot::CenterTop),
     ));
 }
 

@@ -19,19 +19,20 @@ fn setup(mut commands: Commands) {
     commands.spawn(TerminalCamera::new());
 }
 
+#[allow(deprecated)]
 fn update(mut q_term: Query<&mut Terminal>, time: Res<Time>) {
     let mut term = q_term.single_mut().unwrap();
     let size = (time.elapsed_secs().cos() * 20.0) as u32 % 20 + 15;
     term.resize([size, size]);
 
     term.clear();
-    term.put_string([0, 0].pivot(Pivot::TopLeft), "TopL");
-    term.put_string([0, 0].pivot(Pivot::TopCenter), "TopC");
-    term.put_string([0, 0].pivot(Pivot::TopRight), "TopR");
+    term.put_string([0, 0].pivot(Pivot::LeftTop), "TopL");
+    term.put_string([0, 0].pivot(Pivot::CenterTop), "TopC");
+    term.put_string([0, 0].pivot(Pivot::RightTop), "TopR");
     term.put_string([0, 0].pivot(Pivot::LeftCenter), "LefC");
     term.put_string([0, 0].pivot(Pivot::Center), "C");
     term.put_string([0, 0].pivot(Pivot::RightCenter), "RigC");
-    term.put_string([0, 0].pivot(Pivot::BottomLeft), "BotL");
-    term.put_string([0, 0].pivot(Pivot::BottomCenter), "BotC");
-    term.put_string([0, 0].pivot(Pivot::BottomRight), "BotR");
+    term.put_string([0, 0].pivot(Pivot::LeftBottom), "BotL");
+    term.put_string([0, 0].pivot(Pivot::CenterBottom), "BotC");
+    term.put_string([0, 0].pivot(Pivot::RightBottom), "BotR");
 }

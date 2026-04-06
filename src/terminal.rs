@@ -255,7 +255,7 @@ impl Terminal {
         width: usize,
     ) -> impl Iterator<Item = char> + '_ {
         let xy: PivotedPoint = xy.into();
-        let xy = xy.with_default_pivot(Pivot::TopLeft);
+        let xy = xy.with_default_pivot(Pivot::LeftTop);
         let i = self.tile_to_index(xy);
         let remaining_width = (self.width() - i % self.width()).min(width);
         self.tiles[i..i + remaining_width].iter().map(|t| t.glyph)

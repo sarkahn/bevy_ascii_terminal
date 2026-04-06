@@ -2,6 +2,7 @@ pub mod ascii;
 pub mod border;
 pub mod color;
 pub mod padding;
+pub mod pivot;
 pub mod render;
 pub(crate) mod rexpaint;
 pub mod string;
@@ -18,6 +19,7 @@ use bevy::{
 };
 #[allow(deprecated)]
 pub use border::TerminalBorder;
+pub use pivot::Pivot;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
 pub use strings::{StringDecorator, TerminalString};
 pub use terminal::Terminal;
@@ -268,81 +270,81 @@ impl_grid_size!([u32; 2]);
 impl_grid_size!([i32; 2]);
 impl_grid_size!([usize; 2]);
 
-/// A pivot on a 2d sized grid. Can be used to set positions relative to a given
-/// pivot. Each pivot has it's own coordinate space it uses to calculate
-/// the final adjusted position.
-#[derive(Eq, PartialEq, Clone, Copy, Debug)]
-pub enum Pivot {
-    /// Coordinate space: X increases to the right, Y increases downwards.
-    TopLeft,
-    /// Coordinate space: X increases to the right, Y increases downwards.
-    TopCenter,
-    /// Coordinate space: X increases to the left, Y increases downwards.
-    TopRight,
-    /// Coordinate space: X increases to the right, Y increases upwards.
-    LeftCenter,
-    /// Coordinate space: X increases to the left, Y increases upwards.
-    RightCenter,
-    /// Coordinate space: X increases to the right, Y increases upwards.
-    BottomLeft,
-    /// Coordinate space: X increases to the right, Y increases upwards.
-    BottomCenter,
-    /// Coordinate space: X increases to the left, Y increases upwards.
-    BottomRight,
-    /// Coordinate space: X increases to the right, Y increases upwards.
-    Center,
-}
+// /// A pivot on a 2d sized grid. Can be used to set positions relative to a given
+// /// pivot. Each pivot has it's own coordinate space it uses to calculate
+// /// the final adjusted position.
+// #[derive(Eq, PartialEq, Clone, Copy, Debug)]
+// pub enum Pivot {
+//     /// Coordinate space: X increases to the right, Y increases downwards.
+//     TopLeft,
+//     /// Coordinate space: X increases to the right, Y increases downwards.
+//     TopCenter,
+//     /// Coordinate space: X increases to the left, Y increases downwards.
+//     TopRight,
+//     /// Coordinate space: X increases to the right, Y increases upwards.
+//     LeftCenter,
+//     /// Coordinate space: X increases to the left, Y increases upwards.
+//     RightCenter,
+//     /// Coordinate space: X increases to the right, Y increases upwards.
+//     BottomLeft,
+//     /// Coordinate space: X increases to the right, Y increases upwards.
+//     BottomCenter,
+//     /// Coordinate space: X increases to the left, Y increases upwards.
+//     BottomRight,
+//     /// Coordinate space: X increases to the right, Y increases upwards.
+//     Center,
+// }
 
-#[allow(deprecated)]
-impl Pivot {
-    /// Coordinate axis for each pivot, used when transforming a point into
-    /// the pivot's coordinate space.
-    #[inline]
-    pub fn axis(&self) -> IVec2 {
-        match self {
-            Pivot::TopLeft => IVec2::new(1, -1),
-            Pivot::TopRight => IVec2::new(-1, -1),
-            Pivot::Center => IVec2::new(1, 1),
-            Pivot::BottomLeft => IVec2::new(1, 1),
-            Pivot::BottomRight => IVec2::new(-1, 1),
-            Pivot::TopCenter => IVec2::new(1, -1),
-            Pivot::LeftCenter => IVec2::new(1, 1),
-            Pivot::RightCenter => IVec2::new(-1, 1),
-            Pivot::BottomCenter => IVec2::new(1, 1),
-        }
-    }
+// #[allow(deprecated)]
+// impl Pivot {
+//     /// Coordinate axis for each pivot, used when transforming a point into
+//     /// the pivot's coordinate space.
+//     #[inline]
+//     pub fn axis(&self) -> IVec2 {
+//         match self {
+//             Pivot::TopLeft => IVec2::new(1, -1),
+//             Pivot::TopRight => IVec2::new(-1, -1),
+//             Pivot::Center => IVec2::new(1, 1),
+//             Pivot::BottomLeft => IVec2::new(1, 1),
+//             Pivot::BottomRight => IVec2::new(-1, 1),
+//             Pivot::TopCenter => IVec2::new(1, -1),
+//             Pivot::LeftCenter => IVec2::new(1, 1),
+//             Pivot::RightCenter => IVec2::new(-1, 1),
+//             Pivot::BottomCenter => IVec2::new(1, 1),
+//         }
+//     }
 
-    /// The normalized value of this pivot in default coordinate space where
-    /// `[0.0, 0.0]` is the bottom left and `[1.0, 1.0]` is the top right.
-    #[inline]
-    pub fn normalized(&self) -> Vec2 {
-        match self {
-            Pivot::TopLeft => Vec2::new(0.0, 1.0),
-            Pivot::TopRight => Vec2::new(1.0, 1.0),
-            Pivot::Center => Vec2::new(0.5, 0.5),
-            Pivot::BottomLeft => Vec2::new(0.0, 0.0),
-            Pivot::BottomRight => Vec2::new(1.0, 0.0),
-            Pivot::TopCenter => Vec2::new(0.5, 1.0),
-            Pivot::LeftCenter => Vec2::new(0.0, 0.5),
-            Pivot::RightCenter => Vec2::new(1.0, 0.5),
-            Pivot::BottomCenter => Vec2::new(0.5, 0.0),
-        }
-    }
+//     /// The normalized value of this pivot in default coordinate space where
+//     /// `[0.0, 0.0]` is the bottom left and `[1.0, 1.0]` is the top right.
+//     #[inline]
+//     pub fn normalized(&self) -> Vec2 {
+//         match self {
+//             Pivot::TopLeft => Vec2::new(0.0, 1.0),
+//             Pivot::TopRight => Vec2::new(1.0, 1.0),
+//             Pivot::Center => Vec2::new(0.5, 0.5),
+//             Pivot::BottomLeft => Vec2::new(0.0, 0.0),
+//             Pivot::BottomRight => Vec2::new(1.0, 0.0),
+//             Pivot::TopCenter => Vec2::new(0.5, 1.0),
+//             Pivot::LeftCenter => Vec2::new(0.0, 0.5),
+//             Pivot::RightCenter => Vec2::new(1.0, 0.5),
+//             Pivot::BottomCenter => Vec2::new(0.5, 0.0),
+//         }
+//     }
 
-    /// Transform a point into the pivot's coordinate space.
-    #[inline]
-    pub fn transform_point(&self, grid_point: impl GridPoint) -> IVec2 {
-        grid_point.to_ivec2() * self.axis()
-    }
+//     /// Transform a point into the pivot's coordinate space.
+//     #[inline]
+//     pub fn transform_axis(&self, grid_point: impl GridPoint) -> IVec2 {
+//         grid_point.to_ivec2() * self.axis()
+//     }
 
-    /// Calculate the position of a pivot on a sized grid.
-    #[inline]
-    pub fn pivot_position(&self, grid_size: impl GridSize) -> IVec2 {
-        ((grid_size.to_vec2() - 1.0) * self.normalized())
-            .round()
-            .as_ivec2()
-    }
-}
+//     /// Calculate the position of a pivot on a sized grid.
+//     #[inline]
+//     pub fn pivot_position(&self, grid_size: impl GridSize) -> IVec2 {
+//         ((grid_size.to_vec2() - 1.0) * self.normalized())
+//             .round()
+//             .as_ivec2()
+//     }
+// }
 
 /// A grid point that may optionally have a pivot applied to it.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -366,7 +368,7 @@ impl PivotedPoint {
     /// returns the original point if no pivot is applied.
     pub fn calculate(&self, grid_size: impl GridSize) -> IVec2 {
         if let Some(pivot) = self.pivot {
-            pivot.pivot_position(grid_size) + pivot.transform_point(self.point)
+            pivot.pivot_position(grid_size.to_ivec2()) + pivot.transform_axis(self.point)
         } else {
             self.point
         }
@@ -459,14 +461,14 @@ impl GridRect {
     /// Resizes the rect along a given pivot point.
     pub fn resize_from_pivot(&mut self, pivot: Pivot, amount: i32) {
         let p = match pivot {
-            Pivot::TopLeft => self.top_left() + ivec2(-1, 1) * amount,
-            Pivot::TopCenter => self.top_left() + ivec2(0, 1) * amount,
-            Pivot::TopRight => self.top_right() + ivec2(1, 1) * amount,
+            Pivot::LeftTop => self.top_left() + ivec2(-1, 1) * amount,
+            Pivot::CenterTop => self.top_left() + ivec2(0, 1) * amount,
+            Pivot::RightTop => self.top_right() + ivec2(1, 1) * amount,
             Pivot::LeftCenter => self.top_left() + ivec2(-1, 0) * amount,
             Pivot::RightCenter => self.top_right() + ivec2(1, 0) * amount,
-            Pivot::BottomLeft => self.bottom_left() + ivec2(-1, -1) * amount,
-            Pivot::BottomCenter => self.bottom_left() + ivec2(0, -1) * amount,
-            Pivot::BottomRight => self.bottom_right() + ivec2(1, -1) * amount,
+            Pivot::LeftBottom => self.bottom_left() + ivec2(-1, -1) * amount,
+            Pivot::CenterBottom => self.bottom_left() + ivec2(0, -1) * amount,
+            Pivot::RightBottom => self.bottom_right() + ivec2(1, -1) * amount,
             Pivot::Center => self.center(),
         };
         self.envelope_point(p);
@@ -632,13 +634,13 @@ impl GridRect {
 
     /// Retrieve the position of the tile at the given pivot point on the rect.
     pub fn pivot_point(&self, pivot: Pivot) -> IVec2 {
-        self.bottom_left() + pivot.pivot_position(self.size)
+        self.bottom_left() + pivot.pivot_position(self.size.as_ivec2())
     }
 
     /// Retrieve a transformed point from a local pivot position.
     pub fn pivoted_point(&self, xy: impl Into<PivotedPoint>) -> IVec2 {
         let xy: PivotedPoint = xy.into();
-        let pivot = xy.pivot.unwrap_or(Pivot::BottomLeft);
+        let pivot = xy.pivot.unwrap_or(Pivot::LeftBottom);
         let xy = xy.point;
         let origin = self.pivot_point(pivot);
         origin + (xy * pivot.axis())
