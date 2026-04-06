@@ -97,6 +97,7 @@ fn wrap_line(string: &str, max_len: usize, word_wrap: bool) -> Option<(&str, &st
 ///
 /// The iterator will always wrap at newlines and will strip leading and trailing
 /// whitespace past the first line.
+#[deprecated = "GridStringIterator will be removed by bevy 0.20. Terminal::put_string will changed to use persistent pivot and padding state instead"]
 pub struct GridStringIterator<'a> {
     remaining: &'a str,
     rect: GridRect,
@@ -167,6 +168,7 @@ impl<'a> GridStringIterator<'a> {
     }
 }
 
+#[allow(deprecated)]
 impl Iterator for GridStringIterator<'_> {
     type Item = (IVec2, (char, Option<LinearRgba>, Option<LinearRgba>));
 
@@ -201,6 +203,7 @@ impl Iterator for GridStringIterator<'_> {
     }
 }
 
+#[allow(deprecated)]
 #[cfg(test)]
 mod tests {
     use bevy_platform::collections::HashMap;

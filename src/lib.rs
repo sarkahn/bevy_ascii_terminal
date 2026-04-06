@@ -21,7 +21,10 @@ use bevy::{
 pub use border::TerminalBorder;
 pub use pivot::Pivot;
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
-pub use strings::{StringDecorator, TerminalString};
+pub use strings::{
+    TerminalString, TerminalStringBuilder, Token, TokenIterator, wrap_line_count, wrap_string,
+    wrap_tagged_line_count, wrap_tagged_string,
+};
 pub use terminal::Terminal;
 pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;

@@ -57,7 +57,7 @@ fn input(input: Res<ButtonInput<KeyCode>>, mut q_term: Query<&mut TerminalFont>)
 fn update(mut q_term: Query<(&TerminalFont, &mut TerminalBorder), Changed<TerminalFont>>) {
     if let Ok((font, mut border)) = q_term.single_mut() {
         border.clear_strings();
-        border.put_title(font.variant_name().fg(MAROON).delimiters("[]"));
+        border.put_title(font.variant_name().fg(MAROON));
     }
 }
 

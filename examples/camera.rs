@@ -82,7 +82,7 @@ fn draw_grid(term: &mut Terminal, lightness: f32) {
 
 fn put_strings(mut q_term: Query<(&mut Terminal, &TermString)>) {
     for (mut term, string) in &mut q_term {
-        term.put_string([0, 0].pivot(string.1), string.0.as_str().clear_colors());
+        term.put_string([0, 0].pivot(string.1), string.0.as_str());
     }
 }
 
@@ -103,7 +103,7 @@ fn handle_just_pressed(
         for (i, (_, term, string)) in terminals.iter_mut().enumerate() {
             let lightness = if current.0 == i { BRIGHT } else { FADED };
             draw_grid(term, lightness);
-            term.put_string([0, 0].pivot(string.1), string.0.as_str().clear_colors());
+            term.put_string([0, 0].pivot(string.1), string.0.as_str());
         }
     }
 
@@ -144,6 +144,6 @@ fn handle_pressed(
         term.resize((curr_size + size).max(IVec2::ONE).as_uvec2());
         term.clear();
         draw_grid(term, BRIGHT);
-        term.put_string([0, 0].pivot(string.1), string.0.as_str().clear_colors());
+        term.put_string([0, 0].pivot(string.1), string.0.as_str());
     }
 }

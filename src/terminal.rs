@@ -1,5 +1,4 @@
 //! A grid of tiles for rendering colorful ascii.
-
 use bevy::{
     color::{ColorToPacked, LinearRgba},
     math::{IVec2, UVec2},
@@ -8,6 +7,7 @@ use bevy::{
     sprite_render::MeshMaterial2d,
 };
 
+use crate::strings::{StringDecoration, StringFormatting};
 #[allow(deprecated)]
 use crate::{
     GridRect, GridSize, Pivot, PivotedPoint, Tile, ascii,
@@ -215,32 +215,59 @@ impl Terminal {
         string: impl Into<TerminalString<T>>,
     ) {
         let bounds = self.bounds();
-        let ts: TerminalString<T> = string.into();
+        let ts = string.into();
         let clear_tile = self.clear_tile;
-        let clear_colors = ts.decoration.clear_colors;
+        let clear_colors = ts.clear_colors;
+        let colored_spaces = ts.colored_spaces;
+
+        let fg = if let Some(c) = ts.fg_color {
+            Some(c)
+        } else if clear_colors {
+            Some(clear_tile.fg_color)
+        } else {
+            None
+        };
+
+        let bg = if let Some(c) = ts.bg_color {
+            Some(c)
+        } else if clear_colors {
+            Some(clear_tile.bg_color)
+        } else {
+            None
+        };
+
+        #[allow(deprecated)]
         let mut iter = GridStringIterator::new(
             ts.string.as_ref(),
             bounds,
             xy,
-            Some(ts.formatting),
-            Some(ts.decoration),
+            Some(StringFormatting {
+                ignore_spaces: !ts.colored_spaces,
+                word_wrap: ts.word_wrap,
+            }),
+            Some(StringDecoration {
+                fg_color: ts.fg_color,
+                bg_color: ts.bg_color,
+                delimiters: (None, None),
+                clear_colors,
+                parse_tags: ts.parse_tags,
+            }),
         );
-        for (xy, (ch, fg, bg)) in iter.by_ref() {
+        for (xy, (ch, _, _)) in iter.by_ref() {
             if !self.bounds().contains_point(xy) {
                 continue;
             }
             let tile = self.tile_mut(xy);
             tile.glyph = ch;
-            if clear_colors {
-                tile.fg_color = clear_tile.fg_color;
-                tile.bg_color = clear_tile.bg_color;
-            } else {
-                if let Some(col) = fg {
-                    tile.fg_color = col;
-                }
-                if let Some(col) = bg {
-                    tile.bg_color = col;
-                }
+
+            if ch == ' ' && !colored_spaces {
+                continue;
+            }
+            if let Some(col) = fg {
+                tile.fg_color = col;
+            }
+            if let Some(col) = bg {
+                tile.bg_color = col;
             }
         }
     }

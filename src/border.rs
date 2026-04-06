@@ -5,10 +5,11 @@ use bevy::{math::IVec2, prelude::Component, reflect::Reflect};
 use bevy_platform::collections::HashMap;
 use enum_ordinalize::Ordinalize;
 
+use crate::TerminalString;
 #[allow(deprecated)]
 use crate::{
     GridRect, GridSize, Pivot, Tile,
-    strings::{DecoratedString, GridStringIterator, StringDecoration},
+    strings::{GridStringIterator, StringDecoration},
 };
 
 /// A component for drawing a border around a terminal.
@@ -82,7 +83,7 @@ impl TerminalBorder {
     }
 
     pub fn with_title(mut self, title: impl AsRef<str>) -> Self {
-        self.put_title(title);
+        self.put_title(title.as_ref());
         self
     }
 
@@ -197,13 +198,21 @@ impl TerminalBorder {
         edge: BorderSide,
         alignment: f32,
         offset: i32,
-        string: impl Into<DecoratedString<T>>,
+        string: impl Into<TerminalString<T>>,
     ) {
-        let ds: DecoratedString<T> = string.into();
+        //let ds: DecoratedString<T> = string.into();
+        let ts = string.into();
+
         let bs = BorderString {
             edge,
-            string: String::from(ds.string.as_ref()),
-            decoration: ds.decoration,
+            string: ts.string.as_ref().to_string(),
+            decoration: StringDecoration {
+                fg_color: ts.fg_color,
+                bg_color: ts.bg_color,
+                delimiters: (None, None),
+                clear_colors: ts.clear_colors,
+                parse_tags: ts.parse_tags,
+            },
             offset,
             alignment,
         };
@@ -211,7 +220,7 @@ impl TerminalBorder {
     }
 
     /// Write a title to the top left of the border.
-    pub fn put_title<T: AsRef<str>>(&mut self, string: impl Into<DecoratedString<T>>) {
+    pub fn put_title<T: AsRef<str>>(&mut self, string: impl Into<TerminalString<T>>) {
         self.put_string(BorderSide::Top, 0.0, 0, string);
     }
 
