@@ -1,6 +1,7 @@
 //! Terminal component for translating between world positions and terminal
 //! grid coordinates.
 
+use crate::render::RebuildMeshVerts;
 #[allow(deprecated)]
 use crate::{
     GridPoint, Terminal, TerminalMeshWorldScaling,
@@ -11,6 +12,7 @@ use bevy::{
     app::{Plugin, PostUpdate},
     asset::{AssetEvent, Assets},
     ecs::{
+        change_detection::DetectChanges,
         component::Component,
         entity::Entity,
         lifecycle::Add,
@@ -38,6 +40,7 @@ impl Plugin for TerminalTransformPlugin {
         app.add_systems(
             PostUpdate,
             (
+                on_scaling_changed,
                 on_image_load,
                 on_mat_change,
                 on_size_change,
@@ -195,6 +198,21 @@ fn on_border_replace(on_replace: On<Add, TerminalBorder>, mut commands: Commands
     commands
         .entity(on_replace.event().entity)
         .insert(CacheTransformData);
+}
+
+fn on_scaling_changed(
+    mut commands: Commands,
+    scaling: Res<TerminalMeshWorldScaling>,
+    terminals: Query<Entity, With<TerminalMeshPivot>>,
+) {
+    if scaling.is_changed() {
+        for e in &terminals {
+            commands
+                .entity(e)
+                .insert(CacheTransformData)
+                .insert(RebuildMeshVerts);
+        }
+    }
 }
 
 /// Calculate the terminal mesh size and cache the data used when translating

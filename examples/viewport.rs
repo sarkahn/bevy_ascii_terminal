@@ -2,6 +2,7 @@ use bevy::{
     camera::{ScalingMode, Viewport},
     math::ops::powf,
     prelude::*,
+    window::WindowMode,
 };
 use bevy_ascii_terminal::*;
 use enum_ordinalize::Ordinalize;
@@ -41,7 +42,7 @@ fn setup(mut commands: Commands, window: Single<&Window>) {
         TerminalMeshPivot::RightBottom,
     ));
 
-    commands.insert_resource(TerminalMeshWorldScaling::Pixels);
+    commands.insert_resource(TerminalMeshWorldScaling::World);
 }
 
 fn fit_to_terminal(
@@ -73,21 +74,22 @@ fn fit_to_terminal(
         .max(1);
 
     let visible_tiles = vp_size / max_scale;
+    // if let Projection::Orthographic(proj) = proj.as_mut() {
+    //     proj.scaling_mode = ScalingMode::Fixed {
+    //         width: visible_tiles.x as f32,
+    //         height: visible_tiles.y as f32,
+    //     };
+    //     proj.viewport_origin = term_pivot.normalized();
+    // }
+
+    let ortho_size = vp_size.y as f32 / max_scale as f32;
     if let Projection::Orthographic(proj) = proj.as_mut() {
-        proj.scaling_mode = ScalingMode::Fixed {
-            width: visible_tiles.x as f32,
-            height: visible_tiles.y as f32,
+        proj.scaling_mode = ScalingMode::FixedVertical {
+            viewport_height: ortho_size,
         };
         proj.viewport_origin = term_pivot.normalized();
     }
 
-    // let ortho_size = vp_size.y as f32 / scale as f32;
-    // if let Projection::Orthographic(proj) = proj.as_mut() {
-    //     proj.scaling_mode = ScalingMode::FixedVertical {
-    //         viewport_height: ortho_size,
-    //     };
-    //     proj.viewport_origin = term_pivot.normalized();
-    // }
     // let vp = cam.viewport.clone().unwrap();
     // cam.viewport = Some(Viewport {
     //     physical_position: vp.physical_position,
@@ -101,23 +103,47 @@ fn fit_to_terminal(
         format!(
             "VP Size: {}
 Tar size: {}
-Pivot: {:?}",
-            vp_size, target_size, term_pivot
+Pivot: {:?}
+Scaling: {:?}",
+            vp_size, target_size, term_pivot, *mesh_scaling,
         ),
     );
 }
 
 fn controls(
     camera_query: Single<(&mut Camera, &mut Transform, &mut Projection)>,
-    window: Single<&Window>,
+    mut window: Single<&mut Window>,
     input: Res<ButtonInput<KeyCode>>,
     time: Res<Time<Fixed>>,
+    mut world_scaling: ResMut<TerminalMeshWorldScaling>,
     mut term_pivot: Single<&mut TerminalMeshPivot>,
+    mut exit: MessageWriter<AppExit>,
 ) {
     if input.just_pressed(KeyCode::Tab) {
         let mut i = term_pivot.ordinal();
         i = (i + 1).rem_euclid(TerminalMeshPivot::VARIANT_COUNT as i8);
         **term_pivot = TerminalMeshPivot::from_ordinal(i).unwrap();
+    }
+
+    if input.just_pressed(KeyCode::KeyF) {
+        let fullscreen = WindowMode::BorderlessFullscreen(MonitorSelection::Current);
+        let windowed = WindowMode::Windowed;
+        window.mode = match window.mode {
+            WindowMode::Windowed => fullscreen,
+            _ => windowed,
+        };
+    }
+
+    if input.just_pressed(KeyCode::Space) {
+        *world_scaling = match *world_scaling.as_ref() {
+            TerminalMeshWorldScaling::World => TerminalMeshWorldScaling::Pixels,
+            TerminalMeshWorldScaling::Pixels => TerminalMeshWorldScaling::World,
+        };
+    }
+
+    if input.just_pressed(KeyCode::Escape) {
+        exit.write(AppExit::Success);
+        return;
     }
 
     let (mut camera, mut transform, mut projection) = camera_query.into_inner();
