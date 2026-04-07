@@ -108,6 +108,14 @@ impl TerminalMeshPivot {
         }
         .into()
     }
+
+    pub fn centered_vertically(&self) -> bool {
+        matches!(self, Self::LeftCenter | Self::RightCenter | Self::Center)
+    }
+
+    pub fn centered_horizontally(&self) -> bool {
+        matches!(self, Self::CenterBottom | Self::CenterTop | Self::Center)
+    }
 }
 
 /// An optional component to scale terminal tiles after [crate::TerminalMeshWorldScaling] is

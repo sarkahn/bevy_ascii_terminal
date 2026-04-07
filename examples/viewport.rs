@@ -38,7 +38,7 @@ fn setup(mut commands: Commands, window: Single<&Window>) {
     ));
 
     commands.spawn((
-        Terminal::new([24, 10]).with_border(BoxStyle::SINGLE_LINE),
+        Terminal::new([28, 14]).with_border(BoxStyle::SINGLE_LINE),
         TerminalMeshPivot::RightBottom,
     ));
 
@@ -50,64 +50,68 @@ fn fit_to_terminal(
     mesh_scaling: Res<TerminalMeshWorldScaling>,
     mut q_cam: Single<(&mut Camera, &mut Projection, &mut Transform)>,
 ) {
-    let (mut cam, mut proj, mut transform) = q_cam.into_inner();
-    let (mut term, term_pivot) = term.into_inner();
+    let (mut cam, mut proj, mut cam_transform) = q_cam.into_inner();
+    let (mut term, mesh_pivot) = term.into_inner();
 
     let term_size = term.size();
     let vp_size = cam.physical_viewport_size().unwrap();
 
     let pixels_per_tile = 8; // TODO: Derive from texture
 
-    let tiles_fit = (vp_size.as_vec2() / pixels_per_tile as f32)
-        .floor()
-        .as_uvec2();
+    let target_size = (term_size * pixels_per_tile).as_vec2();
 
-    let target_size = match mesh_scaling.as_ref() {
-        TerminalMeshWorldScaling::World => term_size,
-        TerminalMeshWorldScaling::Pixels => term_size * pixels_per_tile,
-    };
-
-    let max_scale = (vp_size.as_vec2() / target_size.as_vec2())
+    let max_scale = (vp_size.as_vec2() / target_size)
         .floor()
         .as_uvec2()
         .min_element()
         .max(1);
 
-    let visible_tiles = vp_size / max_scale;
-    // if let Projection::Orthographic(proj) = proj.as_mut() {
-    //     proj.scaling_mode = ScalingMode::Fixed {
-    //         width: visible_tiles.x as f32,
-    //         height: visible_tiles.y as f32,
-    //     };
-    //     proj.viewport_origin = term_pivot.normalized();
-    // }
+    // let scaled_pixel = pixels_per_tile * max_scale;
+    // let vp_height = if scaled_pixel % 2 == 0 {
+    //     vp_size.y
+    // } else {
+    //     vp_size.y + 1
+    // };
 
-    let ortho_size = vp_size.y as f32 / max_scale as f32;
+    let vp_height = vp_size.y;
+    let ortho_size = match mesh_scaling.as_ref() {
+        TerminalMeshWorldScaling::World => vp_height as f32 / (max_scale * pixels_per_tile) as f32,
+        TerminalMeshWorldScaling::Pixels => vp_height as f32 / max_scale as f32,
+    };
+
     if let Projection::Orthographic(proj) = proj.as_mut() {
         proj.scaling_mode = ScalingMode::FixedVertical {
             viewport_height: ortho_size,
         };
-        proj.viewport_origin = term_pivot.normalized();
+        proj.viewport_origin = mesh_pivot.normalized();
     }
 
-    // let vp = cam.viewport.clone().unwrap();
-    // cam.viewport = Some(Viewport {
-    //     physical_position: vp.physical_position,
-    //     physical_size: target_size,
-    //     depth: vp.depth,
-    // });
+    // if mesh_pivot.centered_horizontally() {
+    //     cam_transform.translation.x = match mesh_scaling.as_ref() {
+    //         TerminalMeshWorldScaling::World => 1.0 / 8.0,
+    //         TerminalMeshWorldScaling::Pixels => 1.0,
+    //     };
+    // } else {
+    //     cam_transform.translation.x = 0.0;
+    // }
 
     term.clear();
-    term.put_string(
-        [0, 0],
-        format!(
-            "VP Size: {}
-Tar size: {}
-Pivot: {:?}
-Scaling: {:?}",
-            vp_size, target_size, term_pivot, *mesh_scaling,
-        ),
-    );
+
+    let mut line = 0;
+    let mut put_line = |s: String| {
+        term.put_string([0, line], s);
+        line += 1;
+    };
+
+    put_line(format!("VP Size:     {}", vp_size));
+    put_line(format!("Term Size:   {}", term_size));
+    put_line(format!("Term Pixels: {}", term_size * pixels_per_tile));
+    put_line(format!("Tar Size:    {}", target_size));
+    put_line(format!("Scale:       {}", max_scale));
+    put_line(format!("Ortho Size:  {}", ortho_size));
+    put_line("".to_string());
+    put_line(format!("Scaling: {:?}", *mesh_scaling));
+    put_line(format!("Pivot:   {:?}", *mesh_pivot));
 }
 
 fn controls(
