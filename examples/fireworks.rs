@@ -28,6 +28,10 @@ struct Particle {
 struct State {
     rockets: Vec<Rocket>,
     particles: Vec<Particle>,
+    term_scale: u32,
+    last_scale: u32,
+    last_size: Vec2,
+    show_text: bool,
 }
 
 #[derive(Reflect, VariantArray)]
@@ -64,11 +68,16 @@ fn main() {
     let state = State {
         rockets: Vec::with_capacity(150),
         particles: Vec::with_capacity(15000),
+        term_scale: 1,
+        last_scale: 0,
+        last_size: Vec2::ZERO,
+        show_text: true,
     };
     App::new()
         .add_plugins((DefaultPlugins, TerminalPlugins))
         .add_systems(Startup, init)
-        .add_systems(FixedUpdate, update)
+        .add_systems(Update, handle_input)
+        .add_systems(FixedUpdate, fixed_update)
         .add_systems(Update, draw)
         .insert_resource(state)
         .run();
@@ -78,7 +87,7 @@ fn spawn_rocket(max: Vec2) -> Rocket {
     let mut rng = rand::thread_rng();
 
     let hor = rng.gen_range(-3.0..=3.0);
-    let ver = rng.gen_range(5.0..=40.0);
+    let ver = rng.gen_range(30.0..=45.0);
 
     let x: f32 = rng.gen_range(0.0..=max.x);
     let y: f32 = 0.0;
@@ -96,7 +105,7 @@ fn spawn_rocket(max: Vec2) -> Rocket {
 fn explode(particles: &mut Vec<Particle>, xy: Vec2, up_vel: f32, base_color: LinearRgba) {
     let mut rng = rand::thread_rng();
 
-    let count = rng.gen_range(30..=80);
+    let count = rng.gen_range(30..=160);
     let rot = rng.gen_range(0.0..=TAU);
 
     let shape = Shape::VARIANTS.choose(&mut rng).unwrap();
@@ -157,23 +166,19 @@ fn explode(particles: &mut Vec<Particle>, xy: Vec2, up_vel: f32, base_color: Lin
 }
 
 fn init(mut commands: Commands) {
-    commands.spawn(Terminal::new([80, 50]).with_string([0, 0], "Hello world"));
+    commands.spawn(Terminal::new([120, 70]));
     commands.spawn(TerminalCamera::new());
 }
 
-fn update(
+fn handle_input(
     mut exit: MessageWriter<AppExit>,
     mut window: Single<&mut Window>,
     input: Res<ButtonInput<KeyCode>>,
     mut state: ResMut<State>,
-    time: Res<Time>,
-    term: Single<&Terminal>,
+    mut term: Single<&mut Terminal>,
 ) {
-    let mut rng = rand::thread_rng();
-
-    if rng.gen_range(0..=100) < 6 {
-        let r = spawn_rocket(term.size().as_vec2());
-        state.rockets.push(r);
+    if input.just_pressed(KeyCode::KeyH) {
+        state.show_text = !state.show_text;
     }
 
     if input.just_pressed(KeyCode::KeyF) {
@@ -187,6 +192,31 @@ fn update(
     if input.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
         return;
+    }
+
+    if input.just_pressed(KeyCode::Equal) {
+        state.term_scale += 1;
+    }
+
+    if input.just_pressed(KeyCode::Minus) {
+        state.term_scale = state.term_scale.max(2) - 1;
+    }
+
+    if state.last_size != window.size() || state.last_scale != state.term_scale {
+        state.last_size = window.size();
+        state.last_scale = state.term_scale;
+
+        let max = (window.size() / (Vec2::new(8.0, 8.0) * state.term_scale as f32)).floor();
+        term.resize(max.as_uvec2());
+    }
+}
+
+fn fixed_update(mut state: ResMut<State>, time: Res<Time>, term: Single<&Terminal>) {
+    let mut rng = rand::thread_rng();
+
+    if rng.gen_range(0..=100) < 6 {
+        let r = spawn_rocket(term.size().as_vec2());
+        state.rockets.push(r);
     }
 
     let dt = time.delta_secs();
@@ -278,5 +308,20 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>) {
         };
         t.glyph = if r.vel.y >= 0.0 { '^' } else { 'v' };
         t.fg_color = r.color;
+    }
+
+    if state.show_text {
+        term.set_pivot(Pivot::LeftTop);
+
+        #[rustfmt::skip]
+        let keys_string = format!(
+"[<fg={0}>+/-</fg>]: Zoom
+[<fg={0}>H</fg>]: Toggle text
+[<fg={0}>F</fg>]: Toggle fullscreen",
+"dodger_blue" );
+        term.put_string([0, 0], keys_string);
+
+        term.set_pivot(Pivot::RightTop);
+        term.put_string([0, 0], format!("Particles: {}", state.particles.len()));
     }
 }
