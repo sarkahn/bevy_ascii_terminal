@@ -5,10 +5,9 @@ use bevy::math::ops::powf;
 use bevy::{prelude::*, window::WindowMode};
 use bevy_ascii_terminal::*;
 
+use enum_ordinalize::Ordinalize;
 use rand::Rng;
 use rand::seq::SliceRandom;
-use strum::VariantArray;
-use strum_macros::VariantArray;
 
 struct Rocket {
     color: LinearRgba,
@@ -34,7 +33,7 @@ struct State {
     show_text: bool,
 }
 
-#[derive(Reflect, VariantArray)]
+#[derive(Reflect, Ordinalize)]
 enum Shape {
     Ring,
     DoubleRing,

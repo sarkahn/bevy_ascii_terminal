@@ -218,6 +218,7 @@ fn cache_transform_data(
             Changed<Transform>,
             Changed<TerminalFont>,
             Changed<TerminalBorder>,
+            Changed<TerminalMeshPivot>,
             With<CacheTransformData>,
         )>,
     >,
@@ -263,14 +264,14 @@ fn cache_transform_data(
             let bottom = border.has_bottom_side() as i32;
 
             match pivot {
-                TerminalMeshPivot::TopLeft => [left, -top],
-                TerminalMeshPivot::TopCenter => [0, -top],
-                TerminalMeshPivot::TopRight => [-right, -top],
+                TerminalMeshPivot::LeftTop => [left, -top],
+                TerminalMeshPivot::CenterTop => [0, -top],
+                TerminalMeshPivot::RightTop => [-right, -top],
                 TerminalMeshPivot::LeftCenter => [left, 0],
                 TerminalMeshPivot::RightCenter => [-right, 0],
-                TerminalMeshPivot::BottomLeft => [left, bottom],
-                TerminalMeshPivot::BottomCenter => [0, bottom],
-                TerminalMeshPivot::BottomRight => [-right, bottom],
+                TerminalMeshPivot::LeftBottom => [left, bottom],
+                TerminalMeshPivot::CenterBottom => [0, bottom],
+                TerminalMeshPivot::RightBottom => [-right, bottom],
                 TerminalMeshPivot::Center => [0, 0],
             }
         } else {

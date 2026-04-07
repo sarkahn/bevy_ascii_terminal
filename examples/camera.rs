@@ -45,17 +45,17 @@ fn setup(mut commands: Commands) {
 
     commands.spawn((
         make_terminal([10, 10], BRIGHT),
-        TerminalMeshPivot::BottomRight,
+        TerminalMeshPivot::RightBottom,
         TermString("WASD to change size".to_string()),
     ));
     commands.spawn((
         make_terminal([10, 10], FADED),
-        TerminalMeshPivot::BottomLeft,
+        TerminalMeshPivot::LeftBottom,
         TermString("Tab to change active terminal".to_string()),
     ));
     commands.spawn((
         make_terminal([12, 12], FADED),
-        TerminalMeshPivot::TopCenter,
+        TerminalMeshPivot::CenterTop,
         TermString("Space to toggle border".to_string()),
     ));
 }

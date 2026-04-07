@@ -1,8 +1,7 @@
 use bevy::{
     app::{First, Plugin},
     asset::{AssetEvent, Assets},
-    camera::{Camera, Projection, ScalingMode, Viewport},
-    camera::visibility::InheritedVisibility,
+    camera::{Camera, Projection, ScalingMode, Viewport, visibility::InheritedVisibility},
     ecs::{
         component::Component,
         entity::Entity,

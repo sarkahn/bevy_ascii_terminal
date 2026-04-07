@@ -18,9 +18,11 @@ use bevy::{
     math::{IVec2, Vec2},
     mesh::{Indices, Mesh, MeshVertexAttribute, VertexAttributeValues},
     prelude::{Mesh2d, On},
+    reflect::Reflect,
     render::render_resource::{PrimitiveTopology, VertexFormat},
     sprite_render::MeshMaterial2d,
 };
+use enum_ordinalize::Ordinalize;
 
 #[allow(deprecated)]
 use crate::{Terminal, Tile, border::TerminalBorder, transform::TerminalTransform};
@@ -75,18 +77,18 @@ pub struct RebuildMeshVerts;
 /// not overlap.
 ///
 /// Defaults to bottom left.
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug, Reflect, Ordinalize)]
 pub enum TerminalMeshPivot {
-    TopLeft,
-    TopCenter,
-    TopRight,
+    LeftTop,
+    CenterTop,
+    RightTop,
     LeftCenter,
     Center,
     RightCenter,
     #[default]
-    BottomLeft,
-    BottomCenter,
-    BottomRight,
+    LeftBottom,
+    CenterBottom,
+    RightBottom,
 }
 
 impl TerminalMeshPivot {
@@ -94,15 +96,15 @@ impl TerminalMeshPivot {
     /// and 1 is the top/right.
     pub fn normalized(&self) -> Vec2 {
         match self {
-            Self::TopLeft => [0., 1.],
-            Self::TopCenter => [0.5, 1.],
-            Self::TopRight => [1., 1.],
+            Self::LeftTop => [0., 1.],
+            Self::CenterTop => [0.5, 1.],
+            Self::RightTop => [1., 1.],
             Self::LeftCenter => [0., 0.5],
             Self::Center => [0.5, 0.5],
             Self::RightCenter => [1., 0.5],
-            Self::BottomLeft => [0., 0.],
-            Self::BottomCenter => [0.5, 0.],
-            Self::BottomRight => [1., 0.],
+            Self::LeftBottom => [0., 0.],
+            Self::CenterBottom => [0.5, 0.],
+            Self::RightBottom => [1., 0.],
         }
         .into()
     }

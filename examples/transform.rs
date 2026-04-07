@@ -21,15 +21,15 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands.spawn((
         Terminal::new([26, 10]).with_border(BoxStyle::SINGLE_LINE),
-        TerminalMeshPivot::BottomLeft,
+        TerminalMeshPivot::LeftBottom,
     ));
     commands.spawn((
         Terminal::new([22, 8]).with_border(BoxStyle::SINGLE_LINE),
-        TerminalMeshPivot::BottomRight,
+        TerminalMeshPivot::RightBottom,
     ));
     commands.spawn((
         Terminal::new([24, 10]).with_border(BoxStyle::SINGLE_LINE),
-        TerminalMeshPivot::TopCenter,
+        TerminalMeshPivot::CenterTop,
     ));
     commands.spawn(TerminalCamera::new());
 }

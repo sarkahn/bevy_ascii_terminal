@@ -785,6 +785,9 @@ impl Terminal {
 
     #[allow(deprecated)]
     pub fn resize(&mut self, new_size: impl GridSize) {
+        if new_size.to_uvec2() == self.size {
+            return;
+        }
         let new_size = new_size.to_uvec2().max(UVec2::new(2, 2));
         self.tiles = vec![self.clear_tile; new_size.tile_count()];
         self.size = new_size;

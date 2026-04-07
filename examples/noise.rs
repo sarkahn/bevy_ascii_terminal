@@ -64,10 +64,10 @@ fn main() {
 pub struct ControlsTerminal;
 
 fn setup(mut commands: Commands) {
-    commands.spawn((Terminal::new([80, 60]), TerminalMeshPivot::TopLeft));
+    commands.spawn((Terminal::new([80, 60]), TerminalMeshPivot::LeftTop));
     commands.spawn((
         Terminal::new([30, 30]),
-        TerminalMeshPivot::TopRight,
+        TerminalMeshPivot::RightTop,
         ControlsTerminal,
     ));
     commands.spawn(TerminalCamera::new());
