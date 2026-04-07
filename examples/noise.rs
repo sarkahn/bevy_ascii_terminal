@@ -148,10 +148,7 @@ fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, contr
         term.put_string([0, i + 5], control_string.as_str());
 
         if i == controls.current_control {
-            term.put_string(
-                [control_string.len() + 1, i + 5],
-                "<--".fg(LinearRgba::GREEN),
-            );
+            term.put_string([control_string.len() + 1, i + 5], "<fg=green>/<--"); // Note the escape character for left brace
         }
     }
 }

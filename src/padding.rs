@@ -1,10 +1,14 @@
-use bevy::{
-    //color::LinearRgba,
-    //math::{IVec2, ivec2},
-    reflect::Reflect,
-};
+use bevy::{color::LinearRgba, reflect::Reflect};
 
-#[derive(Debug, Reflect, Clone, Copy, Default)]
+#[derive(Default, Debug, Copy, Clone, Reflect)]
+pub enum ColorWrite {
+    /// Set a tile to the terminal's clear tile color.
+    #[default]
+    Clear,
+    Set(LinearRgba),
+}
+
+#[derive(Debug, Reflect, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Padding {
     pub left: usize,
     pub top: usize,
@@ -26,20 +30,6 @@ impl Padding {
         right: 0,
         bottom: 0,
     };
-
-    // pub fn pivot_offset(&self, pivot: Pivot) -> IVec2 {
-    //     match pivot {
-    //         Pivot::LeftBottom => ivec2(self.left as i32, self.bottom as i32),
-    //         Pivot::LeftCenter => ivec2(self.left as i32, self.bottom as i32),
-    //         Pivot::LeftTop => ivec2(self.left as i32, -(self.top as i32)),
-    //         _ => todo!(), // Pivot::CenterBottom => ivec2(self.left as i32, self.bottom as i32),
-    //                       // Pivot::Center => ivec2(self.left as i32, self.bottom as i32),
-    //                       // Pivot::CenterTop => ivec2(self.left as i32, self.bottom as i32),
-    //                       // Pivot::RightBottom => ivec2(self.left as i32, self.bottom as i32),
-    //                       // Pivot::RightCenter => ivec2(self.left as i32, self.bottom as i32),
-    //                       // Pivot::RightTop => ivec2(self.left as i32, self.bottom as i32),
-    //     }
-    // }
 }
 
 #[derive(Debug, Copy, Clone, Reflect)]
@@ -53,9 +43,9 @@ pub struct BoxStyle {
     pub bottom_left: char,
     pub bottom_center: char,
     pub bottom_right: char,
-    //pub fg_color: Option<ColorWrite>,
-    //pub bg_color: Option<ColorWrite>,
-    /// Reset the padding when writing - only used in [crate::Terminal::put_border]
+    pub fg_color: Option<ColorWrite>,
+    pub bg_color: Option<ColorWrite>,
+    // Reset the padding when writing - only used in [crate::Terminal::put_border]
     pub reset_padding: bool,
 }
 
@@ -71,8 +61,8 @@ impl Default for BoxStyle {
             bottom_left: Default::default(),
             bottom_center: Default::default(),
             bottom_right: Default::default(),
-            // fg_color: Some(ColorWrite::Clear),
-            // bg_color: Some(ColorWrite::Clear),
+            fg_color: Some(ColorWrite::Clear),
+            bg_color: Some(ColorWrite::Clear),
             reset_padding: true,
         }
     }
@@ -163,8 +153,8 @@ impl BoxStyle {
             bottom_left,
             bottom_center,
             bottom_right,
-            //fg_color: Some(ColorWrite::Clear),
-            //bg_color: Some(ColorWrite::Clear),
+            fg_color: Some(ColorWrite::Clear),
+            bg_color: Some(ColorWrite::Clear),
             reset_padding: true,
         }
     }
@@ -173,37 +163,37 @@ impl BoxStyle {
     pub const DOUBLE_LINE: BoxStyle = BoxStyle::from_string("╔═╗║ ║╚═╝");
     pub const ASCII: BoxStyle = BoxStyle::from_string("+-+| |+-+");
 
-    // /// Set the foreground colors on border tiles to the terminal's clear tile color
-    // pub fn clear_fg(mut self) -> Self {
-    //     self.fg_color = Some(ColorWrite::Clear);
-    //     self
-    // }
+    /// Set the foreground colors on border tiles to the terminal's clear tile color
+    pub fn clear_fg(mut self) -> Self {
+        self.fg_color = Some(ColorWrite::Clear);
+        self
+    }
 
-    // /// Set the background colors on border tiles to the terminal's clear tile color
-    // pub fn clear_bg(mut self) -> Self {
-    //     self.bg_color = Some(ColorWrite::Clear);
-    //     self
-    // }
+    /// Set the background colors on border tiles to the terminal's clear tile color
+    pub fn clear_bg(mut self) -> Self {
+        self.bg_color = Some(ColorWrite::Clear);
+        self
+    }
 
-    // pub fn set_fg(mut self, col: LinearRgba) -> Self {
-    //     self.fg_color = Some(ColorWrite::Set(col));
-    //     self
-    // }
+    pub fn with_fg_color(mut self, col: LinearRgba) -> Self {
+        self.fg_color = Some(ColorWrite::Set(col));
+        self
+    }
 
-    // pub fn set_bg(mut self, col: LinearRgba) -> Self {
-    //     self.bg_color = Some(ColorWrite::Set(col));
-    //     self
-    // }
+    pub fn with_bg_color(mut self, col: LinearRgba) -> Self {
+        self.bg_color = Some(ColorWrite::Set(col));
+        self
+    }
 
-    // pub fn dont_clear_fg(mut self) -> Self {
-    //     self.fg_color = None;
-    //     self
-    // }
+    pub fn dont_clear_fg(mut self) -> Self {
+        self.fg_color = None;
+        self
+    }
 
-    // pub fn dont_clear_bg(mut self) -> Self {
-    //     self.bg_color = None;
-    //     self
-    // }
+    pub fn dont_clear_bg(mut self) -> Self {
+        self.bg_color = None;
+        self
+    }
 
     /// When used with put_border this will prevent the terminal padding
     /// from being overwritten

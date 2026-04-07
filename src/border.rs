@@ -5,12 +5,9 @@ use bevy::{math::IVec2, prelude::Component, reflect::Reflect};
 use bevy_platform::collections::HashMap;
 use enum_ordinalize::Ordinalize;
 
-use crate::TerminalString;
 #[allow(deprecated)]
-use crate::{
-    GridRect, GridSize, Pivot, Tile,
-    strings::{GridStringIterator, StringDecoration},
-};
+use crate::{GridRect, GridSize, Pivot, Tile};
+use crate::{TerminalString, color};
 
 /// A component for drawing a border around a terminal.
 ///
@@ -206,13 +203,6 @@ impl TerminalBorder {
         let bs = BorderString {
             edge,
             string: ts.string.as_ref().to_string(),
-            decoration: StringDecoration {
-                fg_color: ts.fg_color,
-                bg_color: ts.bg_color,
-                delimiters: (None, None),
-                clear_colors: ts.clear_colors,
-                parse_tags: ts.parse_tags,
-            },
             offset,
             alignment,
         };
@@ -328,19 +318,9 @@ impl TerminalBorder {
                 }
             };
 
-            for (p, (ch, fg, bg)) in
-                GridStringIterator::new(&s.string, side_rect, offset, None, Some(s.decoration))
-            {
-                // decoration.clear_colors is ignored in borders since we don't have
-                // an existing tile to work from.
-                self.tiles.insert(
-                    p,
-                    Tile {
-                        glyph: ch,
-                        fg_color: fg.unwrap_or(clear_tile.fg_color),
-                        bg_color: bg.unwrap_or(clear_tile.bg_color),
-                    },
-                );
+            for (ch, p) in s.string.chars().zip(side_rect.iter_points()) {
+                self.tiles
+                    .insert(p + offset, Tile::new(ch, color::WHITE, color::BLACK));
             }
         }
     }
@@ -363,7 +343,6 @@ pub enum BorderSide {
 pub struct BorderString {
     pub edge: BorderSide,
     pub string: String,
-    pub decoration: StringDecoration,
     pub offset: i32,
     pub alignment: f32,
 }

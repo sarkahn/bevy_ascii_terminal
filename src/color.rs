@@ -1,4 +1,4 @@
-//! Set of [LinearRgba] colors that can be used in a const context.
+//! Utilities for dealing with bevy colors.
 
 use bevy::color::LinearRgba;
 
@@ -7,6 +7,15 @@ pub const fn hex_color(hex: u32) -> LinearRgba {
     let g = (hex >> 8) & 0xff;
     let b = hex & 0xff;
     LinearRgba::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0)
+}
+
+pub const fn from_bytes(r: u8, g: u8, b: u8, a: u8) -> LinearRgba {
+    LinearRgba {
+        red: r as f32 / 255.0,
+        green: g as f32 / 255.0,
+        blue: b as f32 / 255.0,
+        alpha: a as f32 / 255.0,
+    }
 }
 
 pub const ALICE_BLUE: LinearRgba = hex_color(0xF0F8FF);

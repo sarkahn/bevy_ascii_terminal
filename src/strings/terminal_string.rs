@@ -1,38 +1,26 @@
-//! Utilities  for writing formatted/decorated strings to the terminal
-//! without any extra allocations.
-
+//! Utilities for customizing terminal strings.
 use bevy::color::LinearRgba;
 
-/// A string with optional formatting and tags.
-///
-/// `dont_word_wrap`: Disable word wrapping, which is enabled by default for
-/// terminal strings.
-///
-/// `dont_clear_colors`: The existing colors in the terminal won't be changed,
-/// only the characters from the string will be written.
-///
-/// `bg` and `fg`: Set the background and/or foreground colors of the string.
-/// These will override clear colors if set.
-///
-/// `dont_parse_tags`: Disable tag parsing which is enabled by default for
-/// terminal strings. Tag parsing doesn't allocate but it isn't free.
+/// A string wrapper for customizing how strings are written to the terminal.
 #[derive(Debug, Clone)]
 pub struct TerminalString<T> {
     pub string: T,
-    /// Prevent splitting words between lines. Defaults to true
+    /// Prevent splitting words between lines. Defaults to true.
     pub word_wrap: bool,
-    /// Parse tags in the string before writing. This doesn't allocate but it
-    /// isn't free. Defaults to true
+    /// Parse tags in the string before writing. See [] Defaults to true.
     pub parse_tags: bool,
-    /// Whether or not to set the string colors to the terminal's clear color.
-    /// This will be overridden by [Self::fg_color] and [Self::bg_color]
-    /// if they are set.
+    /// Set string colors to the terminal's clear color. Defaults to true, but
+    /// will be overridden by [Self::fg_color] or [Self::bg_color] if they are set.
     pub clear_colors: bool,
-    /// If true then colors will be written to spaces in the string
+    /// Write colors to the spaces in the string. Defaults to true.
     pub colored_spaces: bool,
-    /// Set the foreground color for the string. Will override clear colors if set.
+    /// Set the foreground color for the string.
+    /// Will override [Self::clear_colors] if set.
+    /// This setting is ignored for tagged strings.
     pub fg_color: Option<LinearRgba>,
-    /// Set the background colors for the string. Will override clear colors if set.
+    /// Set the background color for the string.
+    /// Will override [Self::clear_colors] if set.
+    /// This setting is ignored for tagged strings.
     pub bg_color: Option<LinearRgba>,
 }
 
@@ -40,20 +28,17 @@ impl<T: AsRef<str> + Default> Default for TerminalString<T> {
     fn default() -> Self {
         Self {
             string: Default::default(),
-
             word_wrap: true,
             clear_colors: true,
-
             parse_tags: true,
             colored_spaces: true,
-
             fg_color: Default::default(),
             bg_color: Default::default(),
         }
     }
 }
 
-/// A trait for creating a [DecoratedString].
+/// A trait for creating a [TerminalString]
 pub trait TerminalStringBuilder<T: AsRef<str>> {
     /// Sets the foreground color for string tiles. Will override clear colors if set.
     fn fg(self, color: impl Into<LinearRgba>) -> TerminalString<T>;

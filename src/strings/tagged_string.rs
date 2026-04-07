@@ -1,3 +1,4 @@
+//! Utilities for wrapping and parsing tagged strings without allocations
 use crate::color;
 use anyhow::{Result, anyhow};
 use bevy::{color::LinearRgba, math::IVec2};
@@ -7,6 +8,7 @@ use bevy::{color::LinearRgba, math::IVec2};
 pub enum Token<'a> {
     Text(&'a str),
     Space,
+    Escaped(char),
     Newline,
     /// <fg=COLOR> Color + text of color from tag (either name or hex string)
     FgStart(LinearRgba, &'a str),
@@ -61,9 +63,10 @@ impl<'a> Iterator for TokenIterator<'a> {
         if let Some(rem) = remaining.strip_prefix("/<") {
             self.remaining = rem;
             self.position.x += 2;
-            return Some(Ok(Token::Text("<")));
+            return Some(Ok(Token::Escaped('<')));
         }
 
+        // Escape handled, process / as normal text
         if let Some(rem) = remaining.strip_prefix("/") {
             self.remaining = rem;
             self.position.x += 1;
@@ -146,6 +149,7 @@ impl<'a> Iterator for TokenIterator<'a> {
             )));
         }
 
+        // Should be impossible to get here
         Some(Err(anyhow::anyhow!(
             "Unknown tag {} at {}",
             tag,
@@ -154,7 +158,9 @@ impl<'a> Iterator for TokenIterator<'a> {
     }
 }
 
-/// Returns the wrapped string, character count (minus tags), and remaining string
+/// Wrap a tagged string. Returns (wrapped, line width minus tags, remaining)
+/// This doesn't strip the tags but is used to pre-wrap the tagged string into
+/// lines and provide correct line width before parsing
 pub fn wrap_tagged_string(
     input: &str,
     max_len: usize,
@@ -206,6 +212,10 @@ pub fn wrap_tagged_string(
                 byte_count += '\n'.len_utf8();
                 break;
             }
+            Token::Escaped(ch) => {
+                byte_count += 1 + ch.len_utf8(); // / + escape character
+                char_count += 1;
+            }
             Token::FgStart(_, name) => byte_count += 5 + name.len(), // <fg=> + name
             Token::BgStart(_, name) => byte_count += 5 + name.len(), // <bg=> + name
             Token::FgEnd | Token::BgEnd => byte_count += 5,          // </fg>
@@ -220,6 +230,7 @@ pub fn wrap_tagged_string(
     Ok((wrapped, char_count, remaining))
 }
 
+/// The line count of a wrapped tagged string
 pub fn wrap_tagged_line_count(input: &str, max_len: usize, word_wrap: bool) -> Result<usize> {
     if input.is_empty() {
         return Ok(0);
@@ -233,8 +244,9 @@ pub fn wrap_tagged_line_count(input: &str, max_len: usize, word_wrap: bool) -> R
     Ok(count)
 }
 
+/// Wrap an untagged string. Returns (wrapped, remaining)
 pub fn wrap_string(input: &str, max_len: usize, wrap: bool) -> (&str, &str) {
-    // Find the byte index of the max_len-th character boundary
+    // Find the byte index of the max_length character boundary
     let max_byte = input
         .char_indices()
         .nth(max_len)
@@ -270,7 +282,7 @@ pub fn wrap_string(input: &str, max_len: usize, wrap: bool) -> (&str, &str) {
     (&input[..max_byte], &input[max_byte..])
 }
 
-/// Precalculate the number of vertical lines a wrapped string will occupy.
+/// Calculate the number of vertical lines a wrapped string will occupy.
 pub fn wrap_line_count(input: &str, max_len: usize, word_wrap: bool) -> usize {
     let mut count = 1;
     let mut res = wrap_string(input, max_len, word_wrap);
@@ -573,5 +585,16 @@ Also this line in particular is particularly long!"
         let string = "Hello, how are";
         let count = wrap_line_count(string, 10, true);
         assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn escape_character_doesnt_affect_wrap() -> Result<()> {
+        let input = "<fg=green>/<--";
+        let (wrapped, count, _) = wrap_tagged_string(input, 20, true)?;
+
+        assert_eq!(3, count);
+        assert_eq!("<fg=green>/<--", wrapped);
+
+        Ok(())
     }
 }

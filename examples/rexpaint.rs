@@ -12,9 +12,11 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     #[allow(deprecated)]
-    commands.spawn((
-        Terminal::from_rexpaint_file("assets/hello_rexpaint.xp").unwrap(),
-        TerminalBorder::single_line(),
-    ));
+    commands.spawn(
+        Terminal::from_rexpaint_file("assets/hello_rexpaint.xp")
+            .unwrap()
+            .with_border(BoxStyle::SINGLE_LINE)
+            .with_title(" [<fg=4d65b4>Rexpaint</fg>]"),
+    );
     commands.spawn(TerminalCamera::new());
 }

@@ -2,14 +2,24 @@
 ## [0.18.3] - 2026/04/06
 
 ### Changes
+- Update for bevy 0.19.
+- `put_string` can now use embedded color tags to color strings as they are written to the terminal. The examples have been updated to use tagged strings. You can use `dont_parse_tags` on the string to prevent parsing. 
+- Merged pr so hidden terminals will be ignored by `TerminalCamera`.
+- `Pivot` variant names changed so horizontal axis is always first (IE: `LeftBottom` instead of `BottomLeft`) - a little awkward to write but much easier for my brain to reason about in code.
+- Removed "grid_poitns" example
+- Added "fireworks" example.
+
+### Deprecations
 
 ***(Apologies for the various breaking changes, I am trying to simplify some aspects of the library.)***
 
-- Update for bevy 0.19.
-- Hidden terminals will be ignored by `TerminalCamera`.
-- Removed dependency on sark_grids and moved it's types to this crate. `GridPoint`, `GridSize`, `GridRect` and `PivotedPoint` are deprecated and will be removed by bevy 0.20. `GridPoint` and `GridSize` will be replaced with `impl Into<IVec2>` and `impl Into<UVec2>`. `PivotedPoint` will be replaced with a persistent `Pivot` state on the Terminal that will affect all drawing.
-- Deprecated `TerminalBorder`. `TerminalBorder` will be removed and `put_border` will be re-added to the terminal itself along with persistent `Padding` state that will affect all drawing.
-- `Pivot` variant names changed so horizontal axis is always first (IE: `LeftBottom` instead of `BottomLeft`) - a little awkward to write but much easier for my brain to reason about in code.
+- Removed dependency on sark_grids and moved it's types to this crate. 
+- `GridPoint`, `GridSize`, `GridRect` are deprecated and will be removed by bevy 0.20. `GridPoint` and `GridSize` will be replaced with `impl Into<IVec2>` and `impl Into<UVec2>`. 
+- `PivotedPoint` is deprecated and will be removed by bevy 0.20. It will be replaced with `set_pivot` to set a persistent state on the Terminal that will affect all drawing. Examples have been updated to use `set_pivot`.
+- Deprecated `TerminalBorder`. `TerminalBorder` will be removed in favor of `put_border` along with persistent `Padding` state on the terminal itself that will affect all drawing.
+- Removed "grid_position" example
+- `StringDecoration` and `StringFormatting` have been removed, all functionality was moved into `TerminalString`.
+- `GridStringIterator` was removed, it's functionality has been moved to `strings::tagged_string`.
 
 ## [0.18.2] - 2026/02/02
 
