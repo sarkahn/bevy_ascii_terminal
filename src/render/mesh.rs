@@ -79,16 +79,16 @@ pub struct RebuildMeshVerts;
 /// Defaults to bottom left.
 #[derive(Component, Default, Debug, Reflect, Ordinalize)]
 pub enum TerminalMeshPivot {
-    LeftTop,
-    CenterTop,
-    RightTop,
-    LeftCenter,
-    Center,
-    RightCenter,
     #[default]
     LeftBottom,
     CenterBottom,
     RightBottom,
+    LeftCenter,
+    Center,
+    RightCenter,
+    LeftTop,
+    CenterTop,
+    RightTop,
 }
 
 impl TerminalMeshPivot {
@@ -96,14 +96,14 @@ impl TerminalMeshPivot {
     /// and 1 is the top/right.
     pub fn normalized(&self) -> Vec2 {
         match self {
+            Self::LeftBottom => [0., 0.],
+            Self::CenterBottom => [0.5, 0.],
             Self::LeftTop => [0., 1.],
             Self::CenterTop => [0.5, 1.],
             Self::RightTop => [1., 1.],
             Self::LeftCenter => [0., 0.5],
             Self::Center => [0.5, 0.5],
             Self::RightCenter => [1., 0.5],
-            Self::LeftBottom => [0., 0.],
-            Self::CenterBottom => [0.5, 0.],
             Self::RightBottom => [1., 0.],
         }
         .into()

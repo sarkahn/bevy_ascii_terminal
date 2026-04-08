@@ -9,6 +9,7 @@ use bevy::{
         system::{Query, Res, ResMut},
     },
     image::{Image, ImageLoaderSettings, ImageSampler},
+    math::UVec2,
     prelude::Plugin,
     reflect::{Reflect, enums::Enum},
     sprite_render::MeshMaterial2d,
