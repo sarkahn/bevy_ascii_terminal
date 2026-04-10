@@ -1,7 +1,8 @@
 use std::f32;
 use std::f32::consts::TAU;
+use std::ops::RangeInclusive;
 
-use bevy::math::ops::powf;
+use bevy::math::ops::{powf, sin};
 use bevy::{prelude::*, window::WindowMode};
 use bevy_ascii_terminal::*;
 
@@ -23,10 +24,16 @@ struct Particle {
     life: f32,
 }
 
+struct Star {
+    pos: IVec2,
+    phase: f32,
+}
+
 #[derive(Resource, Default)]
 struct State {
     rockets: Vec<Rocket>,
     particles: Vec<Particle>,
+    stars: Vec<Star>,
     term_scale: u32,
     last_scale: u32,
     last_size: Vec2,
@@ -62,11 +69,18 @@ const COLORS: &[LinearRgba] = &[
 ];
 
 const GRAVITY: f32 = 9.8;
+const STAR_DENSITY: u32 = 8;
+const ROCKET_DRIFT: f32 = 3.0;
+const ROCKET_VEL_RANGE: RangeInclusive<f32> = 30.0..=45.0;
+const ROCKET_LIFE_RANGE: RangeInclusive<f32> = 1.5..=6.0;
+
+const PARTICLE_COUNT_RANGE: RangeInclusive<i32> = 30..=160;
 
 fn main() {
     let state = State {
         rockets: Vec::with_capacity(150),
         particles: Vec::with_capacity(15000),
+        stars: Vec::with_capacity(3000),
         term_scale: 1,
         last_scale: 0,
         last_size: Vec2::ZERO,
@@ -82,16 +96,30 @@ fn main() {
         .run();
 }
 
+fn init_stars(stars: &mut Vec<Star>, min: IVec2, max: IVec2) {
+    let mut rng = rand::thread_rng();
+    let count = (max - min).element_product() / STAR_DENSITY as i32;
+    for _ in 0..count {
+        stars.push(Star {
+            pos: IVec2::new(
+                rng.gen_range(min.x..=max.x) as i32,
+                rng.gen_range(min.y..=max.y) as i32,
+            ),
+            phase: rng.gen_range(0.0..=1.0) * TAU,
+        })
+    }
+}
+
 fn spawn_rocket(max: Vec2) -> Rocket {
     let mut rng = rand::thread_rng();
 
-    let hor = rng.gen_range(-3.0..=3.0);
-    let ver = rng.gen_range(30.0..=45.0);
+    let hor = rng.gen_range(-ROCKET_DRIFT..=ROCKET_DRIFT);
+    let ver = rng.gen_range(ROCKET_VEL_RANGE);
 
     let x: f32 = rng.gen_range(0.0..=max.x);
     let y: f32 = 0.0;
 
-    let life: f32 = rng.gen_range(1.5..=6.0);
+    let life: f32 = rng.gen_range(ROCKET_LIFE_RANGE);
 
     Rocket {
         color: *COLORS.choose(&mut rng).unwrap(),
@@ -104,7 +132,7 @@ fn spawn_rocket(max: Vec2) -> Rocket {
 fn explode(particles: &mut Vec<Particle>, xy: Vec2, up_vel: f32, base_color: LinearRgba) {
     let mut rng = rand::thread_rng();
 
-    let count = rng.gen_range(30..=160);
+    let count = rng.gen_range(PARTICLE_COUNT_RANGE);
     let rot = rng.gen_range(0.0..=TAU);
 
     let shape = Shape::VARIANTS.choose(&mut rng).unwrap();
@@ -207,6 +235,12 @@ fn handle_input(
 
         let max = (window.size() / (Vec2::new(8.0, 8.0) * state.term_scale as f32)).floor();
         term.resize(max.as_uvec2());
+        state.stars.clear();
+        init_stars(
+            &mut state.stars,
+            IVec2::new(0, 40),
+            IVec2::new(term.width() as i32 - 1, term.height() as i32 - 1),
+        )
     }
 }
 
@@ -273,7 +307,7 @@ fn fixed_update(mut state: ResMut<State>, time: Res<Time>, term: Single<&Termina
     }
 }
 
-fn draw(mut term: Single<&mut Terminal>, state: Res<State>) {
+fn draw(mut term: Single<&mut Terminal>, state: Res<State>, time: Res<Time>) {
     term.clear();
     term.set_pivot(Pivot::LeftBottom);
 
@@ -307,6 +341,40 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>) {
         };
         t.glyph = if r.vel.y >= 0.0 { '^' } else { 'v' };
         t.fg_color = r.color;
+    }
+
+    let time = time.elapsed_secs();
+    for s in &state.stars {
+        let wave = sin(time * 0.01 + s.phase);
+
+        // only allow twinkle near the peak
+        let mut twinkle = 0.0;
+        if wave > 0.99 {
+            twinkle = (wave - 0.98) / 0.02;
+        }
+
+        let v = (20.0 * (twinkle * twinkle)) as u8;
+        let mut brightness = 5 + v;
+
+        // rare bright pulse
+        if twinkle > 0.998 {
+            brightness = 105
+        }
+
+        let col = color::from_bytes(
+            brightness,
+            brightness,
+            brightness.saturating_add(50), // slight blue bias
+            255,
+        );
+
+        let ch = if brightness < 100 { '.' } else { '+' };
+
+        let Some(t) = term.try_tile_mut(s.pos) else {
+            continue;
+        };
+        t.glyph = ch;
+        t.fg_color = col;
     }
 
     if state.show_text {

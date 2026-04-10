@@ -20,8 +20,19 @@ struct State {
     values: Vec<Control>,
 }
 
-const ALPHA: u8 = 200;
+impl State {
+    fn value(&self, name: &str) -> Option<f32> {
+        self.values
+            .iter()
+            .find(|v| v.name.eq_ignore_ascii_case(name))
+            .map(|v| v.value)
+    }
+}
+
+const DRIFT_INIT: Vec2 = Vec2::new(5.0, -1.0);
+const ALPHA: u8 = 255;
 const COLOR_RAMP: &[LinearRgba] = &[
+    color::from_bytes(0, 0, 0, ALPHA),
     color::from_bytes(0, 10, 5, ALPHA),
     color::from_bytes(0, 30, 15, ALPHA),
     color::from_bytes(0, 60, 30, ALPHA),
@@ -32,8 +43,8 @@ const COLOR_RAMP: &[LinearRgba] = &[
     color::from_bytes(150, 255, 150, ALPHA),
 ];
 
-const CHAR_RAMP2: &str = ".:-=+*#%@";
-const CHAR_RAMP: &str = ".'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+const CHAR_RAMP2: &str = " .:-=+*#%@";
+const CHAR_RAMP: &str = " .'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
 fn color_ramp(noise: f32, ramp: &[LinearRgba]) -> LinearRgba {
     let t = noise.clamp(0.0, 1.0);
@@ -51,15 +62,72 @@ fn char_ramp(noise: f32, string: &str) -> char {
 fn setup(mut commands: Commands) {
     commands.spawn((Terminal::new([86, 64]), TerminalMeshPivot::LeftTop));
     commands.spawn((
-        Terminal::new([23, 20]),
+        Terminal::new([29, 20]),
         TerminalMeshPivot::RightTop,
         ControlsTerminal,
     ));
     commands.spawn(TerminalCamera::new());
 }
 
+fn make_some_noise(
+    mut q_term: Query<&mut Terminal, Without<ControlsTerminal>>,
+    controls: Res<State>,
+    time: Res<Time>,
+    mut drift: Local<Vec2>,
+) {
+    let mut term = q_term.single_mut().unwrap();
+    let mut noise = FastNoiseLite::new();
+    noise.set_noise_type(Some(controls.noise_type));
+    noise.set_fractal_type(Some(controls.fractal_type));
+
+    noise.set_seed(controls.value("Seed").map(|v| v as i32));
+    noise.set_fractal_octaves(controls.value("octaves").map(|v| v.max(1.0) as i32));
+    noise.set_frequency(controls.value("frequency"));
+    noise.set_fractal_lacunarity(controls.value("lacunarity"));
+    noise.set_fractal_gain(controls.value("gain"));
+    noise.set_fractal_weighted_strength(controls.value("weighted strength"));
+
+    let xdrift = controls.value("driftx").expect("Driftx");
+    let ydrift = controls.value("drifty").expect("Drifty");
+
+    drift.x += xdrift * time.delta_secs();
+    drift.y += ydrift * time.delta_secs();
+
+    let scale = 11.0;
+
+    for (p, t) in term.iter_xy_mut() {
+        let dx = p.x as f32 * scale;
+        let dy = p.y as f32 * scale * 0.5;
+
+        let noise = noise.get_noise_2d(dx + drift.x, dy + drift.y);
+        let noise = (noise + 1.0) / 2.0;
+
+        let col = color_ramp(noise, COLOR_RAMP);
+
+        let glyph = if (p.x + p.y) % 2 == 0 {
+            char_ramp(noise, CHAR_RAMP)
+        } else {
+            char_ramp(noise, CHAR_RAMP2)
+        };
+
+        t.glyph = glyph;
+
+        t.fg_color = col;
+    }
+    term.put_string(
+        [0, 0],
+        format!(
+            "[Noise:<fg=blue>{:?}</fg> | Fractal:<fg=navy>{:?}</fg>]",
+            controls.noise_type, controls.fractal_type
+        ),
+    );
+}
+
 fn handle_key_repeat(input: Res<ButtonInput<KeyCode>>, mut controls: ResMut<State>) {
-    let hor = input.pressed(KeyCode::KeyD) as i32 - input.pressed(KeyCode::KeyA) as i32;
+    let right = [KeyCode::KeyD, KeyCode::ArrowRight];
+    let left = [KeyCode::KeyA, KeyCode::ArrowLeft];
+
+    let hor = input.any_pressed(right) as i32 - input.any_pressed(left) as i32;
     if hor != 0 {
         let curr = controls.current_control;
         let step = controls.values[curr].step;
@@ -118,59 +186,6 @@ fn handle_other_input(
     }
 }
 
-fn make_some_noise(
-    mut q_term: Query<&mut Terminal, Without<ControlsTerminal>>,
-    controls: Res<State>,
-    time: Res<Time>,
-    mut drift: Local<Vec2>,
-) {
-    let mut term = q_term.single_mut().unwrap();
-    let mut noise = FastNoiseLite::new();
-    noise.set_noise_type(Some(controls.noise_type));
-    noise.set_fractal_type(Some(controls.fractal_type));
-
-    noise.set_seed(Some(controls.values[0].value as i32));
-    noise.set_fractal_octaves(Some((controls.values[1].value as i32).max(1)));
-    noise.set_frequency(Some(controls.values[2].value));
-    noise.set_fractal_lacunarity(Some(controls.values[3].value));
-    noise.set_fractal_gain(Some(controls.values[4].value));
-    noise.set_fractal_weighted_strength(Some(controls.values[5].value));
-
-    let xdrift = controls.values[6].value;
-    let ydrift = controls.values[7].value;
-
-    drift.x += xdrift * time.delta_secs();
-    drift.y += ydrift * time.delta_secs();
-
-    for (p, t) in term.iter_xy_mut() {
-        let dx = p.x as f32;
-        let dy = p.y as f32 * 0.5;
-
-        let noise = noise.get_noise_2d(dx + drift.x, dy + drift.y);
-        let noise = (noise + 1.0) / 2.0;
-
-        let glyph = if (p.x + p.y) % 2 == 0 {
-            char_ramp(noise, CHAR_RAMP)
-        } else {
-            char_ramp(noise, CHAR_RAMP2)
-        };
-
-        t.glyph = glyph;
-
-        let col = color_ramp(noise, COLOR_RAMP);
-        t.fg_color = col;
-
-        //t.bg_color = Hsla::from(t.bg_color).with_lightness(noise).into();
-    }
-    term.put_string(
-        [0, 0],
-        format!(
-            "[Noise:{:?} | Fractal:{:?}]",
-            controls.noise_type, controls.fractal_type
-        ),
-    );
-}
-
 fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, controls: Res<State>) {
     let mut term = q_term.single_mut().unwrap();
     term.clear();
@@ -191,10 +206,11 @@ fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, contr
 }
 
 fn main() {
+    let fnl = FastNoiseLite::default();
     let controls = State {
         current_control: 0,
         noise_type: NoiseType::OpenSimplex2,
-        fractal_type: FractalType::FBm,
+        fractal_type: fnl.fractal_type,
         values: vec![
             Control {
                 name: "Seed".to_string(),
@@ -203,37 +219,37 @@ fn main() {
             },
             Control {
                 name: "Octaves".to_string(),
-                value: 3.0,
+                value: fnl.octaves as f32,
                 step: 1.0,
             },
             Control {
                 name: "Frequency".to_string(),
-                value: 0.1,
-                step: 0.01,
+                value: fnl.frequency,
+                step: 0.0005,
             },
             Control {
                 name: "Lacunarity".to_string(),
-                value: 2.0,
+                value: fnl.lacunarity,
                 step: 0.02,
             },
             Control {
                 name: "Gain".to_string(),
-                value: 0.5,
+                value: fnl.gain,
                 step: 0.01,
             },
             Control {
                 name: "Weighted Strength".to_string(),
-                value: 0.0,
+                value: fnl.weighted_strength,
                 step: 0.03,
             },
             Control {
                 name: "DriftX".to_string(),
-                value: 0.5,
+                value: DRIFT_INIT.x,
                 step: 0.5,
             },
             Control {
                 name: "DriftY".to_string(),
-                value: 1.0,
+                value: DRIFT_INIT.y,
                 step: 0.5,
             },
         ],

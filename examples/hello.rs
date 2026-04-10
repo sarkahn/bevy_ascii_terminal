@@ -6,6 +6,7 @@ use bevy_ascii_terminal::*;
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, TerminalPlugins))
+        .insert_resource(ClearColor(Color::BLACK))
         .add_systems(Startup, setup)
         .add_systems(Update, handle_input)
         .run();
@@ -13,12 +14,11 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn(
-        Terminal::new([14, 3])
+        Terminal::new([25, 3])
             .with_border(BoxStyle::SINGLE_LINE)
-            .with_bg_clear_color(color::DARK_BLUE)
             .with_string(
                 [0, 0],
-                "<bg=midnight_blue><fg=firebrick>Hello</fg> <fg=#5772e5>world!</fg></bg>",
+                "# <fg=red>Bevy</fg> <fg=green>Ascii</fg> <fg=blue>Terminal</fg> #",
             ),
     );
     commands.spawn(TerminalCamera::new());
