@@ -19,6 +19,7 @@ use crate::{
 };
 use crate::{
     Token, TokenIterator,
+    color::ColorPalette,
     padding::{BoxStyle, ColorWrite, Padding},
     wrap_line_count, wrap_string, wrap_tagged_line_count, wrap_tagged_string,
 };
@@ -40,6 +41,7 @@ pub struct Terminal {
     clear_tile: Tile,
     pivot: Pivot,
     padding: Padding,
+    colors: ColorPalette,
 }
 
 impl Terminal {
@@ -51,6 +53,7 @@ impl Terminal {
             clear_tile: Tile::default(),
             pivot: Pivot::default(),
             padding: Padding::default(),
+            colors: ColorPalette::default(),
         }
     }
 
@@ -100,8 +103,13 @@ impl Terminal {
     }
 
     /// Set a title
-    pub fn with_title(mut self, title: &str) -> Self {
+    pub fn with_title<T: AsRef<str>>(mut self, title: impl Into<TerminalString<T>>) -> Self {
         self.put_title(title);
+        self
+    }
+
+    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
+        self.pivot = pivot;
         self
     }
 
@@ -163,7 +171,7 @@ impl Terminal {
     /// terminal.put_char([5, 5], 'X').fg(color::RED);
     /// ```
     #[allow(deprecated)]
-    pub fn put_char(&mut self, xy: impl Into<PivotedPoint>, ch: char) {
+    pub fn put_char(&mut self, xy: impl Into<PivotedPoint>, ch: char) -> &mut Tile {
         let pp = xy.into();
 
         let piv = self.pivot;
@@ -171,9 +179,15 @@ impl Terminal {
             self.pivot = pivot;
         }
 
-        self.tile_mut(pp.point).char(ch);
+        let i = self
+            .try_transform_point_to_index(pp.point)
+            .expect("Put char out of bounds");
+
+        self.tiles[i].glyph = ch;
 
         self.pivot = piv;
+
+        &mut self.tiles[i]
     }
 
     pub fn maybe_put(
@@ -291,11 +305,13 @@ impl Terminal {
 
     /// Sets a title for the terminal, writing it to the top row. Leading
     /// spaces will offset the title.
-    pub fn put_title(&mut self, title: &str) {
+    pub fn put_title<T: AsRef<str>>(&mut self, title: impl Into<TerminalString<T>>) {
         let padding = self.padding;
         self.padding = Padding::ZERO;
         let pivot = self.pivot;
         self.pivot = Pivot::LeftTop;
+        let ts = title.into();
+        let title = ts.string.as_ref();
 
         let offset = title.find(|c| c != ' ').unwrap_or(0);
         let title = title.trim_start();
@@ -309,6 +325,14 @@ impl Terminal {
     /// Clear the terminal, setting all tiles to the terminal's `clear_tile`.
     pub fn clear(&mut self) {
         self.tiles.fill(self.clear_tile);
+    }
+
+    pub fn clear_inner(&mut self) {
+        for y in 0..self.inner_height() {
+            let i = self.try_transform_point_to_index([0, y as i32]).unwrap();
+            let w = self.inner_width();
+            self.tiles[i..i + w].fill(self.clear_tile);
+        }
     }
 
     pub fn fill(&mut self, tile: Tile) {
@@ -448,7 +472,7 @@ impl Terminal {
             wrap_tagged_string(string, first_line_len, ts.word_wrap).unwrap();
 
         // TODO: Error handling
-        let mut xy = self.transform_point(origin).unwrap();
+        let mut xy = self.try_transform_point(origin).unwrap();
 
         // Count remaining lines after wrapping the first line since all
         // remaining line widths are the same
@@ -459,7 +483,7 @@ impl Terminal {
         xy.y += line_offset;
 
         // Newline resets x position based on pivot
-        let newline_x = self.transform_point(IVec2::ZERO).unwrap().x;
+        let newline_x = self.try_transform_point(IVec2::ZERO).unwrap().x;
 
         while !wrapped.is_empty() || !rem.is_empty() {
             let x_offset = (pivot.x * char_count.saturating_sub(1) as f32).floor() as i32;
@@ -559,11 +583,11 @@ impl Terminal {
         let lines = 1 + wrap_line_count(rem, max_len, ts.word_wrap);
         let line_offset = (lines.saturating_sub(1) as f32 * (1.0 - pivot.y)) as i32;
 
-        let mut xy = self.transform_point(origin).unwrap();
+        let mut xy = self.try_transform_point(origin).unwrap();
         xy.y += line_offset;
 
         // Newline resets x position based on pivot
-        let newline_x = self.transform_point(IVec2::ZERO).unwrap().x;
+        let newline_x = self.try_transform_point(IVec2::ZERO).unwrap().x;
 
         while !wrapped.is_empty() || !rem.is_empty() {
             let charcount = wrapped.chars().count().saturating_sub(1) as f32;
@@ -600,7 +624,7 @@ impl Terminal {
     /// Read a number of characters from a given line, based on the current pivot.
     pub fn read_line(&self, line: i32, count: usize) -> impl Iterator<Item = char> + '_ {
         let mut p = self
-            .transform_point([0, line])
+            .try_transform_point([0, line])
             .expect("Index out of bounds");
 
         let xoff = (count - 1) as f32 * self.pivot.normalized().x;
@@ -631,7 +655,7 @@ impl Terminal {
     /// Retrieve a tile from the inner area of the terminal, or None if the
     /// position is out of bounds.
     pub fn try_tile_mut(&mut self, xy: impl Into<IVec2>) -> Option<&mut Tile> {
-        let xy = self.transform_point(xy.into())?;
+        let xy = self.try_transform_point(xy.into())?;
         let i = self.tile_to_index(xy);
         Some(&mut self.tiles[i])
     }
@@ -640,7 +664,7 @@ impl Terminal {
     /// out of bounds.
     pub fn tile(&mut self, xy: impl Into<IVec2>) -> &Tile {
         let xy = xy.into();
-        let xy = self.transform_point(xy).unwrap_or_else(|| {
+        let xy = self.try_transform_point(xy).unwrap_or_else(|| {
             panic!(
                 "Error accessing tile position {} in terminal sized {}",
                 xy,
@@ -655,7 +679,7 @@ impl Terminal {
     /// out of bounds.
     pub fn tile_mut(&mut self, xy: impl Into<IVec2>) -> &mut Tile {
         let xy = xy.into();
-        let xy = self.transform_point(xy).unwrap_or_else(|| {
+        let xy = self.try_transform_point(xy).unwrap_or_else(|| {
             panic!(
                 "Error accessing tile position {} in terminal sized {}",
                 xy,
@@ -795,7 +819,7 @@ impl Terminal {
 
     /// Transform a point from a bottom-left origin to the current pivot origin
     /// within the padded area of the terminal.
-    fn transform_point(&self, xy: impl Into<IVec2>) -> Option<IVec2> {
+    pub fn try_transform_point(&self, xy: impl Into<IVec2>) -> Option<IVec2> {
         let innersize = self.inner_size();
         let mut xy = self.pivot.transform_point(xy, innersize);
         if xy.cmplt(IVec2::ZERO).any() {
@@ -809,6 +833,51 @@ impl Terminal {
         }
 
         Some(xy)
+    }
+
+    /// Transform a point from a bottom-left origin to it's corresponding tile index
+    /// within the padded area of the terminal.
+    pub fn try_transform_point_to_index(&self, xy: impl Into<IVec2>) -> Option<usize> {
+        let innersize = self.inner_size();
+        let mut xy = self.pivot.transform_point(xy, innersize);
+        if xy.cmplt(IVec2::ZERO).any() {
+            return None;
+        }
+
+        let padding_offset = IVec2::new(self.padding.left as i32, self.padding.bottom as i32);
+        xy += padding_offset;
+        if xy.cmpge(self.size.as_ivec2()).any() {
+            return None;
+        }
+        println!("TRANSFORMED POINT {}", xy);
+        Some(xy.y as usize * self.width() + xy.x as usize)
+    }
+
+    pub fn progress_bar(&mut self, xy: impl Into<IVec2>, progress_bar: ProgressBar) {
+        let pb = &progress_bar;
+
+        let mut xy = self
+            .try_transform_point(xy)
+            .expect("Progress bar position out of bounds");
+
+        let x_offset = (self.pivot.normalized().x * (pb.len - 1) as f32).floor() as i32;
+        xy.x -= x_offset;
+
+        let bar_percent = pb.value.clamp(0.0, 1.0);
+        let fill_col = pb.fill_color.unwrap_or(self.clear_tile.fg_color);
+        let empty_col = pb.fill_color.unwrap_or(self.clear_tile.fg_color);
+
+        for i in 0..pb.len {
+            let t = i as f32 / pb.len as f32;
+            let (c, col) = if t < bar_percent {
+                (pb.fill_char, fill_col)
+            } else {
+                (pb.empty_char, empty_col)
+            };
+            let i = self.tile_to_index(xy);
+            self.tiles[i].char(c).fg(col);
+            xy.x += 1;
+        }
     }
 
     /// Create a terminal from a REXPaint file. Note this writes all layers to the
@@ -836,6 +905,7 @@ impl Terminal {
                     let brgb = [cell.bg.r, cell.bg.g, cell.bg.b, 255];
                     let fg = LinearRgba::from_u8_array(frgb);
                     let bg = LinearRgba::from_u8_array(brgb);
+                    let y = layer.height - 1 - y;
                     let t = terminal.tile_mut([x as i32, y as i32]);
                     t.glyph = glyph;
                     t.fg_color = fg;
@@ -845,11 +915,54 @@ impl Terminal {
         }
         Ok(terminal)
     }
+
+    pub fn print_to_console(&self) {
+        for y in (0..self.height()).rev() {
+            for x in 0..self.width() {
+                let i = self.tile_to_index([x as i32, y as i32]);
+                let t = self.tiles[i];
+                print!("{}", t.glyph);
+            }
+            println!();
+        }
+    }
+}
+
+pub struct ProgressBar {
+    value: f32,
+    pub len: usize,
+    pub fill_char: char,
+    pub empty_char: char,
+    pub fill_color: Option<LinearRgba>,
+    pub empty_color: Option<LinearRgba>,
+}
+
+impl ProgressBar {
+    pub fn new(value: f32, len: usize, fill_char: char, empty_char: char) -> Self {
+        Self {
+            value,
+            len,
+            fill_char,
+            empty_char,
+            fill_color: None,
+            empty_color: None,
+        }
+    }
+
+    pub fn with_fill_color(mut self, col: impl Into<LinearRgba>) -> Self {
+        self.fill_color = Some(col.into());
+        self
+    }
+
+    pub fn with_empty_color(mut self, col: impl Into<LinearRgba>) -> Self {
+        self.empty_color = Some(col.into());
+        self
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::TerminalStringBuilder;
+    use crate::{BoxStyle, TerminalStringBuilder, Tile, terminal::ProgressBar};
     #[allow(deprecated)]
     use crate::{GridPoint, Pivot, Terminal, ascii};
 
@@ -870,9 +983,39 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn big_string() {
         let mut term = Terminal::new([16, 16]);
         let string = String::from_iter(ascii::CP_437_ARRAY.iter());
         term.put_string([0, 0], string.dont_parse_tags());
+        term.print_to_console();
+    }
+
+    #[test]
+    #[ignore]
+    fn progress() {
+        let mut term = Terminal::new([30, 3])
+            .with_clear_char('.')
+            .with_pivot(Pivot::RightBottom);
+
+        term.progress_bar([0, 0], ProgressBar::new(0.5, 15, '#', '-'));
+        term.print_to_console();
+
+        term.clear();
+
+        term.progress_bar([0, 0], ProgressBar::new(1.0, 15, '#', '-'));
+        term.print_to_console();
+    }
+
+    #[test]
+    #[ignore]
+    fn clear_inner() {
+        let mut t = Terminal::new([20, 10]).with_border(BoxStyle::SINGLE_LINE);
+        t.fill(Tile {
+            glyph: '.',
+            ..Default::default()
+        });
+        t.clear_inner();
+        t.print_to_console();
     }
 }

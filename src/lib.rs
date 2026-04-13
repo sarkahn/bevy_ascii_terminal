@@ -6,7 +6,6 @@ pub mod padding;
 pub mod pivot;
 pub mod render;
 pub(crate) mod rexpaint;
-pub mod string;
 pub mod strings;
 pub mod terminal;
 pub mod tile;
@@ -15,7 +14,6 @@ pub mod transform;
 pub use ascii::Glyph;
 use bevy::{
     app::{Plugin, PostUpdate},
-    math::{IVec2, UVec2, Vec2, ivec2},
     prelude::IntoScheduleConfigs,
 };
 #[allow(deprecated)]
@@ -32,6 +30,7 @@ pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;
 pub use transform::{SetTerminalGridPosition, SetTerminalLayerPosition, TerminalTransform};
 
+#[allow(deprecated)]
 pub use deprecated::{GridPoint, GridRect, GridSize, PivotedPoint};
 
 pub struct TerminalPlugins;

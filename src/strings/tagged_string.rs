@@ -301,19 +301,19 @@ mod tests {
 
     #[test]
     fn parsing_tests() -> Result<()> {
-        let input = "Hello <fg=blue>Wor<bg=orange>ld!</fg>.\n<fg=red>How</fg></bg>'s it going?";
+        let input = "Hello <fg=blue>Wor<bg=css_orange>ld!</fg>.\n<fg=red>How</fg></bg>'s it going?";
 
         let expected = [
             Token::Text("Hello"),
             Token::Space,
             Token::FgStart(color::BLUE, "blue"),
             Token::Text("Wor"),
-            Token::BgStart(color::ORANGE, "orange"),
+            Token::BgStart(color::css::ORANGE, "css_orange"),
             Token::Text("ld!"),
             Token::FgEnd,
             Token::Text("."),
             Token::Newline,
-            Token::FgStart(color::RED, "red"),
+            Token::FgStart(color::css::RED, "red"),
             Token::Text("How"),
             Token::FgEnd,
             Token::BgEnd,

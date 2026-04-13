@@ -32,15 +32,15 @@ impl State {
 const DRIFT_INIT: Vec2 = Vec2::new(5.0, -1.0);
 const ALPHA: u8 = 255;
 const COLOR_RAMP: &[LinearRgba] = &[
-    color::from_bytes(0, 0, 0, ALPHA),
-    color::from_bytes(0, 10, 5, ALPHA),
-    color::from_bytes(0, 30, 15, ALPHA),
-    color::from_bytes(0, 60, 30, ALPHA),
-    color::from_bytes(0, 100, 50, ALPHA),
-    color::from_bytes(34, 139, 34, ALPHA),
-    color::from_bytes(0, 200, 100, ALPHA),
-    color::from_bytes(0, 255, 127, ALPHA),
-    color::from_bytes(150, 255, 150, ALPHA),
+    color::srgba_bytes(0, 0, 0, ALPHA),
+    color::srgba_bytes(0, 10, 5, ALPHA),
+    color::srgba_bytes(0, 30, 15, ALPHA),
+    color::srgba_bytes(0, 60, 30, ALPHA),
+    color::srgba_bytes(0, 100, 50, ALPHA),
+    color::srgba_bytes(34, 139, 34, ALPHA),
+    color::srgba_bytes(0, 200, 100, ALPHA),
+    color::srgba_bytes(0, 255, 127, ALPHA),
+    color::srgba_bytes(150, 255, 150, ALPHA),
 ];
 
 const CHAR_RAMP2: &str = " .:-=+*#%@";
@@ -117,7 +117,7 @@ fn make_some_noise(
     term.put_string(
         [0, 0],
         format!(
-            "[Noise:<fg=blue>{:?}</fg> | Fractal:<fg=navy>{:?}</fg>]",
+            "[Noise:<fg=blue>{:?}</fg> | Fractal:<fg=css_navy>{:?}</fg>]",
             controls.noise_type, controls.fractal_type
         ),
     );

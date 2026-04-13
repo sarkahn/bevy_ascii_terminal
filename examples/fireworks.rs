@@ -52,24 +52,24 @@ enum Shape {
 }
 
 const COLORS: &[LinearRgba] = &[
-    color::from_bytes(255, 80, 80, 255),   // red
-    color::from_bytes(255, 140, 60, 255),  // orange
-    color::from_bytes(255, 200, 80, 255),  // gold
-    color::from_bytes(255, 255, 120, 255), // yellow
-    color::from_bytes(80, 200, 255, 255),  // sky blue
-    color::from_bytes(120, 160, 255, 255), // soft blue
-    color::from_bytes(140, 120, 255, 255), // indigo
-    color::from_bytes(200, 120, 255, 255), // violet
-    color::from_bytes(120, 255, 140, 255), // bright green
-    color::from_bytes(80, 255, 200, 255),  // teal
-    color::from_bytes(255, 120, 180, 255), // pink
-    color::from_bytes(255, 160, 220, 255), // soft pink
-    color::from_bytes(255, 255, 255, 255), // pure white
-    color::from_bytes(200, 220, 255, 255), // cool white
+    color::srgba_bytes(255, 80, 80, 255),   // red
+    color::srgba_bytes(255, 140, 60, 255),  // orange
+    color::srgba_bytes(255, 200, 80, 255),  // gold
+    color::srgba_bytes(255, 255, 120, 255), // yellow
+    color::srgba_bytes(80, 200, 255, 255),  // sky blue
+    color::srgba_bytes(120, 160, 255, 255), // soft blue
+    color::srgba_bytes(140, 120, 255, 255), // indigo
+    color::srgba_bytes(200, 120, 255, 255), // violet
+    color::srgba_bytes(120, 255, 140, 255), // bright green
+    color::srgba_bytes(80, 255, 200, 255),  // teal
+    color::srgba_bytes(255, 120, 180, 255), // pink
+    color::srgba_bytes(255, 160, 220, 255), // soft pink
+    color::srgba_bytes(255, 255, 255, 255), // pure white
+    color::srgba_bytes(200, 220, 255, 255), // cool white
 ];
 
 const GRAVITY: f32 = 9.8;
-const STAR_DENSITY: u32 = 8;
+const STAR_DENSITY: u32 = 16;
 const ROCKET_DRIFT: f32 = 3.0;
 const ROCKET_VEL_RANGE: RangeInclusive<f32> = 30.0..=45.0;
 const ROCKET_LIFE_RANGE: RangeInclusive<f32> = 1.5..=6.0;
@@ -96,14 +96,14 @@ fn main() {
         .run();
 }
 
-fn init_stars(stars: &mut Vec<Star>, min: IVec2, max: IVec2) {
+fn init_stars(stars: &mut Vec<Star>, max: IVec2) {
     let mut rng = rand::thread_rng();
-    let count = (max - min).element_product() / STAR_DENSITY as i32;
+    let count = max.element_product() / STAR_DENSITY as i32;
     for _ in 0..count {
         stars.push(Star {
             pos: IVec2::new(
-                rng.gen_range(min.x..=max.x) as i32,
-                rng.gen_range(min.y..=max.y) as i32,
+                rng.gen_range(0..=max.x) as i32,
+                rng.gen_range(0..=max.y) as i32,
             ),
             phase: rng.gen_range(0.0..=1.0) * TAU,
         })
@@ -238,7 +238,6 @@ fn handle_input(
         state.stars.clear();
         init_stars(
             &mut state.stars,
-            IVec2::new(0, 40),
             IVec2::new(term.width() as i32 - 1, term.height() as i32 - 1),
         )
     }
@@ -344,6 +343,8 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>, time: Res<Time>) {
     }
 
     let time = time.elapsed_secs();
+    let max_height = term.height();
+
     for s in &state.stars {
         let wave = sin(time * 0.01 + s.phase);
 
@@ -353,15 +354,17 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>, time: Res<Time>) {
             twinkle = (wave - 0.98) / 0.02;
         }
 
-        let v = (20.0 * (twinkle * twinkle)) as u8;
-        let mut brightness = 5 + v;
+        let mut brightness = 5 + (20.0 * (twinkle * twinkle)) as u8;
 
-        // rare bright pulse
+        // Pulse
         if twinkle > 0.998 {
             brightness = 105
         }
 
-        let col = color::from_bytes(
+        let height_t = s.pos.y as f32 / max_height as f32;
+        let brightness = (brightness as f32 * height_t.powf(0.25)) as u8;
+
+        let col = color::srgba_bytes(
             brightness,
             brightness,
             brightness.saturating_add(50), // slight blue bias
@@ -385,10 +388,16 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>, time: Res<Time>) {
 "[<fg={0}>+/-</fg>]: Zoom
 [<fg={0}>H</fg>]: Toggle text
 [<fg={0}>F</fg>]: Toggle fullscreen",
-"dodger_blue" );
+"css_dodger_blue" );
         term.put_string([0, 0], keys_string);
 
         term.set_pivot(Pivot::RightTop);
-        term.put_string([0, 0], format!("Particles: {}", state.particles.len()));
+        term.put_string(
+            [0, 0],
+            format!(
+                "Particles: {}",
+                state.particles.len() + state.rockets.len() + state.stars.len()
+            ),
+        );
     }
 }

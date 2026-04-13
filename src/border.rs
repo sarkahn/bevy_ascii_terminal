@@ -17,7 +17,7 @@ use crate::{TerminalString, color};
 /// The border can have "empty" sides which will be ignored when building the
 /// terminal mesh.
 #[derive(Debug, Default, Clone, Component)]
-#[deprecated = "This component will be removed in bevy 0.20. put_border will be added to the terminal with 'padding' state"]
+#[deprecated = "This component will be removed in bevy 0.20. Use put_border which automatically applies padding to put functions"]
 pub struct TerminalBorder {
     pub edge_glyphs: [Option<char>; 8],
     pub border_strings: Vec<BorderString>,

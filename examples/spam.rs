@@ -1,4 +1,5 @@
 //! Spamming the entire terminal with random glyphs and colors.
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::window::{PresentMode, PrimaryWindow, WindowMode};
 use bevy_ascii_terminal::*;
@@ -10,12 +11,13 @@ fn main() {
     app.add_plugins((
         DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                present_mode: PresentMode::Immediate,
+                present_mode: PresentMode::AutoNoVsync,
                 ..Default::default()
             }),
             ..Default::default()
         }),
         TerminalPlugins,
+        FrameTimeDiagnosticsPlugin::default(),
     ))
     .add_systems(Startup, setup)
     .add_systems(Update, spam_terminal)
@@ -32,37 +34,21 @@ fn setup(mut commands: Commands) {
 }
 
 fn rand_color(rng: &mut ThreadRng) -> LinearRgba {
-    let r: f32 = rng.gen_range(0.0..=1.0);
-    let g: f32 = rng.gen_range(0.0..=1.0);
-    let b: f32 = rng.gen_range(0.0..=1.0);
-    let a: f32 = rng.gen_range(0.2..=1.0);
-    Color::linear_rgba(r, g, b, a).into()
-}
-
-#[derive(Default)]
-struct Fps {
-    start: f32,
-    count: u32,
-    fps: u32,
+    let r = rng.gen_range(0..=255) as u8;
+    let g = rng.gen_range(0..=255) as u8;
+    let b = rng.gen_range(0..=255) as u8;
+    let a = rng.gen_range(100..=255) as u8;
+    color::srgba_bytes(r, g, b, a)
 }
 
 fn spam_terminal(
     mut window: Single<&mut Window, With<PrimaryWindow>>,
     mut q: Query<&mut Terminal>,
-    time: Res<Time>,
-    mut fps: Local<Fps>,
     mut pause: Local<bool>,
     input: Res<ButtonInput<KeyCode>>,
     mut exit: MessageWriter<AppExit>,
+    diag: Res<DiagnosticsStore>,
 ) {
-    fps.count += 1;
-    let now = time.elapsed_secs();
-    if now - fps.start > 1.0 {
-        fps.fps = fps.count;
-        fps.count = 0;
-        fps.start = now;
-    }
-
     if input.just_pressed(KeyCode::Space) {
         *pause = !(*pause);
     }
@@ -97,8 +83,19 @@ fn spam_terminal(
         }
     }
 
+    let Some(fps) = diag
+        .get(&FrameTimeDiagnosticsPlugin::FPS)
+        .and_then(|fps| fps.average())
+    else {
+        return;
+    };
+
+    let col = if fps < 60.0 { "red" } else { "green" };
+
     term.set_pivot(Pivot::RightTop);
-    let col = if fps.fps < 60 { "red" } else { "green" };
-    term.put_string([0, 0], format!("FPS: <fg={}>{}</fg>", col, fps.fps));
+    term.put_string(
+        [0, 0],
+        format!("FPS: <fg={}>{}</fg>", col, fps.round() as u32),
+    );
     term.set_pivot(Pivot::LeftTop);
 }

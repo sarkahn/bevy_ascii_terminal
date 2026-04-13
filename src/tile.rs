@@ -8,6 +8,7 @@ use bevy::{
 #[derive(Debug, Clone, Reflect, Copy, PartialEq)]
 pub struct Tile {
     pub glyph: char,
+    // Tile colors are stored as linear to be passed directly to the shader
     pub fg_color: LinearRgba,
     pub bg_color: LinearRgba,
 }

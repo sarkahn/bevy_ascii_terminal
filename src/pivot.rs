@@ -10,16 +10,16 @@ use crate::GridPoint;
 
 #[derive(Debug, Default, Reflect, Clone, Copy, PartialEq, Eq)]
 pub enum Pivot {
-    LeftBottom, // X right, Y up
-    LeftCenter, // X right, Y up
     #[default]
     LeftTop, // X right, Y down
+    LeftBottom,   // X right, Y up
+    LeftCenter,   // X right, Y up
     CenterBottom, // X right, Y up
-    Center,     // X right, Y up
-    CenterTop,  // X right, Y down,
-    RightBottom, // X left, Y up
-    RightCenter, // X left, Y up
-    RightTop,   // X left, Y down
+    Center,       // X right, Y up
+    CenterTop,    // X right, Y down,
+    RightBottom,  // X left, Y up
+    RightCenter,  // X left, Y up
+    RightTop,     // X left, Y down
 }
 
 impl Pivot {

@@ -18,6 +18,8 @@ byteorder = "1"
 anyhow = "1.0.100"
 nom = "8.0.0"
 bevy_platform = "0.18"
+case_insensitive_hashmap = "1.0.1"
+unicase = "2.9.0"
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"
