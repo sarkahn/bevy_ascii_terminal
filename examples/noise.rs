@@ -117,7 +117,7 @@ fn make_some_noise(
     term.put_string(
         [0, 0],
         format!(
-            "[Noise:<fg=blue>{:?}</fg> | Fractal:<fg=css_navy>{:?}</fg>]",
+            "[Noise:<fg=blue>{:?}</fg> | Fractal:<fg=navy>{:?}</fg>]",
             controls.noise_type, controls.fractal_type
         ),
     );

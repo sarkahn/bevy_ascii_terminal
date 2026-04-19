@@ -19,7 +19,6 @@ use crate::{
 };
 use crate::{
     Token, TokenIterator,
-    color::ColorPalette,
     padding::{BoxStyle, ColorWrite, Padding},
     wrap_line_count, wrap_string, wrap_tagged_line_count, wrap_tagged_string,
 };
@@ -41,7 +40,6 @@ pub struct Terminal {
     clear_tile: Tile,
     pivot: Pivot,
     padding: Padding,
-    colors: ColorPalette,
 }
 
 impl Terminal {
@@ -53,7 +51,6 @@ impl Terminal {
             clear_tile: Tile::default(),
             pivot: Pivot::default(),
             padding: Padding::default(),
-            colors: ColorPalette::default(),
         }
     }
 
@@ -248,12 +245,13 @@ impl Terminal {
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_fg_color([5, 5], color::RED).bg(color::BLUE);
+    /// terminal.put_fg_color([5, 5], color::RED);
     /// ```
     #[allow(deprecated)]
     pub fn put_fg_color(&mut self, xy: impl Into<PivotedPoint>, color: impl Into<LinearRgba>) {
         let pp = xy.into();
 
+        // TODO: Remove after pivoted point is gone
         let piv = self.pivot;
         if let Some(pivot) = pp.pivot {
             self.pivot = pivot;
@@ -273,7 +271,7 @@ impl Terminal {
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_bg_color([5, 5], color::BLUE).fg(color::RED);
+    /// terminal.put_bg_color([5, 5], color::BLUE);
     /// ```
     #[allow(deprecated)]
     pub fn put_bg_color(&mut self, xy: impl Into<PivotedPoint>, color: impl Into<LinearRgba>) {
@@ -303,8 +301,8 @@ impl Terminal {
         self.pivot = piv;
     }
 
-    /// Sets a title for the terminal, writing it to the top row. Leading
-    /// spaces will offset the title.
+    /// Writes title to the top row of the terminal. Leading spaces will offset
+    /// the title.
     pub fn put_title<T: AsRef<str>>(&mut self, title: impl Into<TerminalString<T>>) {
         let padding = self.padding;
         self.padding = Padding::ZERO;
@@ -963,15 +961,17 @@ impl ProgressBar {
 #[cfg(test)]
 mod tests {
     use crate::{BoxStyle, TerminalStringBuilder, Tile, terminal::ProgressBar};
-    #[allow(deprecated)]
-    use crate::{GridPoint, Pivot, Terminal, ascii};
+    use crate::{Pivot, Terminal, ascii};
 
     #[test]
-    #[allow(deprecated)]
     fn put_string_negative() {
-        let mut terminal = Terminal::new([10, 10]);
-        terminal.put_string([-2, -2].pivot(Pivot::Center), "Hello");
-        assert_eq!(terminal.tile([1, 3]).glyph, 'H');
+        let mut terminal = Terminal::new([10, 10])
+            .with_clear_char('.')
+            .with_pivot(Pivot::Center);
+        terminal.put_string([-2, 2], "Hello");
+
+        terminal.pivot = Pivot::LeftTop;
+        assert_eq!(terminal.tile([1, 2]).glyph, 'H');
     }
 
     #[test]

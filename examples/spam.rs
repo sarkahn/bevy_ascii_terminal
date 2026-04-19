@@ -93,9 +93,6 @@ fn spam_terminal(
     let col = if fps < 60.0 { "red" } else { "green" };
 
     term.set_pivot(Pivot::RightTop);
-    term.put_string(
-        [0, 0],
-        format!("FPS: <fg={}>{}</fg>", col, fps.round() as u32),
-    );
+    term.put_string([0, 0], format!("FPS: <fg={}>{}", col, fps.round() as u32));
     term.set_pivot(Pivot::LeftTop);
 }

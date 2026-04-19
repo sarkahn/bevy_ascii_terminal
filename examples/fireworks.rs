@@ -388,7 +388,7 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>, time: Res<Time>) {
 "[<fg={0}>+/-</fg>]: Zoom
 [<fg={0}>H</fg>]: Toggle text
 [<fg={0}>F</fg>]: Toggle fullscreen",
-"css_dodger_blue" );
+"dodger_blue" );
         term.put_string([0, 0], keys_string);
 
         term.set_pivot(Pivot::RightTop);

@@ -63,10 +63,8 @@ fn input(
     }
     if input.just_pressed(KeyCode::KeyF) {
         window.mode = match window.mode {
-            bevy::window::WindowMode::Windowed => {
-                WindowMode::BorderlessFullscreen(MonitorSelection::Current)
-            }
-            bevy::window::WindowMode::BorderlessFullscreen(_) => WindowMode::Windowed,
+            WindowMode::Windowed => WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+            WindowMode::BorderlessFullscreen(_) => WindowMode::Windowed,
             _ => window.mode,
         };
     }

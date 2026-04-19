@@ -1,13 +1,13 @@
 use std::ops::Sub;
 
-use bevy::{math::IVec2, prelude::Component, reflect::Reflect};
+use bevy::{color::LinearRgba, math::IVec2, prelude::Component, reflect::Reflect};
 
 use bevy_platform::collections::HashMap;
 use enum_ordinalize::Ordinalize;
 
+use crate::TerminalString;
 #[allow(deprecated)]
 use crate::{GridRect, GridSize, Pivot, Tile};
-use crate::{TerminalString, color};
 
 /// A component for drawing a border around a terminal.
 ///
@@ -319,8 +319,10 @@ impl TerminalBorder {
             };
 
             for (ch, p) in s.string.chars().zip(side_rect.iter_points()) {
-                self.tiles
-                    .insert(p + offset, Tile::new(ch, color::WHITE, color::BLACK));
+                self.tiles.insert(
+                    p + offset,
+                    Tile::new(ch, LinearRgba::WHITE, LinearRgba::BLACK),
+                );
             }
         }
     }
