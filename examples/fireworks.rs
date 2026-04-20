@@ -93,6 +93,7 @@ fn main() {
         .add_systems(FixedUpdate, fixed_update)
         .add_systems(Update, draw)
         .insert_resource(state)
+        .insert_resource(ClearColor(Color::BLACK))
         .run();
 }
 

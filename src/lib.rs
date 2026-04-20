@@ -1,7 +1,5 @@
 pub mod ascii;
-pub mod border;
 pub mod color;
-mod deprecated;
 pub mod padding;
 pub mod pivot;
 pub mod render;
@@ -16,10 +14,9 @@ use bevy::{
     app::{Plugin, PostUpdate},
     prelude::IntoScheduleConfigs,
 };
-#[allow(deprecated)]
-pub use border::TerminalBorder;
+
 pub use padding::{BoxStyle, Padding};
-pub use pivot::Pivot;
+pub use pivot::{Pivot, PivotPoint, PivotedPoint};
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};
 pub use strings::{
     TerminalString, TerminalStringBuilder, Token, TokenIterator, wrap_line_count, wrap_string,
@@ -29,9 +26,6 @@ pub use terminal::Terminal;
 pub use tile::Tile;
 use transform::TerminalSystemsUpdateTransform;
 pub use transform::{SetTerminalGridPosition, SetTerminalLayerPosition, TerminalTransform};
-
-#[allow(deprecated)]
-pub use deprecated::{GridPoint, GridRect, GridSize, PivotedPoint};
 
 pub struct TerminalPlugins;
 

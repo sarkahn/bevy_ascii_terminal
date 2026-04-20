@@ -1,7 +1,9 @@
 //! Utilities for converting srgba colors to linear colors in a const context.
-//! Tile colors are stored as linear for correct rendering with the shader.
+//! All terminal colors are stored as linear for correct rendering with the shader,
+//! we should prefer to avoid converting two colors for evert terminal tile (fg
+//! and bg color) at runtime.
 
-use bevy::{color::LinearRgba};
+use bevy::color::LinearRgba;
 
 /// Convert an Srgba hex color to linear. Works at compile time.
 pub const fn srgba_hex(hex: u32) -> LinearRgba {
@@ -33,6 +35,8 @@ pub const fn srgba_bytes(r: u8, g: u8, b: u8, a: u8) -> LinearRgba {
     }
 }
 
+/// Parse a color string. Accepts: #rrggbb, rrggbb, 0xrrggbb, or a named color
+/// from the list of css colors. Case insensitive.
 pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
     let s = input.trim();
 

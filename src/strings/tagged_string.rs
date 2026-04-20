@@ -158,9 +158,9 @@ impl<'a> Iterator for TokenIterator<'a> {
     }
 }
 
-/// Wrap a tagged string. Returns (wrapped, line width minus tags, remaining)
+/// Wrap a tagged string. Returns (wrapped, wrapped width minus tags, remaining).
 /// This doesn't strip the tags but is used to pre-wrap the tagged string into
-/// lines and provide correct line width before parsing
+/// lines and provide correct line width before parsing/printing
 pub fn wrap_tagged_string(
     input: &str,
     max_len: usize,

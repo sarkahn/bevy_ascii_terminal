@@ -5,9 +5,6 @@ use bevy::{
     reflect::Reflect,
 };
 
-#[allow(deprecated)]
-use crate::GridPoint;
-
 #[derive(Debug, Default, Reflect, Clone, Copy, PartialEq, Eq)]
 pub enum Pivot {
     #[default]
@@ -65,14 +62,110 @@ impl Pivot {
 
     /// Transform a point into the pivot's coordinate space.
     #[inline]
-    #[allow(deprecated)]
-    pub fn transform_axis(&self, grid_point: impl GridPoint) -> IVec2 {
-        grid_point.to_ivec2() * self.axis()
+    pub fn transform_axis(&self, grid_point: impl Into<IVec2>) -> IVec2 {
+        grid_point.into() * self.axis()
     }
 
     /// Transform a point from a bottom-left origin to the pivot origin
     pub fn transform_point(&self, point: impl Into<IVec2>, grid_size: impl Into<UVec2>) -> IVec2 {
         self.pivot_position(grid_size.into().as_ivec2()) + self.transform_coordinates(point)
+    }
+}
+
+pub trait PivotPoint {
+    fn pivot(&self, pivot: Pivot) -> PivotedPoint;
+}
+
+impl<T: Into<IVec2> + Copy> PivotPoint for T {
+    fn pivot(&self, pivot: Pivot) -> PivotedPoint {
+        let p = (*self).into();
+        PivotedPoint {
+            point: p,
+            pivot: Some(pivot),
+        }
+    }
+}
+
+impl From<UVec2> for PivotedPoint {
+    fn from(value: UVec2) -> Self {
+        PivotedPoint {
+            point: value.as_ivec2(),
+            pivot: None,
+        }
+    }
+}
+
+impl From<IVec2> for PivotedPoint {
+    fn from(value: IVec2) -> Self {
+        PivotedPoint {
+            point: value,
+            pivot: None,
+        }
+    }
+}
+
+impl From<[i32; 2]> for PivotedPoint {
+    fn from(value: [i32; 2]) -> Self {
+        PivotedPoint {
+            point: IVec2::from_array(value),
+            pivot: None,
+        }
+    }
+}
+
+impl From<[u32; 2]> for PivotedPoint {
+    fn from(value: [u32; 2]) -> Self {
+        PivotedPoint {
+            point: UVec2::from_array(value).as_ivec2(),
+            pivot: None,
+        }
+    }
+}
+
+impl From<[usize; 2]> for PivotedPoint {
+    fn from(value: [usize; 2]) -> Self {
+        PivotedPoint {
+            point: IVec2::new(value[0] as i32, value[1] as i32),
+            pivot: None,
+        }
+    }
+}
+
+/// A grid point that may optionally have a pivot applied to it. This can be used
+/// to override the terminal pivot for a certain operation.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct PivotedPoint {
+    pub point: IVec2,
+    pub pivot: Option<Pivot>,
+}
+
+impl PivotedPoint {
+    pub fn new(xy: impl Into<IVec2>, pivot: Pivot) -> Self {
+        Self {
+            point: xy.into(),
+            pivot: Some(pivot),
+        }
+    }
+
+    /// Calculate the final pivoted position on a sized grid.
+    ///
+    /// Transforms into the pivot's coordinate space if a pivot is applied,
+    /// returns the original point if no pivot is applied.
+    pub fn calculate(&self, grid_size: impl Into<UVec2>) -> IVec2 {
+        if let Some(pivot) = self.pivot {
+            pivot.pivot_position(grid_size.into().as_ivec2()) + pivot.transform_axis(self.point)
+        } else {
+            self.point
+        }
+    }
+
+    /// Returns a new PivotedPoint with this point's pivot or a default applied
+    /// to it if this point doesn't have one.
+    pub fn with_default_pivot(&self, default_pivot: Pivot) -> PivotedPoint {
+        Self {
+            point: self.point,
+            pivot: Some(self.pivot.unwrap_or(default_pivot)),
+        }
     }
 }
 
@@ -87,5 +180,16 @@ mod tests {
         let pivot = Pivot::Center;
         let p = pivot.transform_point([-2, -2], [10, 10]);
         assert_eq!(ivec2(3, 3), p);
+    }
+
+    fn point_taker(xy: impl Into<PivotedPoint>) -> IVec2 {
+        let pp = xy.into();
+        pp.calculate([10, 10])
+    }
+
+    #[test]
+    fn pivot_point() {
+        let p = point_taker([1, 1].pivot(Pivot::LeftTop));
+        assert_eq!([1, 8], p.to_array());
     }
 }

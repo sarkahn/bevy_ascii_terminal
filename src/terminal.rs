@@ -9,7 +9,7 @@ use bevy::{
 
 #[allow(deprecated)]
 use crate::{
-    GridRect, GridSize, Pivot, PivotedPoint, Tile, ascii,
+    Pivot, PivotedPoint, Tile, ascii,
     render::{
         RebuildMeshVerts, TerminalFont, TerminalMaterial, TerminalMeshPivot, UvMappingHandle,
     },
@@ -44,10 +44,11 @@ pub struct Terminal {
 
 impl Terminal {
     #[allow(deprecated)]
-    pub fn new(size: impl GridSize) -> Self {
+    pub fn new(size: impl Into<UVec2>) -> Self {
+        let size = size.into();
         Self {
-            size: size.to_uvec2(),
-            tiles: vec![Tile::default(); size.tile_count()],
+            size,
+            tiles: vec![Tile::default(); size.element_product() as usize],
             clear_tile: Tile::default(),
             pivot: Pivot::default(),
             padding: Padding::default(),
@@ -69,7 +70,7 @@ impl Terminal {
         if width == 0 || height == 0 {
             return None;
         }
-        let mut terminal = Self::new([width, height]);
+        let mut terminal = Self::new([width as u32, height as u32]);
         for (y, line) in string.as_ref().lines().rev().enumerate() {
             for (x, ch) in line.chars().enumerate() {
                 let t = terminal.tile_mut([x as i32, y as i32]);
@@ -132,15 +133,12 @@ impl Terminal {
     }
 
     /// A utility function to add a string to the terminal during creation.
-    #[allow(deprecated)]
     pub fn with_string<T: AsRef<str>>(
         mut self,
         xy: impl Into<PivotedPoint>,
         string: impl Into<TerminalString<T>>,
     ) -> Self {
-        let xy = xy.into();
-
-        self.put_string(xy.point, string);
+        self.put_string(xy, string);
         self
     }
 
@@ -165,9 +163,8 @@ impl Terminal {
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_char([5, 5], 'X').fg(color::RED);
+    /// terminal.put_char([5, 5], 'X');
     /// ```
-    #[allow(deprecated)]
     pub fn put_char(&mut self, xy: impl Into<PivotedPoint>, ch: char) -> &mut Tile {
         let pp = xy.into();
 
@@ -176,29 +173,29 @@ impl Terminal {
             self.pivot = pivot;
         }
 
-        let i = self
-            .try_transform_point_to_index(pp.point)
-            .expect("Put char out of bounds");
+        let i = self.transform_point_to_index(pp.point);
+        self.pivot = piv;
 
         self.tiles[i].glyph = ch;
-
-        self.pivot = piv;
 
         &mut self.tiles[i]
     }
 
     pub fn maybe_put(
         &mut self,
-        xy: impl Into<IVec2>,
+        xy: impl Into<PivotedPoint>,
         glyph: Option<char>,
         fg: Option<LinearRgba>,
         bg: Option<LinearRgba>,
     ) {
-        //let xy = xy.into().calculate(self.size());
-        let xy = xy.into();
+        let pp = xy.into();
+        let piv = self.pivot;
+        if let Some(pivot) = pp.pivot {
+            self.pivot = pivot;
+        }
 
-        let i = (xy.y * self.width() as i32 + xy.x) as usize;
-        let t = &mut self.tiles[i];
+        let t = self.tile_mut(pp.point);
+
         if let Some(glyph) = glyph {
             t.glyph = glyph;
         }
@@ -210,6 +207,8 @@ impl Terminal {
         if let Some(bg) = bg {
             t.bg_color = bg;
         }
+
+        self.pivot = piv;
     }
 
     pub fn maybe_fill(
@@ -245,21 +244,26 @@ impl Terminal {
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_fg_color([5, 5], color::RED);
+    /// terminal.put_fg_color([5, 5], color::RED).bg(color::BLUE);
     /// ```
-    #[allow(deprecated)]
-    pub fn put_fg_color(&mut self, xy: impl Into<PivotedPoint>, color: impl Into<LinearRgba>) {
+    pub fn put_fg_color(
+        &mut self,
+        xy: impl Into<PivotedPoint>,
+        color: impl Into<LinearRgba>,
+    ) -> &mut Tile {
         let pp = xy.into();
 
-        // TODO: Remove after pivoted point is gone
         let piv = self.pivot;
         if let Some(pivot) = pp.pivot {
             self.pivot = pivot;
         }
 
-        self.tile_mut(pp.point).fg(color);
+        let i = self.transform_point_to_index(pp.point);
 
         self.pivot = piv;
+
+        self.tiles[i].fg_color = color.into();
+        &mut self.tiles[i]
     }
 
     /// Set the background color of a tile.
@@ -271,10 +275,14 @@ impl Terminal {
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_bg_color([5, 5], color::BLUE);
+    /// terminal.put_bg_color([5, 5], color::BLUE).fg(color::RED);
     /// ```
     #[allow(deprecated)]
-    pub fn put_bg_color(&mut self, xy: impl Into<PivotedPoint>, color: impl Into<LinearRgba>) {
+    pub fn put_bg_color(
+        &mut self,
+        xy: impl Into<PivotedPoint>,
+        color: impl Into<LinearRgba>,
+    ) -> &mut Tile {
         let pp = xy.into();
 
         let piv = self.pivot;
@@ -282,21 +290,24 @@ impl Terminal {
             self.pivot = pivot;
         }
 
-        self.tile_mut(pp.point).bg(color);
+        let i = self.transform_point_to_index(pp.point);
 
         self.pivot = piv;
+
+        self.tiles[i].bg_color = color.into();
+        &mut self.tiles[i]
     }
 
     /// Insert a tile into the terminal.
     #[allow(deprecated)]
     pub fn put_tile(&mut self, xy: impl Into<PivotedPoint>, tile: Tile) {
-        let xy = xy.into();
+        let pp = xy.into();
         let piv = self.pivot;
-        if let Some(pivot) = xy.pivot {
+        if let Some(pivot) = pp.pivot {
             self.pivot = pivot;
         }
-        let t = self.tile_mut(xy.point);
-        *t = tile;
+
+        *self.tile_mut(pp.point) = tile;
 
         self.pivot = piv;
     }
@@ -351,21 +362,25 @@ impl Terminal {
         let padding = self.padding;
 
         self.padding = Padding::ZERO;
+
+        let pivot = self.pivot;
+        self.pivot = Pivot::LeftBottom;
+
         self.put_box([0, 0], self.size(), box_style);
 
         if box_style.reset_padding {
-            let pad_left = box_style.top_left != ' '
-                || box_style.center_left != ' '
-                || box_style.bottom_left != ' ';
-            let pad_right = box_style.top_right != ' '
-                || box_style.center_right != ' '
-                || box_style.bottom_right != ' ';
-            let pad_top = box_style.top_left != ' '
-                || box_style.top_center != ' '
-                || box_style.top_right != ' ';
-            let pad_bottom = box_style.bottom_left != ' '
-                || box_style.bottom_center != ' '
-                || box_style.bottom_right != ' ';
+            let pad_left = box_style.left_top != ' '
+                || box_style.left_center != ' '
+                || box_style.left_bottom != ' ';
+            let pad_right = box_style.right_top != ' '
+                || box_style.right_center != ' '
+                || box_style.right_bottom != ' ';
+            let pad_top = box_style.left_top != ' '
+                || box_style.center_top != ' '
+                || box_style.right_top != ' ';
+            let pad_bottom = box_style.left_bottom != ' '
+                || box_style.center_bottom != ' '
+                || box_style.right_bottom != ' ';
 
             self.padding = Padding {
                 left: pad_left as usize,
@@ -376,10 +391,13 @@ impl Terminal {
         } else {
             self.padding = padding;
         }
+
+        self.pivot = pivot;
     }
 
+    /// Draw a box within the inner area of the terminal
     pub fn put_box(&mut self, xy: impl Into<IVec2>, size: impl Into<UVec2>, style: BoxStyle) {
-        //let xy = xy.into().calculate(self.size);
+        // TODO: Account for pivot
         let xy = xy.into();
 
         let size = size.into().as_ivec2();
@@ -395,31 +413,43 @@ impl Terminal {
             ColorWrite::Clear => self.clear_tile.bg_color,
             ColorWrite::Set(col) => col,
         });
-        self.maybe_put(xy, Some(style.bottom_left), fg, bg);
-        self.maybe_put(xy + up, Some(style.top_left), fg, bg);
-        self.maybe_put(xy + right, Some(style.bottom_right), fg, bg);
-        self.maybe_put(xy + right + up, Some(style.top_right), fg, bg);
+        self.maybe_put(xy, Some(style.left_bottom), fg, bg);
+        self.maybe_put(xy + up, Some(style.left_top), fg, bg);
+        self.maybe_put(xy + right, Some(style.right_bottom), fg, bg);
+        self.maybe_put(xy + right + up, Some(style.right_top), fg, bg);
 
         for i in 1..size.x - 1 {
-            self.maybe_put([xy.x + i, xy.y], Some(style.bottom_center), fg, bg);
-            self.maybe_put([xy.x + i, xy.y + up.y], Some(style.top_center), fg, bg);
+            self.maybe_put([xy.x + i, xy.y], Some(style.center_bottom), fg, bg);
+            self.maybe_put([xy.x + i, xy.y + up.y], Some(style.center_top), fg, bg);
         }
 
         for i in 1..size.y - 1 {
-            self.maybe_put([xy.x, xy.y + i], Some(style.center_left), fg, bg);
-            self.maybe_put([xy.x + right.x, xy.y + i], Some(style.center_right), fg, bg);
+            self.maybe_put([xy.x, xy.y + i], Some(style.left_center), fg, bg);
+            self.maybe_put([xy.x + right.x, xy.y + i], Some(style.right_center), fg, bg);
         }
     }
 
-    /// Write a formatted string to the terminal.
+    /// Write a string to the terminal. Color tags can optionally be written
+    /// into the string to color parts of the foreground/background within the string.
     ///
-    /// # Example
+    /// ## Color tags:
+    /// - Set the foreground color between tags: <fg=color>Text</fg>
+    /// - Set the background color between tags: <bg=color>Text</bg>
+    /// - Color format can be `#rrggbb`, `rrggbb`, `0xrrggbb`, or any of the named css colors.
+    ///
+    /// Closing tags are optional if you want to set the whole string color.
+    ///
+    /// Parsing color tags doesn't cause any allocations but it isn't free. To
+    /// prevent parsing call `.dont_parse_tags()` on the string.
+    ///
+    /// ## Example
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
     ///
-    /// terminal.put_string([5, 5], "<fg=blue>Hello</fg>, <fg=#0000FF>World</fg>!");
-    /// terminal.put_string([1, 1], "<bg=gray><fg=orange>Beep</fg> <fg=yellow>beep</fg>!");
+    /// terminal.put_string([5, 1], "<fg=blue>Hello</fg>, <fg=#0000FF>World</fg>!");
+    /// terminal.put_string([1, 2], "<bg=gray><fg=orange>Beep</fg> <fg=light_goldenrod_yellow>beep</fg>!");
+    /// terminal.put_string([1, 3], "A regular string with no tags".dont_parse_tags());
     /// ```
     #[allow(deprecated)]
     pub fn put_string<T: AsRef<str>>(
@@ -444,7 +474,7 @@ impl Terminal {
         self.pivot = pivot;
     }
 
-    pub fn put_string_tagged<T: AsRef<str>>(
+    fn put_string_tagged<T: AsRef<str>>(
         &mut self,
         xy: impl Into<IVec2>,
         string: impl Into<TerminalString<T>>,
@@ -543,6 +573,7 @@ impl Terminal {
         }
     }
 
+    /// Write an untagged string to the terminal.
     fn put_string_untagged<T: AsRef<str>>(
         &mut self,
         xy: impl Into<IVec2>,
@@ -754,20 +785,32 @@ impl Terminal {
     }
 
     /// Iterate over a rectangular section of terminal tiles.
-    pub fn iter_rect(&self, rect: GridRect) -> impl DoubleEndedIterator<Item = &Tile> {
+    pub fn iter_rect(
+        &self,
+        xy: impl Into<IVec2>,
+        size: impl Into<UVec2>,
+    ) -> impl DoubleEndedIterator<Item = &Tile> {
+        let bl = xy.into();
+        let tr = bl + (size.into().as_ivec2() - 1);
         self.tiles
             .chunks(self.width())
-            .skip(rect.bottom() as usize)
-            .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter())
+            .skip(bl.y as usize)
+            .flat_map(move |tiles| tiles[bl.x as usize..=tr.x as usize].iter())
     }
 
     /// Iterate over a rectangular section of terminal tiles.
-    pub fn iter_rect_mut(&mut self, rect: GridRect) -> impl DoubleEndedIterator<Item = &mut Tile> {
+    pub fn iter_rect_mut(
+        &mut self,
+        xy: impl Into<IVec2>,
+        size: impl Into<UVec2>,
+    ) -> impl DoubleEndedIterator<Item = &mut Tile> {
+        let bl = xy.into();
+        let tr = bl + (size.into().as_ivec2() - 1);
         let w = self.width();
         self.tiles
             .chunks_mut(w)
-            .skip(rect.bottom() as usize)
-            .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter_mut())
+            .skip(bl.y as usize)
+            .flat_map(move |tiles| tiles[bl.x as usize..=tr.x as usize].iter_mut())
     }
 
     /// An iterator over all tiles that also yields each tile's 2d grid position
@@ -796,22 +839,18 @@ impl Terminal {
         self.tiles.iter_mut()
     }
 
-    /// The local grid bounds of the terminal. For world bounds see [TerminalTransform].
-    pub fn bounds(&self) -> GridRect {
-        GridRect::new([0, 0], self.size)
-    }
-
     pub fn clear_tile(&self) -> Tile {
         self.clear_tile
     }
 
     #[allow(deprecated)]
-    pub fn resize(&mut self, new_size: impl GridSize) {
-        if new_size.to_uvec2() == self.size {
+    pub fn resize(&mut self, new_size: impl Into<UVec2>) {
+        let new_size = new_size.into();
+        if new_size == self.size {
             return;
         }
-        let new_size = new_size.to_uvec2().max(UVec2::new(2, 2));
-        self.tiles = vec![self.clear_tile; new_size.tile_count()];
+        let new_size = new_size.max(UVec2::new(2, 2));
+        self.tiles = vec![self.clear_tile; new_size.element_product() as usize];
         self.size = new_size;
     }
 
@@ -833,6 +872,17 @@ impl Terminal {
         Some(xy)
     }
 
+    pub fn transform_point_to_index(&self, xy: impl Into<IVec2>) -> usize {
+        let xy = xy.into();
+        self.try_transform_point_to_index(xy).unwrap_or_else(|| {
+            panic!(
+                "Error transforming position {} to index, out of inner terminal bounds {}",
+                xy,
+                self.inner_size()
+            )
+        })
+    }
+
     /// Transform a point from a bottom-left origin to it's corresponding tile index
     /// within the padded area of the terminal.
     pub fn try_transform_point_to_index(&self, xy: impl Into<IVec2>) -> Option<usize> {
@@ -847,7 +897,6 @@ impl Terminal {
         if xy.cmpge(self.size.as_ivec2()).any() {
             return None;
         }
-        println!("TRANSFORMED POINT {}", xy);
         Some(xy.y as usize * self.width() + xy.x as usize)
     }
 
@@ -890,7 +939,7 @@ impl Terminal {
                 "No layers found in REXPaint file",
             ));
         };
-        let mut terminal = Self::new([w, h]);
+        let mut terminal = Self::new([w as u32, h as u32]);
         for layer in &xp.layers {
             for y in 0..layer.height {
                 for x in 0..layer.width {

@@ -24,15 +24,20 @@ use bevy_ascii_terminal::*;
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, TerminalPlugins))
+        .insert_resource(ClearColor(Color::BLACK))
         .add_systems(Startup, setup)
         .run();
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn((
-        Terminal::new([12, 1]).with_string([0, 0], "Hello world!".fg(color::BLUE)),
-        TerminalBorder::single_line(),
-    ));
+    commands.spawn(
+        Terminal::new([25, 3])
+            .with_border(BoxStyle::SINGLE_LINE)
+            .with_string(
+                [0, 0],
+                "# <fg=red>Bevy <fg=green>Ascii <fg=blue>Terminal</fg> #",
+            ),
+    );
     commands.spawn(TerminalCamera::new());
 }
 ```

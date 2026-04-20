@@ -1,23 +1,21 @@
 # Changelog
-## [0.18.3] - 2026/04/06
+## [0.19.0] - 2026/04/20
 
 ### Changes
 - Update for bevy 0.19.
-- `put_string` can now use embedded color tags to color strings as they are written to the terminal. The examples have been updated to use tagged strings. You can use `dont_parse_tags` on the string to prevent parsing. 
+- `put_string` can now use embedded color tags to color strings as they are written to the terminal. Docs and examples have been updated to use tagged strings.
 - Merged pr so hidden terminals will be ignored by `TerminalCamera`.
 - `Pivot` variant names changed so horizontal axis is always first (IE: `LeftBottom` instead of `BottomLeft`) - a little awkward to write but much easier for my brain to reason about in code.
-- Removed "grid_poitns" example
+- Removed "grid_position" example
 - Added "fireworks" example.
+- Added "viewport" example showing how to render a terminal nicely in a resized viewport.
 
 ### Deprecations
 
 ***(Apologies for the various breaking changes, I am trying to simplify some aspects of the library.)***
 
-- Removed dependency on sark_grids and moved it's types to this crate. 
-- `GridPoint`, `GridSize`, `GridRect` are deprecated and will be removed by bevy 0.20. `GridPoint` and `GridSize` will be replaced with `impl Into<IVec2>` and `impl Into<UVec2>`. 
-- `PivotedPoint` is deprecated and will be removed by bevy 0.20. It will be replaced with `set_pivot` to set a persistent state on the Terminal that will affect all drawing. Examples have been updated to use `set_pivot`.
-- Deprecated `TerminalBorder`. `TerminalBorder` will be removed in favor of `put_border` along with persistent `Padding` state on the terminal itself that will affect all drawing.
-- Removed "grid_position" example
+- Removed dependency on sark_grids. 
+- `TerminalBorder` was removed in favor of `put_border` along with persistent `Padding` state on the terminal itself that will affect all drawing.
 - `StringDecoration` and `StringFormatting` have been removed, all functionality was moved into `TerminalString`.
 - `GridStringIterator` was removed, it's functionality has been moved to `strings::tagged_string`.
 

@@ -36,15 +36,15 @@ impl Padding {
 
 #[derive(Debug, Copy, Clone, Reflect)]
 pub struct BoxStyle {
-    pub top_left: char,
-    pub top_center: char,
-    pub top_right: char,
-    pub center_left: char,
+    pub left_top: char,
+    pub center_top: char,
+    pub right_top: char,
+    pub left_center: char,
     pub center: char,
-    pub center_right: char,
-    pub bottom_left: char,
-    pub bottom_center: char,
-    pub bottom_right: char,
+    pub right_center: char,
+    pub left_bottom: char,
+    pub center_bottom: char,
+    pub right_bottom: char,
     pub fg_color: Option<ColorWrite>,
     pub bg_color: Option<ColorWrite>,
     // Reset the padding when writing - only used in [crate::Terminal::put_border]
@@ -54,15 +54,15 @@ pub struct BoxStyle {
 impl Default for BoxStyle {
     fn default() -> Self {
         Self {
-            top_left: Default::default(),
-            top_center: Default::default(),
-            top_right: Default::default(),
-            center_left: Default::default(),
+            left_top: Default::default(),
+            center_top: Default::default(),
+            right_top: Default::default(),
+            left_center: Default::default(),
             center: Default::default(),
-            center_right: Default::default(),
-            bottom_left: Default::default(),
-            bottom_center: Default::default(),
-            bottom_right: Default::default(),
+            right_center: Default::default(),
+            left_bottom: Default::default(),
+            center_bottom: Default::default(),
+            right_bottom: Default::default(),
             fg_color: Some(ColorWrite::Clear),
             bg_color: Some(ColorWrite::Clear),
             reset_padding: true,
@@ -75,34 +75,34 @@ impl BoxStyle {
         let b = s.as_bytes();
         let mut pos = 0;
 
-        let (top_left, n) = decode_char(b, pos);
+        let (left_top, n) = decode_char(b, pos);
         pos += n;
-        let (top_center, n) = decode_char(b, pos);
+        let (center_top, n) = decode_char(b, pos);
         pos += n;
-        let (top_right, n) = decode_char(b, pos);
+        let (right_top, n) = decode_char(b, pos);
         pos += n;
-        let (center_left, n) = decode_char(b, pos);
+        let (left_center, n) = decode_char(b, pos);
         pos += n;
         let (center, n) = decode_char(b, pos);
         pos += n;
-        let (center_right, n) = decode_char(b, pos);
+        let (right_center, n) = decode_char(b, pos);
         pos += n;
-        let (bottom_left, n) = decode_char(b, pos);
+        let (left_bottom, n) = decode_char(b, pos);
         pos += n;
-        let (bottom_center, n) = decode_char(b, pos);
+        let (center_bottom, n) = decode_char(b, pos);
         pos += n;
-        let (bottom_right, _) = decode_char(b, pos);
+        let (right_bottom, _) = decode_char(b, pos);
 
         BoxStyle {
-            top_left,
-            top_center,
-            top_right,
-            center_left,
+            left_top,
+            center_top,
+            right_top,
+            left_center,
             center,
-            center_right,
-            bottom_left,
-            bottom_center,
-            bottom_right,
+            right_center,
+            left_bottom,
+            center_bottom,
+            right_bottom,
             fg_color: Some(ColorWrite::Clear),
             bg_color: Some(ColorWrite::Clear),
             reset_padding: true,

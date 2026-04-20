@@ -2,10 +2,8 @@
 //! grid coordinates.
 
 use crate::render::RebuildMeshVerts;
-#[allow(deprecated)]
 use crate::{
-    GridPoint, Terminal, TerminalMeshWorldScaling,
-    border::TerminalBorder,
+    Terminal, TerminalMeshWorldScaling,
     render::{TerminalFont, TerminalMaterial, TerminalMeshPivot, TerminalMeshTileScaling},
 };
 use bevy::{
@@ -15,7 +13,6 @@ use bevy::{
         change_detection::DetectChanges,
         component::Component,
         entity::Entity,
-        lifecycle::Add,
         message::MessageReader,
         query::{Changed, With},
         schedule::{IntoScheduleConfigs, SystemSet},
@@ -23,7 +20,7 @@ use bevy::{
     },
     image::Image,
     math::{IVec2, Rect, UVec2, Vec2, Vec3},
-    prelude::{GlobalTransform, On, Or},
+    prelude::{GlobalTransform, Or},
     reflect::Reflect,
     sprite_render::MeshMaterial2d,
     transform::{TransformSystems, components::Transform},
@@ -36,7 +33,6 @@ pub struct TerminalSystemsUpdateTransform;
 
 impl Plugin for TerminalTransformPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_observer(on_border_replace);
         app.add_systems(
             PostUpdate,
             (
@@ -80,9 +76,9 @@ pub struct TerminalTransform {
 pub struct SetTerminalGridPosition(pub IVec2);
 
 #[allow(deprecated)]
-impl<T: GridPoint> From<T> for SetTerminalGridPosition {
+impl<T: Into<IVec2>> From<T> for SetTerminalGridPosition {
     fn from(xy: T) -> Self {
-        Self(xy.to_ivec2())
+        Self(xy.into())
     }
 }
 
@@ -192,14 +188,6 @@ fn on_size_change(
     }
 }
 
-// TODO: How do we do this now?
-#[allow(deprecated)]
-fn on_border_replace(on_replace: On<Add, TerminalBorder>, mut commands: Commands) {
-    commands
-        .entity(on_replace.event().entity)
-        .insert(CacheTransformData);
-}
-
 fn on_scaling_changed(
     mut commands: Commands,
     scaling: Res<TerminalMeshWorldScaling>,
@@ -230,12 +218,10 @@ fn cache_transform_data(
             &Terminal,
             &MeshMaterial2d<TerminalMaterial>,
             Option<&TerminalMeshTileScaling>,
-            Option<&TerminalBorder>,
         ),
         Or<(
             Changed<Transform>,
             Changed<TerminalFont>,
-            Changed<TerminalBorder>,
             Changed<TerminalMeshPivot>,
             With<CacheTransformData>,
         )>,
@@ -245,7 +231,7 @@ fn cache_transform_data(
     scaling: Res<TerminalMeshWorldScaling>,
     mut commands: Commands,
 ) {
-    for (entity, transform, mut term_transform, pivot, term, mat_handle, tile_scaling, border) in
+    for (entity, transform, mut term_transform, pivot, term, mat_handle, tile_scaling) in
         &mut q_term
     {
         let Some(image) = materials
@@ -275,49 +261,16 @@ fn cache_transform_data(
         data.world_tile_size = world_tile_size;
         data.pixels_per_tile = ppu;
 
-        let border_offset = if let Some(border) = border.as_ref() {
-            let left = border.has_left_side() as i32;
-            let right = border.has_right_side() as i32;
-            let top = border.has_top_side() as i32;
-            let bottom = border.has_bottom_side() as i32;
-
-            match pivot {
-                TerminalMeshPivot::LeftTop => [left, -top],
-                TerminalMeshPivot::CenterTop => [0, -top],
-                TerminalMeshPivot::RightTop => [-right, -top],
-                TerminalMeshPivot::LeftCenter => [left, 0],
-                TerminalMeshPivot::RightCenter => [-right, 0],
-                TerminalMeshPivot::LeftBottom => [left, bottom],
-                TerminalMeshPivot::CenterBottom => [0, bottom],
-                TerminalMeshPivot::RightBottom => [-right, bottom],
-                TerminalMeshPivot::Center => [0, 0],
-            }
-        } else {
-            [0, 0]
-        }
-        .to_vec2()
-            * world_tile_size;
-
         // The size of the terminal mesh excluding the border bounds
         let inner_mesh_size = term.size().as_vec2() * world_tile_size;
         let inner_mesh_min = -inner_mesh_size * pivot.normalized();
-        let local_min = inner_mesh_min + border_offset;
+        let local_min = inner_mesh_min;
         let local_max = local_min + inner_mesh_size;
         data.local_inner_mesh_bounds = Rect::from_corners(local_min, local_max);
 
-        let world_bounds = if let Some(border) = border.as_ref() {
-            let bounds = border.bounds(term.size());
-            // The size of the terminal mesh including the border bounds
-            let total_world_size = bounds.size.as_vec2() * world_tile_size;
-            let world_min =
-                transform.translation().truncate() - total_world_size * pivot.normalized();
-            let world_max = world_min + total_world_size;
-            Rect::from_corners(world_min, world_max)
-        } else {
-            let world_min = transform.translation().truncate() + local_min;
-            let world_max = world_min + inner_mesh_size;
-            Rect::from_corners(world_min, world_max)
-        };
+        let world_min = transform.translation().truncate() + local_min;
+        let world_max = world_min + inner_mesh_size;
+        let world_bounds = Rect::from_corners(world_min, world_max);
 
         data.world_mesh_bounds = world_bounds;
 

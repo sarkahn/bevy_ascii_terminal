@@ -112,11 +112,12 @@ fn update_font(
 ) {
     for (mut mat_handle, font) in &mut q_term {
         let image: Handle<Image> = match font {
-            TerminalFont::Custom(path) => {
-                server.load_with_settings(path, move |settings: &mut ImageLoaderSettings| {
+            TerminalFont::Custom(path) => server
+                .load_builder()
+                .with_settings(move |settings: &mut ImageLoaderSettings| {
                     settings.sampler = ImageSampler::nearest()
                 })
-            }
+                .load(path),
             TerminalFont::CustomImage(image) => image.clone(),
             _ => handles.handles[font.variant_index()].clone(),
         };

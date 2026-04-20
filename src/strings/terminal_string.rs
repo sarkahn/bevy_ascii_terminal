@@ -7,7 +7,7 @@ pub struct TerminalString<T> {
     pub string: T,
     /// Prevent splitting words between lines. Defaults to true.
     pub word_wrap: bool,
-    /// Parse tags in the string before writing. See [] Defaults to true.
+    /// Parse tags in the string before writing. See [crate::Terminal::put_string] Defaults to true.
     pub parse_tags: bool,
     /// Set string colors to the terminal's clear color. Defaults to true, but
     /// will be overridden by [Self::fg_color] or [Self::bg_color] if they are set.
