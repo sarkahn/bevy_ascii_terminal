@@ -7,7 +7,6 @@ use bevy::{
     sprite_render::MeshMaterial2d,
 };
 
-#[allow(deprecated)]
 use crate::{
     Pivot, PivotedPoint, Tile, ascii,
     render::{
@@ -19,6 +18,7 @@ use crate::{
 };
 use crate::{
     Token, TokenIterator,
+    color::ColorPalette,
     padding::{BoxStyle, ColorWrite, Padding},
     wrap_line_count, wrap_string, wrap_tagged_line_count, wrap_tagged_string,
 };
@@ -40,10 +40,11 @@ pub struct Terminal {
     clear_tile: Tile,
     pivot: Pivot,
     padding: Padding,
+    /// Optional palette for defining custom colors used in tagged strings
+    color_palette: Option<ColorPalette>,
 }
 
 impl Terminal {
-    #[allow(deprecated)]
     pub fn new(size: impl Into<UVec2>) -> Self {
         let size = size.into();
         Self {
@@ -52,6 +53,7 @@ impl Terminal {
             clear_tile: Tile::default(),
             pivot: Pivot::default(),
             padding: Padding::default(),
+            color_palette: None,
         }
     }
 
@@ -88,6 +90,13 @@ impl Terminal {
         self
     }
 
+    /// Add a color palette to the terminal which defines the named colors that
+    /// will be matched from tagged strings. See [Terminal::put_string]
+    pub fn with_color_palette(mut self, palette: ColorPalette) -> Self {
+        self.color_palette = Some(palette);
+        self
+    }
+
     /// Draw a border on the terminal.
     pub fn with_border(mut self, box_style: BoxStyle) -> Self {
         self.put_border(box_style);
@@ -100,7 +109,7 @@ impl Terminal {
         self
     }
 
-    /// Set a title
+    /// Draw a title to the top row of the terminal.
     pub fn with_title<T: AsRef<str>>(mut self, title: impl Into<TerminalString<T>>) -> Self {
         self.put_title(title);
         self
@@ -133,6 +142,8 @@ impl Terminal {
     }
 
     /// A utility function to add a string to the terminal during creation.
+    ///
+    /// This will accept tagged strings, see [Terminal::put_string]
     pub fn with_string<T: AsRef<str>>(
         mut self,
         xy: impl Into<PivotedPoint>,
@@ -244,7 +255,7 @@ impl Terminal {
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_fg_color([5, 5], color::RED).bg(color::BLUE);
+    /// terminal.put_fg_color([5, 5], color::css::RED).bg(color::css::BLUE);
     /// ```
     pub fn put_fg_color(
         &mut self,
@@ -275,9 +286,8 @@ impl Terminal {
     /// ```
     /// use bevy_ascii_terminal::*;
     /// let mut terminal = Terminal::new([10, 10]);
-    /// terminal.put_bg_color([5, 5], color::BLUE).fg(color::RED);
+    /// terminal.put_bg_color([5, 5], color::css::BLUE).fg(color::css::RED);
     /// ```
-    #[allow(deprecated)]
     pub fn put_bg_color(
         &mut self,
         xy: impl Into<PivotedPoint>,
@@ -299,7 +309,6 @@ impl Terminal {
     }
 
     /// Insert a tile into the terminal.
-    #[allow(deprecated)]
     pub fn put_tile(&mut self, xy: impl Into<PivotedPoint>, tile: Tile) {
         let pp = xy.into();
         let piv = self.pivot;
@@ -312,7 +321,7 @@ impl Terminal {
         self.pivot = piv;
     }
 
-    /// Writes title to the top row of the terminal. Leading spaces will offset
+    /// Write a title to the top row of the terminal. Leading spaces will offset
     /// the title.
     pub fn put_title<T: AsRef<str>>(&mut self, title: impl Into<TerminalString<T>>) {
         let padding = self.padding;
@@ -435,9 +444,9 @@ impl Terminal {
     /// ## Color tags:
     /// - Set the foreground color between tags: <fg=color>Text</fg>
     /// - Set the background color between tags: <bg=color>Text</bg>
-    /// - Color format can be `#rrggbb`, `rrggbb`, `0xrrggbb`, or any of the named css colors.
-    ///
-    /// Closing tags are optional if you want to set the whole string color.
+    /// - Color format can be `#rrggbb`, `rrggbb`, `0xrrggbb`, or any named colors.
+    ///   Custom color names for tagged strings can be explicitly defined via [Terminal::with_color_palette],
+    ///   if not specified the default colors from [crate::color::css] will be used.
     ///
     /// Parsing color tags doesn't cause any allocations but it isn't free. To
     /// prevent parsing call `.dont_parse_tags()` on the string.
@@ -448,10 +457,9 @@ impl Terminal {
     /// let mut terminal = Terminal::new([10, 10]);
     ///
     /// terminal.put_string([5, 1], "<fg=blue>Hello</fg>, <fg=#0000FF>World</fg>!");
-    /// terminal.put_string([1, 2], "<bg=gray><fg=orange>Beep</fg> <fg=light_goldenrod_yellow>beep</fg>!");
+    /// terminal.put_string([1, 2], "<bg=gray><fg=orange>Beep <fg=light_goldenrod_yellow>beep</fg>!");
     /// terminal.put_string([1, 3], "A regular string with no tags".dont_parse_tags());
     /// ```
-    #[allow(deprecated)]
     pub fn put_string<T: AsRef<str>>(
         &mut self,
         xy: impl Into<PivotedPoint>,
@@ -500,7 +508,7 @@ impl Terminal {
             wrap_tagged_string(string, first_line_len, ts.word_wrap).unwrap();
 
         // TODO: Error handling
-        let mut xy = self.try_transform_point(origin).unwrap();
+        let mut xy = self.transform_point(origin);
 
         // Count remaining lines after wrapping the first line since all
         // remaining line widths are the same
@@ -511,13 +519,17 @@ impl Terminal {
         xy.y += line_offset;
 
         // Newline resets x position based on pivot
-        let newline_x = self.try_transform_point(IVec2::ZERO).unwrap().x;
+        let newline_x = self.transform_point(IVec2::ZERO).x;
 
         while !wrapped.is_empty() || !rem.is_empty() {
             let x_offset = (pivot.x * char_count.saturating_sub(1) as f32).floor() as i32;
             xy.x -= x_offset;
-
-            for token in TokenIterator::new(wrapped) {
+            let iter = if let Some(palette) = &self.color_palette {
+                TokenIterator::new(wrapped).with_color_palette(palette)
+            } else {
+                TokenIterator::new(wrapped)
+            };
+            for token in iter {
                 // TODO: Error handling
                 let token = token.unwrap();
                 match token {
@@ -674,15 +686,15 @@ impl Terminal {
     }
 
     /// Convert a 1d index into the terminal tile data into it's corresponding
-    /// 2d tile index, ignoring padding.
+    /// 2d tile index, ignoring padding and pivot.
     #[inline]
     pub fn index_to_tile(&self, i: usize) -> IVec2 {
         let w = self.width() as i32;
         IVec2::new(i as i32 % w, i as i32 / w)
     }
 
-    /// Retrieve a tile from the inner area of the terminal, or None if the
-    /// position is out of bounds.
+    /// Retrieve a tile from the inner area of the terminal, or [None] if the
+    /// transformed position is out of bounds.
     pub fn try_tile_mut(&mut self, xy: impl Into<IVec2>) -> Option<&mut Tile> {
         let xy = self.try_transform_point(xy.into())?;
         let i = self.tile_to_index(xy);
@@ -813,7 +825,8 @@ impl Terminal {
             .flat_map(move |tiles| tiles[bl.x as usize..=tr.x as usize].iter_mut())
     }
 
-    /// An iterator over all tiles that also yields each tile's 2d grid position
+    /// An iterator over all tiles that also yields each tile's 2d grid position,
+    /// ignoring pivot and padding
     pub fn iter_xy(&self) -> impl DoubleEndedIterator<Item = (IVec2, &Tile)> {
         self.tiles
             .iter()
@@ -843,7 +856,6 @@ impl Terminal {
         self.clear_tile
     }
 
-    #[allow(deprecated)]
     pub fn resize(&mut self, new_size: impl Into<UVec2>) {
         let new_size = new_size.into();
         if new_size == self.size {
@@ -870,6 +882,17 @@ impl Terminal {
         }
 
         Some(xy)
+    }
+
+    pub fn transform_point(&self, xy: impl Into<IVec2>) -> IVec2 {
+        let xy = xy.into();
+        self.try_transform_point(xy).unwrap_or_else(|| {
+            panic!(
+                "Error transforming position {}, transformed point out of inner terminal bounds {}",
+                xy,
+                self.inner_size()
+            )
+        })
     }
 
     pub fn transform_point_to_index(&self, xy: impl Into<IVec2>) -> usize {

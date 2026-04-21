@@ -11,7 +11,6 @@ fn main() {
 }
 
 fn setup(mut commands: Commands) {
-    #[allow(deprecated)]
     commands.spawn(
         Terminal::from_rexpaint_file("assets/hello_rexpaint.xp")
             .unwrap()

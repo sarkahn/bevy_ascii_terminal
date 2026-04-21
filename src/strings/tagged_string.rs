@@ -1,13 +1,15 @@
 //! Utilities for wrapping and parsing tagged strings without allocations
-use crate::color;
-use anyhow::{Result, anyhow};
+use crate::color::{self, ColorPalette};
+use anyhow::Result;
 use bevy::{color::LinearRgba, math::IVec2};
+use thiserror::Error;
 
 /// Tokens from a tagged string.
 #[derive(PartialEq, Debug)]
 pub enum Token<'a> {
     Text(&'a str),
     Space,
+    /// Escape braces with forward slash `/`
     Escaped(char),
     Newline,
     /// <fg=COLOR> Color + text of color from tag (either name or hex string)
@@ -20,11 +22,28 @@ pub enum Token<'a> {
     BgEnd,
 }
 
+#[derive(Error, Debug)]
+pub enum ParseError<'a> {
+    #[error("Invalid color name `{1}` at {0} from input:\n`{2}`\n")]
+    InvalidColorName(IVec2, &'a str, &'a str),
+    #[error("Missing closing brace on tag at {0} from input:\n{1}\n")]
+    NoClosingBrace(IVec2, &'a str),
+    #[error("Unknown tag at {0} from input:\n{1}\n")]
+    UnknownTag(IVec2, &'a str),
+    #[error("Unhandled token at {0} from input:\n{1}\n")]
+    UnhandledToken(IVec2, &'a str),
+}
+
 /// An iterator over the tokens in a tagged string.
 pub struct TokenIterator<'a> {
     remaining: &'a str,
     // For error reporting
     position: IVec2,
+    /// Prevent color parsing when iterating tokens. See [TokenIterator::dont_parse_colors]
+    parse_colors: bool,
+    /// An optional palette for matching named colors from the tagged string. If
+    /// set to [None] default CSS color names from [crate::color::css] will be used.
+    palette: Option<&'a ColorPalette>,
 }
 
 impl<'a> TokenIterator<'a> {
@@ -32,12 +51,27 @@ impl<'a> TokenIterator<'a> {
         Self {
             remaining: input,
             position: IVec2::ZERO,
+            parse_colors: true,
+            palette: None,
         }
+    }
+
+    /// Prevent the iterator from parsing colors. Used when calculing line widths
+    /// for wrapping tagged strings. Color Tokens will have default color values
+    /// in this case but will still store the named color from the input.
+    pub fn dont_parse_colors(mut self) -> Self {
+        self.parse_colors = false;
+        self
+    }
+
+    pub fn with_color_palette(mut self, palette: &'a ColorPalette) -> Self {
+        self.palette = Some(palette);
+        self
     }
 }
 
 impl<'a> Iterator for TokenIterator<'a> {
-    type Item = Result<Token<'a>>;
+    type Item = Result<Token<'a>, ParseError<'a>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.remaining.is_empty() {
@@ -75,13 +109,12 @@ impl<'a> Iterator for TokenIterator<'a> {
 
         // Not a tag
         if !remaining.starts_with('<') {
+            // Escape slash should be handled above,
             if let Some(next_token) = remaining.find([' ', '<', '\n', '/']) {
                 if next_token == 0 {
-                    // We should have handled all the expected tags above
-                    return Some(Err(anyhow!(
-                        "Unhandled tag from string `{}` at {}",
-                        self.remaining,
+                    return Some(Err(ParseError::UnhandledToken(
                         self.position,
+                        self.remaining,
                     )));
                 }
 
@@ -100,11 +133,15 @@ impl<'a> Iterator for TokenIterator<'a> {
 
         // Tags
         let Some(tag_end) = remaining.find('>') else {
-            return Some(Err(anyhow!(
-                "No closing brace on string `{}` starting at at {}",
+            return Some(Err(ParseError::NoClosingBrace(
+                self.position,
                 self.remaining,
-                self.position
             )));
+            // return Some(Err(anyhow!(
+            //     "No closing brace on string `{}` starting at at {}",
+            //     self.remaining,
+            //     self.position
+            // )));
         };
 
         let tag = &remaining[1..tag_end];
@@ -122,50 +159,65 @@ impl<'a> Iterator for TokenIterator<'a> {
             return Some(Ok(Token::BgEnd));
         }
 
+        let lookup = |col_name: &str| {
+            if let Some(palette) = &self.palette {
+                palette.named_color(col_name)
+            } else {
+                color::try_parse_color_string(col_name)
+            }
+        };
         if prefix.eq_ignore_ascii_case("fg=") {
             let colortext = &tag[3..];
-            if let Some(col) = color::parse_color_string(colortext) {
+
+            if self.parse_colors {
+                if let Some(col) = lookup(colortext) {
+                    self.position.x += 5 + colortext.len() as i32;
+                    return Some(Ok(Token::FgStart(col, colortext)));
+                }
+                return Some(Err(ParseError::InvalidColorName(
+                    self.position,
+                    colortext,
+                    self.remaining,
+                )));
+            } else {
                 self.position.x += 5 + colortext.len() as i32;
-                return Some(Ok(Token::FgStart(col, colortext)));
+                return Some(Ok(Token::FgStart(color::css::WHITE, colortext)));
             }
-            return Some(Err(anyhow::anyhow!(
-                "Invalid color in tag {} at {}",
-                tag,
-                self.position
-            )));
         }
 
         if prefix.eq_ignore_ascii_case("bg=") {
             let colortext = &tag[3..];
-            if let Some(col) = color::parse_color_string(colortext) {
-                self.position.x += 5 + colortext.len() as i32;
-                return Some(Ok(Token::BgStart(col, colortext)));
-            }
 
-            return Some(Err(anyhow::anyhow!(
-                "Invalid color in tag {} at {}",
-                tag,
-                self.position
-            )));
+            if self.parse_colors {
+                if let Some(col) = lookup(colortext) {
+                    self.position.x += 5 + colortext.len() as i32;
+                    return Some(Ok(Token::BgStart(col, colortext)));
+                }
+
+                return Some(Err(ParseError::InvalidColorName(
+                    self.position,
+                    colortext,
+                    self.remaining,
+                )));
+            } else {
+                // We don't want to parse colors if we're measuring line wraps
+                self.position.x += 5 + colortext.len() as i32;
+                return Some(Ok(Token::FgStart(color::css::BLACK, colortext)));
+            }
         }
 
-        // Should be impossible to get here
-        Some(Err(anyhow::anyhow!(
-            "Unknown tag {} at {}",
-            tag,
-            self.position
-        )))
+        Some(Err(ParseError::UnknownTag(self.position, self.remaining)))
     }
 }
 
 /// Wrap a tagged string. Returns (wrapped, wrapped width minus tags, remaining).
 /// This doesn't strip the tags but is used to pre-wrap the tagged string into
 /// lines and provide correct line width before parsing/printing
-pub fn wrap_tagged_string(
-    input: &str,
+pub fn wrap_tagged_string<'a>(
+    input: &'a str,
     max_len: usize,
     word_wrap: bool,
-) -> Result<(&str, usize, &str)> {
+) -> Result<(&'a str, usize, &'a str), ParseError<'a>> {
     if input.trim().is_empty() {
         return Ok(("", 0, ""));
     }
@@ -174,7 +226,7 @@ pub fn wrap_tagged_string(
     let mut char_count = 0;
     let mut trailing_spaces = 0;
 
-    let iter = TokenIterator::new(input);
+    let iter = TokenIterator::new(input).dont_parse_colors();
     'start: for token in iter {
         let token = token?;
 
@@ -218,7 +270,7 @@ pub fn wrap_tagged_string(
             }
             Token::FgStart(_, name) => byte_count += 5 + name.len(), // <fg=> + name
             Token::BgStart(_, name) => byte_count += 5 + name.len(), // <bg=> + name
-            Token::FgEnd | Token::BgEnd => byte_count += 5,          // </fg>
+            Token::FgEnd | Token::BgEnd => byte_count += 5,          // </fg> or </bg>
         }
     }
 
@@ -231,7 +283,11 @@ pub fn wrap_tagged_string(
 }
 
 /// The line count of a wrapped tagged string
-pub fn wrap_tagged_line_count(input: &str, max_len: usize, word_wrap: bool) -> Result<usize> {
+pub fn wrap_tagged_line_count<'a>(
+    input: &'a str,
+    max_len: usize,
+    word_wrap: bool,
+) -> Result<usize, ParseError<'a>> {
     if input.is_empty() {
         return Ok(0);
     }
@@ -306,14 +362,14 @@ mod tests {
         let expected = [
             Token::Text("Hello"),
             Token::Space,
-            Token::FgStart(color::BLUE, "blue"),
+            Token::FgStart(color::css::BLUE, "blue"),
             Token::Text("Wor"),
-            Token::BgStart(color::ORANGE, "orange"),
+            Token::BgStart(color::css::ORANGE, "orange"),
             Token::Text("ld!"),
             Token::FgEnd,
             Token::Text("."),
             Token::Newline,
-            Token::FgStart(color::RED, "red"),
+            Token::FgStart(color::css::RED, "red"),
             Token::Text("How"),
             Token::FgEnd,
             Token::BgEnd,

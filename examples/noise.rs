@@ -30,17 +30,16 @@ impl State {
 }
 
 const DRIFT_INIT: Vec2 = Vec2::new(5.0, -1.0);
-const ALPHA: u8 = 255;
 const COLOR_RAMP: &[LinearRgba] = &[
-    color::srgba_bytes(0, 0, 0, ALPHA),
-    color::srgba_bytes(0, 10, 5, ALPHA),
-    color::srgba_bytes(0, 30, 15, ALPHA),
-    color::srgba_bytes(0, 60, 30, ALPHA),
-    color::srgba_bytes(0, 100, 50, ALPHA),
-    color::srgba_bytes(34, 139, 34, ALPHA),
-    color::srgba_bytes(0, 200, 100, ALPHA),
-    color::srgba_bytes(0, 255, 127, ALPHA),
-    color::srgba_bytes(150, 255, 150, ALPHA),
+    color::from_hex_string("#000000"),
+    color::from_hex_string("#000a0a"),
+    color::from_hex_string("#001a0f"),
+    color::from_hex_string("#003c1e"),
+    color::from_hex_string("#006432"),
+    color::from_hex_string("#228b22"),
+    color::from_hex_string("#00c864"),
+    color::from_hex_string("#00ff7f"),
+    color::from_hex_string("#96ff96"),
 ];
 
 const CHAR_RAMP2: &str = " .:-=+*#%@";

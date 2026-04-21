@@ -52,20 +52,19 @@ enum Shape {
 }
 
 const COLORS: &[LinearRgba] = &[
-    color::srgba_bytes(255, 80, 80, 255),   // red
-    color::srgba_bytes(255, 140, 60, 255),  // orange
-    color::srgba_bytes(255, 200, 80, 255),  // gold
-    color::srgba_bytes(255, 255, 120, 255), // yellow
-    color::srgba_bytes(80, 200, 255, 255),  // sky blue
-    color::srgba_bytes(120, 160, 255, 255), // soft blue
-    color::srgba_bytes(140, 120, 255, 255), // indigo
-    color::srgba_bytes(200, 120, 255, 255), // violet
-    color::srgba_bytes(120, 255, 140, 255), // bright green
-    color::srgba_bytes(80, 255, 200, 255),  // teal
-    color::srgba_bytes(255, 120, 180, 255), // pink
-    color::srgba_bytes(255, 160, 220, 255), // soft pink
-    color::srgba_bytes(255, 255, 255, 255), // pure white
-    color::srgba_bytes(200, 220, 255, 255), // cool white
+    color::from_hex_string("#ff5050"),
+    color::from_hex_string("#ff8c60"),
+    color::from_hex_string("#ffc850"),
+    color::from_hex_string("#50c8ff"),
+    color::from_hex_string("#78a0ff"),
+    color::from_hex_string("#8c78ff"),
+    color::from_hex_string("#c878ff"),
+    color::from_hex_string("#78ff8c"),
+    color::from_hex_string("#50ffc8"),
+    color::from_hex_string("#ff78b4"),
+    color::from_hex_string("#ffa0ff"),
+    color::from_hex_string("#ffffff"),
+    color::from_hex_string("#c8dcff"),
 ];
 
 const GRAVITY: f32 = 9.8;

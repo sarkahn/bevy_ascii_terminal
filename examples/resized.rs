@@ -19,7 +19,6 @@ fn setup(mut commands: Commands) {
     commands.spawn(TerminalCamera::new());
 }
 
-#[allow(deprecated)]
 fn update(mut q_term: Query<&mut Terminal>, time: Res<Time>) {
     let mut term = q_term.single_mut().unwrap();
     let size = (time.elapsed_secs().cos() * 20.0) as u32 % 20 + 15;

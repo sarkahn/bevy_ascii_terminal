@@ -75,7 +75,6 @@ pub struct TerminalTransform {
 #[derive(Component, Debug, Default, Clone, Copy, Reflect)]
 pub struct SetTerminalGridPosition(pub IVec2);
 
-#[allow(deprecated)]
 impl<T: Into<IVec2>> From<T> for SetTerminalGridPosition {
     fn from(xy: T) -> Self {
         Self(xy.into())
@@ -207,7 +206,6 @@ fn on_scaling_changed(
 /// coordinates between world and terminal space. Reads terminal size, border,
 /// mesh and font size, as well as global terminal grid settings.
 #[allow(clippy::type_complexity)]
-#[allow(deprecated)]
 fn cache_transform_data(
     mut q_term: Query<
         (

@@ -1,11 +1,11 @@
 //! Utilities for converting srgba colors to linear colors in a const context.
-//! All terminal colors are stored as linear for correct rendering with the shader,
-//! we should prefer to avoid converting two colors for evert terminal tile (fg
-//! and bg color) at runtime.
+//! All terminal colors are stored as [LinearRgba] to avoid runtime conversions when
+//! passing color data to the shader, which is twice (foreground and background)
+//! for every single terminal tile.
 
-use bevy::color::LinearRgba;
+use bevy::{color::LinearRgba, platform::collections::HashMap, reflect::Reflect};
 
-/// Convert an Srgba hex color to linear. Works at compile time.
+/// Convert an Srgba hex color to [LinearRgba]. Works at compile time.
 pub const fn srgba_hex(hex: u32) -> LinearRgba {
     let rgba = if hex < 0xFFFFFFFF {
         hex << 8 | 0xFF
@@ -21,6 +21,7 @@ pub const fn srgba_hex(hex: u32) -> LinearRgba {
     srgba_bytes(r, g, b, a)
 }
 
+/// Convert srgb bytes to [LinearRgba]. Works at compile time.
 pub const fn srgb_bytes(r: u8, g: u8, b: u8) -> LinearRgba {
     srgba_bytes(r, g, b, 255)
 }
@@ -35,9 +36,14 @@ pub const fn srgba_bytes(r: u8, g: u8, b: u8, a: u8) -> LinearRgba {
     }
 }
 
+pub fn parse_color_string(input: &str) -> LinearRgba {
+    try_parse_color_string(input)
+        .expect("Ascii color strings must be ascii and fewer than 32 characters")
+}
+
 /// Parse a color string. Accepts: #rrggbb, rrggbb, 0xrrggbb, or a named color
 /// from the list of css colors. Case insensitive.
-pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
+pub fn try_parse_color_string(input: &str) -> Option<LinearRgba> {
     let s = input.trim();
 
     // --- Try parsing as hex ---
@@ -65,6 +71,7 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
     }
     let up = unsafe { std::str::from_utf8_unchecked(&buffer[0..input.len()]) };
 
+    use css::*;
     Some(match up {
         "WHITE" => WHITE,
         "BLACK" => BLACK,
@@ -95,6 +102,7 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
         "DARK_GOLDENROD" => DARK_GOLDENROD,
         "DARK_GRAY" => DARK_GRAY,
         "DARK_GREEN" => DARK_GREEN,
+        "DARK_GREY" => DARK_GREY,
         "DARK_KHAKI" => DARK_KHAKI,
         "DARK_MAGENTA" => DARK_MAGENTA,
         "DARK_OLIVE_GREEN" => DARK_OLIVE_GREEN,
@@ -105,11 +113,13 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
         "DARK_SEA_GREEN" => DARK_SEA_GREEN,
         "DARK_SLATE_BLUE" => DARK_SLATE_BLUE,
         "DARK_SLATE_GRAY" => DARK_SLATE_GRAY,
+        "DARK_SLATE_GREY" => DARK_SLATE_GREY,
         "DARK_TURQUOISE" => DARK_TURQUOISE,
         "DARK_VIOLET" => DARK_VIOLET,
         "DEEP_PINK" => DEEP_PINK,
         "DEEP_SKY_BLUE" => DEEP_SKY_BLUE,
         "DIM_GRAY" => DIM_GRAY,
+        "DIM_GREY" => DIM_GREY,
         "DODGER_BLUE" => DODGER_BLUE,
         "FIREBRICK" => FIREBRICK,
         "FLORAL_WHITE" => FLORAL_WHITE,
@@ -121,6 +131,7 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
         "GOLDENROD" => GOLDENROD,
         "GRAY" => GRAY,
         "GREEN_YELLOW" => GREEN_YELLOW,
+        "GREY" => GREY,
         "HONEYDEW" => HONEYDEW,
         "HOT_PINK" => HOT_PINK,
         "INDIAN_RED" => INDIAN_RED,
@@ -137,11 +148,13 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
         "LIGHT_GOLDENROD_YELLOW" => LIGHT_GOLDENROD_YELLOW,
         "LIGHT_GRAY" => LIGHT_GRAY,
         "LIGHT_GREEN" => LIGHT_GREEN,
+        "LIGHT_GREY" => LIGHT_GREY,
         "LIGHT_PINK" => LIGHT_PINK,
         "LIGHT_SALMON" => LIGHT_SALMON,
         "LIGHT_SEA_GREEN" => LIGHT_SEA_GREEN,
         "LIGHT_SKY_BLUE" => LIGHT_SKY_BLUE,
         "LIGHT_SLATE_GRAY" => LIGHT_SLATE_GRAY,
+        "LIGHT_SLATE_GREY" => LIGHT_SLATE_GREY,
         "LIGHT_STEEL_BLUE" => LIGHT_STEEL_BLUE,
         "LIGHT_YELLOW" => LIGHT_YELLOW,
         "LIME" => LIME,
@@ -194,6 +207,7 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
         "SKY_BLUE" => SKY_BLUE,
         "SLATE_BLUE" => SLATE_BLUE,
         "SLATE_GRAY" => SLATE_GRAY,
+        "SLATE_GREY" => SLATE_GREY,
         "SNOW" => SNOW,
         "SPRING_GREEN" => SPRING_GREEN,
         "STEEL_BLUE" => STEEL_BLUE,
@@ -212,148 +226,203 @@ pub fn parse_color_string(input: &str) -> Option<LinearRgba> {
     })
 }
 
-// CSS Colors
-pub const ALICE_BLUE: LinearRgba = srgba_hex(0xF0F8FF);
-pub const ANTIQUE_WHITE: LinearRgba = srgba_hex(0xFAEBD7);
-pub const AQUA: LinearRgba = srgba_hex(0x00FFFF);
-pub const AQUAMARINE: LinearRgba = srgba_hex(0x7FFFD4);
-pub const AZURE: LinearRgba = srgba_hex(0xF0FFFF);
-pub const BEIGE: LinearRgba = srgba_hex(0xF5F5DC);
-pub const BISQUE: LinearRgba = srgba_hex(0xFFE4C4);
-pub const BLACK: LinearRgba = srgba_hex(0x000000);
-pub const BLANCHED_ALMOND: LinearRgba = srgba_hex(0xFFEBCD);
-pub const BLUE: LinearRgba = srgba_hex(0x0000FF);
-pub const BLUE_VIOLET: LinearRgba = srgba_hex(0x8A2BE2);
-pub const BROWN: LinearRgba = srgba_hex(0xA52A2A);
-pub const BURLY_WOOD: LinearRgba = srgba_hex(0xDEB887);
-pub const CADET_BLUE: LinearRgba = srgba_hex(0x5F9EA0);
-pub const CHARTREUSE: LinearRgba = srgba_hex(0x7FFF00);
-pub const CHOCOLATE: LinearRgba = srgba_hex(0xD2691E);
-pub const CORAL: LinearRgba = srgba_hex(0xFF7F50);
-pub const CORNFLOWER_BLUE: LinearRgba = srgba_hex(0x6495ED);
-pub const CORNSILK: LinearRgba = srgba_hex(0xFFF8DC);
-pub const CRIMSON: LinearRgba = srgba_hex(0xDC143C);
-pub const CYAN: LinearRgba = srgba_hex(0x00FFFF);
-pub const DARK_BLUE: LinearRgba = srgba_hex(0x00008B);
-pub const DARK_CYAN: LinearRgba = srgba_hex(0x008B8B);
-pub const DARK_GOLDENROD: LinearRgba = srgba_hex(0xB8860B);
-pub const DARK_GRAY: LinearRgba = srgba_hex(0xA9A9A9);
-pub const DARK_GREEN: LinearRgba = srgba_hex(0x006400);
-pub const DARK_KHAKI: LinearRgba = srgba_hex(0xBDB76B);
-pub const DARK_MAGENTA: LinearRgba = srgba_hex(0x8B008B);
-pub const DARK_OLIVE_GREEN: LinearRgba = srgba_hex(0x556B2F);
-pub const DARK_ORANGE: LinearRgba = srgba_hex(0xFF8C00);
-pub const DARK_ORCHID: LinearRgba = srgba_hex(0x9932CC);
-pub const DARK_RED: LinearRgba = srgba_hex(0x8B0000);
-pub const DARK_SALMON: LinearRgba = srgba_hex(0xE9967A);
-pub const DARK_SEA_GREEN: LinearRgba = srgba_hex(0x8FBC8F);
-pub const DARK_SLATE_BLUE: LinearRgba = srgba_hex(0x483D8B);
-pub const DARK_SLATE_GRAY: LinearRgba = srgba_hex(0x2F4F4F);
-pub const DARK_TURQUOISE: LinearRgba = srgba_hex(0x00CED1);
-pub const DARK_VIOLET: LinearRgba = srgba_hex(0x9400D3);
-pub const DEEP_PINK: LinearRgba = srgba_hex(0xFF1493);
-pub const DEEP_SKY_BLUE: LinearRgba = srgba_hex(0x00BFFF);
-pub const DIM_GRAY: LinearRgba = srgba_hex(0x696969);
-pub const DODGER_BLUE: LinearRgba = srgba_hex(0x1E90FF);
-pub const FIREBRICK: LinearRgba = srgba_hex(0xB22222);
-pub const FLORAL_WHITE: LinearRgba = srgba_hex(0xFFFAF0);
-pub const FOREST_GREEN: LinearRgba = srgba_hex(0x228B22);
-pub const FUCHSIA: LinearRgba = srgba_hex(0xFF00FF);
-pub const GAINSBORO: LinearRgba = srgba_hex(0xDCDCDC);
-pub const GHOST_WHITE: LinearRgba = srgba_hex(0xF8F8FF);
-pub const GOLD: LinearRgba = srgba_hex(0xFFD700);
-pub const GOLDENROD: LinearRgba = srgba_hex(0xDAA520);
-pub const GRAY: LinearRgba = srgba_hex(0x808080);
-pub const GREEN: LinearRgba = srgba_hex(0x008000);
-pub const GREEN_YELLOW: LinearRgba = srgba_hex(0xADFF2F);
-pub const HONEYDEW: LinearRgba = srgba_hex(0xF0FFF0);
-pub const HOT_PINK: LinearRgba = srgba_hex(0xFF69B4);
-pub const INDIAN_RED: LinearRgba = srgba_hex(0xCD5C5C);
-pub const INDIGO: LinearRgba = srgba_hex(0x4B0082);
-pub const IVORY: LinearRgba = srgba_hex(0xFFFFF0);
-pub const KHAKI: LinearRgba = srgba_hex(0xF0E68C);
-pub const LAVENDER: LinearRgba = srgba_hex(0xE6E6FA);
-pub const LAVENDER_BLUSH: LinearRgba = srgba_hex(0xFFF0F5);
-pub const LAWN_GREEN: LinearRgba = srgba_hex(0x7CFC00);
-pub const LEMON_CHIFFON: LinearRgba = srgba_hex(0xFFFACD);
-pub const LIGHT_BLUE: LinearRgba = srgba_hex(0xADD8E6);
-pub const LIGHT_CORAL: LinearRgba = srgba_hex(0xF08080);
-pub const LIGHT_CYAN: LinearRgba = srgba_hex(0xE0FFFF);
-pub const LIGHT_GOLDENROD_YELLOW: LinearRgba = srgba_hex(0xFAFAD2);
-pub const LIGHT_GRAY: LinearRgba = srgba_hex(0xD3D3D3);
-pub const LIGHT_GREEN: LinearRgba = srgba_hex(0x90EE90);
-pub const LIGHT_PINK: LinearRgba = srgba_hex(0xFFB6C1);
-pub const LIGHT_SALMON: LinearRgba = srgba_hex(0xFFA07A);
-pub const LIGHT_SEA_GREEN: LinearRgba = srgba_hex(0x20B2AA);
-pub const LIGHT_SKY_BLUE: LinearRgba = srgba_hex(0x87CEFA);
-pub const LIGHT_SLATE_GRAY: LinearRgba = srgba_hex(0x778899);
-pub const LIGHT_STEEL_BLUE: LinearRgba = srgba_hex(0xB0C4DE);
-pub const LIGHT_YELLOW: LinearRgba = srgba_hex(0xFFFFE0);
-pub const LIME: LinearRgba = srgba_hex(0x00FF00);
-pub const LIME_GREEN: LinearRgba = srgba_hex(0x32CD32);
-pub const LINEN: LinearRgba = srgba_hex(0xFAF0E6);
-pub const MAGENTA: LinearRgba = srgba_hex(0xFF00FF);
-pub const MAROON: LinearRgba = srgba_hex(0x800000);
-pub const MEDIUM_AQUAMARINE: LinearRgba = srgba_hex(0x66CDAA);
-pub const MEDIUM_BLUE: LinearRgba = srgba_hex(0x0000CD);
-pub const MEDIUM_ORCHID: LinearRgba = srgba_hex(0xBA55D3);
-pub const MEDIUM_PURPLE: LinearRgba = srgba_hex(0x9370DB);
-pub const MEDIUM_SEA_GREEN: LinearRgba = srgba_hex(0x3CB371);
-pub const MEDIUM_SLATE_BLUE: LinearRgba = srgba_hex(0x7B68EE);
-pub const MEDIUM_SPRING_GREEN: LinearRgba = srgba_hex(0x00FA9A);
-pub const MEDIUM_TURQUOISE: LinearRgba = srgba_hex(0x48D1CC);
-pub const MEDIUM_VIOLET_RED: LinearRgba = srgba_hex(0xC71585);
-pub const MIDNIGHT_BLUE: LinearRgba = srgba_hex(0x191970);
-pub const MINT_CREAM: LinearRgba = srgba_hex(0xF5FFFA);
-pub const MISTY_ROSE: LinearRgba = srgba_hex(0xFFE4E1);
-pub const MOCCASIN: LinearRgba = srgba_hex(0xFFE4B5);
-pub const NAVAJO_WHITE: LinearRgba = srgba_hex(0xFFDEAD);
-pub const NAVY: LinearRgba = srgba_hex(0x000080);
-pub const OLD_LACE: LinearRgba = srgba_hex(0xFDF5E6);
-pub const OLIVE: LinearRgba = srgba_hex(0x808000);
-pub const OLIVE_DRAB: LinearRgba = srgba_hex(0x6B8E23);
-pub const ORANGE: LinearRgba = srgba_hex(0xFFA500);
-pub const ORANGE_RED: LinearRgba = srgba_hex(0xFF4500);
-pub const ORCHID: LinearRgba = srgba_hex(0xDA70D6);
-pub const PALE_GOLDENROD: LinearRgba = srgba_hex(0xEEE8AA);
-pub const PALE_GREEN: LinearRgba = srgba_hex(0x98FB98);
-pub const PALE_TURQUOISE: LinearRgba = srgba_hex(0xAFEEEE);
-pub const PALE_VIOLET_RED: LinearRgba = srgba_hex(0xDB7093);
-pub const PAPAYA_WHIP: LinearRgba = srgba_hex(0xFFEFD5);
-pub const PEACH_PUFF: LinearRgba = srgba_hex(0xFFDAB9);
-pub const PERU: LinearRgba = srgba_hex(0xCD853F);
-pub const PINK: LinearRgba = srgba_hex(0xFFC0CB);
-pub const PLUM: LinearRgba = srgba_hex(0xDDA0DD);
-pub const POWDER_BLUE: LinearRgba = srgba_hex(0xB0E0E6);
-pub const PURPLE: LinearRgba = srgba_hex(0x800080);
-pub const REBECCA_PURPLE: LinearRgba = srgba_hex(0x663399);
-pub const RED: LinearRgba = srgba_hex(0xFF0000);
-pub const ROSY_BROWN: LinearRgba = srgba_hex(0xBC8F8F);
-pub const ROYAL_BLUE: LinearRgba = srgba_hex(0x4169E1);
-pub const SADDLE_BROWN: LinearRgba = srgba_hex(0x8B4513);
-pub const SALMON: LinearRgba = srgba_hex(0xFA8072);
-pub const SANDY_BROWN: LinearRgba = srgba_hex(0xF4A460);
-pub const SEA_GREEN: LinearRgba = srgba_hex(0x2E8B57);
-pub const SEA_SHELL: LinearRgba = srgba_hex(0xFFF5EE);
-pub const SIENNA: LinearRgba = srgba_hex(0xA0522D);
-pub const SILVER: LinearRgba = srgba_hex(0xC0C0C0);
-pub const SKY_BLUE: LinearRgba = srgba_hex(0x87CEEB);
-pub const SLATE_BLUE: LinearRgba = srgba_hex(0x6A5ACD);
-pub const SLATE_GRAY: LinearRgba = srgba_hex(0x708090);
-pub const SNOW: LinearRgba = srgba_hex(0xFFFAFA);
-pub const SPRING_GREEN: LinearRgba = srgba_hex(0x00FF7F);
-pub const STEEL_BLUE: LinearRgba = srgba_hex(0x4682B4);
-pub const TAN: LinearRgba = srgba_hex(0xD2B48C);
-pub const TEAL: LinearRgba = srgba_hex(0x008080);
-pub const THISTLE: LinearRgba = srgba_hex(0xD8BFD8);
-pub const TOMATO: LinearRgba = srgba_hex(0xFF6347);
-pub const TURQUOISE: LinearRgba = srgba_hex(0x40E0D0);
-pub const VIOLET: LinearRgba = srgba_hex(0xEE82EE);
-pub const WHEAT: LinearRgba = srgba_hex(0xF5DEB3);
-pub const WHITE: LinearRgba = srgba_hex(0xFFFFFF);
-pub const WHITE_SMOKE: LinearRgba = srgba_hex(0xF5F5F5);
-pub const YELLOW: LinearRgba = srgba_hex(0xFFFF00);
-pub const YELLOW_GREEN: LinearRgba = srgba_hex(0x9ACD32);
+/// Convert a srgba hex string to a linear color. Works at compile time.
+pub const fn from_hex_string(input: &str) -> LinearRgba {
+    let bytes = input.as_bytes();
+    let mut start = 0;
+
+    if !bytes.is_empty() && bytes[0] == b'#' {
+        start = 1;
+    } else if bytes.len() >= 2 && bytes[0] == b'0' && bytes[1] == b'x' {
+        start = 2;
+    }
+
+    let len = bytes.len() - start;
+    if len <= 8 {
+        let mut value: u32 = 0;
+        let mut i = 0;
+
+        while i < len {
+            let c = bytes[start + i];
+            let digit = match hex_val(c) {
+                Some(v) => v,
+                None => break,
+            };
+            value = (value << 4) | digit as u32;
+            i += 1;
+        }
+
+        return srgba_hex(value);
+    }
+
+    panic!("Unable to parse color string");
+}
+
+const fn hex_val(c: u8) -> Option<u8> {
+    if c >= b'0' && c <= b'9' {
+        Some(c - b'0')
+    } else if c >= b'a' && c <= b'f' {
+        Some(c - b'a' + 10)
+    } else if c >= b'A' && c <= b'F' {
+        Some(c - b'A' + 10)
+    } else {
+        None
+    }
+}
+
+pub mod css {
+    use super::srgba_hex;
+    use bevy::color::LinearRgba;
+
+    pub const ALICE_BLUE: LinearRgba = srgba_hex(0xF0F8FF);
+    pub const ANTIQUE_WHITE: LinearRgba = srgba_hex(0xFAEBD7);
+    pub const AQUA: LinearRgba = srgba_hex(0x00FFFF);
+    pub const AQUAMARINE: LinearRgba = srgba_hex(0x7FFFD4);
+    pub const AZURE: LinearRgba = srgba_hex(0xF0FFFF);
+    pub const BEIGE: LinearRgba = srgba_hex(0xF5F5DC);
+    pub const BISQUE: LinearRgba = srgba_hex(0xFFE4C4);
+    pub const BLACK: LinearRgba = srgba_hex(0x000000);
+    pub const BLANCHED_ALMOND: LinearRgba = srgba_hex(0xFFEBCD);
+    pub const BLUE: LinearRgba = srgba_hex(0x0000FF);
+    pub const BLUE_VIOLET: LinearRgba = srgba_hex(0x8A2BE2);
+    pub const BROWN: LinearRgba = srgba_hex(0xA52A2A);
+    pub const BURLY_WOOD: LinearRgba = srgba_hex(0xDEB887);
+    pub const CADET_BLUE: LinearRgba = srgba_hex(0x5F9EA0);
+    pub const CHARTREUSE: LinearRgba = srgba_hex(0x7FFF00);
+    pub const CHOCOLATE: LinearRgba = srgba_hex(0xD2691E);
+    pub const CORAL: LinearRgba = srgba_hex(0xFF7F50);
+    pub const CORNFLOWER_BLUE: LinearRgba = srgba_hex(0x6495ED);
+    pub const CORNSILK: LinearRgba = srgba_hex(0xFFF8DC);
+    pub const CRIMSON: LinearRgba = srgba_hex(0xDC143C);
+    pub const CYAN: LinearRgba = srgba_hex(0x00FFFF);
+    pub const DARK_BLUE: LinearRgba = srgba_hex(0x00008B);
+    pub const DARK_CYAN: LinearRgba = srgba_hex(0x008B8B);
+    pub const DARK_GOLDENROD: LinearRgba = srgba_hex(0xB8860B);
+    pub const DARK_GRAY: LinearRgba = srgba_hex(0xA9A9A9);
+    pub const DARK_GREEN: LinearRgba = srgba_hex(0x006400);
+    pub const DARK_GREY: LinearRgba = srgba_hex(0xA9A9A9);
+    pub const DARK_KHAKI: LinearRgba = srgba_hex(0xBDB76B);
+    pub const DARK_MAGENTA: LinearRgba = srgba_hex(0x8B008B);
+    pub const DARK_OLIVE_GREEN: LinearRgba = srgba_hex(0x556B2F);
+    pub const DARK_ORANGE: LinearRgba = srgba_hex(0xFF8C00);
+    pub const DARK_ORCHID: LinearRgba = srgba_hex(0x9932CC);
+    pub const DARK_RED: LinearRgba = srgba_hex(0x8B0000);
+    pub const DARK_SALMON: LinearRgba = srgba_hex(0xE9967A);
+    pub const DARK_SEA_GREEN: LinearRgba = srgba_hex(0x8FBC8F);
+    pub const DARK_SLATE_BLUE: LinearRgba = srgba_hex(0x483D8B);
+    pub const DARK_SLATE_GRAY: LinearRgba = srgba_hex(0x2F4F4F);
+    pub const DARK_SLATE_GREY: LinearRgba = srgba_hex(0x2F4F4F);
+    pub const DARK_TURQUOISE: LinearRgba = srgba_hex(0x00CED1);
+    pub const DARK_VIOLET: LinearRgba = srgba_hex(0x9400D3);
+    pub const DEEP_PINK: LinearRgba = srgba_hex(0xFF1493);
+    pub const DEEP_SKY_BLUE: LinearRgba = srgba_hex(0x00BFFF);
+    pub const DIM_GRAY: LinearRgba = srgba_hex(0x696969);
+    pub const DIM_GREY: LinearRgba = srgba_hex(0x696969);
+    pub const DODGER_BLUE: LinearRgba = srgba_hex(0x1E90FF);
+    pub const FIREBRICK: LinearRgba = srgba_hex(0xB22222);
+    pub const FLORAL_WHITE: LinearRgba = srgba_hex(0xFFFAF0);
+    pub const FOREST_GREEN: LinearRgba = srgba_hex(0x228B22);
+    pub const FUCHSIA: LinearRgba = srgba_hex(0xFF00FF);
+    pub const GAINSBORO: LinearRgba = srgba_hex(0xDCDCDC);
+    pub const GHOST_WHITE: LinearRgba = srgba_hex(0xF8F8FF);
+    pub const GOLD: LinearRgba = srgba_hex(0xFFD700);
+    pub const GOLDENROD: LinearRgba = srgba_hex(0xDAA520);
+    pub const GRAY: LinearRgba = srgba_hex(0x808080);
+    pub const GREEN: LinearRgba = srgba_hex(0x008000);
+    pub const GREEN_YELLOW: LinearRgba = srgba_hex(0xADFF2F);
+    pub const GREY: LinearRgba = srgba_hex(0x808080);
+    pub const HONEYDEW: LinearRgba = srgba_hex(0xF0FFF0);
+    pub const HOT_PINK: LinearRgba = srgba_hex(0xFF69B4);
+    pub const INDIAN_RED: LinearRgba = srgba_hex(0xCD5C5C);
+    pub const INDIGO: LinearRgba = srgba_hex(0x4B0082);
+    pub const IVORY: LinearRgba = srgba_hex(0xFFFFF0);
+    pub const KHAKI: LinearRgba = srgba_hex(0xF0E68C);
+    pub const LAVENDER: LinearRgba = srgba_hex(0xE6E6FA);
+    pub const LAVENDER_BLUSH: LinearRgba = srgba_hex(0xFFF0F5);
+    pub const LAWN_GREEN: LinearRgba = srgba_hex(0x7CFC00);
+    pub const LEMON_CHIFFON: LinearRgba = srgba_hex(0xFFFACD);
+    pub const LIGHT_BLUE: LinearRgba = srgba_hex(0xADD8E6);
+    pub const LIGHT_CORAL: LinearRgba = srgba_hex(0xF08080);
+    pub const LIGHT_CYAN: LinearRgba = srgba_hex(0xE0FFFF);
+    pub const LIGHT_GOLDENROD_YELLOW: LinearRgba = srgba_hex(0xFAFAD2);
+    pub const LIGHT_GRAY: LinearRgba = srgba_hex(0xD3D3D3);
+    pub const LIGHT_GREEN: LinearRgba = srgba_hex(0x90EE90);
+    pub const LIGHT_GREY: LinearRgba = srgba_hex(0xD3D3D3);
+    pub const LIGHT_PINK: LinearRgba = srgba_hex(0xFFB6C1);
+    pub const LIGHT_SALMON: LinearRgba = srgba_hex(0xFFA07A);
+    pub const LIGHT_SEA_GREEN: LinearRgba = srgba_hex(0x20B2AA);
+    pub const LIGHT_SKY_BLUE: LinearRgba = srgba_hex(0x87CEFA);
+    pub const LIGHT_SLATE_GRAY: LinearRgba = srgba_hex(0x778899);
+    pub const LIGHT_SLATE_GREY: LinearRgba = srgba_hex(0x778899);
+    pub const LIGHT_STEEL_BLUE: LinearRgba = srgba_hex(0xB0C4DE);
+    pub const LIGHT_YELLOW: LinearRgba = srgba_hex(0xFFFFE0);
+    pub const LIME: LinearRgba = srgba_hex(0x00FF00);
+    pub const LIME_GREEN: LinearRgba = srgba_hex(0x32CD32);
+    pub const LINEN: LinearRgba = srgba_hex(0xFAF0E6);
+    pub const MAGENTA: LinearRgba = srgba_hex(0xFF00FF);
+    pub const MAROON: LinearRgba = srgba_hex(0x800000);
+    pub const MEDIUM_AQUAMARINE: LinearRgba = srgba_hex(0x66CDAA);
+    pub const MEDIUM_BLUE: LinearRgba = srgba_hex(0x0000CD);
+    pub const MEDIUM_ORCHID: LinearRgba = srgba_hex(0xBA55D3);
+    pub const MEDIUM_PURPLE: LinearRgba = srgba_hex(0x9370DB);
+    pub const MEDIUM_SEA_GREEN: LinearRgba = srgba_hex(0x3CB371);
+    pub const MEDIUM_SLATE_BLUE: LinearRgba = srgba_hex(0x7B68EE);
+    pub const MEDIUM_SPRING_GREEN: LinearRgba = srgba_hex(0x00FA9A);
+    pub const MEDIUM_TURQUOISE: LinearRgba = srgba_hex(0x48D1CC);
+    pub const MEDIUM_VIOLET_RED: LinearRgba = srgba_hex(0xC71585);
+    pub const MIDNIGHT_BLUE: LinearRgba = srgba_hex(0x191970);
+    pub const MINT_CREAM: LinearRgba = srgba_hex(0xF5FFFA);
+    pub const MISTY_ROSE: LinearRgba = srgba_hex(0xFFE4E1);
+    pub const MOCCASIN: LinearRgba = srgba_hex(0xFFE4B5);
+    pub const NAVAJO_WHITE: LinearRgba = srgba_hex(0xFFDEAD);
+    pub const NAVY: LinearRgba = srgba_hex(0x000080);
+    pub const OLD_LACE: LinearRgba = srgba_hex(0xFDF5E6);
+    pub const OLIVE: LinearRgba = srgba_hex(0x808000);
+    pub const OLIVE_DRAB: LinearRgba = srgba_hex(0x6B8E23);
+    pub const ORANGE: LinearRgba = srgba_hex(0xFFA500);
+    pub const ORANGE_RED: LinearRgba = srgba_hex(0xFF4500);
+    pub const ORCHID: LinearRgba = srgba_hex(0xDA70D6);
+    pub const PALE_GOLDENROD: LinearRgba = srgba_hex(0xEEE8AA);
+    pub const PALE_GREEN: LinearRgba = srgba_hex(0x98FB98);
+    pub const PALE_TURQUOISE: LinearRgba = srgba_hex(0xAFEEEE);
+    pub const PALE_VIOLET_RED: LinearRgba = srgba_hex(0xDB7093);
+    pub const PAPAYA_WHIP: LinearRgba = srgba_hex(0xFFEFD5);
+    pub const PEACH_PUFF: LinearRgba = srgba_hex(0xFFDAB9);
+    pub const PERU: LinearRgba = srgba_hex(0xCD853F);
+    pub const PINK: LinearRgba = srgba_hex(0xFFC0CB);
+    pub const PLUM: LinearRgba = srgba_hex(0xDDA0DD);
+    pub const POWDER_BLUE: LinearRgba = srgba_hex(0xB0E0E6);
+    pub const PURPLE: LinearRgba = srgba_hex(0x800080);
+    pub const REBECCA_PURPLE: LinearRgba = srgba_hex(0x663399);
+    pub const RED: LinearRgba = srgba_hex(0xFF0000);
+    pub const ROSY_BROWN: LinearRgba = srgba_hex(0xBC8F8F);
+    pub const ROYAL_BLUE: LinearRgba = srgba_hex(0x4169E1);
+    pub const SADDLE_BROWN: LinearRgba = srgba_hex(0x8B4513);
+    pub const SALMON: LinearRgba = srgba_hex(0xFA8072);
+    pub const SANDY_BROWN: LinearRgba = srgba_hex(0xF4A460);
+    pub const SEA_GREEN: LinearRgba = srgba_hex(0x2E8B57);
+    pub const SEA_SHELL: LinearRgba = srgba_hex(0xFFF5EE);
+    pub const SIENNA: LinearRgba = srgba_hex(0xA0522D);
+    pub const SILVER: LinearRgba = srgba_hex(0xC0C0C0);
+    pub const SKY_BLUE: LinearRgba = srgba_hex(0x87CEEB);
+    pub const SLATE_BLUE: LinearRgba = srgba_hex(0x6A5ACD);
+    pub const SLATE_GRAY: LinearRgba = srgba_hex(0x708090);
+    pub const SLATE_GREY: LinearRgba = srgba_hex(0x708090);
+    pub const SNOW: LinearRgba = srgba_hex(0xFFFAFA);
+    pub const SPRING_GREEN: LinearRgba = srgba_hex(0x00FF7F);
+    pub const STEEL_BLUE: LinearRgba = srgba_hex(0x4682B4);
+    pub const TAN: LinearRgba = srgba_hex(0xD2B48C);
+    pub const TEAL: LinearRgba = srgba_hex(0x008080);
+    pub const THISTLE: LinearRgba = srgba_hex(0xD8BFD8);
+    pub const TOMATO: LinearRgba = srgba_hex(0xFF6347);
+    pub const TURQUOISE: LinearRgba = srgba_hex(0x40E0D0);
+    pub const VIOLET: LinearRgba = srgba_hex(0xEE82EE);
+    pub const WHEAT: LinearRgba = srgba_hex(0xF5DEB3);
+    pub const WHITE: LinearRgba = srgba_hex(0xFFFFFF);
+    pub const WHITE_SMOKE: LinearRgba = srgba_hex(0xF5F5F5);
+    pub const YELLOW: LinearRgba = srgba_hex(0xFFFF00);
+    pub const YELLOW_GREEN: LinearRgba = srgba_hex(0x9ACD32);
+}
 
 const SRGB_TO_LINEAR: [f32; 256] = [
     0.000000, 0.000304, 0.000607, 0.000911, 0.001214, 0.001518, 0.001821, 0.002125, 0.002428,
@@ -386,3 +455,43 @@ const SRGB_TO_LINEAR: [f32; 256] = [
     0.896269, 0.904661, 0.913099, 0.921582, 0.930111, 0.938686, 0.947307, 0.955974, 0.964686,
     0.973445, 0.982251, 0.991102, 1.000000,
 ];
+
+/// A color palette for definined named colors, see [crate::Terminal::with_color_palette]
+#[derive(Debug, Default, Clone, Reflect)]
+pub struct ColorPalette {
+    colors: HashMap<String, LinearRgba>,
+}
+
+impl ColorPalette {
+    pub fn new() -> ColorPalette {
+        ColorPalette::default()
+    }
+
+    pub fn add_color(&mut self, name: impl Into<String>, color: LinearRgba) {
+        self.colors.insert(name.into(), color);
+    }
+
+    pub fn from_colors<'a>(colors: impl Iterator<Item = (&'a str, LinearRgba)>) -> ColorPalette {
+        let mut map = HashMap::new();
+        for (name, col) in colors {
+            map.insert(name.to_owned(), col);
+        }
+        ColorPalette { colors: map }
+    }
+
+    pub fn named_color<T: AsRef<str>>(&self, name: T) -> Option<LinearRgba> {
+        let input = name.as_ref();
+        let mut buffer: [u8; 32] = [0; 32];
+        debug_assert!(input.is_ascii(), "Color tag names must be ascii");
+        debug_assert!(
+            input.len() < 32,
+            "Color tag names must be 32 characters or less"
+        );
+        for (i, c) in input.as_bytes().iter().enumerate() {
+            buffer[i] = c.to_ascii_uppercase();
+        }
+        let up = unsafe { std::str::from_utf8_unchecked(&buffer[0..input.len()]) };
+
+        self.colors.get(up).cloned()
+    }
+}

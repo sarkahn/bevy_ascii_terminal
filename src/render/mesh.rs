@@ -23,7 +23,6 @@ use bevy::{
 };
 use enum_ordinalize::Ordinalize;
 
-#[allow(deprecated)]
 use crate::{Terminal, Tile, transform::TerminalTransform};
 
 use super::{
@@ -194,7 +193,6 @@ fn on_material_changed(
     }
 }
 
-#[allow(deprecated)]
 fn on_terminal_resized(
     q_term: Query<(Entity, &Terminal, &Mesh2d), Changed<Terminal>>,
     mut commands: Commands,
@@ -216,7 +214,6 @@ fn on_terminal_resized(
 // to updating uvs and colors. Generally it only needs to be done when terminal
 // assets are changed or a terminal is resized.
 #[allow(clippy::type_complexity)]
-#[allow(deprecated)]
 fn rebuild_mesh_verts(
     mut q_term: Query<
         (
@@ -266,6 +263,9 @@ fn rebuild_mesh_verts(
         let tile_size = transform_data.world_tile_size;
         let mesh_bl = transform_data.local_inner_mesh_bounds.min;
 
+        // Remove all our relevant attributes from the mesh. This is done
+        // to prevent the borrow checker from complaining when trying to
+        // modify multiple mesh attributes at the same time.
         let Some(Indices::U32(mut indices)) = mesh.remove_indices() else {
             panic!("Incorrect terminal mesh indices format");
         };
@@ -312,7 +312,6 @@ fn rebuild_mesh_verts(
 // Update tile uv and color data. This is called any time the terminal is
 // modified in any way.
 #[allow(clippy::type_complexity)]
-#[allow(deprecated)]
 fn rebuild_mesh_uvs(
     q_term: Query<(&Terminal, &Mesh2d, &UvMappingHandle), Changed<Terminal>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -368,8 +367,6 @@ fn rebuild_mesh_uvs(
         mesh.insert_attribute(ATTRIBUTE_UV, uvs);
         mesh.insert_attribute(ATTRIBUTE_COLOR_FG, fg);
         mesh.insert_attribute(ATTRIBUTE_COLOR_BG, bg);
-
-        //println!("Rebuilding uvs: {}\n", time.elapsed_secs());
     }
 }
 

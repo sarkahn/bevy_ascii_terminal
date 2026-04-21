@@ -15,6 +15,7 @@ use bevy::{
     prelude::IntoScheduleConfigs,
 };
 
+pub use color::ColorPalette;
 pub use padding::{BoxStyle, Padding};
 pub use pivot::{Pivot, PivotPoint, PivotedPoint};
 pub use render::{TerminalCamera, TerminalFont, TerminalMeshPivot, TerminalMeshWorldScaling};

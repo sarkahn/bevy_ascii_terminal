@@ -4,6 +4,7 @@
 ### Changes
 - Update for bevy 0.19.
 - `put_string` can now use embedded color tags to color strings as they are written to the terminal. Docs and examples have been updated to use tagged strings.
+- Added an optional `ColorPalette` to the Terminal to define named colors for tagged strings.
 - Merged pr so hidden terminals will be ignored by `TerminalCamera`.
 - `Pivot` variant names changed so horizontal axis is always first (IE: `LeftBottom` instead of `BottomLeft`) - a little awkward to write but much easier for my brain to reason about in code.
 - Removed "grid_position" example
