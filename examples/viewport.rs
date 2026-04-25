@@ -1,11 +1,6 @@
 use std::ops::Mul;
 
-use bevy::{
-    camera::{ScalingMode, Viewport},
-    math::ops::powf,
-    prelude::*,
-    window::WindowMode,
-};
+use bevy::{camera::Viewport, math::ops::powf, prelude::*, window::WindowMode};
 use bevy_ascii_terminal::{render::TerminalMaterial, *};
 
 #[derive(Component)]
@@ -16,11 +11,7 @@ fn main() {
         .add_plugins((DefaultPlugins, TerminalPlugins))
         .add_systems(Startup, setup)
         .add_systems(FixedUpdate, controls)
-        //.add_systems(PostUpdate, draw_cursor.after(TransformSystems::Propagate))
-        .add_systems(
-            PostUpdate,
-            fit_to_terminal.before(TransformSystems::Propagate),
-        )
+        .add_systems(PostUpdate, draw)
         .run();
 }
 
@@ -39,6 +30,7 @@ fn setup(mut commands: Commands, window: Single<&Window>) {
             clear_color: ClearColorConfig::Custom(Color::linear_rgb(0.01, 0.01, 0.01)),
             ..default()
         },
+        TerminalCamera::new(),
     ));
 
     commands.spawn((
@@ -58,7 +50,7 @@ fn setup(mut commands: Commands, window: Single<&Window>) {
 }
 
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
-fn fit_to_terminal(
+fn draw(
     mut q_term: Query<(
         &mut Terminal,
         &TerminalMeshPivot,
@@ -67,11 +59,11 @@ fn fit_to_terminal(
         Option<&DrawTerminal>,
     )>,
     mesh_scaling: Res<TerminalMeshWorldScaling>,
-    q_cam: Single<(&Camera, &mut Projection, &mut Transform), Without<Terminal>>,
+    q_cam: Single<&Camera, Without<Terminal>>,
     materials: Res<Assets<TerminalMaterial>>,
     images: Res<Assets<Image>>,
 ) {
-    let (cam, mut proj, mut cam_transform) = q_cam.into_inner();
+    let cam = q_cam.into_inner();
 
     // Determine a canonical pixels per unit based on the largest of
     // all terminals. Probably not the best way to do that
@@ -88,27 +80,31 @@ fn fit_to_terminal(
         pixels_per_tile = pixels_per_tile.max(ppt);
     }
 
+    // The size of a single terminal mesh tile in world space
     let world_tile = match *mesh_scaling {
         TerminalMeshWorldScaling::World => {
             Vec2::new(pixels_per_tile.x as f32 / pixels_per_tile.y as f32, 1.0)
         }
         TerminalMeshWorldScaling::Pixels => pixels_per_tile.as_vec2(),
     };
+    // Size of a pixel in world space
     let world_pixel = world_tile / pixels_per_tile.as_vec2();
 
-    let mut world_min = Vec2::MAX;
-    let mut world_max = Vec2::MIN;
+    let mut mesh_world_bl = Vec2::MAX;
+    let mut mesh_world_tr = Vec2::MIN;
     for (term, mesh_pivot, term_transform, _, _) in q_term.iter() {
         let mesh_world_size = term.size().as_vec2() * world_tile;
         let mesh_pivot_offset = mesh_pivot.normalized() * mesh_world_size;
         let mesh_pos = term_transform.translation.truncate();
         let mesh_bl = mesh_pos - mesh_pivot_offset;
         let mesh_tr = mesh_bl + mesh_world_size;
-        world_min = world_min.min(mesh_bl);
-        world_max = world_max.max(mesh_tr);
+        mesh_world_bl = mesh_world_bl.min(mesh_bl);
+        mesh_world_tr = mesh_world_tr.max(mesh_tr);
     }
 
-    let tile_count = ((world_max - world_min) / world_tile).round().as_uvec2();
+    let tile_count = ((mesh_world_tr - mesh_world_bl) / world_tile)
+        .round()
+        .as_uvec2();
 
     let vp_size = cam.physical_viewport_size().unwrap();
     let target_resolution = (tile_count * pixels_per_tile).as_vec2();
@@ -119,28 +115,12 @@ fn fit_to_terminal(
         .min_element()
         .max(1);
 
-    let vp_height = vp_size.y;
-    let vp_world_height = match mesh_scaling.as_ref() {
-        TerminalMeshWorldScaling::Pixels => vp_height as f32 / scale as f32,
-        TerminalMeshWorldScaling::World => vp_height as f32 / (scale * pixels_per_tile.y) as f32,
-    };
-
-    if let Projection::Orthographic(proj) = proj.as_mut() {
-        proj.scaling_mode = ScalingMode::FixedVertical {
-            viewport_height: vp_world_height,
-        };
-        proj.viewport_origin = Vec2::ZERO;
-    }
-
     let scaled_res = target_resolution * scale as f32;
     let edge_pixels = (vp_size.as_vec2() - scaled_res).mul(0.5).floor();
     let center_offset = edge_pixels / scale as f32 * world_pixel;
 
-    let cam_z = cam_transform.translation.z;
-    cam_transform.translation = (world_min - center_offset).extend(cam_z);
-
-    for (mut term, _, _, _, dt) in q_term.iter_mut() {
-        if dt.is_none() {
+    for (mut term, _, _, _, drawterm) in q_term.iter_mut() {
+        if drawterm.is_none() {
             continue;
         }
         term.clear();

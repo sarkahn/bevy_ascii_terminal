@@ -9,7 +9,7 @@
 - `Pivot` variant names changed so horizontal axis is always first (IE: `LeftBottom` instead of `BottomLeft`) - a little awkward to write but much easier for my brain to reason about in code.
 - Removed "grid_position" example
 - Added "fireworks" example.
-- Added "viewport" example showing how to render a terminal nicely in a resized viewport.
+- Updated camera module - it now works by modifying the position of the camera and setting the orthographic size rather than directly setting the viewport dimensions. Camera system now updates in PostUpdate. This allows terminals to render nicely in resized viewports, the  "viewport" example demonstrates.
 
 ### Deprecations
 

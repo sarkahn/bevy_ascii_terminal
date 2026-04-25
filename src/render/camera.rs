@@ -1,24 +1,29 @@
+use std::ops::Mul;
+
 use bevy::{
-    app::{First, Plugin},
+    app::{Plugin, PostUpdate},
     asset::{AssetEvent, Assets},
-    camera::{Camera, Projection, ScalingMode, Viewport, visibility::InheritedVisibility},
+    camera::{Camera, Projection, ScalingMode},
     ecs::{
         component::Component,
         entity::Entity,
         message::{Message, MessageReader, MessageWriter},
-        query::{Changed, Or, With},
+        query::{Changed, Or, With, Without},
         schedule::{IntoScheduleConfigs, SystemSet},
-        system::{Query, Res},
+        system::{Query, Res, Single},
     },
     image::Image,
     math::{Mat4, UVec2, Vec2},
     prelude::Camera2d,
     sprite_render::MeshMaterial2d,
-    transform::components::{GlobalTransform, Transform},
+    transform::{
+        self,
+        components::{GlobalTransform, Transform},
+    },
     window::{PrimaryWindow, Window, WindowResized},
 };
 
-use crate::{Terminal, transform::TerminalTransform};
+use crate::{Terminal, TerminalMeshPivot};
 
 use super::{TerminalMaterial, TerminalMeshWorldScaling};
 
@@ -32,16 +37,18 @@ impl Plugin for TerminalCameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_message::<UpdateTerminalViewportEvent>()
             .add_systems(
-                First,
+                PostUpdate,
                 (
                     cache_cursor_data,
                     cache_camera_data,
                     on_window_resized,
                     on_font_changed,
-                    update_viewport,
+                    on_viewport_changed,
+                    fit_to_terminal,
                 )
                     .chain()
-                    .in_set(TerminalSystemsUpdateCamera),
+                    .in_set(TerminalSystemsUpdateCamera)
+                    .before(transform::TransformSystems::Propagate),
             );
     }
 }
@@ -243,103 +250,110 @@ fn on_font_changed(
     }
 }
 
-fn update_viewport(
-    q_term: Query<(&TerminalTransform, Option<&InheritedVisibility>)>,
-    mut q_cam: Query<(&mut Camera, &mut Transform, &mut Projection), With<TerminalCamera>>,
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    scaling: Res<TerminalMeshWorldScaling>,
+fn on_viewport_changed(
+    q_cam: Query<&Camera, (With<TerminalCamera>, Changed<Camera>)>,
+    mut update: MessageWriter<UpdateTerminalViewportEvent>,
+) {
+    if q_cam.is_empty() {
+        return;
+    }
+
+    update.write(UpdateTerminalViewportEvent);
+}
+
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn fit_to_terminal(
+    mut q_term: Query<(
+        &mut Terminal,
+        &TerminalMeshPivot,
+        &Transform,
+        &MeshMaterial2d<TerminalMaterial>,
+    )>,
+    mesh_scaling: Res<TerminalMeshWorldScaling>,
+    q_cam: Single<
+        (&Camera, &mut Projection, &mut Transform),
+        (Without<Terminal>, With<TerminalCamera>),
+    >,
+    materials: Res<Assets<TerminalMaterial>>,
+    images: Res<Assets<Image>>,
     mut update_evt: MessageReader<UpdateTerminalViewportEvent>,
 ) {
+    // TODO: Remove once tracking asset changes becomes more ergonomic
     if update_evt.is_empty() {
         return;
     }
 
-    let Ok((mut cam, mut cam_transform, mut proj)) = q_cam.single_mut() else {
-        return;
-    };
-    let Ok(window) = q_window.single() else {
-        return;
-    };
+    let (cam, mut proj, mut cam_transform) = q_cam.into_inner();
 
-    // TODO: Calculate this from the lowest common multiple?
-    // Determine our canonical 'pixels per unit' from the terminal
-    // with the largest font.
-    let Some(ppu) = q_term
-        .iter()
-        .filter(|(_, visibility)| visibility.is_none_or(|v| v.get()))
-        .filter_map(|(t, _)| t.cached_data.as_ref().map(|d| d.pixels_per_tile))
-        .reduce(UVec2::max)
-    else {
-        // The camera system runs first, so this will return immediately at least once.
-        // Furthermore the transform data won't be cached until the terminal font
-        // is done loading.
-        return;
-    };
-    // Determine our canonical tile size from the largest of all terminals.
-    let Some(tile_size) = q_term
-        .iter()
-        .filter(|(_, visibility)| visibility.is_none_or(|v| v.get()))
-        .filter_map(|(t, _)| t.cached_data.as_ref().map(|d| d.world_tile_size))
-        .reduce(Vec2::max)
-    else {
-        // We can probably just unwrap?
-        return;
-    };
-
-    // Invalid terminal image size, images could still be loading.
-    if ppu.cmpeq(UVec2::ZERO).any() {
-        return;
+    // Determine a canonical pixels per unit based on the largest of
+    // all terminals. Probably not the best way to do that
+    let mut pixels_per_tile = UVec2::new(8, 8);
+    for (_, _, _, mat) in q_term.iter_mut() {
+        let Some(ppt) = materials
+            .get(&mat.0)
+            .and_then(|mat| mat.texture.as_ref().and_then(|image| images.get(image)))
+            .map(|i| i.size() / 16)
+        // Assuming 16/16 tiled textures
+        else {
+            continue;
+        };
+        pixels_per_tile = pixels_per_tile.max(ppt);
     }
 
-    // The total bounds of all terminal meshes in world space
-    let Some(mesh_bounds) = q_term
-        .iter()
-        .filter(|(_, visibility)| visibility.is_none_or(|v| v.get()))
-        .filter_map(|(t, _)| t.cached_data.as_ref().map(|d| d.world_mesh_bounds))
-        .reduce(|a, b| a.union(b))
-    else {
-        // We can probably just unwrap?
-        return;
+    // The size of a single terminal mesh tile in world space
+    let world_tile = match *mesh_scaling {
+        TerminalMeshWorldScaling::World => {
+            Vec2::new(pixels_per_tile.x as f32 / pixels_per_tile.y as f32, 1.0)
+        }
+        TerminalMeshWorldScaling::Pixels => pixels_per_tile.as_vec2(),
     };
+    // Size of a pixel in world space
+    let world_pixel = world_tile / pixels_per_tile.as_vec2();
 
-    let z = cam_transform.translation.z;
-    cam_transform.translation = mesh_bounds.center().extend(z);
+    let mut mesh_world_bl = Vec2::MAX;
+    let mut mesh_world_tr = Vec2::MIN;
+    for (term, mesh_pivot, term_transform, _) in q_term.iter() {
+        let mesh_world_size = term.size().as_vec2() * world_tile;
+        let mesh_pivot_offset = mesh_pivot.normalized() * mesh_world_size;
+        let mesh_pos = term_transform.translation.truncate();
+        let mesh_bl = mesh_pos - mesh_pivot_offset;
+        let mesh_tr = mesh_bl + mesh_world_size;
+        mesh_world_bl = mesh_world_bl.min(mesh_bl);
+        mesh_world_tr = mesh_world_tr.max(mesh_tr);
+    }
 
-    let tile_count = (mesh_bounds.size() / tile_size).as_ivec2();
+    let tile_count = ((mesh_world_tr - mesh_world_bl) / world_tile)
+        .round()
+        .as_uvec2();
 
-    let ortho_size = match *scaling {
-        TerminalMeshWorldScaling::Pixels => tile_count.y as f32 * ppu.y as f32,
-        TerminalMeshWorldScaling::World => tile_count.y as f32,
+    let vp_size = cam.physical_viewport_size().unwrap();
+    let target_resolution = (tile_count * pixels_per_tile).as_vec2();
+
+    let scale = (vp_size.as_vec2() / target_resolution)
+        .floor()
+        .as_uvec2()
+        .min_element()
+        .max(1);
+
+    let vp_height = vp_size.y;
+    let vp_world_height = match mesh_scaling.as_ref() {
+        TerminalMeshWorldScaling::Pixels => vp_height as f32 / scale as f32,
+        TerminalMeshWorldScaling::World => vp_height as f32 / (scale * pixels_per_tile.y) as f32,
     };
-
-    let target_res = tile_count.as_vec2() * ppu.as_vec2();
-
-    let window_res = UVec2::new(window.physical_width(), window.physical_height()).as_vec2();
-    let zoom = (window_res / target_res).floor().min_element().max(1.0);
-
-    let vp_size = (target_res * zoom).max(Vec2::ONE);
-    let vp_pos = if window_res.cmple(target_res).any() {
-        Vec2::ZERO
-    } else {
-        (window_res / 2.0) - (vp_size / 2.0)
-    }
-    .floor();
-
-    if vp_size.cmpgt(window_res).any() {
-        cam.viewport = None;
-    } else {
-        cam.viewport = Some(Viewport {
-            physical_position: vp_pos.as_uvec2(),
-            physical_size: vp_size.as_uvec2(),
-            ..Default::default()
-        });
-    }
 
     if let Projection::Orthographic(proj) = proj.as_mut() {
         proj.scaling_mode = ScalingMode::FixedVertical {
-            viewport_height: ortho_size,
+            viewport_height: vp_world_height,
         };
+        proj.viewport_origin = Vec2::ZERO;
     }
+
+    let scaled_res = target_resolution * scale as f32;
+    let edge_pixels = (vp_size.as_vec2() - scaled_res).mul(0.5).floor();
+    let center_offset = edge_pixels / scale as f32 * world_pixel;
+
+    let cam_z = cam_transform.translation.z;
+    cam_transform.translation = (mesh_world_bl - center_offset).extend(cam_z);
 
     update_evt.clear();
 }
