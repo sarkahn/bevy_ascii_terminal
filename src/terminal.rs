@@ -165,6 +165,18 @@ impl Terminal {
         self.pivot = pivot;
     }
 
+    pub fn pivot(&self) -> Pivot {
+        self.pivot
+    }
+
+    pub fn set_color_palette(&mut self, palette: Option<ColorPalette>) {
+        self.color_palette = palette;
+    }
+
+    pub fn color_palette(&self) -> Option<&ColorPalette> {
+        self.color_palette.as_ref()
+    }
+
     /// Insert a character to the terminal.
     ///
     /// This returns a mutable reference to the terminal tile which can be used
@@ -441,9 +453,9 @@ impl Terminal {
     /// Write a string to the terminal. Color tags can optionally be written
     /// into the string to color parts of the foreground/background within the string.
     ///
-    /// ## Color tags:
-    /// - Set the foreground color between tags: <fg=color>Text</fg>
-    /// - Set the background color between tags: <bg=color>Text</bg>
+    /// ### Color tags:
+    /// - Set the foreground color between tags: `<fg=color>Text</fg>`
+    /// - Set the background color between tags: `<bg=color>Text</bg>`
     /// - Color format can be `#rrggbb`, `rrggbb`, `0xrrggbb`, or any named colors.
     ///   Custom color names for tagged strings can be explicitly defined via [Terminal::with_color_palette],
     ///   if not specified the default colors from [crate::color::css] will be used.
@@ -852,6 +864,10 @@ impl Terminal {
         self.tiles.iter_mut()
     }
 
+    pub fn set_clear_tile(&mut self, tile: Tile) {
+        self.clear_tile = tile;
+    }
+
     pub fn clear_tile(&self) -> Tile {
         self.clear_tile
     }
@@ -986,6 +1002,7 @@ impl Terminal {
         Ok(terminal)
     }
 
+    /// Writes the contents of the terminal to the system console using [print]
     pub fn print_to_console(&self) {
         for y in (0..self.height()).rev() {
             for x in 0..self.width() {

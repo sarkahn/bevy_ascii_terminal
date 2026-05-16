@@ -34,7 +34,7 @@ git = "https://github.com/bevyengine/bevy"
 rev = "8b8a432ab444eabc775f12939f4cb3b1b047be61"
 # version = "0.18"
 default-features = false
-features = ["bevy_winit", "debug"]
+features = ["bevy_winit", "debug", "bevy_state"]
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

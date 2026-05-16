@@ -137,11 +137,6 @@ impl<'a> Iterator for TokenIterator<'a> {
                 self.position,
                 self.remaining,
             )));
-            // return Some(Err(anyhow!(
-            //     "No closing brace on string `{}` starting at at {}",
-            //     self.remaining,
-            //     self.position
-            // )));
         };
 
         let tag = &remaining[1..tag_end];
