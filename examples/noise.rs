@@ -1,5 +1,11 @@
 //! An interactive ui to display noise using the fastnoise-lite crate.
-use bevy::{app::AppExit, prelude::*, time::common_conditions::on_timer, window::WindowMode};
+use bevy::{
+    app::AppExit,
+    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
+    prelude::*,
+    time::common_conditions::on_timer,
+    window::WindowMode,
+};
 use bevy_ascii_terminal::*;
 use fastnoise_lite::*;
 
@@ -45,24 +51,22 @@ const COLOR_RAMP: &[LinearRgba] = &[
 const CHAR_RAMP2: &str = " .:-=+*#%@";
 const CHAR_RAMP: &str = " .'`^\",:;Il!i~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
-fn color_ramp(noise: f32, ramp: &[LinearRgba]) -> LinearRgba {
+fn noise_value<T: Copy>(noise: f32, ramp: &[T]) -> T {
     let t = noise.clamp(0.0, 1.0);
     let i = (t * (ramp.len() - 1) as f32) as usize;
     ramp[i]
 }
 
-fn char_ramp(noise: f32, string: &str) -> char {
-    let t = noise.clamp(0.0, 1.0);
-    let count = string.chars().count();
-    let i = (t * (count - 1) as f32) as usize;
-    string.chars().nth(i).unwrap()
-}
-
 fn setup(mut commands: Commands) {
-    commands.spawn((Terminal::new([86, 64]), TerminalMeshPivot::LeftTop));
+    assert!(CHAR_RAMP.is_ascii());
+    assert!(CHAR_RAMP2.is_ascii());
+
+    commands.spawn((Terminal::new([110, 60]), TerminalMeshPivot::LeftTop));
     commands.spawn((
-        Terminal::new([29, 20]),
-        TerminalMeshPivot::RightTop,
+        Terminal::new([28, 16]),
+        SetTerminalGridPosition(IVec2::new(0, -1)),
+        SetTerminalLayerPosition(1),
+        TerminalMeshPivot::LeftTop,
         ControlsTerminal,
     ));
     commands.spawn(TerminalCamera::new());
@@ -73,6 +77,7 @@ fn make_some_noise(
     controls: Res<State>,
     time: Res<Time>,
     mut drift: Local<Vec2>,
+    diag: Res<DiagnosticsStore>,
 ) {
     let mut term = q_term.single_mut().unwrap();
     let mut noise = FastNoiseLite::new();
@@ -101,24 +106,35 @@ fn make_some_noise(
         let noise = noise.get_noise_2d(dx + drift.x, dy + drift.y);
         let noise = (noise + 1.0) / 2.0;
 
-        let col = color_ramp(noise, COLOR_RAMP);
+        let col = noise_value(noise, COLOR_RAMP);
 
         let glyph = if (p.x + p.y) % 2 == 0 {
-            char_ramp(noise, CHAR_RAMP)
+            noise_value(noise, CHAR_RAMP.as_bytes())
         } else {
-            char_ramp(noise, CHAR_RAMP2)
+            noise_value(noise, CHAR_RAMP2.as_bytes())
         };
 
-        t.glyph = glyph;
+        t.glyph = glyph as char;
 
         t.fg_color = col;
     }
     term.put_string(
         [0, 0],
         format!(
-            "[Noise:<fg=blue>{:?}</fg> | Fractal:<fg=navy>{:?}</fg>]",
+            "[Noise:<fg=blue>{:?}</fg> | Fractal:<fg=blue>{:?}</fg>]",
             controls.noise_type, controls.fractal_type
         ),
+    );
+
+    let Some(fps) = diag
+        .get(&FrameTimeDiagnosticsPlugin::FPS)
+        .and_then(|fps| fps.average())
+    else {
+        return;
+    };
+    term.put_string(
+        [0, 0].pivot(Pivot::RightTop),
+        format!("FPS: <fg=yellow>{}", fps.round() as i32),
     );
 }
 
@@ -143,7 +159,8 @@ fn handle_other_input(
     if input.just_pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
-    let ver = input.just_pressed(KeyCode::KeyS) as i32 - input.just_pressed(KeyCode::KeyW) as i32;
+    let ver = input.any_just_pressed([KeyCode::KeyS, KeyCode::ArrowDown]) as i32
+        - input.any_just_pressed([KeyCode::KeyW, KeyCode::ArrowUp]) as i32;
     if ver != 0 {
         let mut value = controls.current_control as i32;
         value = (value + ver).rem_euclid(controls.values.len() as i32);
@@ -188,19 +205,35 @@ fn handle_other_input(
 fn draw_controls(mut q_term: Query<&mut Terminal, With<ControlsTerminal>>, controls: Res<State>) {
     let mut term = q_term.single_mut().unwrap();
     term.clear();
-    term.put_string([0, 0], "WASD to change values");
-    term.put_string([0, 1], "Space to change noise");
-    term.put_string([0, 2], "Tab to change fractal");
-    term.put_string([0, 3], "Escape to quit");
+    term.put_string(
+        [0, 0],
+        "<fg=lawn_green>WASD/Arrows</fg> to change values
+<fg=lawn_green>Space</fg> to change noise
+<fg=lawn_green>Tab</fg> to change fractal
+<fg=lawn_green>Escape</fg> to quit",
+    );
     term.put_string([0, 4], "-----------------------");
     for (i, control) in controls.values.iter().enumerate() {
         let value = (control.value * 1000.0).round() / 1000.0;
-        let control_string = format!("{}: {}", control.name, value);
+        let control_string = format!("{}: <fg=blue>{}</fg>", control.name, value);
         term.put_string([0, i + 5], control_string.as_str());
 
-        if i == controls.current_control {
-            term.put_string([control_string.len() + 1, i + 5], "<fg=green>/<--"); // Note the escape character for left brace
+        if i == controls.current_control
+            && let Ok((_, len, _)) = strings::wrap_tagged_string(&control_string, 30, false)
+        {
+            term.put_string([len + 1, i + 5], "<fg=lime>/<--"); // Note the escape character for left brace
         }
+    }
+}
+
+fn update_terminal_size(
+    window: Single<&Window>,
+    mut term: Single<&mut Terminal, Without<ControlsTerminal>>,
+) {
+    let max = (window.size() / 8.0).floor().as_uvec2();
+
+    if term.size() != max {
+        term.resize(max);
     }
 }
 
@@ -256,7 +289,11 @@ fn main() {
     let key_repeat = std::time::Duration::from_secs_f32(0.1);
     App::new()
         .insert_resource(controls)
-        .add_plugins((DefaultPlugins, TerminalPlugins))
+        .add_plugins((
+            DefaultPlugins,
+            TerminalPlugins,
+            FrameTimeDiagnosticsPlugin::default(),
+        ))
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -268,5 +305,7 @@ fn main() {
             )
                 .chain(),
         )
+        .add_systems(Update, update_terminal_size)
+        .insert_resource(ClearColor(Color::BLACK))
         .run();
 }

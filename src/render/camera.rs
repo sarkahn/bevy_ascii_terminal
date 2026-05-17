@@ -56,8 +56,13 @@ impl Plugin for TerminalCameraPlugin {
 #[derive(Message)]
 pub struct UpdateTerminalViewportEvent;
 
-/// A camera component to assist in rendering terminals and translating
+/// An optional camera component to assist in rendering terminals and translating
 /// cursor coordinates to and from terminal grid coordinates.
+///
+/// By default the TerminalCamera will highjack certain aspects of the camera
+/// it's attached to try and render any visible terminals without artifacts -
+/// specifically it will automatically adjust the camera's transform and
+/// camera's projection within the current viewport.
 #[derive(Component)]
 #[require(Camera2d, Transform = cam_transform())]
 pub struct TerminalCamera {
@@ -112,11 +117,11 @@ impl TerminalCamera {
     ///
     /// If you are attempting to translate the cursor position to/from terminal
     /// grid coordinates, consider using [TerminalCamera::cursor_world_pos] along with
-    /// [TerminalTransform::world_to_tile] instead.
+    /// [crate::TerminalTransform::world_to_tile] instead.
     //
     // Note this is more or less a copy of the existing bevy viewport transform
     // function, but adjusted to account for a manually resized viewport which
-    // the original function did not do.
+    // the original function did not do when this was written.
     pub fn viewport_to_world(&self, mut viewport_position: Vec2) -> Option<Vec2> {
         let data = self.cam_data.as_ref()?;
         let target_size = data.target_size?;

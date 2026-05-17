@@ -165,7 +165,7 @@ impl<'a> Iterator for TokenIterator<'a> {
             let colortext = &tag[3..];
 
             if self.parse_colors {
-                if let Some(col) = lookup(colortext) {
+                if let Ok(col) = lookup(colortext) {
                     self.position.x += 5 + colortext.len() as i32;
                     return Some(Ok(Token::FgStart(col, colortext)));
                 }
@@ -184,7 +184,7 @@ impl<'a> Iterator for TokenIterator<'a> {
             let colortext = &tag[3..];
 
             if self.parse_colors {
-                if let Some(col) = lookup(colortext) {
+                if let Ok(col) = lookup(colortext) {
                     self.position.x += 5 + colortext.len() as i32;
                     return Some(Ok(Token::BgStart(col, colortext)));
                 }
@@ -205,7 +205,7 @@ impl<'a> Iterator for TokenIterator<'a> {
     }
 }
 
-/// Wrap a tagged string. Returns (wrapped, wrapped width minus tags, remaining).
+/// Wrap a tagged string. Returns (wrapped line, wrapped line width minus tags, remaining).
 /// This doesn't strip the tags but is used to pre-wrap the tagged string into
 /// lines and provide correct line width before parsing/printing
 pub fn wrap_tagged_string<'a>(

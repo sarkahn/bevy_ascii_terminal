@@ -1,6 +1,9 @@
+//! Renders the terminal in a movable, resizable camera viewport, showing that
+//! the `TerminalCamera` will adjust to render the terminal without artifacts
+
 use std::ops::Mul;
 
-use bevy::{camera::Viewport, math::ops::powf, prelude::*, window::WindowMode};
+use bevy::{camera::Viewport, prelude::*, window::WindowMode};
 use bevy_ascii_terminal::{render::TerminalMaterial, *};
 
 #[derive(Component)]
@@ -131,6 +134,11 @@ fn draw(
             line += 1;
         };
 
+        put_line("Resize viewport with <fg=lime>WASD".to_string());
+        put_line("Move viewport with <fg=lime>Arrows".to_string());
+
+        put_line("".to_string());
+
         put_line(format!("VP Size:     {}", vp_size));
         put_line(format!("Term Size:   {}", tile_count));
         put_line(format!("Tar Res:     {}", target_resolution));
@@ -148,7 +156,7 @@ fn draw(
 }
 
 fn controls(
-    camera_query: Single<(&mut Camera, &mut Transform, &mut Projection)>,
+    camera_query: Single<&mut Camera>,
     mut window: Single<&mut Window>,
     input: Res<ButtonInput<KeyCode>>,
     time: Res<Time<Fixed>>,
@@ -176,36 +184,11 @@ fn controls(
         return;
     }
 
-    let (mut camera, mut transform, mut projection) = camera_query.into_inner();
+    let mut camera = camera_query.into_inner();
 
     let fspeed = 600.0 * time.delta_secs();
     let uspeed = fspeed as u32;
     let window_size = window.resolution.physical_size();
-
-    let offset = Vec2::splat(fspeed);
-    if input.just_pressed(KeyCode::ArrowLeft) {
-        transform.translation.x -= offset.x;
-    }
-    if input.just_pressed(KeyCode::ArrowRight) {
-        transform.translation.x += offset.x;
-    }
-    if input.just_pressed(KeyCode::ArrowUp) {
-        transform.translation.y += offset.y;
-    }
-    if input.just_pressed(KeyCode::ArrowDown) {
-        transform.translation.y -= offset.y;
-    }
-
-    // Camera zoom controls
-    if let Projection::Orthographic(projection2d) = &mut *projection {
-        if input.pressed(KeyCode::Comma) {
-            projection2d.scale *= powf(4.0f32, time.delta_secs());
-        }
-
-        if input.pressed(KeyCode::Period) {
-            projection2d.scale *= powf(0.25f32, time.delta_secs());
-        }
-    }
 
     if let Some(viewport) = camera.viewport.as_mut() {
         // Reset viewport size on window resize
@@ -214,16 +197,16 @@ fn controls(
         }
 
         // Viewport movement controls
-        if input.pressed(KeyCode::KeyI) {
+        if input.pressed(KeyCode::ArrowUp) {
             viewport.physical_position.y = viewport.physical_position.y.saturating_sub(uspeed);
         }
-        if input.pressed(KeyCode::KeyK) {
+        if input.pressed(KeyCode::ArrowDown) {
             viewport.physical_position.y += uspeed;
         }
-        if input.pressed(KeyCode::KeyJ) {
+        if input.pressed(KeyCode::ArrowLeft) {
             viewport.physical_position.x = viewport.physical_position.x.saturating_sub(uspeed);
         }
-        if input.pressed(KeyCode::KeyL) {
+        if input.pressed(KeyCode::ArrowRight) {
             viewport.physical_position.x += uspeed;
         }
 
@@ -232,21 +215,19 @@ fn controls(
             .physical_position
             .min(window_size - viewport.physical_size);
 
-        if !input.pressed(KeyCode::ShiftLeft) {
-            // Viewport size controls
-            if input.pressed(KeyCode::KeyW) {
-                viewport.physical_size.y = viewport.physical_size.y.saturating_sub(uspeed);
-            }
-            if input.pressed(KeyCode::KeyS) {
-                viewport.physical_size.y += uspeed;
-            }
-            if input.pressed(KeyCode::KeyA) {
-                viewport.physical_size.x = viewport.physical_size.x.saturating_sub(uspeed);
-            }
-            if input.pressed(KeyCode::KeyD) {
-                viewport.physical_size.x += uspeed;
-            }
+        if input.pressed(KeyCode::KeyW) {
+            viewport.physical_size.y = viewport.physical_size.y.saturating_sub(uspeed);
         }
+        if input.pressed(KeyCode::KeyS) {
+            viewport.physical_size.y += uspeed;
+        }
+        if input.pressed(KeyCode::KeyA) {
+            viewport.physical_size.x = viewport.physical_size.x.saturating_sub(uspeed);
+        }
+        if input.pressed(KeyCode::KeyD) {
+            viewport.physical_size.x += uspeed;
+        }
+
         // Bound viewport size so it doesn't go off-screen
         viewport.physical_size = viewport
             .physical_size

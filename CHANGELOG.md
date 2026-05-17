@@ -1,5 +1,5 @@
 # Changelog
-## [0.19.0] - 2026/04/20
+## [0.19.0] - 2026/05/16
 
 ### Changes
 - Update for bevy 0.19.
@@ -7,9 +7,11 @@
 - Added an optional `ColorPalette` to the Terminal to define named colors for tagged strings.
 - Merged pr so hidden terminals will be ignored by `TerminalCamera`.
 - `Pivot` variant names changed so horizontal axis is always first (IE: `LeftBottom` instead of `BottomLeft`) - a little awkward to write but much easier for my brain to reason about in code.
-- Removed "grid_position" example
+- Removed "grid_position" example.
+- Removed "resized" example.
 - Added "fireworks" example.
 - Updated camera module - it now works by modifying the position of the camera and setting the orthographic size rather than directly setting the viewport dimensions. Camera system now updates in PostUpdate. This allows terminals to render nicely in resized viewports, the  "viewport" example demonstrates.
+- Added a snake example.
 
 ### Deprecations
 

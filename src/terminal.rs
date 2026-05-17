@@ -507,8 +507,24 @@ impl Terminal {
 
         let pivot = self.pivot.normalized();
 
-        let mut fg = self.clear_tile.fg_color;
-        let mut bg = self.clear_tile.bg_color;
+        // Precedence is tag color > ts.fg_color > clear_color
+        let fallback_fg = if let Some(fg) = ts.fg_color {
+            Some(fg)
+        } else if ts.clear_colors {
+            Some(self.clear_tile.fg_color)
+        } else {
+            None
+        };
+        let mut fg = fallback_fg;
+
+        let fallback_bg = if let Some(bg) = ts.bg_color {
+            Some(bg)
+        } else if ts.clear_colors {
+            Some(self.clear_tile.bg_color)
+        } else {
+            None
+        };
+        let mut bg = fallback_bg;
 
         let max_len = self.inner_width();
 
@@ -550,8 +566,12 @@ impl Terminal {
                             let i = self.tile_to_index(xy);
                             let t = &mut self.tiles[i];
                             t.glyph = ch;
-                            t.fg_color = fg;
-                            t.bg_color = bg;
+                            if let Some(fg) = fg {
+                                t.fg_color = fg;
+                            }
+                            if let Some(bg) = bg {
+                                t.bg_color = bg;
+                            }
 
                             xy.x += 1;
                         }
@@ -560,8 +580,14 @@ impl Terminal {
                         let i = self.tile_to_index(xy);
                         let t = &mut self.tiles[i];
                         t.glyph = ' ';
-                        t.fg_color = fg;
-                        t.bg_color = bg;
+                        if ts.colored_spaces {
+                            if let Some(fg) = fg {
+                                t.fg_color = fg;
+                            }
+                            if let Some(bg) = bg {
+                                t.bg_color = bg;
+                            }
+                        }
                         xy.x += 1;
                     }
                     Token::Newline => {
@@ -571,16 +597,20 @@ impl Terminal {
                             return;
                         }
                     }
-                    Token::FgStart(col, _) => fg = col,
-                    Token::BgStart(col, _) => bg = col,
-                    Token::FgEnd => fg = self.clear_tile.fg_color,
-                    Token::BgEnd => bg = self.clear_tile.bg_color,
+                    Token::FgStart(col, _) => fg = Some(col),
+                    Token::BgStart(col, _) => bg = Some(col),
+                    Token::FgEnd => fg = fallback_fg,
+                    Token::BgEnd => bg = fallback_bg,
                     Token::Escaped(ch) => {
                         let i = self.tile_to_index(xy);
                         let t = &mut self.tiles[i];
                         t.glyph = ch;
-                        t.fg_color = fg;
-                        t.bg_color = bg;
+                        if let Some(fg) = fg {
+                            t.fg_color = fg;
+                        }
+                        if let Some(bg) = bg {
+                            t.bg_color = bg;
+                        }
 
                         xy.x += 1;
                     }

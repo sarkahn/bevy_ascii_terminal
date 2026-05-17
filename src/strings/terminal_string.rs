@@ -46,8 +46,8 @@ pub trait TerminalStringBuilder<T: AsRef<str>> {
     /// Sets the background color for string tiles. Will override clear colors if set.
     fn bg(self, color: impl Into<LinearRgba>) -> TerminalString<T>;
 
-    /// Sets the string tile colors to match the terminal's clear tile. Will be
-    /// overriden by [Self::fg] or [Self::bg] if they are set
+    /// By default any string tile will have it's colors set to the terminal's
+    /// clear tile colors. This will prevent that.
     fn dont_clear_colors(self) -> TerminalString<T>;
 
     /// Disable parsing for embedded string tags before writing. Tag parsing

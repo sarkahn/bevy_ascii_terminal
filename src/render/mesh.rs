@@ -70,9 +70,6 @@ pub struct RebuildMeshVerts;
 /// Component for the terminal which determines where terminal mesh tiles
 /// are built relative to the terminal's transform position.
 ///
-/// Two terminals with the same position and a different [TerminalMeshPivot] will
-/// not overlap.
-///
 /// Defaults to bottom left.
 #[derive(Component, Default, Debug, Reflect, Ordinalize)]
 pub enum TerminalMeshPivot {
@@ -104,14 +101,6 @@ impl TerminalMeshPivot {
             Self::RightBottom => [1., 0.],
         }
         .into()
-    }
-
-    pub fn centered_vertically(&self) -> bool {
-        matches!(self, Self::LeftCenter | Self::RightCenter | Self::Center)
-    }
-
-    pub fn centered_horizontally(&self) -> bool {
-        matches!(self, Self::CenterBottom | Self::CenterTop | Self::Center)
     }
 }
 
@@ -145,6 +134,7 @@ fn init_mesh(
 }
 
 // Force a mesh rebuild when a terminal's font finishes loading.
+// TODO: Replace when tracking asset changes becomes more ergonomic
 fn on_image_load(
     mut q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
     materials: Res<Assets<TerminalMaterial>>,
@@ -173,6 +163,7 @@ fn on_image_load(
 }
 
 // Force a mesh rebuild when a terminal's material changes.
+// TODO: Replace when tracking assets changes becomes more ergonomic
 fn on_material_changed(
     mut q_term: Query<(Entity, &MeshMaterial2d<TerminalMaterial>)>,
     mut mat_evt: MessageReader<AssetEvent<TerminalMaterial>>,
@@ -193,6 +184,8 @@ fn on_material_changed(
     }
 }
 
+// TODO: this could technically fail if a terminal is resized to the same
+// area...
 fn on_terminal_resized(
     q_term: Query<(Entity, &Terminal, &Mesh2d), Changed<Terminal>>,
     mut commands: Commands,
