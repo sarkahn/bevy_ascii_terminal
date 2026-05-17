@@ -1,5 +1,5 @@
 //! Extended ascii used as the default for mapping chars to terminal glyphs.
-//! Note this is simply the default, a custom mapping can be defined via
+//! Note this is the default, a custom mapping can be defined via
 //! [crate::render::UvMapping]
 use enum_ordinalize::Ordinalize;
 use thiserror::Error;
@@ -591,7 +591,7 @@ impl Glyph {
     }
 }
 
-/// Convert an index to it's corresponding ascii glyph (0..256)
+/// Convert an index to it's corresponding rust char within code page 437
 pub const fn index_to_char(index: u8) -> char {
     CP_437_ARRAY[index as usize]
 }

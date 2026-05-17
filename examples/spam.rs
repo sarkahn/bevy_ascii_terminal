@@ -19,17 +19,14 @@ fn main() {
         TerminalPlugins,
         FrameTimeDiagnosticsPlugin::default(),
     ))
+    .add_systems(Update, update_terminal_size)
     .add_systems(Startup, setup)
     .add_systems(Update, spam_terminal)
     .run();
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(
-        Terminal::new([82, 52])
-            .with_border(BoxStyle::SINGLE_LINE)
-            .with_title(" Press space to pause"),
-    );
+    commands.spawn(Terminal::new([82, 52]));
     commands.spawn(TerminalCamera::new());
 }
 
@@ -95,4 +92,25 @@ fn spam_terminal(
     term.set_pivot(Pivot::RightTop);
     term.put_string([0, 0], format!("FPS: <fg={}>{}", col, fps.round() as u32));
     term.set_pivot(Pivot::LeftTop);
+}
+
+fn update_terminal_size(
+    input: Res<ButtonInput<KeyCode>>,
+    window: Single<&Window>,
+    mut term: Single<&mut Terminal>,
+    mut scale: Local<i32>,
+) {
+    let old_scale = *scale;
+
+    let dscale =
+        input.just_pressed(KeyCode::Period) as i32 - input.just_pressed(KeyCode::Comma) as i32;
+    *scale = (*scale + dscale).max(1);
+    let max = (window.size() / (8.0 * *scale as f32)).floor().as_uvec2();
+
+    if term.size() != max || old_scale != *scale {
+        term.resize(max);
+
+        term.put_border(BoxStyle::SINGLE_LINE);
+        term.put_title(" Press space to pause");
+    }
 }

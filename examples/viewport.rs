@@ -26,8 +26,8 @@ fn setup(mut commands: Commands, window: Single<&Window>) {
         Camera2d,
         Camera {
             viewport: Some(Viewport {
-                physical_position: (window_size * 0.125).as_uvec2(),
-                physical_size: (window_size * 0.75).as_uvec2(),
+                physical_position: (window_size * 0.135).as_uvec2(),
+                physical_size: (window_size * 0.8).as_uvec2(),
                 ..default()
             }),
             clear_color: ClearColorConfig::Custom(Color::linear_rgb(0.01, 0.01, 0.01)),
@@ -37,7 +37,7 @@ fn setup(mut commands: Commands, window: Single<&Window>) {
     ));
 
     commands.spawn((
-        Terminal::new([28, 16]).with_border(BoxStyle::SINGLE_LINE),
+        Terminal::new([30, 16]).with_border(BoxStyle::SINGLE_LINE),
         TerminalMeshPivot::RightTop,
         DrawTerminal,
     ));
@@ -134,16 +134,16 @@ fn draw(
             line += 1;
         };
 
-        put_line("Resize viewport with <fg=lime>WASD".to_string());
-        put_line("Move viewport with <fg=lime>Arrows".to_string());
+        put_line("<fg=lime>WASD</fg>: Resize Viewport".to_string());
+        put_line("<fg=lime>Arrows</fg>: Move Viewport".to_string());
+        put_line("<fg=lime>Space</fg>: World Scaling".to_string());
 
         put_line("".to_string());
 
         put_line(format!("VP Size:     {}", vp_size));
         put_line(format!("Term Size:   {}", tile_count));
-        put_line(format!("Tar Res:     {}", target_resolution));
         put_line(format!("Scale:       {}", scale));
-        // put_line(format!("BotLeft:     {}", bl));
+
         put_line(format!("World Tile:  {:.2}", world_tile));
         put_line(format!("World Pixel: {:.2}", world_pixel));
         put_line(format!("Pixel off:   {:.2}", edge_pixels));
@@ -151,7 +151,6 @@ fn draw(
 
         put_line("".to_string());
         put_line(format!("Scaling: {:?}", *mesh_scaling));
-        //put_line(format!("Pivot:   {:?}", *mesh_pivot));
     }
 }
 
