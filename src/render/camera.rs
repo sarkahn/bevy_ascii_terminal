@@ -342,8 +342,8 @@ fn fit_to_terminal(
 
     let vp_height = vp_size.y;
     let vp_world_height = match mesh_scaling.as_ref() {
-        TerminalMeshWorldScaling::Pixels => vp_height as f32 / scale as f32,
-        TerminalMeshWorldScaling::World => vp_height as f32 / (scale * pixels_per_tile.y) as f32,
+        TerminalMeshWorldScaling::Pixels => vp_height / scale as f32,
+        TerminalMeshWorldScaling::World => vp_height / (scale * pixels_per_tile.y) as f32,
     };
 
     if let Projection::Orthographic(proj) = proj.as_mut() {

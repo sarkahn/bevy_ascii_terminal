@@ -92,7 +92,7 @@ fn spam_terminal(
     term.set_pivot(Pivot::RightTop);
     term.put_string([0, 0], format!("FPS: <fg={}>{}", col, fps.round() as u32));
     term.set_pivot(Pivot::LeftTop);
-    term.put_string([0,0], format!("[<fg=dodger_blue>+/-</fg>]: Zoom"))
+    term.put_string([0, 0], "[<fg=dodger_blue>+/-</fg>]: Zoom")
 }
 
 fn update_terminal_size(
@@ -102,10 +102,16 @@ fn update_terminal_size(
     mut scale: Local<i32>,
 ) {
     let mut s = (*scale).max(1);
-    if input.just_pressed(KeyCode::Equal) {s += 1};
-    if input.just_pressed(KeyCode::Minus) {s = (s - 1).max(1)};
-    
-    let new_size = (window.physical_size().as_vec2() / (8.0 * s as f32)).floor().as_uvec2();
+    if input.just_pressed(KeyCode::Equal) {
+        s += 1
+    };
+    if input.just_pressed(KeyCode::Minus) {
+        s = (s - 1).max(1)
+    };
+
+    let new_size = (window.physical_size().as_vec2() / (8.0 * s as f32))
+        .floor()
+        .as_uvec2();
 
     if term.size() != new_size || s != *scale {
         *scale = s;
