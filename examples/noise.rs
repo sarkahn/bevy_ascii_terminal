@@ -230,7 +230,8 @@ fn update_terminal_size(
     window: Single<&Window>,
     mut term: Single<&mut Terminal, Without<ControlsTerminal>>,
 ) {
-    let max = (window.size() / 8.0).floor().as_uvec2();
+    let res = window.physical_size().as_vec2();
+    let max = (res / 8.0).floor().as_uvec2();
 
     if term.size() != max {
         term.resize(max);

@@ -4,6 +4,7 @@ use std::ops::RangeInclusive;
 
 use bevy::math::ops::{powf, sin};
 use bevy::{prelude::*, window::WindowMode};
+use bevy_ascii_terminal::render::UpdateTerminalViewportEvent;
 use bevy_ascii_terminal::*;
 
 use enum_ordinalize::Ordinalize;
@@ -27,6 +28,7 @@ struct Particle {
 struct Star {
     pos: IVec2,
     phase: f32,
+    speed: f32,
 }
 
 #[derive(Resource, Default)]
@@ -36,7 +38,7 @@ struct State {
     stars: Vec<Star>,
     term_scale: u32,
     last_scale: u32,
-    last_size: Vec2,
+    last_resolution: Vec2,
     show_text: bool,
 }
 
@@ -68,7 +70,7 @@ const COLORS: &[LinearRgba] = &[
 ];
 
 const GRAVITY: f32 = 9.8;
-const STAR_DENSITY: u32 = 16;
+const STAR_DENSITY: u32 = 50;
 const ROCKET_DRIFT: f32 = 3.0;
 const ROCKET_VEL_RANGE: RangeInclusive<f32> = 30.0..=45.0;
 const ROCKET_LIFE_RANGE: RangeInclusive<f32> = 1.5..=6.0;
@@ -82,7 +84,7 @@ fn main() {
         stars: Vec::with_capacity(3000),
         term_scale: 1,
         last_scale: 0,
-        last_size: Vec2::ZERO,
+        last_resolution: Vec2::ZERO,
         show_text: true,
     };
     App::new()
@@ -97,8 +99,10 @@ fn main() {
 }
 
 fn init_stars(stars: &mut Vec<Star>, max: IVec2) {
-    let mut rng = rand::thread_rng();
     let count = max.element_product() / STAR_DENSITY as i32;
+    
+    let mut rng = rand::thread_rng();
+    
     for _ in 0..count {
         stars.push(Star {
             pos: IVec2::new(
@@ -106,6 +110,7 @@ fn init_stars(stars: &mut Vec<Star>, max: IVec2) {
                 rng.gen_range(0..=max.y) as i32,
             ),
             phase: rng.gen_range(0.0..=1.0) * TAU,
+            speed: rng.gen_range(0.25..=0.75),
         })
     }
 }
@@ -203,6 +208,7 @@ fn handle_input(
     input: Res<ButtonInput<KeyCode>>,
     mut state: ResMut<State>,
     mut term: Single<&mut Terminal>,
+    mut commands: Commands,
 ) {
     if input.just_pressed(KeyCode::KeyH) {
         state.show_text = !state.show_text;
@@ -229,17 +235,21 @@ fn handle_input(
         state.term_scale = state.term_scale.max(2) - 1;
     }
 
-    if state.last_size != window.size() || state.last_scale != state.term_scale {
-        state.last_size = window.size();
+    let new_resolution = window.physical_size().as_vec2();
+    if state.last_resolution != new_resolution || state.last_scale != state.term_scale {
+        let ppu = Vec2::new(8., 8.); // TODO: Derive from font
+        let new_size = (new_resolution / (ppu * state.term_scale as f32)).floor();
+
+        state.last_resolution = new_resolution;
         state.last_scale = state.term_scale;
 
-        let max = (window.size() / (Vec2::new(8.0, 8.0) * state.term_scale as f32)).floor();
-        term.resize(max.as_uvec2());
+        term.resize(new_size.as_uvec2());
         state.stars.clear();
         init_stars(
             &mut state.stars,
             IVec2::new(term.width() as i32 - 1, term.height() as i32 - 1),
-        )
+        );
+        commands.write_message(UpdateTerminalViewportEvent);
     }
 }
 
@@ -310,6 +320,46 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>, time: Res<Time>) {
     term.clear();
     term.set_pivot(Pivot::LeftBottom);
 
+    let time = time.elapsed_secs();
+    let world_height = term.inner_height();
+
+    let height_scale = (world_height as f32 / 50.).clamp(0.4, 1.);
+
+    for s in &state.stars {
+        let Some(t) = term.try_tile_mut(s.pos) else {
+            continue;
+        };
+        
+        let h: f32 = (s.pos.y as f32 / world_height as f32).clamp(0., 1.);
+        let exponent = 2.5 + (1.5 * (1.0 - height_scale));
+        
+        let brightness = powf(h, exponent);
+
+        let b8 = ((brightness * 255.) * 0.85) as u8;
+
+        let twinkle = 0.85 + 0.15 * (0.5 + 0.5 * sin(time * s.speed + s.phase));
+
+        let b8 = (b8 as f32 * twinkle * height_scale) as u8;
+
+        let col = color::srgba_bytes(
+            b8,
+            b8,
+            b8.saturating_add(70),
+            255
+        );
+
+        let ch = match b8 {
+            200..=255 => '*',
+            130..200 => '+',
+            80..130 => '.',
+            _ => if h < 0.15 {' '} else {'.'},
+        };
+
+        t.glyph = ch;
+        t.fg_color = col;
+    }
+
+
     for p in &state.particles {
         let Some(t) = term.try_tile_mut(p.pos.as_ivec2()) else {
             continue;
@@ -340,44 +390,6 @@ fn draw(mut term: Single<&mut Terminal>, state: Res<State>, time: Res<Time>) {
         };
         t.glyph = if r.vel.y >= 0.0 { '^' } else { 'v' };
         t.fg_color = r.color;
-    }
-
-    let time = time.elapsed_secs();
-    let max_height = term.height();
-
-    for s in &state.stars {
-        let wave = sin(time * 0.01 + s.phase);
-
-        // only allow twinkle near the peak
-        let mut twinkle = 0.0;
-        if wave > 0.99 {
-            twinkle = (wave - 0.98) / 0.02;
-        }
-
-        let mut brightness = 5 + (20.0 * (twinkle * twinkle)) as u8;
-
-        // Pulse
-        if twinkle > 0.998 {
-            brightness = 105
-        }
-
-        let height_t = s.pos.y as f32 / max_height as f32;
-        let brightness = (brightness as f32 * height_t.powf(0.25)) as u8;
-
-        let col = color::srgba_bytes(
-            brightness,
-            brightness,
-            brightness.saturating_add(50), // slight blue bias
-            255,
-        );
-
-        let ch = if brightness < 100 { '.' } else { '+' };
-
-        let Some(t) = term.try_tile_mut(s.pos) else {
-            continue;
-        };
-        t.glyph = ch;
-        t.fg_color = col;
     }
 
     if state.show_text {

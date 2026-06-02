@@ -92,6 +92,7 @@ fn spam_terminal(
     term.set_pivot(Pivot::RightTop);
     term.put_string([0, 0], format!("FPS: <fg={}>{}", col, fps.round() as u32));
     term.set_pivot(Pivot::LeftTop);
+    term.put_string([0,0], format!("[<fg=dodger_blue>+/-</fg>]: Zoom"))
 }
 
 fn update_terminal_size(
@@ -100,15 +101,16 @@ fn update_terminal_size(
     mut term: Single<&mut Terminal>,
     mut scale: Local<i32>,
 ) {
-    let old_scale = *scale;
+    let mut s = (*scale).max(1);
+    if input.just_pressed(KeyCode::Equal) {s += 1};
+    if input.just_pressed(KeyCode::Minus) {s = (s - 1).max(1)};
+    
+    let new_size = (window.physical_size().as_vec2() / (8.0 * s as f32)).floor().as_uvec2();
 
-    let dscale =
-        input.just_pressed(KeyCode::Period) as i32 - input.just_pressed(KeyCode::Comma) as i32;
-    *scale = (*scale + dscale).max(1);
-    let max = (window.size() / (8.0 * *scale as f32)).floor().as_uvec2();
+    if term.size() != new_size || s != *scale {
+        *scale = s;
 
-    if term.size() != max || old_scale != *scale {
-        term.resize(max);
+        term.resize(new_size);
 
         term.put_border(BoxStyle::SINGLE_LINE);
         term.put_title(" Press space to pause");

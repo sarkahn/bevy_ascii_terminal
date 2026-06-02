@@ -331,10 +331,10 @@ fn fit_to_terminal(
         .round()
         .as_uvec2();
 
-    let vp_size = cam.physical_viewport_size().unwrap();
+    let vp_size = cam.physical_viewport_size().unwrap().as_vec2();
     let target_resolution = (tile_count * pixels_per_tile).as_vec2();
 
-    let scale = (vp_size.as_vec2() / target_resolution)
+    let scale = (vp_size / target_resolution)
         .floor()
         .as_uvec2()
         .min_element()
@@ -354,7 +354,7 @@ fn fit_to_terminal(
     }
 
     let scaled_res = target_resolution * scale as f32;
-    let edge_pixels = (vp_size.as_vec2() - scaled_res).mul(0.5).floor();
+    let edge_pixels = (vp_size - scaled_res).mul(0.5).floor();
     let center_offset = edge_pixels / scale as f32 * world_pixel;
 
     let cam_z = cam_transform.translation.z;
