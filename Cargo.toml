@@ -24,14 +24,14 @@ rand = "0.8.4"
 
 [dependencies.bevy]
 git = "https://github.com/bevyengine/bevy"
-rev = "8b8a432ab444eabc775f12939f4cb3b1b047be61"
+rev = "99d2e972d06a3a688aa1ebca6ce5759d784821c5"
 # version = "0.18"
 default-features = false
 features = ["std", "png", "bevy_render", "bevy_asset", "bevy_sprite", "bevy_sprite_render", "bevy_window", "bevy_color"]
 
 [dev-dependencies.bevy]
 git = "https://github.com/bevyengine/bevy"
-rev = "8b8a432ab444eabc775f12939f4cb3b1b047be61"
+rev = "99d2e972d06a3a688aa1ebca6ce5759d784821c5"
 # version = "0.18"
 default-features = false
 features = ["bevy_winit", "x11", "debug", "bevy_state"]
