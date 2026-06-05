@@ -981,7 +981,7 @@ impl Terminal {
 
         let bar_percent = pb.value.clamp(0.0, 1.0);
         let fill_col = pb.fill_color.unwrap_or(self.clear_tile.fg_color);
-        let empty_col = pb.fill_color.unwrap_or(self.clear_tile.fg_color);
+        let empty_col = pb.empty_color.unwrap_or(self.clear_tile.fg_color);
 
         for i in 0..pb.len {
             let t = i as f32 / pb.len as f32;
