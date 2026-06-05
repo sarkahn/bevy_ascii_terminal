@@ -20,32 +20,46 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn((
-        Terminal::new([26, 10]).with_border(BoxStyle::SINGLE_LINE),
+        Terminal::new([26, 10])
+            .with_border(BoxStyle::SINGLE_LINE)
+            .with_pivot(Pivot::RightTop),
         TerminalMeshPivot::LeftBottom,
     ));
     commands.spawn((
-        Terminal::new([22, 8]).with_border(BoxStyle::SINGLE_LINE),
+        Terminal::new([22, 8])
+            .with_border(BoxStyle::SINGLE_LINE)
+            .with_pivot(Pivot::LeftTop),
         TerminalMeshPivot::RightBottom,
     ));
     commands.spawn((
-        Terminal::new([24, 10]).with_border(BoxStyle::SINGLE_LINE),
+        Terminal::new([24, 10])
+            .with_border(BoxStyle::SINGLE_LINE)
+            .with_pivot(Pivot::CenterBottom),
         TerminalMeshPivot::CenterTop,
     ));
     commands.spawn(TerminalCamera::new());
 }
 
-fn update(mut q_term: Query<(&mut Terminal, &TerminalTransform)>, q_cam: Query<&TerminalCamera>) {
+fn update(
+    mut q_term: Query<(&mut Terminal, &TerminalTransform)>,
+    q_cam: Query<&TerminalCamera>,
+    input: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+) {
     let cam = q_cam.single().unwrap();
     let Some(cursor_pos) = cam.cursor_world_pos() else {
         return;
     };
     for (mut term, transform) in &mut q_term {
         clear_term(&mut term);
-        if let Some(xy) = transform.world_to_tile(cursor_pos) {
+        if let Some(xy) = transform.world_to_tile_inner(cursor_pos) {
             term.put_string([0, 0], format!("Cursor pos: <fg=magenta>{}</fg>", xy));
         } else {
             term.put_string([0, 0], "Cursor out of bounds");
         }
+    }
+    if input.just_pressed(KeyCode::Escape) {
+        commands.write_message(AppExit::Success);
     }
 }
 

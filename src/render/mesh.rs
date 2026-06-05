@@ -254,7 +254,7 @@ fn rebuild_mesh_verts(
         resize_mesh_data(&mut mesh, tile_count);
 
         let tile_size = transform_data.world_tile_size;
-        let mesh_bl = transform_data.local_inner_mesh_bounds.min;
+        let mesh_bl = transform_data.local_mesh_bounds.min;
 
         // Remove all our relevant attributes from the mesh. This is done
         // to prevent the borrow checker from complaining when trying to

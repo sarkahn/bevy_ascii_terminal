@@ -1,6 +1,7 @@
 //! Terminal component for translating between world positions and terminal
 //! grid coordinates.
 
+use crate::Padding;
 use crate::render::RebuildMeshVerts;
 use crate::{
     Terminal, TerminalMeshWorldScaling,
@@ -94,17 +95,19 @@ pub(crate) struct CachedTransformData {
     /// the terminal's [crate::TerminalFont] and the terminal's [crate::render::TerminalMeshTileScaling]
     /// component.
     pub world_tile_size: Vec2,
-    /// The number of tiles on each axis excluding the terminal border
+    /// The number of tiles on each axis
     pub terminal_size: UVec2,
-    /// The local bounds of the terminal's inner mesh excluding the terminal border.
-    pub local_inner_mesh_bounds: Rect,
+    /// The local bounds of the terminal's mesh.
+    pub local_mesh_bounds: Rect,
 
-    /// The world bounds of the terminal mesh including the border if it has one.
+    /// The world bounds of the terminal mesh
     pub world_mesh_bounds: Rect,
     /// The world position of the terminal as of the last [TerminalTransform] update.
     pub world_pos: Vec3,
     /// The pixels per tile for the terminal based on the terminal's current font.
     pub pixels_per_tile: UVec2,
+
+    pub padding: Padding,
 }
 
 impl TerminalTransform {
@@ -116,11 +119,30 @@ impl TerminalTransform {
         let Some(data) = &self.cached_data else {
             return None;
         };
-        let min = data.world_pos.truncate() + data.local_inner_mesh_bounds.min;
+        let min = data.world_pos.truncate() + data.local_mesh_bounds.min;
         let pos = ((world_pos - min) / data.world_tile_size)
             .floor()
             .as_ivec2();
         if pos.cmplt(IVec2::ZERO).any() || pos.cmpge(data.terminal_size.as_ivec2()).any() {
+            return None;
+        }
+        Some(pos)
+    }
+
+    pub fn world_to_tile_inner(&self, world_pos: Vec2) -> Option<IVec2> {
+        let Some(data) = &self.cached_data else {
+            return None;
+        };
+        let min = data.world_pos.truncate() + data.local_mesh_bounds.min;
+        let pos = ((world_pos - min) / data.world_tile_size)
+            .floor()
+            .as_ivec2();
+        let padding_bl = IVec2::new(data.padding.left as i32, data.padding.bottom as i32);
+        let padding_tr = IVec2::new(data.padding.right as i32, data.padding.top as i32);
+        let pos = pos - padding_bl;
+        let max = data.terminal_size.as_ivec2() - padding_bl - padding_tr;
+
+        if pos.cmplt(IVec2::ZERO).any() || pos.cmpge(max).any() {
             return None;
         }
         Some(pos)
@@ -203,7 +225,7 @@ fn on_scaling_changed(
 }
 
 /// Calculate the terminal mesh size and cache the data used when translating
-/// coordinates between world and terminal space. Reads terminal size, border,
+/// coordinates between world and terminal space. Reads terminal size,
 /// mesh and font size, as well as global terminal grid settings.
 #[allow(clippy::type_complexity)]
 fn cache_transform_data(
@@ -259,18 +281,19 @@ fn cache_transform_data(
         data.world_tile_size = world_tile_size;
         data.pixels_per_tile = ppu;
 
-        // The size of the terminal mesh excluding the border bounds
-        let inner_mesh_size = term.size().as_vec2() * world_tile_size;
-        let inner_mesh_min = -inner_mesh_size * pivot.normalized();
-        let local_min = inner_mesh_min;
-        let local_max = local_min + inner_mesh_size;
-        data.local_inner_mesh_bounds = Rect::from_corners(local_min, local_max);
+        // The size of the terminal mesh
+        let mesh_size = term.size().as_vec2() * world_tile_size;
+        let mesh_min = -mesh_size * pivot.normalized();
+        let local_min = mesh_min;
+        let local_max = local_min + mesh_size;
+        data.local_mesh_bounds = Rect::from_corners(local_min, local_max);
 
         let world_min = transform.translation().truncate() + local_min;
-        let world_max = world_min + inner_mesh_size;
+        let world_max = world_min + mesh_size;
         let world_bounds = Rect::from_corners(world_min, world_max);
 
         data.world_mesh_bounds = world_bounds;
+        data.padding = term.padding();
 
         commands.entity(entity).remove::<CacheTransformData>();
     }
