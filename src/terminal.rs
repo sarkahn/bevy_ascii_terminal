@@ -381,7 +381,6 @@ impl Terminal {
     /// ```
     pub fn put_border(&mut self, box_style: BoxStyle) {
         let padding = self.padding;
-
         self.padding = Padding::ZERO;
 
         let pivot = self.pivot;
@@ -434,6 +433,24 @@ impl Terminal {
             ColorWrite::Clear => self.clear_tile.bg_color,
             ColorWrite::Set(col) => col,
         });
+
+        let mut style = style;
+        if self.pivot == Pivot::LeftTop
+            || self.pivot == Pivot::RightTop
+            || self.pivot == Pivot::CenterTop
+        {
+            std::mem::swap(&mut style.left_top, &mut style.left_bottom);
+            std::mem::swap(&mut style.right_top, &mut style.right_bottom);
+        }
+
+        if self.pivot == Pivot::RightBottom
+            || self.pivot == Pivot::RightCenter
+            || self.pivot == Pivot::RightTop
+        {
+            std::mem::swap(&mut style.left_top, &mut style.right_top);
+            std::mem::swap(&mut style.left_bottom, &mut style.right_bottom);
+        }
+
         self.maybe_put(xy, Some(style.left_bottom), fg, bg);
         self.maybe_put(xy + up, Some(style.left_top), fg, bg);
         self.maybe_put(xy + right, Some(style.right_bottom), fg, bg);
@@ -447,6 +464,14 @@ impl Terminal {
         for i in 1..size.y - 1 {
             self.maybe_put([xy.x, xy.y + i], Some(style.left_center), fg, bg);
             self.maybe_put([xy.x + right.x, xy.y + i], Some(style.right_center), fg, bg);
+        }
+
+        if style.fill_center {
+            for y in xy.y + 1..xy.y + size.y - 1 {
+                for x in xy.x + 1..xy.x + size.x - 1 {
+                    self.maybe_put([x, y], Some(style.center), fg, bg);
+                }
+            }
         }
     }
 
@@ -917,6 +942,7 @@ impl Terminal {
     pub fn try_transform_point(&self, xy: impl Into<IVec2>) -> Option<IVec2> {
         let innersize = self.inner_size();
         let mut xy = self.pivot.transform_point(xy, innersize);
+
         if xy.cmplt(IVec2::ZERO).any() {
             return None;
         }

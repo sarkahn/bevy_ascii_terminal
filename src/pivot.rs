@@ -192,4 +192,17 @@ mod tests {
         let p = point_taker([1, 1].pivot(Pivot::LeftTop));
         assert_eq!([1, 8], p.to_array());
     }
+
+    // #[test]
+    // fn bottom_center() {
+    //     let p = IVec2::new(23, 0);
+    //     let size = IVec2::new(24, 10);
+    //     let piv = Pivot::CenterBottom;
+
+    //     let t = piv.transform_point(p, size.as_uvec2());
+
+    //     let pp = piv.pivot_position(size);
+    //     println!("Pivot pos: {}", pp);
+    //     // println!("TRANSFORMED: {}", t);
+    // }
 }

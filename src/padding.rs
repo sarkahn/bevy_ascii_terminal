@@ -49,6 +49,7 @@ pub struct BoxStyle {
     pub bg_color: Option<ColorWrite>,
     // Reset the padding when writing - only used in [crate::Terminal::put_border]
     pub reset_padding: bool,
+    pub fill_center: bool,
 }
 
 impl Default for BoxStyle {
@@ -66,6 +67,7 @@ impl Default for BoxStyle {
             fg_color: Some(ColorWrite::Clear),
             bg_color: Some(ColorWrite::Clear),
             reset_padding: true,
+            fill_center: false,
         }
     }
 }
@@ -106,6 +108,7 @@ impl BoxStyle {
             fg_color: Some(ColorWrite::Clear),
             bg_color: Some(ColorWrite::Clear),
             reset_padding: true,
+            fill_center: false,
         }
     }
 
@@ -149,6 +152,11 @@ impl BoxStyle {
     /// from being overwritten
     pub fn dont_reset_padding(mut self) -> Self {
         self.reset_padding = false;
+        self
+    }
+
+    pub fn fill_center(mut self) -> Self {
+        self.fill_center = true;
         self
     }
 }
