@@ -481,7 +481,7 @@ impl Terminal {
     /// ### Color tags:
     /// - Set the foreground color between tags: `<fg=color>Text</fg>`
     /// - Set the background color between tags: `<bg=color>Text</bg>`
-    /// - Color format can be `#rrggbb`, `rrggbb`, `0xrrggbb`, or any named colors.
+    /// - Color format can be `#rrggbb`, `rrggbb`, `0xrrggbb`, `r# g# b#` or any named colors.
     ///   Custom color names for tagged strings can be explicitly defined via [Terminal::with_color_palette],
     ///   if not specified the default colors from [crate::color::css] will be used.
     ///

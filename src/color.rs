@@ -5,7 +5,8 @@
 
 use anyhow::{Result, anyhow};
 use bevy::{
-    color::{LinearRgba, Srgba},
+    color::{ColorToComponents, LinearRgba, Srgba},
+    math::Vec4,
     platform::collections::HashMap,
     reflect::Reflect,
 };
@@ -66,6 +67,10 @@ pub fn try_parse_color_string(input: &str) -> Result<LinearRgba> {
     }
 
     if let Ok(c) = parse_float_string(string) {
+        return Ok(c);
+    }
+
+    if let Ok(c) = parse_byte_string(string) {
         return Ok(c);
     }
 
@@ -276,6 +281,10 @@ pub const fn from_hex_string(input: &str) -> LinearRgba {
 /// Convert a string of normalized floats into a color. The string format should
 /// be "r# b# g# (a#)"
 pub fn parse_float_string(s: &str) -> Result<LinearRgba> {
+    if !s.contains('.') {
+        return Err(anyhow!("Float string missing decimal point"));
+    }
+
     let mut tokens = s.split_ascii_whitespace();
 
     let r = tokens
@@ -306,7 +315,47 @@ pub fn parse_float_string(s: &str) -> Result<LinearRgba> {
         1.0_f32
     };
 
-    Ok(Srgba::new(r, g, b, a).into())
+    let mut rgba = Vec4::new(r, g, b, a);
+    if rgba.cmplt(Vec4::ZERO).any() || rgba.cmpgt(Vec4::ONE).any() {
+        rgba /= 255.0;
+    }
+    Ok(Srgba::from_vec4(rgba).into())
+}
+
+/// Convert a string of bytes into a color. The string format should
+/// be "r# b# g# (a#)"
+pub fn parse_byte_string(s: &str) -> Result<LinearRgba> {
+    let mut tokens = s.split_ascii_whitespace();
+
+    let r = tokens
+        .next()
+        .and_then(|s| s.strip_prefix("r"))
+        .ok_or(anyhow!("Missing prefix on red value"))?;
+    let r = r.parse::<u8>()?;
+
+    let g = tokens
+        .next()
+        .and_then(|s| s.strip_prefix("g"))
+        .ok_or(anyhow!("Missing prefix on green value"))?;
+    let g = g.parse::<u8>()?;
+
+    let b = tokens
+        .next()
+        .and_then(|s| s.strip_prefix("b"))
+        .ok_or(anyhow!("Missing prefix on blue value"))?;
+    let b = b.parse::<u8>()?;
+
+    let a = if let Some(s) = tokens.next().map(|s| s.strip_prefix("a")) {
+        if let Some(Ok(s)) = s.map(|v| v.parse::<u8>()) {
+            s
+        } else {
+            255
+        }
+    } else {
+        255
+    };
+
+    Ok(Srgba::rgba_u8(r, g, b, a).into())
 }
 
 const fn hex_val(c: u8) -> Option<u8> {
@@ -565,14 +614,17 @@ impl ColorPalette {
 
 #[cfg(test)]
 mod tests {
-    use crate::color::parse_float_string;
+    use crate::color::{parse_byte_string, parse_float_string};
 
     #[test]
     fn floaty() {
-        let a = parse_float_string("r1.0 g0.5 b0");
+        let a = parse_float_string("fr1.0 g0.5 b0");
         assert!(a.is_ok());
 
-        let b = parse_float_string("r1.0 g0.5 b0 a1");
+        let b = parse_float_string("fr1.0 g0.5 b0 a1");
         assert!(b.is_ok());
+
+        let a = parse_byte_string("br255 g150 b50");
+        assert!(a.is_ok());
     }
 }
