@@ -18,7 +18,7 @@ fn setup(mut commands: Commands) {
             .with_border(BoxStyle::SINGLE_LINE)
             .with_string(
                 [0, 0],
-                "# <fg=red>Bevy <fg=green>Ascii <fg=blue>Terminal</fg> #",
+                "# <fg=red>Bevy <fg=00fF00>Ascii <fg=r0 g0.0 b1>Terminal</fg> #",
             ),
     );
     commands.spawn(TerminalCamera::new());

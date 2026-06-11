@@ -4,7 +4,11 @@
 //! for every single terminal tile.
 
 use anyhow::{Result, anyhow};
-use bevy::{color::LinearRgba, platform::collections::HashMap, reflect::Reflect};
+use bevy::{
+    color::{LinearRgba, Srgba},
+    platform::collections::HashMap,
+    reflect::Reflect,
+};
 
 /// Convert from a 6 digit hex value into a color
 pub const fn srgb_hex(hex: u32) -> LinearRgba {
@@ -52,17 +56,21 @@ pub fn try_parse_color_string(input: &str) -> Result<LinearRgba> {
 
     // --- Try parsing as hex ---
     // Allow: "#RRGGBB", "0xRRGGBB", "RRGGBB"
-    let hex_str = s
+    let string = s
         .strip_prefix('#')
         .or_else(|| s.strip_prefix("0x"))
         .unwrap_or(s);
 
-    if !s.is_ascii() {
-        return Err(anyhow!("Color tag names must be ascii"));
+    if !string.is_ascii() {
+        return Err(anyhow!("Color tags must be ascii"));
     }
 
-    if hex_str.len() == 6
-        && let Ok(v) = u32::from_str_radix(hex_str, 16)
+    if let Ok(c) = parse_float_string(string) {
+        return Ok(c);
+    }
+
+    if string.len() == 6
+        && let Ok(v) = u32::from_str_radix(string, 16)
     {
         return Ok(srgb_hex(v));
     }
@@ -263,6 +271,42 @@ pub const fn from_hex_string(input: &str) -> LinearRgba {
     }
 
     panic!("Unable to parse color string");
+}
+
+/// Convert a string of normalized floats into a color. The string format should
+/// be "r# b# g# (a#)"
+pub fn parse_float_string(s: &str) -> Result<LinearRgba> {
+    let mut tokens = s.split_ascii_whitespace();
+
+    let r = tokens
+        .next()
+        .and_then(|s| s.strip_prefix("r"))
+        .ok_or(anyhow!("Missing prefix on red value"))?;
+    let r = r.parse::<f32>()?;
+
+    let g = tokens
+        .next()
+        .and_then(|s| s.strip_prefix("g"))
+        .ok_or(anyhow!("Missing prefix on green value"))?;
+    let g = g.parse::<f32>()?;
+
+    let b = tokens
+        .next()
+        .and_then(|s| s.strip_prefix("b"))
+        .ok_or(anyhow!("Missing prefix on blue value"))?;
+    let b = b.parse::<f32>()?;
+
+    let a = if let Some(s) = tokens.next().map(|s| s.strip_prefix("a")) {
+        if let Some(Ok(s)) = s.map(|v| v.parse::<f32>()) {
+            s
+        } else {
+            1.0
+        }
+    } else {
+        1.0_f32
+    };
+
+    Ok(Srgba::new(r, g, b, a).into())
 }
 
 const fn hex_val(c: u8) -> Option<u8> {
@@ -516,5 +560,19 @@ impl ColorPalette {
                 name.as_ref()
             ))
             .cloned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::color::parse_float_string;
+
+    #[test]
+    fn floaty() {
+        let a = parse_float_string("r1.0 g0.5 b0");
+        assert!(a.is_ok());
+
+        let b = parse_float_string("r1.0 g0.5 b0 a1");
+        assert!(b.is_ok());
     }
 }

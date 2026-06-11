@@ -16,22 +16,20 @@ thiserror = "2"
 flate2 = "1.0"
 byteorder = "1"
 anyhow = "1.0.100"
-bevy_platform = "0.18"
+bevy_platform = "0.19.0-rc.3"
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"
 rand = "0.8.4"
 
 [dependencies.bevy]
-git = "https://github.com/bevyengine/bevy"
-rev = "99d2e972d06a3a688aa1ebca6ce5759d784821c5"
+version = "0.19.0-rc.3"
 # version = "0.18"
 default-features = false
 features = ["std", "png", "bevy_render", "bevy_asset", "bevy_sprite", "bevy_sprite_render", "bevy_window", "bevy_color"]
 
 [dev-dependencies.bevy]
-git = "https://github.com/bevyengine/bevy"
-rev = "99d2e972d06a3a688aa1ebca6ce5759d784821c5"
+version = "0.19.0-rc.3"
 # version = "0.18"
 default-features = false
 features = ["bevy_winit", "x11", "debug", "bevy_state"]
