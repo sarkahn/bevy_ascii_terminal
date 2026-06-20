@@ -591,7 +591,7 @@ impl Glyph {
     }
 }
 
-/// Convert an index to it's corresponding rust char within code page 437
+/// Convert an index (0..256) to it's corresponding rust char within code page 437
 pub const fn index_to_char(index: u8) -> char {
     CP_437_ARRAY[index as usize]
 }

@@ -8,10 +8,10 @@ use bevy_ascii_terminal::{color::ColorPalette, *};
 // Define custom named colors for the tagged strings
 const COLORS: &[(&str, LinearRgba)] = &[
     ("BORDER", color::from_hex_string("#f0f0f0")),
-    ("BG1", color::from_hex_string("#1920b0")),
+    ("BG1", color::from_hex_string("#303090")),
     ("BG2", color::from_hex_string("#3030b0")),
-    ("BG3", color::from_hex_string("#2828a8")),
-    ("BG4", color::from_hex_string("#2020a0")),
+    ("BG3", color::from_hex_string("#3030d0")),
+    ("BG4", color::from_hex_string("#3030f0")),
     ("TITLE", color::from_hex_string("#f80505")),
     ("HEADER", color::from_hex_string("#f8f8f8")),
     ("TEXT1", color::from_hex_string("#ffffff")),
@@ -37,11 +37,11 @@ fn setup(mut commands: Commands) {
     let big_string = r#"
 <fg=TEXT1><bg=BG1>.☺☻♥♦♣♠•◘○◙♂♀♪♫☼ ►◄↕‼¶§▬↨↑↓→←∟↔▲▼
 !"\#$%&'()*+,-./ 0123456789:;/<=>?
-<fg=TEXT2>@ABCDEFGHIJKLMNO PQRSTUVWXYZ[\]^_
+<fg=TEXT2><bg=bg2>@ABCDEFGHIJKLMNO PQRSTUVWXYZ[\]^_
 `abcdefghijklmno pqrstuvwxyz{|}~⌂
-<fg=TEXT3><bg=BG2>ÇüéâäàåçêëèïîìÄÅ ÉæÆôöòûùÿÖÜ¢£¥₧ƒ
+<fg=TEXT3><bg=BG3>ÇüéâäàåçêëèïîìÄÅ ÉæÆôöòûùÿÖÜ¢£¥₧ƒ
 áíóúñÑªº¿⌐¬½¼¡«» ░▒▓│┤╡╢╖╕╣║╗╝╜╛┐
-<fg=TEXT4>└┴┬├─┼╞╟╚╔╩╦╠═╬╧ ╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀
+<fg=TEXT4><bg=bg4>└┴┬├─┼╞╟╚╔╩╦╠═╬╧ ╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀
 αßΓπΣσµτΦΘΩδ∞φε∩ ≡±≥≤⌠⌡÷≈°∙·√ⁿ²■□"#;
 
     let term = Terminal::new([35, 14])

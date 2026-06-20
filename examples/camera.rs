@@ -144,7 +144,7 @@ fn handle_pressed(
         let term = &mut terminals[current.0].0;
 
         let curr_size = term.size().as_ivec2();
-        term.resize((curr_size + size).max(IVec2::ONE).as_uvec2());
+        term.resize((curr_size + size).max(IVec2::new(3, 3)).as_uvec2());
         term.clear();
         draw_grid(term, BRIGHT);
         if term.padding() == Padding::ONE {

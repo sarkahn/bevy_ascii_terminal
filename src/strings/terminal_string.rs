@@ -57,7 +57,7 @@ pub trait TerminalStringBuilder<T: AsRef<str>> {
     /// Disable word wrap, allowing words to be split between lines.
     fn dont_word_wrap(self) -> TerminalString<T>;
 
-    /// Prevent colors from being written to space characters
+    /// Prevent colors from being written to space characters.
     fn dont_color_spaces(self) -> TerminalString<T>;
 }
 

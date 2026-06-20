@@ -8,7 +8,7 @@ license = "MIT"
 name = "bevy_ascii_terminal"
 readme = "README.md"
 repository = "https://github.com/sarkahn/bevy_ascii_terminal"
-version = "0.19.0-dev"
+version = "0.19.0"
 
 [dependencies]
 enum-ordinalize = "4.3.0"
@@ -16,21 +16,19 @@ thiserror = "2"
 flate2 = "1.0"
 byteorder = "1"
 anyhow = "1.0.100"
-bevy_platform = "0.19.0-rc.3"
+bevy_platform = "0.19.0"
 
 [dev-dependencies]
 fastnoise-lite = "1.1.1"
 rand = "0.8.4"
 
 [dependencies.bevy]
-version = "0.19.0-rc.3"
-# version = "0.18"
+version = "0.19.0"
 default-features = false
 features = ["std", "png", "bevy_render", "bevy_asset", "bevy_sprite", "bevy_sprite_render", "bevy_window", "bevy_color"]
 
 [dev-dependencies.bevy]
-version = "0.19.0-rc.3"
-# version = "0.18"
+version = "0.19.0"
 default-features = false
 features = ["bevy_winit", "x11", "debug", "bevy_state"]
 

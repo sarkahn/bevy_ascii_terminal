@@ -618,13 +618,13 @@ mod tests {
 
     #[test]
     fn floaty() {
-        let a = parse_float_string("fr1.0 g0.5 b0");
+        let a = parse_float_string("r1.0 g0.5 b0");
         assert!(a.is_ok());
 
-        let b = parse_float_string("fr1.0 g0.5 b0 a1");
+        let b = parse_float_string("r1.0 g0.5 b0 a1");
         assert!(b.is_ok());
 
-        let a = parse_byte_string("br255 g150 b50");
+        let a = parse_byte_string("r255 g150 b50");
         assert!(a.is_ok());
     }
 }

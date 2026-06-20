@@ -67,9 +67,9 @@ fn clear_term(term: &mut Terminal) {
     term.clear();
     for (p, t) in term.iter_xy_mut() {
         let grid_color = if (p.x + p.y) % 2 == 0 {
-            color::srgb_hex(0x151515)
+            color::from_hex_string("#151515")
         } else {
-            color::srgb_hex(0x040404)
+            color::from_hex_string("#040404")
         };
         t.glyph = ' ';
         t.bg_color = grid_color;
